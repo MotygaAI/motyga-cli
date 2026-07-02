@@ -35,6 +35,10 @@ const MAX_REQUEST_MAX_RETRIES: u64 = 100;
 const OPENAI_PROVIDER_NAME: &str = "OpenAI";
 const OPENAI_ACTOR_AUTHORIZATION_HEADER: &str = "x-openai-actor-authorization";
 pub const OPENAI_PROVIDER_ID: &str = "openai";
+pub const MOTYGA_PROVIDER_ID: &str = "motyga";
+const MOTYGA_PROVIDER_NAME: &str = "Motyga";
+const MOTYGA_DEFAULT_BASE_URL: &str = "https://api.motyga.com/v1";
+const MOTYGA_API_KEY_ENV_VAR: &str = "MOTYGA_API_KEY";
 pub const CHATGPT_CODEX_BASE_URL: &str = "https://chatgpt.com/backend-api/codex";
 const AMAZON_BEDROCK_PROVIDER_NAME: &str = "Amazon Bedrock";
 pub const AMAZON_BEDROCK_PROVIDER_ID: &str = "amazon-bedrock";
@@ -392,6 +396,32 @@ impl ModelProviderInfo {
         }
     }
 
+    pub fn create_motyga_provider() -> ModelProviderInfo {
+        ModelProviderInfo {
+            name: MOTYGA_PROVIDER_NAME.into(),
+            base_url: Some(MOTYGA_DEFAULT_BASE_URL.into()),
+            env_key: Some(MOTYGA_API_KEY_ENV_VAR.into()),
+            env_key_instructions: None,
+            experimental_bearer_token: None,
+            auth: None,
+            aws: None,
+            wire_api: WireApi::Responses,
+            query_params: None,
+            http_headers: Some(
+                [("version".to_string(), env!("CARGO_PKG_VERSION").to_string())]
+                    .into_iter()
+                    .collect(),
+            ),
+            env_http_headers: None,
+            request_max_retries: None,
+            stream_max_retries: None,
+            stream_idle_timeout_ms: None,
+            websocket_connect_timeout_ms: None,
+            requires_openai_auth: false,
+            supports_websockets: false,
+        }
+    }
+
     pub fn is_openai(&self) -> bool {
         self.name == OPENAI_PROVIDER_NAME
     }
@@ -438,6 +468,7 @@ pub fn built_in_model_providers(
     // open source ("oss") providers by default. Users are encouraged to add to
     // `model_providers` in config.toml to add their own providers.
     [
+        (MOTYGA_PROVIDER_ID, P::create_motyga_provider()),
         (OPENAI_PROVIDER_ID, openai_provider),
         (AMAZON_BEDROCK_PROVIDER_ID, amazon_bedrock_provider),
         (

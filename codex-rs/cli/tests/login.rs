@@ -16,7 +16,7 @@ use wiremock::matchers::method;
 use wiremock::matchers::path;
 
 fn codex_command(codex_home: &Path) -> Result<assert_cmd::Command> {
-    let mut cmd = assert_cmd::Command::new(codex_utils_cargo_bin::cargo_bin("codex")?);
+    let mut cmd = assert_cmd::Command::new(codex_utils_cargo_bin::cargo_bin("motyga")?);
     cmd.env("CODEX_HOME", codex_home);
     Ok(cmd)
 }
@@ -65,7 +65,7 @@ fn login_with_access_token_rejects_invalid_jwt() -> Result<()> {
     write_file_auth_config(codex_home.path())?;
 
     let mut cmd = codex_command(codex_home.path())?;
-    cmd.args(["login", "--with-access-token"])
+    cmd.args(["-c", "forced_login_method=\"chatgpt\"", "login", "--with-access-token"])
         .write_stdin("not-a-jwt\n")
         .assert()
         .failure()
@@ -140,7 +140,7 @@ async fn device_login_revokes_existing_auth_before_requesting_new_tokens() -> Re
     .env("no_proxy", "127.0.0.1,localhost")
     .env_remove("CODEX_ACCESS_TOKEN")
     .env_remove("OPENAI_API_KEY")
-    .args(["login", "--device-auth", "--experimental_issuer", &issuer])
+    .args(["-c", "forced_login_method=\"chatgpt\"", "login", "--device-auth", "--experimental_issuer", &issuer])
     .assert()
     .success()
     .stderr(contains("Successfully logged in"));

@@ -11,7 +11,8 @@ use std::path::PathBuf;
 /// - If `CODEX_HOME` is not set, this function does not verify that the
 ///   directory exists.
 pub fn find_codex_home() -> std::io::Result<AbsolutePathBuf> {
-    let codex_home_env = std::env::var("CODEX_HOME")
+    let codex_home_env = std::env::var("MOTYGA_HOME")
+        .or_else(|_| std::env::var("CODEX_HOME"))
         .ok()
         .filter(|val| !val.is_empty());
     find_codex_home_from_env(codex_home_env.as_deref())
@@ -56,7 +57,7 @@ fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<Abs
                     "Could not find home directory",
                 )
             })?;
-            p.push(".codex");
+            p.push(".motyga");
             AbsolutePathBuf::from_absolute_path(p)
         }
     }

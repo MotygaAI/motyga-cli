@@ -1748,7 +1748,7 @@ async fn plugin_read_hides_apps_for_api_key_auth() -> Result<()> {
         codex_home.path(),
         &[
             ("CODEX_ACCESS_TOKEN", None),
-            ("CODEX_API_KEY", None),
+            ("MOTYGA_API_KEY", None),
             ("OPENAI_API_KEY", None),
         ],
     )

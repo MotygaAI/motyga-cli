@@ -88,7 +88,7 @@ function findCodexExecutable() {
     vendorRoot,
     targetTriple,
     "bin",
-    process.platform === "win32" ? "codex.exe" : "codex",
+    process.platform === "win32" ? "motyga.exe" : "motyga",
   );
   if (existsSync(codexExecutable)) {
     return codexExecutable;

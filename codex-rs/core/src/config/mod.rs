@@ -3402,7 +3402,7 @@ impl Config {
 
         let model_provider_id = model_provider
             .or(cfg.model_provider)
-            .unwrap_or_else(|| "openai".to_string());
+            .unwrap_or_else(|| "motyga".to_string());
         let model_provider = model_providers
             .get(&model_provider_id)
             .ok_or_else(|| {
@@ -3544,7 +3544,11 @@ impl Config {
             })
             .filter(|values| !values.is_empty());
 
-        let forced_login_method = cfg.forced_login_method;
+        // Motyga: default to API-key auth so the "Sign in with ChatGPT" OAuth path stays
+        // disabled unless the user explicitly opts back in via forced_login_method = "chatgpt".
+        let forced_login_method = cfg
+            .forced_login_method
+            .or(Some(ForcedLoginMethod::Api));
 
         let model = model.or(cfg.model);
         let notices = cfg.notice.unwrap_or_default();
@@ -3927,7 +3931,8 @@ impl Config {
             notices,
             check_for_update_on_startup,
             disable_paste_burst: cfg.disable_paste_burst.unwrap_or(false),
-            analytics_enabled: cfg.analytics.as_ref().and_then(|a| a.enabled),
+            // Motyga: telemetry off by default; honor an explicit `[analytics] enabled = true` opt-in.
+            analytics_enabled: cfg.analytics.as_ref().and_then(|a| a.enabled).or(Some(false)),
             feedback_enabled: cfg
                 .feedback
                 .as_ref()
