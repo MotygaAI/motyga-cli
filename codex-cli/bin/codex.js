@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Unified entry point for the Codex CLI.
+// Unified entry point for the Motyga CLI (fork of OpenAI Codex CLI, Apache-2.0).
 
 import { spawn } from "node:child_process";
 import { existsSync, realpathSync } from "fs";
@@ -13,12 +13,12 @@ const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 
 const PLATFORM_PACKAGE_BY_TARGET = {
-  "x86_64-unknown-linux-musl": "@openai/codex-linux-x64",
-  "aarch64-unknown-linux-musl": "@openai/codex-linux-arm64",
-  "x86_64-apple-darwin": "@openai/codex-darwin-x64",
-  "aarch64-apple-darwin": "@openai/codex-darwin-arm64",
-  "x86_64-pc-windows-msvc": "@openai/codex-win32-x64",
-  "aarch64-pc-windows-msvc": "@openai/codex-win32-arm64",
+  "x86_64-unknown-linux-musl": "@motyga/cli-linux-x64",
+  "aarch64-unknown-linux-musl": "@motyga/cli-linux-arm64",
+  "x86_64-apple-darwin": "@motyga/cli-darwin-x64",
+  "aarch64-apple-darwin": "@motyga/cli-darwin-arm64",
+  "x86_64-pc-windows-msvc": "@motyga/cli-win32-x64",
+  "aarch64-pc-windows-msvc": "@motyga/cli-win32-arm64",
 };
 
 const { platform, arch } = process;
@@ -97,10 +97,10 @@ function findCodexExecutable() {
   const packageManager = detectPackageManager();
   const updateCommand =
     packageManager === "bun"
-      ? "bun install -g @openai/codex@latest"
-      : "npm install -g @openai/codex@latest";
+      ? "bun install -g @motyga/cli@latest"
+      : "npm install -g @motyga/cli@latest";
   throw new Error(
-    `Missing optional dependency ${platformPackage}. Reinstall Codex: ${updateCommand}`,
+    `Missing optional dependency ${platformPackage}. Reinstall Motyga: ${updateCommand}`,
   );
 }
 

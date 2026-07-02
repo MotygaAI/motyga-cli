@@ -1,3 +1,42 @@
+<h1 align="center">Motyga CLI</h1>
+
+<p align="center"><strong><code>motyga</code></strong> is a local coding agent — a fork of
+<a href="https://github.com/openai/codex">OpenAI Codex CLI</a> (Apache-2.0), rebranded and pointed at
+<a href="https://motyga.com">Motyga</a> by default. It speaks the OpenAI <b>Responses API</b>, so it runs
+against Motyga with your <code>nb-…</code> key (or your own provider) — no OpenAI subscription needed.</p>
+
+## Quickstart (Motyga)
+
+```shell
+npm install -g @motyga/cli
+```
+
+Point it at Motyga in `~/.codex/config.toml` (becomes `~/.motyga/config.toml` after the Rust rebrand lands):
+
+```toml
+model_provider = "motyga"
+disable_response_storage = true          # Motyga's /v1/responses is stateless
+
+[model_providers.motyga]
+name = "Motyga"
+base_url = "https://api.motyga.com/v1"   # RU mirror: https://ru.motyga.com/v1
+env_key = "MOTYGA_API_KEY"
+wire_api = "responses"
+```
+
+```shell
+export MOTYGA_API_KEY=nb-YOUR_KEY
+motyga              # interactive
+motyga exec "..."   # headless
+```
+
+> **Status: rebrand in progress.** This layer applies the npm identity (`@motyga/cli`, bin `motyga`) +
+> attribution. The Rust-side changes (default provider baked in, `~/.codex`→`~/.motyga`, disabling the
+> ChatGPT login + telemetry) are tracked in [`MOTYGA_REBRAND.md`](MOTYGA_REBRAND.md) and need a `cargo build`.
+> The original OpenAI Codex README is kept below for reference until fully rewritten.
+
+---
+
 <p align="center"><strong>Codex CLI</strong> is a coding agent from OpenAI that runs locally on your computer.
 <p align="center">
   <img src="https://github.com/openai/codex/blob/main/.github/codex-cli-splash.png" alt="Codex CLI splash" width="80%" />
