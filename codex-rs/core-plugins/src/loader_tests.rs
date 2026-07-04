@@ -454,7 +454,7 @@ fn load_plugin_hooks_supports_inline_manifest_hook_list() {
 
 #[test]
 fn materialize_git_subdir_uses_sparse_checkout() {
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let repo = tempfile::tempdir().expect("create git repo");
     let plugin_dir = repo.path().join("plugins/toolkit");
     fs::create_dir_all(&plugin_dir).expect("create plugin directory");

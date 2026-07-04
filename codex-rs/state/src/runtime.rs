@@ -622,7 +622,7 @@ mod tests {
         let codex_home = unique_temp_dir();
         tokio::fs::create_dir_all(&codex_home)
             .await
-            .expect("create codex home");
+            .expect("create motyga home");
         let path = state_db_path(codex_home.as_path());
         let pool = SqlitePool::connect_with(
             SqliteConnectOptions::new()
@@ -650,7 +650,7 @@ mod tests {
         let codex_home = unique_temp_dir();
         tokio::fs::create_dir_all(&codex_home)
             .await
-            .expect("create codex home");
+            .expect("create motyga home");
         let state_path = state_db_path(codex_home.as_path());
         let pool = SqlitePool::connect_with(
             SqliteConnectOptions::new()

@@ -361,7 +361,7 @@ impl MessageProcessor {
                     Ok(cfg) => cfg,
                     Err(e) => {
                         let result = CallToolResult::error(vec![rmcp::model::Content::text(
-                            format!("Failed to load Codex configuration from overrides: {e}"),
+                            format!("Failed to load Motyga configuration from overrides: {e}"),
                         )]);
                         self.outgoing.send_response(id, result).await;
                         return;
@@ -369,7 +369,7 @@ impl MessageProcessor {
                 },
                 Err(e) => {
                     let result = CallToolResult::error(vec![rmcp::model::Content::text(format!(
-                        "Failed to parse configuration for Codex tool: {e}"
+                        "Failed to parse configuration for Motyga tool: {e}"
                     ))]);
                     self.outgoing.send_response(id, result).await;
                     return;
@@ -418,9 +418,9 @@ impl MessageProcessor {
             Some(json_val) => match serde_json::from_value::<CodexToolCallReplyParam>(json_val) {
                 Ok(params) => params,
                 Err(e) => {
-                    tracing::error!("Failed to parse Codex tool call reply parameters: {e}");
+                    tracing::error!("Failed to parse Motyga tool call reply parameters: {e}");
                     let result = CallToolResult::error(vec![rmcp::model::Content::text(format!(
-                        "Failed to parse configuration for Codex tool: {e}"
+                        "Failed to parse configuration for Motyga tool: {e}"
                     ))]);
                     self.outgoing.send_response(request_id, result).await;
                     return;
@@ -550,7 +550,7 @@ impl MessageProcessor {
             })
             .await
         {
-            tracing::error!("Failed to submit interrupt to Codex: {e}");
+            tracing::error!("Failed to submit interrupt to Motyga: {e}");
             return;
         }
         // unregister the id so we don't keep it in the map

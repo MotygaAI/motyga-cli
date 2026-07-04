@@ -611,7 +611,7 @@ mod tests {
         let codex_home = unique_temp_dir();
         tokio::fs::create_dir_all(&codex_home)
             .await
-            .expect("create codex home");
+            .expect("create motyga home");
         let logs_path = logs_db_path(codex_home.as_path());
         let old_logs_migrator = Migrator {
             migrations: Cow::Owned(vec![LOGS_MIGRATOR.migrations[0].clone()]),

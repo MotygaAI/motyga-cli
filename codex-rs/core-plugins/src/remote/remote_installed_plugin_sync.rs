@@ -459,7 +459,7 @@ mod tests {
 
     #[test]
     fn remote_installed_plugin_sync_in_flight_dedupes_by_cache_root() {
-        let codex_home = tempfile::tempdir().expect("create codex home");
+        let codex_home = tempfile::tempdir().expect("create motyga home");
         let key = RemoteInstalledPluginBundleSyncKey {
             plugin_cache_root: remote_plugin_cache_root(codex_home.path()),
         };
@@ -481,7 +481,7 @@ mod tests {
     #[tokio::test]
     async fn sync_backfills_remote_plugin_install_metadata_for_current_bundle() {
         let server = MockServer::start().await;
-        let codex_home = tempfile::tempdir().expect("create codex home");
+        let codex_home = tempfile::tempdir().expect("create motyga home");
         let cached_manifest = codex_home
             .path()
             .join(PLUGINS_CACHE_DIR)
@@ -579,7 +579,7 @@ mod tests {
 
     #[test]
     fn stale_remote_plugin_cleanup_skips_cache_mutations_in_progress() {
-        let codex_home = tempfile::tempdir().expect("create codex home");
+        let codex_home = tempfile::tempdir().expect("create motyga home");
         let cached_manifest = codex_home
             .path()
             .join(PLUGINS_CACHE_DIR)
@@ -648,7 +648,7 @@ mod tests {
 
     #[test]
     fn stale_remote_plugin_cleanup_removes_stale_marketplace_caches_and_keeps_canonical_cache() {
-        let codex_home = tempfile::tempdir().expect("create codex home");
+        let codex_home = tempfile::tempdir().expect("create motyga home");
         let created_by_me_cached_manifest = codex_home
             .path()
             .join(PLUGINS_CACHE_DIR)

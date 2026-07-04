@@ -31,11 +31,11 @@ pub(crate) async fn chatgpt_get_request_with_timeout<T: DeserializeOwned>(
         .ok_or_else(|| anyhow::anyhow!("ChatGPT auth not available"))?;
     anyhow::ensure!(
         auth.uses_codex_backend(),
-        "ChatGPT backend requests require Codex backend auth"
+        "ChatGPT backend requests require Motyga backend auth"
     );
     anyhow::ensure!(
         auth.get_account_id().is_some(),
-        "ChatGPT account ID not available, please re-run `codex login`"
+        "ChatGPT account ID not available, please re-run `motyga login`"
     );
 
     // Make direct HTTP request to ChatGPT backend API with the token

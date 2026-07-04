@@ -1632,7 +1632,7 @@ mod tests {
         let user_profile = tmp.path().join("user-profile");
         let codex_home = user_profile.join("CodexHome");
         let documents = user_profile.join("Documents");
-        fs::create_dir_all(&codex_home).expect("create codex home");
+        fs::create_dir_all(&codex_home).expect("create motyga home");
         fs::create_dir_all(&documents).expect("create documents");
 
         let mut roots =
@@ -1789,7 +1789,7 @@ mod tests {
         let command_cwd = tmp.path().join("workspace");
         let extra_root = tmp.path().join("extra-root");
         let sandbox_root = super::sandbox_dir(&codex_home);
-        fs::create_dir_all(&codex_home).expect("create codex home");
+        fs::create_dir_all(&codex_home).expect("create motyga home");
         fs::create_dir_all(&command_cwd).expect("create workspace");
         fs::create_dir_all(&extra_root).expect("create extra root");
         fs::create_dir_all(&sandbox_root).expect("create sandbox root");
@@ -1847,7 +1847,7 @@ mod tests {
         let codex_home = tmp.path().join("codex-home");
         let workspace_root = tmp.path().join("workspace");
         let command_cwd = workspace_root.join("subdir");
-        fs::create_dir_all(&codex_home).expect("create codex home");
+        fs::create_dir_all(&codex_home).expect("create motyga home");
         fs::create_dir_all(&command_cwd).expect("create command cwd");
 
         let permission_profile = workspace_write_profile(

@@ -298,7 +298,7 @@ fn runtime_warnings_are_filtered_to_the_primary_thread() {
 
 #[tokio::test]
 async fn resume_lookup_model_providers_filters_only_last_lookup() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let mut config = ConfigBuilder::default()
         .codex_home(codex_home.path().to_path_buf())
@@ -441,7 +441,7 @@ fn canceled_mcp_server_elicitation_response_uses_cancel_action() {
 
 #[tokio::test]
 async fn thread_start_params_include_review_policy_when_review_policy_is_manual_only() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let config = ConfigBuilder::default()
         .loader_overrides(LoaderOverrides::without_managed_config_for_tests())
@@ -470,7 +470,7 @@ async fn thread_start_params_include_review_policy_when_review_policy_is_manual_
 
 #[tokio::test]
 async fn thread_start_params_include_review_policy_when_auto_review_is_enabled() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let config = ConfigBuilder::default()
         .codex_home(codex_home.path().to_path_buf())
@@ -493,7 +493,7 @@ async fn thread_start_params_include_review_policy_when_auto_review_is_enabled()
 
 #[tokio::test]
 async fn build_exec_config_retries_without_invalid_headless_policy_for_auto_review() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     std::fs::write(
         codex_home.path().join("config.toml"),
@@ -579,7 +579,7 @@ async fn build_exec_config_preserves_headless_error_when_retry_fails() {
 
 #[tokio::test]
 async fn thread_start_params_include_user_thread_source() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let config = ConfigBuilder::default()
         .codex_home(codex_home.path().to_path_buf())
@@ -598,7 +598,7 @@ async fn thread_start_params_include_user_thread_source() {
 
 #[tokio::test]
 async fn thread_lifecycle_params_preserve_hook_trust_bypass() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let config = ConfigBuilder::default()
         .codex_home(codex_home.path().to_path_buf())
@@ -633,7 +633,7 @@ fn active_profile_selection_uses_profile_id_only() {
 
 #[tokio::test]
 async fn thread_lifecycle_params_include_legacy_sandbox_when_no_active_profile() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let config = ConfigBuilder::default()
         .loader_overrides(LoaderOverrides::without_managed_config_for_tests())
@@ -665,7 +665,7 @@ async fn thread_lifecycle_params_include_legacy_sandbox_when_no_active_profile()
 
 #[tokio::test]
 async fn session_configured_from_thread_response_uses_review_policy_from_response() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let config = ConfigBuilder::default()
         .codex_home(codex_home.path().to_path_buf())
@@ -691,7 +691,7 @@ async fn session_configured_from_thread_response_uses_review_policy_from_respons
 
 #[tokio::test]
 async fn session_configured_from_thread_response_uses_permission_profile_from_config() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let config = ConfigBuilder::default()
         .codex_home(codex_home.path().to_path_buf())
@@ -712,7 +712,7 @@ async fn session_configured_from_thread_response_uses_permission_profile_from_co
 
 #[tokio::test]
 async fn session_configured_from_thread_response_preserves_thread_source() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let config = ConfigBuilder::default()
         .codex_home(codex_home.path().to_path_buf())
@@ -733,7 +733,7 @@ async fn session_configured_from_thread_response_preserves_thread_source() {
 
 #[tokio::test]
 async fn session_configured_from_thread_response_preserves_parent_thread_id() {
-    let codex_home = tempdir().expect("create temp codex home");
+    let codex_home = tempdir().expect("create temp motyga home");
     let cwd = tempdir().expect("create temp cwd");
     let config = ConfigBuilder::default()
         .codex_home(codex_home.path().to_path_buf())

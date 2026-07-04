@@ -547,7 +547,7 @@ mod tests {
             write_session_file(home.path(), "2025-01-03T12-00-00", uuid).expect("session file");
         let relative_path = active_path
             .strip_prefix(home.path())
-            .expect("path should be under codex home")
+            .expect("path should be under motyga home")
             .to_path_buf();
 
         let thread = store

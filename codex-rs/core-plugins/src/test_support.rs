@@ -130,7 +130,7 @@ pub(crate) fn write_curated_plugin_sha_with(codex_home: &Path, sha: &str) {
 }
 
 pub(crate) async fn load_plugins_config(codex_home: &Path, cwd: &Path) -> PluginsConfigInput {
-    let codex_home = AbsolutePathBuf::try_from(codex_home).expect("codex home should be absolute");
+    let codex_home = AbsolutePathBuf::try_from(codex_home).expect("motyga home should be absolute");
     let cwd = AbsolutePathBuf::try_from(cwd).expect("cwd should be absolute");
     let config_layer_stack = load_config_layers_state(
         LOCAL_FS.as_ref(),

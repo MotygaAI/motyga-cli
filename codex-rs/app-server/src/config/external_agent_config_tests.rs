@@ -249,7 +249,7 @@ async fn detect_repo_still_reports_non_plugin_items_when_home_config_is_invalid(
             .join("skill-a"),
     )
     .expect("create repo skills");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
     fs::write(codex_home.join("config.toml"), "this is not valid = [toml")
         .expect("write invalid codex config");
     fs::write(
@@ -668,7 +668,7 @@ description = "Research role"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """
-Research with Codex carefully."""
+Research with Motyga carefully."""
 "#,
     )
     .expect("parse expected agent");
@@ -846,7 +846,7 @@ async fn import_home_migrates_supported_config_fields_skills_and_agents_md() {
 
     assert_eq!(
         fs::read_to_string(codex_home.join("AGENTS.md")).expect("read agents"),
-        "Codex guidance"
+        "Motyga guidance"
     );
 
     let config: TomlValue =
@@ -871,7 +871,7 @@ MY_TEAM = "codex"
     assert_eq!(
         fs::read_to_string(agents_skills.join("skill-a").join("SKILL.md"))
             .expect("read copied skill"),
-        "Use Codex and Codex utilities."
+        "Use Motyga and Motyga utilities."
     );
 }
 
@@ -991,7 +991,7 @@ async fn import_local_plugins_returns_completed_status() {
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -1138,7 +1138,7 @@ async fn import_git_plugins_returns_pending_async_status() {
 async fn detect_home_skips_config_when_target_already_has_supported_fields() {
     let (_root, external_agent_home, codex_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
     fs::write(
         external_agent_home.join("settings.json"),
         r#"{"env":{"FOO":"bar"},"sandbox":{"enabled":true}}"#,
@@ -1323,7 +1323,7 @@ async fn import_repo_agents_md_overwrites_empty_targets() {
     );
     assert_eq!(
         fs::read_to_string(repo_root.join("AGENTS.md")).expect("read target"),
-        "Codex guidance"
+        "Motyga guidance"
     );
 }
 
@@ -1645,7 +1645,7 @@ async fn import_repo_uses_non_empty_external_agent_agents_source() {
 
     assert_eq!(
         fs::read_to_string(repo_root.join("AGENTS.md")).expect("read target"),
-        "Codex guidance"
+        "Motyga guidance"
     );
 }
 
@@ -1678,7 +1678,7 @@ async fn import_continues_after_failed_migration_item() {
 
     assert_eq!(
         fs::read_to_string(repo_root.join("AGENTS.md")).expect("read target"),
-        "Codex guidance"
+        "Motyga guidance"
     );
 }
 
@@ -1808,7 +1808,7 @@ async fn detect_repo_skips_plugins_that_are_already_configured_in_codex() {
     let repo_root = root.path().join("repo");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{
@@ -1872,7 +1872,7 @@ async fn detect_repo_skips_plugins_that_are_disabled_in_codex() {
     let repo_root = root.path().join("repo");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{
@@ -1915,7 +1915,7 @@ async fn detect_repo_skips_plugins_without_explicit_enabled_in_codex() {
     let repo_root = root.path().join("repo");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{
@@ -1971,7 +1971,7 @@ async fn detect_repo_does_not_skip_plugins_only_configured_in_project_codex() {
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
     fs::create_dir_all(repo_root.join(".codex")).expect("create repo codex dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{
@@ -2301,7 +2301,7 @@ async fn import_plugins_supports_external_agent_plugin_marketplace_layout() {
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2377,7 +2377,7 @@ async fn detect_home_supports_relative_external_agent_plugin_marketplace_path() 
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2447,7 +2447,7 @@ async fn detect_home_supports_relative_external_agent_plugin_marketplace_path() 
 async fn detect_home_infers_external_official_marketplace_when_missing_from_settings() {
     let (_root, external_agent_home, codex_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2497,7 +2497,7 @@ async fn import_plugins_supports_relative_external_agent_plugin_marketplace_path
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2568,7 +2568,7 @@ async fn import_plugins_supports_relative_external_agent_plugin_marketplace_path
 async fn import_plugins_infers_external_official_marketplace_when_missing_from_settings() {
     let (_root, external_agent_home, codex_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2626,7 +2626,7 @@ async fn detect_repo_supports_project_relative_external_agent_plugin_marketplace
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
 
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
@@ -2708,7 +2708,7 @@ async fn import_plugins_supports_project_relative_external_agent_plugin_marketpl
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create codex home");
+    fs::create_dir_all(&codex_home).expect("create motyga home");
 
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),

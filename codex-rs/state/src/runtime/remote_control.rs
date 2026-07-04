@@ -329,7 +329,7 @@ mod tests {
         let codex_home = unique_temp_dir();
         tokio::fs::create_dir_all(&codex_home)
             .await
-            .expect("create codex home");
+            .expect("create motyga home");
         let old_state_migrator = Migrator {
             migrations: Cow::Owned(STATE_MIGRATOR.migrations[..36].to_vec()),
             ignore_missing: false,

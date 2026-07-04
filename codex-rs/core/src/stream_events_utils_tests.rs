@@ -433,7 +433,7 @@ fn completed_item_defers_mailbox_delivery_for_image_generation_calls() {
 
 #[tokio::test]
 async fn save_image_generation_result_saves_base64_to_png_in_codex_home() {
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let codex_home = codex_home.path().abs();
     let expected_path = image_generation_artifact_path(&codex_home, "session-1", "ig_save_base64");
     let _ = std::fs::remove_file(&expected_path);
@@ -451,7 +451,7 @@ async fn save_image_generation_result_saves_base64_to_png_in_codex_home() {
 #[tokio::test]
 async fn save_image_generation_result_rejects_data_url_payload() {
     let result = "data:image/jpeg;base64,Zm9v";
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let codex_home = codex_home.path().abs();
 
     let err = save_image_generation_result(&codex_home, "session-1", "ig_456", result)
@@ -462,7 +462,7 @@ async fn save_image_generation_result_rejects_data_url_payload() {
 
 #[tokio::test]
 async fn save_image_generation_result_overwrites_existing_file() {
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let codex_home = codex_home.path().abs();
     let existing_path = image_generation_artifact_path(&codex_home, "session-1", "ig_overwrite");
     std::fs::create_dir_all(
@@ -484,7 +484,7 @@ async fn save_image_generation_result_overwrites_existing_file() {
 
 #[tokio::test]
 async fn save_image_generation_result_sanitizes_call_id_for_codex_home_output_path() {
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let codex_home = codex_home.path().abs();
     let expected_path = image_generation_artifact_path(&codex_home, "session-1", "../ig/..");
     let _ = std::fs::remove_file(&expected_path);
@@ -500,7 +500,7 @@ async fn save_image_generation_result_sanitizes_call_id_for_codex_home_output_pa
 
 #[tokio::test]
 async fn save_image_generation_result_rejects_non_standard_base64() {
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let codex_home = codex_home.path().abs();
     let err = save_image_generation_result(&codex_home, "session-1", "ig_urlsafe", "_-8")
         .await
@@ -510,7 +510,7 @@ async fn save_image_generation_result_rejects_non_standard_base64() {
 
 #[tokio::test]
 async fn save_image_generation_result_rejects_non_base64_data_urls() {
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let codex_home = codex_home.path().abs();
     let err = save_image_generation_result(
         &codex_home,

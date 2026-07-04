@@ -1267,7 +1267,7 @@ async fn get_base_instructions_no_user_content() {
 async fn reload_user_config_layer_updates_effective_apps_config() {
     let (session, _turn_context) = make_session_and_context().await;
     let codex_home = session.codex_home().await;
-    std::fs::create_dir_all(&codex_home).expect("create codex home");
+    std::fs::create_dir_all(&codex_home).expect("create motyga home");
     let config_toml_path = codex_home.join(CONFIG_TOML_FILE);
     std::fs::write(
         &config_toml_path,
@@ -1300,7 +1300,7 @@ async fn reload_user_config_layer_updates_effective_apps_config() {
 async fn reload_user_config_layer_updates_base_and_selected_profile_layers() {
     let (session, _turn_context) = make_session_and_context().await;
     let codex_home = session.codex_home().await;
-    std::fs::create_dir_all(&codex_home).expect("create codex home");
+    std::fs::create_dir_all(&codex_home).expect("create motyga home");
     let base_config_path = codex_home.join(CONFIG_TOML_FILE);
     let profile_config_path = codex_home.join("work.config.toml");
     std::fs::write(
@@ -1366,7 +1366,7 @@ async fn reload_user_config_layer_refreshes_hooks() -> anyhow::Result<()> {
         config
             .features
             .enable(Feature::CodexHooks)
-            .expect("enable Codex hooks");
+            .expect("enable Motyga hooks");
     })
     .await?;
     let codex_home = session.codex_home().await;
@@ -1443,7 +1443,7 @@ async fn refresh_runtime_config_refreshes_hooks() -> anyhow::Result<()> {
         config
             .features
             .enable(Feature::CodexHooks)
-            .expect("enable Codex hooks");
+            .expect("enable Motyga hooks");
         state.session_configuration.original_config_do_not_use = Arc::new(config);
     }
     let codex_home = session.codex_home().await;
@@ -1513,7 +1513,7 @@ async fn refresh_runtime_config_refreshes_hooks() -> anyhow::Result<()> {
 async fn reload_user_config_layer_updates_effective_tool_suggest_config() {
     let (session, _turn_context) = make_session_and_context().await;
     let codex_home = session.codex_home().await;
-    std::fs::create_dir_all(&codex_home).expect("create codex home");
+    std::fs::create_dir_all(&codex_home).expect("create motyga home");
     let config_toml_path = codex_home.join(CONFIG_TOML_FILE);
     std::fs::write(
         &config_toml_path,
@@ -1543,7 +1543,7 @@ async fn refresh_runtime_config_updates_runtime_refreshable_fields_and_keeps_ses
  {
     let (session, _turn_context) = make_session_and_context().await;
     let codex_home = session.codex_home().await;
-    std::fs::create_dir_all(&codex_home).expect("create codex home");
+    std::fs::create_dir_all(&codex_home).expect("create motyga home");
     std::fs::write(
         codex_home.join(CONFIG_TOML_FILE),
         r#"[apps.calendar]
@@ -2658,7 +2658,7 @@ async fn config_change_contributor_observes_effective_config_changes() {
         .expect("update settings");
 
     let codex_home = session.codex_home().await;
-    std::fs::create_dir_all(&codex_home).expect("create codex home");
+    std::fs::create_dir_all(&codex_home).expect("create motyga home");
     std::fs::write(
         codex_home.join(CONFIG_TOML_FILE),
         r#"[tool_suggest]
@@ -4684,7 +4684,7 @@ async fn session_configuration_apply_retargets_implicit_workspace_root_on_cwd_up
 
 #[tokio::test]
 async fn active_profile_update_rebuilds_network_proxy_config() -> std::io::Result<()> {
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let cwd = tempfile::tempdir().expect("create cwd");
     let permissions = PermissionsToml {
         entries: std::collections::BTreeMap::from([

@@ -147,7 +147,7 @@ pub(crate) fn reexec_managed_updater(managed_codex_bin: &std::path::Path) -> Res
         .exec();
     Err(err).with_context(|| {
         format!(
-            "failed to replace updater with managed Codex binary {}",
+            "failed to replace updater with managed Motyga binary {}",
             managed_codex_bin.display()
         )
     })
@@ -157,12 +157,12 @@ pub(crate) fn reexec_managed_updater(managed_codex_bin: &std::path::Path) -> Res
 async fn install_latest_standalone() -> Result<()> {
     let script = reqwest::get("https://chatgpt.com/codex/install.sh")
         .await
-        .context("failed to fetch standalone Codex updater")?
+        .context("failed to fetch standalone Motyga updater")?
         .error_for_status()
-        .context("standalone Codex updater request failed")?
+        .context("standalone Motyga updater request failed")?
         .bytes()
         .await
-        .context("failed to read standalone Codex updater")?;
+        .context("failed to read standalone Motyga updater")?;
 
     let mut child = Command::new("/bin/sh")
         .arg("-s")
@@ -170,25 +170,25 @@ async fn install_latest_standalone() -> Result<()> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .context("failed to invoke standalone Codex updater")?;
+        .context("failed to invoke standalone Motyga updater")?;
     let mut stdin = child
         .stdin
         .take()
-        .context("standalone Codex updater stdin was unavailable")?;
+        .context("standalone Motyga updater stdin was unavailable")?;
     stdin
         .write_all(&script)
         .await
-        .context("failed to pass standalone Codex updater to shell")?;
+        .context("failed to pass standalone Motyga updater to shell")?;
     drop(stdin);
     let status = child
         .wait()
         .await
-        .context("failed to wait for standalone Codex updater")?;
+        .context("failed to wait for standalone Motyga updater")?;
 
     if status.success() {
         Ok(())
     } else {
-        anyhow::bail!("standalone Codex updater exited with status {status}")
+        anyhow::bail!("standalone Motyga updater exited with status {status}")
     }
 }
 

@@ -226,7 +226,7 @@ fn startup_cached_codex_apps_tools_loads_from_disk_cache() {
         CODEX_APPS_MCP_SERVER_NAME,
         "calendar_search",
     )];
-    let server_info = create_test_server_info("Codex Apps");
+    let server_info = create_test_server_info("Motyga Apps");
     write_cached_codex_apps_tools_for_test(&writer_cache_context, &server_info, &cached_tools);
     let cache_context = create_codex_apps_tools_cache_context(
         codex_home.path().to_path_buf(),
@@ -287,7 +287,7 @@ fn codex_apps_server_info_cache_survives_legacy_tools_cache_write() {
         Some("account-one"),
         Some("user-one"),
     );
-    let server_info = create_test_server_info("Codex Apps");
+    let server_info = create_test_server_info("Motyga Apps");
     write_cached_codex_apps_tools_for_test(
         &cache_context,
         &server_info,
@@ -373,7 +373,7 @@ fn codex_apps_tools_cache_publishes_newest_shared_snapshot() {
     );
     let older_ticket = cache_context_1.begin_fetch(CodexAppsToolsFetchSource::Startup);
     let newer_ticket = cache_context_2.begin_fetch(CodexAppsToolsFetchSource::HardRefresh);
-    let server_info = create_test_server_info("Codex Apps");
+    let server_info = create_test_server_info("Motyga Apps");
     let newer_tools = vec![create_test_tool(CODEX_APPS_MCP_SERVER_NAME, "newer")];
     let older_tools = vec![create_test_tool(CODEX_APPS_MCP_SERVER_NAME, "older")];
 
@@ -406,7 +406,7 @@ fn codex_apps_tools_cache_publishes_newest_shared_snapshot() {
 fn codex_apps_tools_cache_keeps_live_publish_when_disk_persistence_fails() {
     let codex_home = tempdir().expect("tempdir");
     let codex_home_file = codex_home.path().join("not-a-directory");
-    std::fs::write(&codex_home_file, b"occupied").expect("create codex home file");
+    std::fs::write(&codex_home_file, b"occupied").expect("create motyga home file");
     let cache_context = CodexAppsToolsCache::default().context(
         codex_home_file,
         CodexAppsToolsCacheKey {
@@ -418,7 +418,7 @@ fn codex_apps_tools_cache_keeps_live_publish_when_disk_persistence_fails() {
     let tools = vec![create_test_tool(CODEX_APPS_MCP_SERVER_NAME, "live")];
     let published_tools = cache_context.publish_if_newest_accepted(
         cache_context.begin_fetch(CodexAppsToolsFetchSource::HardRefresh),
-        &create_test_server_info("Codex Apps"),
+        &create_test_server_info("Motyga Apps"),
         tools.clone(),
     );
 

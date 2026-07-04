@@ -566,7 +566,7 @@ impl McpConnectionManager {
                 (Some(cache_context), Some(fetch_ticket)) => cache_context
                     .publish_if_newest_accepted(fetch_ticket, &managed_client.server_info, tools),
                 (None, None) => tools,
-                _ => unreachable!("Codex Apps fetch ticket requires cache context"),
+                _ => unreachable!("Motyga Apps fetch ticket requires cache context"),
             };
         emit_duration(
             MCP_TOOLS_LIST_DURATION_METRIC,
@@ -972,7 +972,7 @@ fn mcp_init_error_display(
         )
     } else if is_mcp_client_auth_required_error(err) {
         format!(
-            "The {server_name} MCP server is not logged in. Run `codex mcp login {server_name}`."
+            "The {server_name} MCP server is not logged in. Run `motyga mcp login {server_name}`."
         )
     } else if is_mcp_client_startup_timeout_error(err) {
         let startup_timeout_secs = match entry {

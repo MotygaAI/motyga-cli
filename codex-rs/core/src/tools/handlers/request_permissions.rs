@@ -77,7 +77,7 @@ impl RequestPermissionsHandler {
         // environment-native foreign paths do not require host conversion.
         let native_cwd = turn_environment.cwd().to_abs_path().map_err(|err| {
             FunctionCallError::RespondToModel(format!(
-                "request_permissions cwd `{}` is not native to the Codex host: {err}",
+                "request_permissions cwd `{}` is not native to the Motyga host: {err}",
                 turn_environment.cwd()
             ))
         })?;

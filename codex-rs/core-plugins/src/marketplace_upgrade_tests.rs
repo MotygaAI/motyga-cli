@@ -10,7 +10,7 @@ use tempfile::TempDir;
 
 #[test]
 fn readback_ignores_unrelated_malformed_marketplace() {
-    let codex_home = TempDir::new().expect("create Codex home");
+    let codex_home = TempDir::new().expect("create Motyga home");
     std::fs::write(
         codex_home.path().join(CONFIG_TOML_FILE),
         r#"
@@ -43,7 +43,7 @@ last_revision = "abc123"
 
 #[test]
 fn one_upgrade_failure_does_not_block_another_marketplace() {
-    let codex_home = TempDir::new().expect("create Codex home");
+    let codex_home = TempDir::new().expect("create Motyga home");
     let remote_repo = TempDir::new().expect("create remote repository");
     init_marketplace_repo(remote_repo.path(), "good");
     let good_url = url::Url::from_directory_path(remote_repo.path())
@@ -89,7 +89,7 @@ source = {good_url:?}
 
 #[test]
 fn upgrade_uses_validated_source_for_git_operations() {
-    let codex_home = TempDir::new().expect("create Codex home");
+    let codex_home = TempDir::new().expect("create Motyga home");
     let remote_repo = TempDir::new().expect("create remote repository");
     init_marketplace_repo(remote_repo.path(), "good");
     let normalized_url = url::Url::from_directory_path(remote_repo.path())
@@ -137,7 +137,7 @@ ref = "missing-ref"
 #[test]
 fn up_to_date_fast_path_validates_marketplace_name() {
     const REVISION: &str = "0123456789abcdef0123456789abcdef01234567";
-    let codex_home = TempDir::new().expect("create Codex home");
+    let codex_home = TempDir::new().expect("create Motyga home");
     let install_root = marketplace_install_root(codex_home.path());
     let destination = install_root.join("good");
     let manifest_dir = destination.join(".agents/plugins");
@@ -201,7 +201,7 @@ fn init_marketplace_repo(repo: &Path, marketplace_name: &str) {
     .expect("write marketplace manifest");
     run_git(repo, &["init"]);
     run_git(repo, &["config", "user.email", "codex-test@example.com"]);
-    run_git(repo, &["config", "user.name", "Codex Test"]);
+    run_git(repo, &["config", "user.name", "Motyga Test"]);
     run_git(repo, &["add", "."]);
     run_git(repo, &["commit", "-m", "initial"]);
 }

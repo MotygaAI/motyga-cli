@@ -1,12 +1,12 @@
 ---
-source: tui/src/history_cell.rs
+source: tui/src/history_cell/tests.rs
 expression: rendered
 ---
 ╭─────────────────────────────────────╮
-│ >_ OpenAI Codex (v0.0.0)            │
+│ >_ Motyga (v0.0.0)                  │
 │                                     │
 │ model:     gpt-5   /model to change │
-│ directory: /tmp/project             │
+│ directory: C:\tmp\project           │
 ╰─────────────────────────────────────╯
 
   Tip: Model just became available

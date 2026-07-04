@@ -440,7 +440,7 @@ async fn shared_elicitation_router_targets_the_exact_pending_request() {
         codex_protocol::mcp::RequestId::String(request_b_id),
     ) = (request_a.id, request_b.id)
     else {
-        panic!("expected Codex-owned string request IDs");
+        panic!("expected Motyga-owned string request IDs");
     };
     assert_ne!(request_a_id, request_b_id);
 
@@ -799,7 +799,7 @@ async fn list_available_server_infos_uses_cache_while_client_is_pending() {
         &permission_profile,
         /*prefix_mcp_tool_names*/ true,
     );
-    let server_info = create_test_server_info("Codex Apps");
+    let server_info = create_test_server_info("Motyga Apps");
     manager.clients.insert(
         CODEX_APPS_MCP_SERVER_NAME.to_string(),
         AsyncManagedClient {
@@ -1073,7 +1073,7 @@ async fn list_all_tools_uses_shared_codex_apps_cache_when_client_startup_fails()
         CODEX_APPS_MCP_SERVER_NAME,
         "calendar_create_event",
     )]);
-    let server_info = create_test_server_info("Codex Apps");
+    let server_info = create_test_server_info("Motyga Apps");
     let failed_client = futures::future::ready::<Result<ManagedClient, StartupOutcomeError>>(Err(
         StartupOutcomeError::Failed {
             error: "startup failed".to_string(),
@@ -1639,7 +1639,7 @@ fn mcp_init_error_display_prompts_for_login_when_auth_required() {
     let display = mcp_init_error_display(server_name, /*entry*/ None, &err);
 
     let expected = format!(
-        "The {server_name} MCP server is not logged in. Run `codex mcp login {server_name}`."
+        "The {server_name} MCP server is not logged in. Run `motyga mcp login {server_name}`."
     );
 
     assert_eq!(expected, display);

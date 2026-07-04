@@ -1098,7 +1098,7 @@ mod tests {
         let active_root = temp.path().join("active-root");
         let stale_root = temp.path().join("stale-root");
         let deny_path = active_root.join("protected");
-        fs::create_dir_all(&codex_home).expect("create codex home");
+        fs::create_dir_all(&codex_home).expect("create motyga home");
         fs::create_dir_all(&workspace).expect("create workspace");
         fs::create_dir_all(&active_root).expect("create active root");
         fs::create_dir_all(&stale_root).expect("create stale root");
@@ -1134,7 +1134,7 @@ mod tests {
         let active_root = temp.path().join("active-root");
         let stale_root = temp.path().join("stale-root");
         let deny_path = temp.path().join("outside-deny");
-        fs::create_dir_all(&codex_home).expect("create codex home");
+        fs::create_dir_all(&codex_home).expect("create motyga home");
         fs::create_dir_all(&workspace).expect("create workspace");
         fs::create_dir_all(&active_root).expect("create active root");
         fs::create_dir_all(&stale_root).expect("create stale root");
@@ -1170,7 +1170,7 @@ mod tests {
         let workspace = temp.path().join("workspace");
         let protected_dir = workspace.join(".codex");
         let nested_root = protected_dir.join("nested-root");
-        fs::create_dir_all(&codex_home).expect("create codex home");
+        fs::create_dir_all(&codex_home).expect("create motyga home");
         fs::create_dir_all(&workspace).expect("create workspace");
         fs::create_dir_all(&nested_root).expect("create nested root");
 

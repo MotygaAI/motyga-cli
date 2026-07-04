@@ -206,7 +206,7 @@ fn install_mcp_permission_request_hook(
         .join("mcp_permission_request_hook_log.jsonl");
     let hook_output = hook_output.to_string();
     std::fs::create_dir_all(&turn_context.config.codex_home)
-        .expect("create codex home for MCP permission hook");
+        .expect("create motyga home for MCP permission hook");
     let script = format!(
         r#"import json
 from pathlib import Path
@@ -2284,7 +2284,7 @@ approval_mode = "approve"
 async fn maybe_persist_mcp_tool_approval_reloads_session_config() {
     let (session, turn_context) = make_session_and_context().await;
     let codex_home = session.codex_home().await;
-    std::fs::create_dir_all(&codex_home).expect("create codex home");
+    std::fs::create_dir_all(&codex_home).expect("create motyga home");
     let key = McpToolApprovalKey {
         server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
         connector_id: Some("calendar".to_string()),
@@ -2323,7 +2323,7 @@ async fn maybe_persist_mcp_tool_approval_reloads_session_config() {
 async fn maybe_persist_mcp_tool_approval_reloads_session_config_for_custom_server() {
     let (session, mut turn_context) = make_session_and_context().await;
     let codex_home = session.codex_home().await;
-    std::fs::create_dir_all(&codex_home).expect("create codex home");
+    std::fs::create_dir_all(&codex_home).expect("create motyga home");
     std::fs::write(
         codex_home.join(CONFIG_TOML_FILE),
         "[mcp_servers.docs]\ncommand = \"docs-server\"\n",

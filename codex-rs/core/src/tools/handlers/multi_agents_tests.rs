@@ -109,7 +109,7 @@ async fn install_role_with_model_override(turn: &mut TurnContext) -> String {
     let role_name = "fork-context-role".to_string();
     tokio::fs::create_dir_all(&turn.config.codex_home)
         .await
-        .expect("codex home should be created");
+        .expect("motyga home should be created");
     let role_config_path = turn
         .config
         .codex_home
@@ -658,7 +658,7 @@ async fn spawn_agent_service_tier_inheritance_preserves_supported_or_configured_
         let (mut session, mut turn) = make_session_and_context().await;
         tokio::fs::create_dir_all(&turn.config.codex_home)
             .await
-            .expect("codex home should be created");
+            .expect("motyga home should be created");
         let role_config_path = turn
             .config
             .codex_home
@@ -734,7 +734,7 @@ async fn spawn_agent_role_service_tier_falls_back_to_supported_parent_tier() {
         .await;
     tokio::fs::create_dir_all(&turn.config.codex_home)
         .await
-        .expect("codex home should be created");
+        .expect("motyga home should be created");
     let role_config_path = turn.config.codex_home.as_path().join("tiered-role.toml");
     tokio::fs::write(
         &role_config_path,
@@ -798,7 +798,7 @@ async fn spawn_agent_role_service_tier_does_not_hide_invalid_spawn_request() {
     let (session, mut turn) = make_session_and_context().await;
     tokio::fs::create_dir_all(&turn.config.codex_home)
         .await
-        .expect("codex home should be created");
+        .expect("motyga home should be created");
     let role_config_path = turn.config.codex_home.as_path().join("tiered-role.toml");
     tokio::fs::write(
         &role_config_path,

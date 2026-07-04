@@ -245,7 +245,7 @@ mod thread_processor_behavior_tests {
     #[test]
     fn validate_dynamic_tools_accepts_responses_compatible_identifiers() {
         let tools = vec![dynamic_tool(
-            Some("Codex-App_2"),
+            Some("Motyga-App_2"),
             "lookup-ticket_2",
             json!({
                 "type": "object",

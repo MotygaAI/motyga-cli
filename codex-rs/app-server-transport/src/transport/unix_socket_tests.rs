@@ -195,7 +195,7 @@ fn absolute_path(path: &str) -> AbsolutePathBuf {
 }
 
 fn default_control_socket_path() -> AbsolutePathBuf {
-    let codex_home = find_codex_home().expect("codex home");
+    let codex_home = find_codex_home().expect("motyga home");
     app_server_control_socket_path(&codex_home).expect("default control socket path")
 }
 

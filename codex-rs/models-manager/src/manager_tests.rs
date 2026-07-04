@@ -220,7 +220,7 @@ c2ln",
         personal_access_token: None,
         bedrock_api_key: None,
     };
-    std::fs::create_dir_all(codex_home).expect("codex home should be created");
+    std::fs::create_dir_all(codex_home).expect("motyga home should be created");
     std::fs::write(
         codex_home.join("auth.json"),
         serde_json::to_string(&auth_dot_json).expect("auth should serialize"),

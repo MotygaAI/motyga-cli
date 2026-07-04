@@ -844,7 +844,7 @@ async fn start_server_task(
             cache_context.publish_if_newest_accepted(fetch_ticket, &server_info, tools)
         }
         (None, None) => tools,
-        _ => unreachable!("Codex Apps fetch ticket requires cache context"),
+        _ => unreachable!("Motyga Apps fetch ticket requires cache context"),
     };
     if is_codex_apps_mcp_server {
         emit_duration(

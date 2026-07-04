@@ -234,7 +234,7 @@ mod tests {
 
     #[tokio::test]
     async fn compose_agents_summary_includes_global_agents_path() {
-        let codex_home = TempDir::new().expect("temp codex home");
+        let codex_home = TempDir::new().expect("temp motyga home");
         let cwd = TempDir::new().expect("temp cwd");
         let global_agents_path = codex_home.path().join("global.md");
         let config = test_config(&codex_home, &cwd).await;
@@ -250,7 +250,7 @@ mod tests {
 
     #[tokio::test]
     async fn compose_agents_summary_names_global_agents_override() {
-        let codex_home = TempDir::new().expect("temp codex home");
+        let codex_home = TempDir::new().expect("temp motyga home");
         let cwd = TempDir::new().expect("temp cwd");
         let override_path = codex_home.path().join("override.md");
         let config = test_config(&codex_home, &cwd).await;
@@ -263,7 +263,7 @@ mod tests {
 
     #[tokio::test]
     async fn compose_agents_summary_shows_relative_native_and_full_foreign_paths() {
-        let codex_home = TempDir::new().expect("temp codex home");
+        let codex_home = TempDir::new().expect("temp motyga home");
         let cwd = TempDir::new().expect("temp cwd");
         let config = test_config(&codex_home, &cwd).await;
         let native_source = PathUri::from_abs_path(&config.cwd.join("AGENTS.md"));
@@ -285,7 +285,7 @@ mod tests {
 
     #[tokio::test]
     async fn compose_agents_summary_orders_global_before_project_agents() {
-        let codex_home = TempDir::new().expect("temp codex home");
+        let codex_home = TempDir::new().expect("temp motyga home");
         let cwd = TempDir::new().expect("temp cwd");
         let global_agents_path = codex_home.path().join("global.md");
         let project_agents_path = cwd.path().join("project.md");

@@ -378,7 +378,7 @@ impl TraceReducer {
             return Ok(thread_id);
         }
         let Some(codex_turn_id) = codex_turn_id else {
-            bail!("tool call start did not include thread or Codex turn context");
+            bail!("tool call start did not include thread or Motyga turn context");
         };
         self.rollout
             .codex_turns

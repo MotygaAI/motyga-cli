@@ -27,7 +27,7 @@ fn default_search_text_uses_model_visible_namespace_metadata_once() {
     parameters.description = Some("Automation options.".to_string());
     let spec = ToolSpec::Namespace(crate::ResponsesApiNamespace {
         name: "codex_app".to_string(),
-        description: "Manage Codex automations.".to_string(),
+        description: "Manage Motyga automations.".to_string(),
         tools: vec![ResponsesApiNamespaceTool::Function(ResponsesApiTool {
             name: "automation_update".to_string(),
             description: "Create or update automations.".to_string(),

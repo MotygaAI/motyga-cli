@@ -10,7 +10,7 @@ use std::io::Write;
 fn materialize_npm_plugin_source_uses_packed_package_root() {
     use std::os::unix::fs::PermissionsExt;
 
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let fake_npm_dir = tempfile::tempdir().expect("create fake npm directory");
     let archive_bytes =
         npm_package_archive_bytes("@acme/plugin", "1.2.0").expect("build fixture archive");

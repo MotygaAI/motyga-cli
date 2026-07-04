@@ -462,7 +462,7 @@ async fn preapproved_additional_permissions_escalate_intercepted_exec() -> anyho
 async fn execve_permission_request_hook_short_circuits_prompt() -> anyhow::Result<()> {
     let (session, mut turn_context) = make_session_and_context().await;
     std::fs::create_dir_all(&turn_context.config.codex_home)
-        .context("recreate codex home for hook fixtures")?;
+        .context("recreate motyga home for hook fixtures")?;
     let script_path = turn_context
         .config
         .codex_home

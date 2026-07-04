@@ -527,7 +527,7 @@ impl PluginRequestProcessor {
             Ok(enabled) => enabled,
             Err(err) => {
                 warn!(
-                    "failed to fetch workspace Codex plugins setting; allowing Codex plugins: {err:#}"
+                    "failed to fetch workspace Motyga plugins setting; allowing Motyga plugins: {err:#}"
                 );
                 true
             }
@@ -1446,7 +1446,7 @@ impl PluginRequestProcessor {
             .await
         {
             return Err(invalid_request(
-                "Codex plugins are disabled for this workspace",
+                "Motyga plugins are disabled for this workspace",
             ));
         }
 

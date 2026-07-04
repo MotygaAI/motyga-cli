@@ -240,7 +240,7 @@ async fn network_denial_fallback_message_names_sandbox_network_proxy() {
 
     assert_eq!(
         message,
-        "Network access was denied by the Codex sandbox network proxy."
+        "Network access was denied by the Motyga sandbox network proxy."
     );
 }
 

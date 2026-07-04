@@ -451,7 +451,7 @@ mod tests {
                 .expect_err("version drift should fail");
         let message = error.to_string();
         assert!(
-            message.contains("config lock Codex version mismatch"),
+            message.contains("config lock Motyga version mismatch"),
             "{message}"
         );
         assert!(

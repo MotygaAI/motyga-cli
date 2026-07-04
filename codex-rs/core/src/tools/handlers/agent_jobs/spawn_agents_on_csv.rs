@@ -316,7 +316,7 @@ fn single_local_environment_cwd(turn: &TurnContext) -> Result<AbsolutePathBuf, F
     // remote environments.
     turn_environment.cwd().to_abs_path().map_err(|err| {
         FunctionCallError::RespondToModel(format!(
-            "spawn_agents_on_csv cwd `{}` is not native to the Codex host: {err}",
+            "spawn_agents_on_csv cwd `{}` is not native to the Motyga host: {err}",
             turn_environment.cwd()
         ))
     })

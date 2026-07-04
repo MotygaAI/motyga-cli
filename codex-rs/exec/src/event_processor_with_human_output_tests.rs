@@ -176,7 +176,7 @@ fn summarizes_managed_read_only_permission_profile() {
 
 #[tokio::test]
 async fn config_summary_entries_include_runtime_workspace_roots() {
-    let codex_home = tempfile::tempdir().expect("create codex home");
+    let codex_home = tempfile::tempdir().expect("create motyga home");
     let cwd = tempfile::tempdir().expect("create cwd");
     let extra_root = tempfile::tempdir().expect("create extra root");
     let mut config = ConfigBuilder::default()

@@ -67,7 +67,7 @@ use codex_core_api::thread_store_from_config;
 #[derive(Debug, Parser)]
 #[command(
     name = "codex-thread-manager-sample",
-    about = "Run one Codex turn through ThreadManager and print mapped notifications as newline-delimited JSON."
+    about = "Run one Motyga turn through ThreadManager and print mapped notifications as newline-delimited JSON."
 )]
 struct Args {
     /// Override the model for this run.
@@ -145,7 +145,7 @@ async fn run_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
     } = thread_manager
         .start_thread(config)
         .await
-        .context("start Codex thread")?;
+        .context("start Motyga thread")?;
 
     let thread_id_string = thread_id.to_string();
     let turn_output = run_turn(&thread, &thread_id_string, prompt).await;
@@ -153,13 +153,13 @@ async fn run_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
     let _ = thread_manager.remove_thread(&thread_id).await;
 
     turn_output?;
-    shutdown_result.context("shut down Codex thread")?;
+    shutdown_result.context("shut down Motyga thread")?;
 
     Ok(())
 }
 
 fn new_config(model: Option<String>, arg0_paths: Arg0DispatchPaths) -> anyhow::Result<Config> {
-    let codex_home = find_codex_home().context("find Codex home")?;
+    let codex_home = find_codex_home().context("find Motyga home")?;
     let cwd = AbsolutePathBuf::current_dir().context("resolve current directory")?;
     let model_provider_id = OPENAI_PROVIDER_ID.to_string();
     let model_providers = built_in_model_providers(/*openai_base_url*/ None);
@@ -320,7 +320,7 @@ async fn run_turn(thread: &CodexThread, thread_id: &str, prompt: String) -> anyh
     let mut current_turn_id: Option<String> = None;
     let mut stdout = std::io::stdout().lock();
     loop {
-        let event = thread.next_event().await.context("read Codex event")?;
+        let event = thread.next_event().await.context("read Motyga event")?;
         let notification = match &event.msg {
             EventMsg::TurnStarted(event) => {
                 current_turn_id = Some(event.turn_id.clone());

@@ -766,7 +766,7 @@ mod tests {
             HookRunStatus::Completed,
             vec![HookOutputEntry {
                 kind: HookOutputEntryKind::Context,
-                text: "## Working Memory Recall\n\nSource: Codex compaction\nScope: Durable workspace memory"
+                text: "## Working Memory Recall\n\nSource: Motyga compaction\nScope: Durable workspace memory"
                     .to_string(),
             }],
         );
@@ -774,7 +774,7 @@ mod tests {
             "• SessionStart hook (completed)".to_string(),
             "  hook context: ## Working Memory Recall".to_string(),
             "".to_string(),
-            "    Source: Codex compaction".to_string(),
+            "    Source: Motyga compaction".to_string(),
             "    Scope: Durable workspace memory".to_string(),
         ];
 

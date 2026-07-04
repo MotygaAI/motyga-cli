@@ -2148,7 +2148,7 @@ async fn strict_config_rejects_unknown_cloud_config_key() {
     let codex_home = tmp.path().join("home");
     tokio::fs::create_dir_all(&codex_home)
         .await
-        .expect("create codex home");
+        .expect("create motyga home");
     let cwd = AbsolutePathBuf::from_absolute_path(tmp.path()).expect("cwd");
 
     let err = load_config_layers_state(

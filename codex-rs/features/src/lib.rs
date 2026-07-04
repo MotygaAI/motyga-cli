@@ -923,8 +923,8 @@ pub const FEATURES: &[FeatureSpec] = &[
         key: "memories",
         stage: Stage::Experimental {
             name: "Memories",
-            menu_description: "Allow Codex to create new memories from conversations and bring relevant memories into new conversations.",
-            announcement: "NEW: Codex can now generate and use memories. Try it now with `/memories`",
+            menu_description: "Allow Motyga to create new memories from conversations and bring relevant memories into new conversations.",
+            announcement: "NEW: Motyga can now generate and use memories. Try it now with `/memories`",
         },
         default_enabled: false,
     },
@@ -1018,7 +1018,7 @@ pub const FEATURES: &[FeatureSpec] = &[
         stage: Stage::Experimental {
             name: "Network proxy",
             menu_description: "Apply network proxy restrictions to sandboxed sessions that already have network access.",
-            announcement: "NEW: Network proxy can now be enabled from /experimental. Restart Codex after enabling it.",
+            announcement: "NEW: Network proxy can now be enabled from /experimental. Restart Motyga after enabling it.",
         },
         default_enabled: false,
     },
@@ -1320,7 +1320,7 @@ pub const FEATURES: &[FeatureSpec] = &[
         )) {
             Stage::Experimental {
                 name: "Prevent sleep while running",
-                menu_description: "Keep your computer awake while Codex is running a thread.",
+                menu_description: "Keep your computer awake while Motyga is running a thread.",
                 announcement: "NEW: Prevent sleep while running is now available in /experimental.",
             }
         } else {

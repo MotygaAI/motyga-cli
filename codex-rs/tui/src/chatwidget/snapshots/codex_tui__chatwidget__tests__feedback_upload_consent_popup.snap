@@ -1,6 +1,5 @@
 ---
 source: tui/src/chatwidget/tests/popups_and_settings.rs
-assertion_line: 2562
 expression: popup
 ---
   Upload logs?
@@ -16,7 +15,7 @@ expression: popup
     - Proxy environment variables are set and may affect connectivity.
       - HTTPS_PROXY = hello
 
-› 1. Yes  Share the current Codex session logs and diagnostics with the team
+› 1. Yes  Share the current Motyga session logs and diagnostics with the team
           for troubleshooting.
   2. No
 

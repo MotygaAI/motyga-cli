@@ -413,7 +413,7 @@ fn sync_openai_plugins_repo_via_git_succeeds_with_local_rewritten_remote() {
         &work_repo,
         &[
             "-c",
-            "user.name=Codex Test",
+            "user.name=Motyga Test",
             "-c",
             "user.email=codex@example.com",
             "commit",
@@ -497,7 +497,7 @@ fn sync_openai_plugins_repo_via_git_succeeds_with_local_rewritten_remote() {
         &work_repo,
         &[
             "-c",
-            "user.name=Codex Test",
+            "user.name=Motyga Test",
             "-c",
             "user.email=codex@example.com",
             "commit",

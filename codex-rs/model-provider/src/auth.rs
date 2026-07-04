@@ -320,7 +320,7 @@ mod tests {
             pid = std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&path);
-        std::fs::create_dir_all(&path).expect("create temp codex home");
+        std::fs::create_dir_all(&path).expect("create temp motyga home");
         path
     }
 

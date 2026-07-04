@@ -4204,7 +4204,7 @@ async fn set_thread_goal_draft_materializes_long_objective_and_confirms_before_p
     let saved_objective = goal.objective.clone();
     let codex_home = app_server
         .codex_home_path(&app.chat_widget.config_ref().codex_home)
-        .expect("codex home");
+        .expect("motyga home");
     assert!(goal_files::objective_file_path(&goal.objective, Some(&codex_home)).is_some());
     assert_eq!(
         goal_files::objective_text_for_edit(&mut app_server, Some(&codex_home), &goal.objective)
@@ -4895,7 +4895,7 @@ fn session_start_error_surfaces_archived_guidance_without_rollout_path() {
         thread_id,
     };
     let expected = format!(
-        "session {thread_id} is archived. Run `codex unarchive {thread_id}` to unarchive it first."
+        "session {thread_id} is archived. Run `motyga unarchive {thread_id}` to unarchive it first."
     );
 
     for action in ["resume", "fork"] {

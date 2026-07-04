@@ -461,7 +461,7 @@ fn transform_for_direct_spawn_windows_preserves_only_wrapper_setup_identity() {
 #[cfg(target_os = "windows")]
 #[test]
 fn transform_for_direct_spawn_windows_materializes_inner_helper() {
-    let codex_home = tempfile::TempDir::new().expect("codex home");
+    let codex_home = tempfile::TempDir::new().expect("motyga home");
     let helper_dir = tempfile::TempDir::new().expect("helper dir");
     let configured_helper = helper_dir.path().join("configured-codex-helper.exe");
     std::fs::write(&configured_helper, b"helper").expect("write configured helper");
