@@ -1,5 +1,7 @@
 """Cargo builds for source-built Codex package artifacts."""
 
+from __future__ import annotations
+
 import os
 import subprocess
 from dataclasses import dataclass

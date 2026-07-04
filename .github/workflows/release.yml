@@ -1,0 +1,217 @@
+name: Release (motyga CLI)
+
+# Builds the per-platform npm payloads for the Motyga CLI natively on the
+# matching GitHub-hosted runner (no cross-compilation), then optionally
+# publishes them plus the thin meta package `@motyga/cli@<ver>`.
+#
+# Each platform payload is published to the SAME npm name with a version tag,
+# e.g. `@motyga/cli@<ver>-win32-x64`; the meta package pulls the right one via
+# an optionalDependency and `bin/codex.js` execs the vendored `motyga` binary.
+#
+# NOTE: only the win32-x64 leg has been validated locally. The macOS / Linux /
+# arm legs follow the same pipeline but have platform-specific friction
+# (linux-musl + V8, macOS ad-hoc signing, arm runners) that may need a CI
+# shakedown. `fail-fast: false` keeps the legs independent.
+#
+# Publishing is gated on the `publish` input (or a `v*` tag) AND an `NPM_TOKEN`
+# repo secret. Building + smoke-testing always runs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "npm version to stage (e.g. 0.1.0). Defaults to codex-cli/package.json."
+        required: false
+        default: ""
+      publish:
+        description: "Publish to npm (needs NPM_TOKEN secret + owned @motyga scope)."
+        type: boolean
+        required: false
+        default: false
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: ver
+        shell: bash
+        run: |
+          v="${{ github.event.inputs.version }}"
+          if [ -z "$v" ] && [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            v="${GITHUB_REF_NAME#v}"
+          fi
+          if [ -z "$v" ]; then
+            v="$(node -p "require('./codex-cli/package.json').version")"
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Release version: $v"
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-musl,  os: ubuntu-latest,    pkg: codex-linux-x64 }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm, pkg: codex-linux-arm64 }
+          - { target: x86_64-apple-darwin,        os: macos-13,         pkg: codex-darwin-x64 }
+          - { target: aarch64-apple-darwin,       os: macos-latest,     pkg: codex-darwin-arm64 }
+          - { target: x86_64-pc-windows-msvc,     os: windows-latest,   pkg: codex-win32-x64 }
+          - { target: aarch64-pc-windows-msvc,    os: windows-11-arm,   pkg: codex-win32-arm64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust toolchain
+        shell: bash
+        run: |
+          rustup show
+          rustup target add ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            codex-rs/target
+          key: cargo-${{ matrix.target }}-${{ hashFiles('codex-rs/Cargo.lock') }}
+          restore-keys: cargo-${{ matrix.target }}-
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Linux payloads target musl for a static, portable binary (matches the
+      # triple bin/codex.js resolves). musl-tools provides the musl C toolchain.
+      - name: Install musl tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      # Builds the RELEASE entrypoint + platform helpers via cargo and
+      # self-fetches ripgrep from the checked-in DotSlash manifest, then
+      # assembles + validates the vendor payload.
+      - name: Build package payload
+        shell: bash
+        run: |
+          python scripts/build_codex_package.py \
+            --target ${{ matrix.target }} \
+            --cargo-profile release \
+            --package-dir dist/pkgroot/${{ matrix.target }} \
+            --force
+
+      # macOS refuses to run unsigned Mach-O from some contexts; ad-hoc signing
+      # is enough for local execution. Developer-ID notarization is a separate
+      # (owner) concern requiring an Apple account.
+      - name: Ad-hoc codesign (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          find "dist/pkgroot/${{ matrix.target }}" -type f -perm +111 -print0 \
+            | xargs -0 -I {} codesign --force --sign - "{}" || true
+
+      - name: Stage + pack npm platform package
+        shell: bash
+        run: |
+          python codex-cli/scripts/build_npm_package.py \
+            --package ${{ matrix.pkg }} \
+            --release-version "${{ needs.prepare.outputs.version }}" \
+            --vendor-src dist/pkgroot \
+            --pack-output "dist/${{ matrix.pkg }}.tgz"
+
+      # Each leg runs natively on a matching-arch runner, so the vendored binary
+      # is executable here. Drop the payload next to bin/codex.js (its fallback
+      # path) and confirm it runs.
+      - name: Smoke test (motyga --version)
+        shell: bash
+        run: |
+          mkdir -p dist/smoke/bin dist/smoke/vendor
+          cp codex-cli/bin/codex.js dist/smoke/bin/codex.js
+          cp -r "dist/pkgroot/${{ matrix.target }}" "dist/smoke/vendor/${{ matrix.target }}"
+          out="$(node dist/smoke/bin/codex.js --version)"
+          echo "motyga --version => $out"
+          case "$out" in
+            motyga\ *) echo "OK" ;;
+            *) echo "Unexpected version output"; exit 1 ;;
+          esac
+
+      - name: Upload payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-${{ matrix.pkg }}
+          path: dist/${{ matrix.pkg }}.tgz
+          if-no-files-found: error
+
+  meta:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Stage + pack npm meta package
+        shell: bash
+        run: |
+          python codex-cli/scripts/build_npm_package.py \
+            --package codex \
+            --release-version "${{ needs.prepare.outputs.version }}" \
+            --pack-output dist/motyga-cli.tgz
+      - name: Upload meta
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-meta
+          path: dist/motyga-cli.tgz
+          if-no-files-found: error
+
+  publish:
+    needs: [prepare, build, meta]
+    if: ${{ github.event.inputs.publish == 'true' || startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - name: Download all payloads
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      # Platform payloads must exist on npm before the meta package (whose
+      # optionalDependency points at them) is installed, so publish meta last.
+      - name: Publish to npm
+        if: ${{ env.NPM_TOKEN != '' }}
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
+        run: |
+          shopt -s nullglob
+          for tgz in dist/codex-*.tgz; do
+            echo "publish $tgz"
+            npm publish "$tgz" --access public
+          done
+          echo "publish dist/motyga-cli.tgz (meta)"
+          npm publish dist/motyga-cli.tgz --access public

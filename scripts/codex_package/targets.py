@@ -1,5 +1,7 @@
 """Supported package targets and default binary discovery."""
 
+from __future__ import annotations
+
 import platform
 import stat
 from dataclasses import dataclass

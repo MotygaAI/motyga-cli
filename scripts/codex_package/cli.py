@@ -1,5 +1,7 @@
 """Command-line interface for building Codex package directories."""
 
+from __future__ import annotations
+
 import argparse
 import tempfile
 from pathlib import Path

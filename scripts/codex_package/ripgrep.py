@@ -1,5 +1,7 @@
 """Fetch ripgrep from the DotSlash manifest used by the package builder."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 from .dotslash import fetch_dotslash_executable

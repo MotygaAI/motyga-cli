@@ -1,5 +1,7 @@
 """Fetch the patched zsh fork used by shell_zsh_fork."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 from .dotslash import fetch_dotslash_executable

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Stage and optionally package the @motyga/cli npm module."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -426,8 +428,11 @@ def run_npm_pack(staging_dir: Path, output_path: Path) -> Path:
         env = os.environ.copy()
         env["NPM_CONFIG_CACHE"] = str(npm_cache_dir)
         env["NPM_CONFIG_LOGS_DIR"] = str(npm_logs_dir)
+        # On Windows `npm` is a `.cmd` shim that bare CreateProcess cannot resolve;
+        # resolve the real launcher path so this works cross-platform (incl. CI).
+        npm_cmd = shutil.which("npm") or "npm"
         stdout = subprocess.check_output(
-            ["npm", "pack", "--json", "--pack-destination", str(pack_dir)],
+            [npm_cmd, "pack", "--json", "--pack-destination", str(pack_dir)],
             cwd=staging_dir,
             env=env,
             text=True,
