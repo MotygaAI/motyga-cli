@@ -426,6 +426,12 @@ impl ModelProviderInfo {
         self.name == OPENAI_PROVIDER_NAME
     }
 
+    /// True for the default Motyga provider, whose `/models` endpoint serves the
+    /// full Motyga catalog (used to fetch + surface it in the model picker).
+    pub fn is_motyga(&self) -> bool {
+        self.name == MOTYGA_PROVIDER_NAME
+    }
+
     pub fn uses_openai_actor_authorization(&self) -> bool {
         !self.requires_openai_auth
             && self.http_headers.as_ref().is_some_and(|headers| {

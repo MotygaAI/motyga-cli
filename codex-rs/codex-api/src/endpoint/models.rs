@@ -5,8 +5,10 @@ use crate::provider::Provider;
 use codex_client::HttpTransport;
 use codex_client::RequestTelemetry;
 use codex_protocol::openai_models::ModelInfo;
+use codex_protocol::openai_models::ModelVisibility;
 use codex_protocol::openai_models::ModelsResponse;
 use http::HeaderMap;
+use serde::Deserialize;
 use http::Method;
 use http::header::ETAG;
 use std::sync::Arc;
@@ -61,16 +63,48 @@ impl<T: HttpTransport> ModelsClient<T> {
             .and_then(|value| value.to_str().ok())
             .map(ToString::to_string);
 
-        let ModelsResponse { models } = serde_json::from_slice::<ModelsResponse>(&resp.body)
-            .map_err(|e| {
-                ApiError::Stream(format!(
-                    "failed to decode models response: {e}; body: {}",
-                    String::from_utf8_lossy(&resp.body)
-                ))
-            })?;
+        let models = match serde_json::from_slice::<ModelsResponse>(&resp.body) {
+            Ok(ModelsResponse { models }) => models,
+            Err(codex_err) => {
+                // Fall back to an OpenAI-compatible `{ "object": "list", "data": [{ "id": ... }] }`
+                // catalog (e.g. the Motyga proxy). Each entry becomes a stub ModelInfo; the caller
+                // (models-manager) enriches missing metadata (base_instructions, ...) from bundled
+                // defaults keyed on the slug.
+                let simple =
+                    serde_json::from_slice::<OpenAiSimpleModelsResponse>(&resp.body).map_err(|e| {
+                        ApiError::Stream(format!(
+                            "failed to decode models response as codex ({codex_err}) or openai list ({e}); body: {}",
+                            String::from_utf8_lossy(&resp.body)
+                        ))
+                    })?;
+                simple
+                    .data
+                    .into_iter()
+                    .map(|m| ModelInfo {
+                        slug: m.id.clone(),
+                        display_name: m.id,
+                        visibility: ModelVisibility::List,
+                        ..Default::default()
+                    })
+                    .collect()
+            }
+        };
 
         Ok((models, header_etag))
     }
+}
+
+/// Minimal view of an OpenAI-compatible `/models` response (only the fields we
+/// need to build stub descriptors; extra fields such as `providers` are ignored).
+#[derive(Deserialize)]
+struct OpenAiSimpleModelsResponse {
+    #[serde(default)]
+    data: Vec<OpenAiSimpleModel>,
+}
+
+#[derive(Deserialize)]
+struct OpenAiSimpleModel {
+    id: String,
 }
 
 #[cfg(test)]

@@ -433,6 +433,55 @@ pub struct ModelInfo {
     pub multi_agent_version: Option<MultiAgentVersion>,
 }
 
+impl Default for ModelInfo {
+    /// Neutral fallback descriptor. Callers building a stub from a bare slug
+    /// (e.g. an OpenAI-compatible `/models` catalog) fill `slug`/`display_name`
+    /// and leave `base_instructions` empty for the caller to enrich.
+    fn default() -> Self {
+        Self {
+            slug: String::new(),
+            display_name: String::new(),
+            description: None,
+            default_reasoning_level: None,
+            supported_reasoning_levels: Vec::new(),
+            shell_type: ConfigShellToolType::Default,
+            visibility: ModelVisibility::None,
+            supported_in_api: true,
+            priority: 99,
+            additional_speed_tiers: Vec::new(),
+            service_tiers: Vec::new(),
+            default_service_tier: None,
+            availability_nux: None,
+            upgrade: None,
+            base_instructions: String::new(),
+            model_messages: None,
+            include_skills_usage_instructions: false,
+            supports_reasoning_summaries: false,
+            default_reasoning_summary: ReasoningSummary::Auto,
+            support_verbosity: false,
+            default_verbosity: None,
+            apply_patch_tool_type: None,
+            web_search_tool_type: WebSearchToolType::Text,
+            truncation_policy: TruncationPolicyConfig::bytes(/*limit*/ 10_000),
+            supports_parallel_tool_calls: false,
+            supports_image_detail_original: false,
+            context_window: Some(272_000),
+            max_context_window: Some(272_000),
+            auto_compact_token_limit: None,
+            comp_hash: None,
+            effective_context_window_percent: 95,
+            experimental_supported_tools: Vec::new(),
+            input_modalities: default_input_modalities(),
+            used_fallback_model_metadata: true,
+            supports_search_tool: false,
+            use_responses_lite: false,
+            auto_review_model_override: None,
+            tool_mode: None,
+            multi_agent_version: None,
+        }
+    }
+}
+
 impl ModelInfo {
     pub fn resolved_context_window(&self) -> Option<i64> {
         self.context_window.or(self.max_context_window)

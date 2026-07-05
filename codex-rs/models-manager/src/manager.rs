@@ -37,6 +37,13 @@ pub trait ModelsEndpointClient: fmt::Debug + Send + Sync {
     /// Returns whether the currently resolved auth can use Codex backend-only models.
     fn uses_codex_backend(&self) -> ModelsEndpointFuture<'_, bool>;
 
+    /// Returns whether this provider serves the full model catalog from its
+    /// `/models` endpoint (e.g. the Motyga proxy), so the manager should always
+    /// refresh from it and treat it as the source of truth even under API-key auth.
+    fn serves_full_catalog(&self) -> bool {
+        false
+    }
+
     /// Fetches the latest remote model catalog and optional ETag.
     fn list_models<'a>(
         &'a self,
@@ -344,7 +351,9 @@ impl OpenAiModelsManager {
     }
 
     async fn should_refresh_models(&self) -> bool {
-        self.endpoint_client.uses_codex_backend().await || self.endpoint_client.has_command_auth()
+        self.endpoint_client.uses_codex_backend().await
+            || self.endpoint_client.has_command_auth()
+            || self.endpoint_client.serves_full_catalog()
     }
 
     async fn get_etag(&self) -> Option<String> {
@@ -353,17 +362,36 @@ impl OpenAiModelsManager {
 
     /// Replace the cached remote models and rebuild the derived presets list.
     async fn apply_remote_models(&self, models: Vec<ModelInfo>) {
+        // A provider that serves an OpenAI-compatible catalog (e.g. Motyga) hands us stub
+        // descriptors with no metadata; enrich them from the bundled defaults keyed on the
+        // slug so they render in the picker and run with a real system prompt. Preserve the
+        // stub's visibility so catalog entries stay listable.
+        let models: Vec<ModelInfo> = models
+            .into_iter()
+            .map(|model| {
+                if model.base_instructions.is_empty() {
+                    let mut enriched = model_info::model_info_from_slug(&model.slug);
+                    enriched.visibility = model.visibility;
+                    enriched
+                } else {
+                    model
+                }
+            })
+            .collect();
+
         // Use the remote models list as the source of truth if it contains at least one
-        // non-hidden model and the user is using ChatGPT auth.
+        // non-hidden model and either the provider serves the full catalog (Motyga) or the
+        // user is on ChatGPT auth.
         let should_use_remote_models_only = !models.is_empty()
             && models
                 .iter()
                 .any(|model| model.visibility == ModelVisibility::List)
-            && self.auth_manager.as_ref().is_some_and(|auth_manager| {
-                auth_manager
-                    .auth_mode()
-                    .is_some_and(AuthMode::has_chatgpt_account)
-            });
+            && (self.endpoint_client.serves_full_catalog()
+                || self.auth_manager.as_ref().is_some_and(|auth_manager| {
+                    auth_manager
+                        .auth_mode()
+                        .is_some_and(AuthMode::has_chatgpt_account)
+                }));
         if should_use_remote_models_only {
             *self.remote_models.write().await = models;
             return;
