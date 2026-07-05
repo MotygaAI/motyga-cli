@@ -22,12 +22,12 @@ separated from the mechanical identity layer.
 > (373 MB debug). **Do NOT `sed codex→motyga` globally** — internal crate names (`codex-core`, `codex-cli`, …)
 > stay; only the user-visible surface was rebranded.
 
-1. ✅ **Installed binary name** — `codex-rs/cli/Cargo.toml` `[[bin]] name = "codex"` → `"motyga"`;
+1. ✅ **Installed binary name** — `motyga-rs/cli/Cargo.toml` `[[bin]] name = "codex"` → `"motyga"`;
    `codex-cli/bin/codex.js:91` (`codex.exe`/`codex`) → `motyga.exe`/`motyga`; `justfile` + `scripts/*.sh` +
    `.codex/environments/environment.toml` `--bin codex` → `--bin motyga` (kept `codex-file-search`/`codex-tui`/
    `codex-code-mode-host`/`codex-write-config-schema`). 32 `cargo_bin("codex")` test refs → `"motyga"`.
    `[package]`/`[lib]` names unchanged. **Verified:** `motyga.exe --version` → `codex-cli 0.0.0`.
-2. ✅ **Config dir** — `codex-rs/utils/home-dir/src/lib.rs::find_codex_home()`: read `MOTYGA_HOME`
+2. ✅ **Config dir** — `motyga-rs/utils/home-dir/src/lib.rs::find_codex_home()`: read `MOTYGA_HOME`
    (**back-compat**: falls back to `CODEX_HOME` — keeps ~20 integration tests green), default `~/.codex` → `~/.motyga`.
    Project-local `.codex/` → `.motyga/` intentionally DEFERRED (would churn `external_agent_config` tests). **Verified:**
    `MOTYGA_HOME=… motyga exec` honored the override.

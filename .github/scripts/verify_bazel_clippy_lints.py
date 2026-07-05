@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CARGO_TOML = ROOT / "codex-rs" / "Cargo.toml"
+DEFAULT_CARGO_TOML = ROOT / "motyga-rs" / "Cargo.toml"
 DEFAULT_BAZELRC = ROOT / ".bazelrc"
 BAZEL_CLIPPY_FLAG_PREFIX = "build:clippy --@rules_rust//rust/settings:clippy_flag="
 BAZEL_SPECIAL_FLAGS = {"-Dwarnings"}
@@ -31,7 +31,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Verify that Bazel clippy flags in .bazelrc stay in sync with "
-            "codex-rs/Cargo.toml [workspace.lints.clippy]."
+            "motyga-rs/Cargo.toml [workspace.lints.clippy]."
         )
     )
     parser.add_argument(
@@ -221,7 +221,7 @@ def display_path(path: Path) -> str:
 
 
 def find_workspace_lints_example_manifest() -> str | None:
-    for cargo_toml in sorted((ROOT / "codex-rs").glob("**/Cargo.toml")):
+    for cargo_toml in sorted((ROOT / "motyga-rs").glob("**/Cargo.toml")):
         if cargo_toml == DEFAULT_CARGO_TOML:
             continue
         data = tomllib.loads(cargo_toml.read_text())

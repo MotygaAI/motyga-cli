@@ -10,8 +10,8 @@ description: Update Codex's pinned `v8` / `rusty_v8` versions, validate the rele
 1. Read `third_party/v8/README.md` and follow its version-bump sequence. Treat
    that document as the release-process source of truth.
 2. Inspect and update the concrete repo surfaces that carry the pin:
-   - `codex-rs/Cargo.toml`
-   - `codex-rs/Cargo.lock`
+   - `motyga-rs/Cargo.toml`
+   - `motyga-rs/Cargo.lock`
    - `MODULE.bazel`
    - `third_party/v8/BUILD.bazel`
    - `third_party/v8/README.md`

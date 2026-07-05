@@ -10,8 +10,8 @@ updates:
       default-days: 7
   - package-ecosystem: cargo
     directories:
-      - codex-rs
-      - codex-rs/*
+      - motyga-rs
+      - motyga-rs/*
     schedule:
       interval: weekly
     cooldown:
@@ -35,7 +35,7 @@ updates:
     cooldown:
       default-days: 7
   - package-ecosystem: rust-toolchain
-    directory: codex-rs
+    directory: motyga-rs
     schedule:
       interval: weekly
     cooldown:

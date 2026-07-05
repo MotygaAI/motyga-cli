@@ -54,7 +54,7 @@ read_query_labels() {
   rm -f "$query_stdout" "$query_stderr"
 }
 
-final_build_targets=(//codex-rs/...)
+final_build_targets=(//motyga-rs/...)
 if [[ "${RUNNER_OS:-}" == "Windows" ]]; then
   # Bazel's local Windows platform currently lacks a default test toolchain for
   # `rust_test`, so target the concrete Rust crate rules directly. The lint
@@ -64,7 +64,7 @@ if [[ "${RUNNER_OS:-}" == "Windows" ]]; then
   while IFS= read -r label; do
     [[ -n "$label" ]] || continue
     final_build_targets+=("$label")
-  done < <(read_query_labels 'kind("rust_(library|binary|proc_macro) rule", //codex-rs/...)')
+  done < <(read_query_labels 'kind("rust_(library|binary|proc_macro) rule", //motyga-rs/...)')
 
   if [[ ${#final_build_targets[@]} -eq 0 ]]; then
     echo "Failed to discover Windows Bazel lint targets." >&2

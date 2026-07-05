@@ -11,7 +11,7 @@ startup --experimental_remote_repo_contents_cache
 
 common --experimental_platform_in_output_dir
 
-# Runfiles strategy rationale: codex-rs/utils/cargo-bin/README.md
+# Runfiles strategy rationale: motyga-rs/utils/cargo-bin/README.md
 common --noenable_runfiles
 
 common --enable_platform_specific_config
@@ -114,8 +114,8 @@ common:ci-bazel --test_env=CODEX_BAZEL_TEST_SKIP_FILTERS=suite::code_mode::,test
 # Shared config for Bazel-backed Rust linting.
 build:clippy --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build:clippy --output_groups=+clippy_checks
-build:clippy --@rules_rust//rust/settings:clippy.toml=//codex-rs:clippy.toml
-# Keep this deny-list in sync with `codex-rs/Cargo.toml` `[workspace.lints.clippy]`.
+build:clippy --@rules_rust//rust/settings:clippy.toml=//motyga-rs:clippy.toml
+# Keep this deny-list in sync with `motyga-rs/Cargo.toml` `[workspace.lints.clippy]`.
 # Cargo applies those lint levels to member crates that opt into `[lints] workspace = true`
 # in their own `Cargo.toml`, but `rules_rust` Bazel clippy does not read Cargo lint levels.
 # `clippy.toml` can configure lint behavior, but it cannot set allow/warn/deny/forbid levels.

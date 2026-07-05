@@ -16,7 +16,7 @@
 
   "containerEnv": {
     "RUST_BACKTRACE": "1",
-    "CARGO_TARGET_DIR": "${containerWorkspaceFolder}/codex-rs/target-arm64"
+    "CARGO_TARGET_DIR": "${containerWorkspaceFolder}/motyga-rs/target-arm64"
   },
 
   "remoteUser": "ubuntu",

@@ -87,8 +87,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            codex-rs/target
-          key: cargo-${{ matrix.target }}-${{ hashFiles('codex-rs/Cargo.lock') }}
+            motyga-rs/target
+          key: cargo-${{ matrix.target }}-${{ hashFiles('motyga-rs/Cargo.lock') }}
           restore-keys: cargo-${{ matrix.target }}-
 
       - uses: actions/setup-python@v5

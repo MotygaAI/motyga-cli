@@ -1,4 +1,4 @@
-// based on item types from codex-rs/exec/src/exec_events.rs
+// based on item types from motyga-rs/exec/src/exec_events.rs
 
 import type { ContentBlock as McpContentBlock } from "@modelcontextprotocol/sdk/types.js";
 

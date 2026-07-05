@@ -12,7 +12,7 @@ cd "${repo_root}"
 manual_rust_test_targets="$(
   ./.github/scripts/run-bazel-query-ci.sh \
     --output=label \
-    -- 'kind("rust_test rule", attr(tags, "manual", //codex-rs/...))'
+    -- 'kind("rust_test rule", attr(tags, "manual", //motyga-rs/...))'
 )"
 if [[ "${RUNNER_OS:-}" != "Windows" ]]; then
   manual_rust_test_targets="$(printf '%s\n' "${manual_rust_test_targets}" | grep -v -- '-windows-cross-bin$' || true)"
@@ -23,13 +23,13 @@ fi
 excluded_targets="$(
   ./.github/scripts/run-bazel-query-ci.sh \
     --output=label \
-    -- 'attr(tags, "no-argument-comment-lint", //codex-rs/...)'
+    -- 'attr(tags, "no-argument-comment-lint", //motyga-rs/...)'
 )"
 
 # The lint configuration does not register the transitioned Windows toolchain.
 printf '%s\n' \
-  "//codex-rs/..." \
-  "-//codex-rs/core/tests/remote_env_windows:smoke-test"
+  "//motyga-rs/..." \
+  "-//motyga-rs/core/tests/remote_env_windows:smoke-test"
 if [[ -n "${excluded_targets}" ]]; then
   printf '%s\n' "${excluded_targets}" | sed 's/^/-/'
 fi

@@ -13,7 +13,7 @@ from .targets import TargetSpec
 from .v8 import resolve_codex_v8_cargo_env
 
 
-CODEX_RS_ROOT = REPO_ROOT / "codex-rs"
+CODEX_RS_ROOT = REPO_ROOT / "motyga-rs"
 
 
 @dataclass(frozen=True)

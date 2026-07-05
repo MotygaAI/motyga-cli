@@ -140,7 +140,7 @@ def release_pair_label(target: str, sandbox: bool = False) -> str:
 
 
 def resolved_v8_crate_version() -> str:
-    cargo_lock = tomllib.loads((ROOT / "codex-rs" / "Cargo.lock").read_text())
+    cargo_lock = tomllib.loads((ROOT / "motyga-rs" / "Cargo.lock").read_text())
     versions = sorted(
         {
             package["version"]

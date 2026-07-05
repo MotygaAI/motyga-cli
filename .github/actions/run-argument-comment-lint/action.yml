@@ -1,5 +1,5 @@
 name: Run argument comment lint
-description: Run argument-comment-lint on codex-rs via Bazel.
+description: Run argument-comment-lint on motyga-rs via Bazel.
 
 inputs:
   target:
@@ -25,7 +25,7 @@ runs:
         sudo DEBIAN_FRONTEND=noninteractive apt-get update
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends pkg-config libcap-dev
 
-    - name: Run argument comment lint on codex-rs via Bazel
+    - name: Run argument comment lint on motyga-rs via Bazel
       if: ${{ runner.os != 'Windows' }}
       env:
         BUILDBUDDY_API_KEY: ${{ inputs.buildbuddy-api-key }}
@@ -41,7 +41,7 @@ runs:
           -- \
           ${bazel_targets}
 
-    - name: Run argument comment lint on codex-rs via Bazel
+    - name: Run argument comment lint on motyga-rs via Bazel
       if: ${{ runner.os == 'Windows' }}
       env:
         BUILDBUDDY_API_KEY: ${{ inputs.buildbuddy-api-key }}

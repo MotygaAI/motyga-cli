@@ -182,7 +182,7 @@ Runs argument-comment-lint on Rust targets using Bazel's Rust dependency graph.
 Example:
 
 ```output
-$ bazel build --config=argument-comment-lint //codex-rs/...
+$ bazel build --config=argument-comment-lint //motyga-rs/...
 ```
 """,
 )

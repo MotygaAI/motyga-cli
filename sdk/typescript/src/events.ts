@@ -1,4 +1,4 @@
-// based on event types from codex-rs/exec/src/exec_events.rs
+// based on event types from motyga-rs/exec/src/exec_events.rs
 
 import type { ThreadItem } from "./items";
 

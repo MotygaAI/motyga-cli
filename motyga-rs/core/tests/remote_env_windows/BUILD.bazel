@@ -1,0 +1,30 @@
+load("//bazel/rules/testing/wine:wine.bzl", "wine_rust_test")
+
+wine_rust_test(
+    name = "smoke-test",
+    timeout = "short",
+    srcs = ["remote_env_windows_test.rs"],
+    crate_name = "remote_env_windows_test",
+    crate_root = "remote_env_windows_test.rs",
+    host_binaries = {
+        "codex-app-server": "//motyga-rs/app-server:codex-app-server",
+    },
+    windows_binaries = {
+        "wine-windows-exec-server": "//motyga-rs/exec-server/testing:windows-exec-server",
+    },
+    deps = [
+        "//motyga-rs/app-server-protocol",
+        "//motyga-rs/app-server/tests/common",
+        "//motyga-rs/core/tests/common",
+        "//motyga-rs/exec-server",
+        "//motyga-rs/exec-server/testing:wine-exec-server-test-support",
+        "//motyga-rs/features",
+        "//motyga-rs/protocol",
+        "//motyga-rs/utils/path-uri",
+        "@crates//:anyhow",
+        "@crates//:pretty_assertions",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

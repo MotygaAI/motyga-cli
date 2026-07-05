@@ -25,7 +25,7 @@ Current pinned versions:
 
 Use this as the maintainer flow for a version bump:
 
-1. Bump the `v8` crate version and refresh `codex-rs/Cargo.lock`.
+1. Bump the `v8` crate version and refresh `motyga-rs/Cargo.lock`.
 2. Update the Bazel versioned inputs in `MODULE.bazel`, then refresh the
    matching checksum manifest and generated checksums as described below.
 3. Publish a release-candidate PR and validate that `v8-canary` passes.
@@ -113,4 +113,4 @@ hardcodes a `v<crate_version>` tag layout, while our artifacts are published
 under `rusty-v8-v<crate_version>`.
 
 Do not mix artifacts across crate versions. The archive and binding must match
-the exact resolved `v8` crate version in `codex-rs/Cargo.lock`.
+the exact resolved `v8` crate version in `motyga-rs/Cargo.lock`.

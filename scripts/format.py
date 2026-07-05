@@ -44,7 +44,7 @@ def rust_formatter_group(*, check: bool) -> FormatterGroup:
     args = ["cargo", "fmt", "--", "--config", "imports_granularity=Item"]
     if check:
         args.append("--check")
-    command = Command(tuple(args), REPO_ROOT / "codex-rs")
+    command = Command(tuple(args), REPO_ROOT / "motyga-rs")
     return FormatterGroup("Rust", (command,))
 
 

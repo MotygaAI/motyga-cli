@@ -77,7 +77,7 @@ rsync \
   --human-readable \
   --itemize-changes \
   --exclude '.git/' \
-  --exclude 'codex-rs/target/' \
+  --exclude 'motyga-rs/target/' \
   --filter=':- .gitignore' \
   "$@" \
   "${repo_root}/" \
@@ -98,7 +98,7 @@ remote_exec_server_log_path="$1"
 remote_exec_server_pid_path="$2"
 remote_exec_server_start_timeout_seconds="$3"
 remote_repo_root="$HOME/code/codex-sync"
-remote_codex_rs="$remote_repo_root/codex-rs"
+remote_codex_rs="$remote_repo_root/motyga-rs"
 
 cd "${remote_codex_rs}"
 cargo build -p codex-cli --bin motyga

@@ -31,7 +31,7 @@ prints its path after the package is built.
 
 The `--variant` flag selects the package entrypoint. Supported variants are
 `codex` and `codex-app-server`. The `version` field in `codex-package.json` is
-read from `[workspace.package].version` in `codex-rs/Cargo.toml`.
+read from `[workspace.package].version` in `motyga-rs/Cargo.toml`.
 
 ## Source-built artifacts
 

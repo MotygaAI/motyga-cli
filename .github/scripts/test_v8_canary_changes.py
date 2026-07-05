@@ -28,7 +28,7 @@ version = "149.2.0"
     ) -> None:
         self.assertFalse(
             windows_source_required(
-                {"codex-rs/Cargo.toml"},
+                {"motyga-rs/Cargo.toml"},
                 "149.2.0",
                 "149.2.0",
             )

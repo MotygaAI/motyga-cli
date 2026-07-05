@@ -60,7 +60,7 @@ bash -c '
   source scripts/test-remote-env.sh
   trap codex_remote_env_cleanup EXIT
 
-  cd codex-rs
+  cd motyga-rs
   just test -p codex-core --test all
 '
 ```
@@ -74,7 +74,7 @@ bash -c '
   source scripts/test-remote-env.sh
   trap codex_remote_env_cleanup EXIT
 
-  cd codex-rs
+  cd motyga-rs
   just test -p codex-app-server --test all
 '
 ```
@@ -87,13 +87,13 @@ the Linux host. The cross-platform build dependency means they only run in Bazel
 For core integration tests:
 
 ```sh
-bazel test //codex-rs/core:core-all-wine-exec-test
+bazel test //motyga-rs/core:core-all-wine-exec-test
 ```
 
 For app-server integration tests:
 
 ```sh
-bazel test //codex-rs/app-server:app-server-all-wine-exec-test
+bazel test //motyga-rs/app-server:app-server-all-wine-exec-test
 ```
 
 ## Devboxes

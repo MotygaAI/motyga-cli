@@ -255,7 +255,7 @@ def codex_rust_crate(
     test_env = {
         # The launcher resolves an absolute workspace root at runtime so
         # manifest-only platforms like macOS still point Insta at the real
-        # `codex-rs` checkout.
+        # `motyga-rs` checkout.
         "INSTA_WORKSPACE_ROOT": ".",
         "INSTA_SNAPSHOT_PATH": "src",
     }
@@ -279,8 +279,8 @@ def codex_rust_crate(
     } | rustc_env
 
     manifest_relpath = native.package_name()
-    if manifest_relpath.startswith("codex-rs/"):
-        manifest_relpath = manifest_relpath[len("codex-rs/"):]
+    if manifest_relpath.startswith("motyga-rs/"):
+        manifest_relpath = manifest_relpath[len("motyga-rs/"):]
     manifest_path = manifest_relpath + "/Cargo.toml"
 
     binaries = DEP_DATA.get(native.package_name())["binaries"]
@@ -332,13 +332,13 @@ def codex_rust_crate(
             # Unit tests also compile to standalone Windows executables, so
             # keep their stack reserve aligned with binaries and integration
             # tests under gnullvm.
-            # Bazel has emitted both `codex-rs/<crate>/...` and
-            # `../codex-rs/<crate>/...` paths for `file!()`. Strip either
+            # Bazel has emitted both `motyga-rs/<crate>/...` and
+            # `../motyga-rs/<crate>/...` paths for `file!()`. Strip either
             # prefix so the workspace-root launcher sees Cargo-like metadata
             # such as `tui/src/...`.
             rustc_flags = rustc_flags_extra + WINDOWS_RUSTC_LINK_FLAGS + [
-                "--remap-path-prefix=../codex-rs=",
-                "--remap-path-prefix=codex-rs=",
+                "--remap-path-prefix=../motyga-rs=",
+                "--remap-path-prefix=motyga-rs=",
             ],
             rustc_env = rustc_env,
             data = test_data_extra,
@@ -356,7 +356,7 @@ def codex_rust_crate(
             name = unit_test_name,
             env = test_env,
             test_bin = ":" + unit_test_binary,
-            workspace_root_marker = "//codex-rs/utils/cargo-bin:repo_root.marker",
+            workspace_root_marker = "//motyga-rs/utils/cargo-bin:repo_root.marker",
             tags = test_tags,
             **unit_test_kwargs
         )
@@ -477,12 +477,12 @@ def codex_rust_crate(
                 data = native.glob(["tests/**"], allow_empty = True) + integration_test_binaries + test_data_extra,
                 compile_data = native.glob(["tests/**"], allow_empty = True) + integration_compile_data_extra,
                 deps = all_crate_deps(normal = True, normal_dev = True) + maybe_deps + deps_extra,
-                # Bazel has emitted both `codex-rs/<crate>/...` and
-                # `../codex-rs/<crate>/...` paths for `file!()`. Strip either
+                # Bazel has emitted both `motyga-rs/<crate>/...` and
+                # `../motyga-rs/<crate>/...` paths for `file!()`. Strip either
                 # prefix so Insta records Cargo-like metadata such as `core/tests/...`.
                 rustc_flags = rustc_flags_extra + WINDOWS_RUSTC_LINK_FLAGS + [
-                    "--remap-path-prefix=../codex-rs=",
-                    "--remap-path-prefix=codex-rs=",
+                    "--remap-path-prefix=../motyga-rs=",
+                    "--remap-path-prefix=motyga-rs=",
                 ],
                 rustc_env = rustc_env,
                 target_compatible_with = WINDOWS_GNULLVM_INCOMPATIBLE,
@@ -498,7 +498,7 @@ def codex_rust_crate(
                 # manifest-only platforms.
                 runfile_env = integration_test_cargo_env_runfiles,
                 test_bin = ":" + integration_test_binary,
-                workspace_root_marker = "//codex-rs/utils/cargo-bin:repo_root.marker",
+                workspace_root_marker = "//motyga-rs/utils/cargo-bin:repo_root.marker",
                 target_compatible_with = WINDOWS_GNULLVM_INCOMPATIBLE,
                 tags = test_tags,
                 **test_kwargs
@@ -516,12 +516,12 @@ def codex_rust_crate(
                 data = native.glob(["tests/**"], allow_empty = True) + integration_test_binaries + test_data_extra,
                 compile_data = native.glob(["tests/**"], allow_empty = True) + integration_compile_data_extra,
                 deps = all_crate_deps(normal = True, normal_dev = True) + maybe_deps + deps_extra,
-                # Bazel has emitted both `codex-rs/<crate>/...` and
-                # `../codex-rs/<crate>/...` paths for `file!()`. Strip either
+                # Bazel has emitted both `motyga-rs/<crate>/...` and
+                # `../motyga-rs/<crate>/...` paths for `file!()`. Strip either
                 # prefix so Insta records Cargo-like metadata such as `core/tests/...`.
                 rustc_flags = rustc_flags_extra + WINDOWS_RUSTC_LINK_FLAGS + [
-                    "--remap-path-prefix=../codex-rs=",
-                    "--remap-path-prefix=codex-rs=",
+                    "--remap-path-prefix=../motyga-rs=",
+                    "--remap-path-prefix=motyga-rs=",
                 ],
                 rustc_env = rustc_env,
                 env = integration_test_cargo_env,
@@ -538,7 +538,7 @@ def codex_rust_crate(
             wine_exec_server = wine_test_name + "-windows-exec-server"
             foreign_platform_binary(
                 name = wine_exec_server,
-                binary = "//codex-rs/exec-server/testing:windows-exec-server",
+                binary = "//motyga-rs/exec-server/testing:windows-exec-server",
                 extra_rustc_flags = WINDOWS_GNULLVM_RUSTC_LINK_FLAGS,
                 platform = "//:windows_x86_64_gnullvm",
                 tags = ["manual"],
@@ -568,8 +568,8 @@ def codex_rust_crate(
                 data = wine_runtime.data,
                 env = test_env,
                 runfile_env = wine_runfile_env,
-                test_bin = "//codex-rs/exec-server/testing:wine-exec-test-runner",
-                workspace_root_marker = "//codex-rs/utils/cargo-bin:repo_root.marker",
+                test_bin = "//motyga-rs/exec-server/testing:wine-exec-test-runner",
+                workspace_root_marker = "//motyga-rs/utils/cargo-bin:repo_root.marker",
                 target_compatible_with = WINE_TEST_TARGET_COMPATIBLE_WITH,
                 # This wrapper has no Rust sources and transitions a data
                 # dependency to a Windows toolchain the lint does not register.
@@ -592,8 +592,8 @@ def codex_rust_crate(
             compile_data = native.glob(["tests/**"], allow_empty = True) + integration_compile_data_extra,
             deps = all_crate_deps(normal = True, normal_dev = True) + maybe_deps + deps_extra,
             rustc_flags = rustc_flags_extra + WINDOWS_RUSTC_LINK_FLAGS + [
-                "--remap-path-prefix=../codex-rs=",
-                "--remap-path-prefix=codex-rs=",
+                "--remap-path-prefix=../motyga-rs=",
+                "--remap-path-prefix=motyga-rs=",
             ],
             rustc_env = rustc_env,
             env = integration_test_cargo_env,
@@ -607,7 +607,7 @@ def codex_rust_crate(
             env = integration_test_cargo_env,
             runfile_env = integration_test_cargo_env_runfiles,
             test_bin = ":" + windows_cross_test_binary,
-            workspace_root_marker = "//codex-rs/utils/cargo-bin:repo_root.marker",
+            workspace_root_marker = "//motyga-rs/utils/cargo-bin:repo_root.marker",
             target_compatible_with = WINDOWS_GNULLVM_ONLY,
             tags = test_tags,
             **windows_cross_test_kwargs

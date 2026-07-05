@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-TUI_ROOT = ROOT / "codex-rs" / "tui"
+TUI_ROOT = ROOT / "motyga-rs" / "tui"
 TUI_MANIFEST = TUI_ROOT / "Cargo.toml"
 FORBIDDEN_PACKAGE = "codex-core"
 FORBIDDEN_SOURCE_PATTERNS = (

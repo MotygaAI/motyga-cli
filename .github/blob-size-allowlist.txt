@@ -3,8 +3,8 @@
 
 .github/codex-cli-splash.png
 MODULE.bazel.lock
-codex-rs/app-server-protocol/schema/json/codex_app_server_protocol.schemas.json
-codex-rs/app-server-protocol/schema/json/codex_app_server_protocol.v2.schemas.json
-codex-rs/tui/tests/fixtures/oss-story.jsonl
-codex-rs/tui_app_server/tests/fixtures/oss-story.jsonl
-codex-rs/tui/src/app.rs
+motyga-rs/app-server-protocol/schema/json/codex_app_server_protocol.schemas.json
+motyga-rs/app-server-protocol/schema/json/codex_app_server_protocol.v2.schemas.json
+motyga-rs/tui/tests/fixtures/oss-story.jsonl
+motyga-rs/tui_app_server/tests/fixtures/oss-story.jsonl
+motyga-rs/tui/src/app.rs

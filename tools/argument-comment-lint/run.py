@@ -21,7 +21,7 @@ from wrapper_common import (
 def main() -> "Never":
     root = repo_root()
     parsed = parse_wrapper_args(sys.argv[1:])
-    final_args = build_final_args(parsed, root / "codex-rs" / "Cargo.toml")
+    final_args = build_final_args(parsed, root / "motyga-rs" / "Cargo.toml")
 
     env = os.environ.copy()
     ensure_source_prerequisites(env)

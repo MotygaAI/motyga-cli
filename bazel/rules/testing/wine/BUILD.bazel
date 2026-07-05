@@ -20,8 +20,8 @@ rust_library(
     edition = "2024",
     target_compatible_with = ["@platforms//os:linux"],
     deps = [
-        "//codex-rs/utils/cargo-bin",
-        "//codex-rs/utils/pty",
+        "//motyga-rs/utils/cargo-bin",
+        "//motyga-rs/utils/pty",
         "@crates//:anyhow",
         "@crates//:tempfile",
         "@crates//:tokio",

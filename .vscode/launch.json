@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "Cargo launch",
       "cargo": {
-        "cwd": "${workspaceFolder}/codex-rs",
+        "cwd": "${workspaceFolder}/motyga-rs",
         "args": ["build", "--bin=codex-tui"]
       },
       "args": []

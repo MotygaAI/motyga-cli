@@ -38,7 +38,7 @@ runs:
       env:
         CACHE_SCOPE: ${{ inputs.cache-scope }}
         TARGET: ${{ inputs.target }}
-        CACHE_HASH: ${{ hashFiles('MODULE.bazel', 'codex-rs/Cargo.lock', 'codex-rs/Cargo.toml') }}
+        CACHE_HASH: ${{ hashFiles('MODULE.bazel', 'motyga-rs/Cargo.lock', 'motyga-rs/Cargo.toml') }}
       run: |
         echo "repository-cache-key=bazel-cache-${CACHE_SCOPE}-${TARGET}-${CACHE_HASH}" >> "${GITHUB_OUTPUT}"
         echo "repository-cache-restore-key=bazel-cache-${CACHE_SCOPE}-${TARGET}-" >> "${GITHUB_OUTPUT}"

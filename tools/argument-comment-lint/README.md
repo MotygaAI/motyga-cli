@@ -130,7 +130,7 @@ If you are changing the lint crate itself, use the source-build wrapper:
 ./tools/argument-comment-lint/run.py -p codex-core
 ```
 
-Run the lint against `codex-rs` from the repo root:
+Run the lint against `motyga-rs` from the repo root:
 
 ```bash
 just argument-comment-lint
@@ -141,7 +141,7 @@ just argument-comment-lint -p codex-core
 ```
 
 If no package selection is provided, `just argument-comment-lint` now defaults
-to the Bazel aspect path over `//codex-rs/...`. The Python wrappers remain the
+to the Bazel aspect path over `//motyga-rs/...`. The Python wrappers remain the
 package-scoped escape hatch and still default the underlying Cargo invocation
 to `--all-targets` unless you explicitly narrow the target set, so targeted
 wrapper runs cover test-only call sites by default. The Bazel entrypoints use
