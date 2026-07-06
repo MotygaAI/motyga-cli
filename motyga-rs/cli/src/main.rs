@@ -457,7 +457,7 @@ struct LoginCommand {
 
     #[arg(
         long = "with-api-key",
-        help = "Read the API key from stdin (e.g. `printenv OPENAI_API_KEY | motyga login --with-api-key`)"
+        help = "Read the API key from stdin (e.g. `printenv MOTYGA_API_KEY | motyga login --with-api-key`)"
     )]
     with_api_key: bool,
 
@@ -802,7 +802,7 @@ fn run_update_command() -> anyhow::Result<()> {
     {
         let Some(action) = codex_tui::get_update_action() else {
             anyhow::bail!(
-                "Could not detect the Motyga installation method. Please update manually: https://developers.openai.com/codex/cli/"
+                "Could not detect the Motyga installation method. Please update manually: https://github.com/MotygaAI/motyga-cli"
             );
         };
         run_update_action(action)
@@ -1323,7 +1323,7 @@ async fn cli_main(
                         .await;
                     } else if login_cli.api_key.is_some() {
                         eprintln!(
-                            "The --api-key flag is no longer supported. Pipe the key instead, e.g. `printenv OPENAI_API_KEY | motyga login --with-api-key`."
+                            "The --api-key flag is no longer supported. Pipe the key instead, e.g. `printenv MOTYGA_API_KEY | motyga login --with-api-key`."
                         );
                         std::process::exit(1);
                     } else if login_cli.with_api_key {
