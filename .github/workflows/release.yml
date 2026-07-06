@@ -75,8 +75,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Run from motyga-rs so rustup reads its pinned rust-toolchain.toml (channel 1.95.0) and adds the
+      # cross target to THAT toolchain — the one `cargo build` (cwd=motyga-rs) actually uses. Adding it at
+      # the repo root targeted the default toolchain instead, so the pinned build hit "target not installed".
       - name: Rust toolchain
         shell: bash
+        working-directory: motyga-rs
         run: |
           rustup show
           rustup target add ${{ matrix.target }}
