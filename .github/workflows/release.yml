@@ -64,10 +64,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { target: x86_64-unknown-linux-gnu,  os: ubuntu-latest,    pkg: codex-linux-x64 }
-          - { target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm, pkg: codex-linux-arm64 }
-          - { target: x86_64-apple-darwin,        os: macos-13,         pkg: codex-darwin-x64 }
-          - { target: aarch64-apple-darwin,       os: macos-latest,     pkg: codex-darwin-arm64 }
+          # Windows-first release. The Linux (gnu) and macOS legs all built green in run 28775778997;
+          # they are commented out only to skip the slow macOS/arm runner queue for the initial publish.
+          # Re-enable (uncomment) to ship all six platforms — the meta package already lists every
+          # platform as an OPTIONAL dependency, so an unpublished platform is a clean skip, not a break.
+          # - { target: x86_64-unknown-linux-gnu,  os: ubuntu-latest,    pkg: codex-linux-x64 }
+          # - { target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm, pkg: codex-linux-arm64 }
+          # - { target: x86_64-apple-darwin,        os: macos-13,         pkg: codex-darwin-x64 }
+          # - { target: aarch64-apple-darwin,       os: macos-latest,     pkg: codex-darwin-arm64 }
           - { target: x86_64-pc-windows-msvc,     os: windows-latest,   pkg: codex-win32-x64 }
           - { target: aarch64-pc-windows-msvc,    os: windows-11-arm,   pkg: codex-win32-arm64 }
     runs-on: ${{ matrix.os }}
