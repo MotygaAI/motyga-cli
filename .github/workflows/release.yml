@@ -8,10 +8,9 @@ name: Release (motyga CLI)
 # e.g. `@motyga/cli@<ver>-win32-x64`; the meta package pulls the right one via
 # an optionalDependency and `bin/codex.js` execs the vendored `motyga` binary.
 #
-# NOTE: only the win32-x64 leg has been validated locally. The macOS / Linux /
-# arm legs follow the same pipeline but have platform-specific friction
-# (linux-musl + V8, macOS ad-hoc signing, arm runners) that may need a CI
-# shakedown. `fail-fast: false` keeps the legs independent.
+# NOTE: Windows (x64/arm64) and macOS (x64/arm64) are green in CI. Linux builds gnu (glibc) natively on
+# the matching-arch runner and links libcap for the bwrap sandbox (libcap-dev installed below).
+# `fail-fast: false` keeps the legs independent.
 #
 # Publishing is gated on the `publish` input (or a `v*` tag) AND an `NPM_TOKEN`
 # repo secret. Building + smoke-testing always runs.
@@ -65,8 +64,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { target: x86_64-unknown-linux-musl,  os: ubuntu-latest,    pkg: codex-linux-x64 }
-          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm, pkg: codex-linux-arm64 }
+          - { target: x86_64-unknown-linux-gnu,  os: ubuntu-latest,    pkg: codex-linux-x64 }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm, pkg: codex-linux-arm64 }
           - { target: x86_64-apple-darwin,        os: macos-13,         pkg: codex-darwin-x64 }
           - { target: aarch64-apple-darwin,       os: macos-latest,     pkg: codex-darwin-arm64 }
           - { target: x86_64-pc-windows-msvc,     os: windows-latest,   pkg: codex-win32-x64 }
@@ -103,11 +102,12 @@ jobs:
         with:
           node-version: "20"
 
-      # Linux payloads target musl for a static, portable binary (matches the
-      # triple bin/codex.js resolves). musl-tools provides the musl C toolchain.
-      - name: Install musl tools (Linux)
+      # Linux payloads are gnu (glibc) built natively on the matching-arch runner — no cross-compilation,
+      # and consistent with the glibc Node.js that runs bin/codex.js. The bwrap sandbox compiles vendored
+      # bubblewrap and links libcap, so libcap-dev + pkg-config must be present.
+      - name: Install Linux build deps
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
+        run: sudo apt-get update && sudo apt-get install -y libcap-dev pkg-config
 
       # Builds the RELEASE entrypoint + platform helpers via cargo and
       # self-fetches ripgrep from the checked-in DotSlash manifest, then

@@ -26,14 +26,14 @@ CODEX_PLATFORM_PACKAGES: dict[str, dict[str, str]] = {
     "codex-linux-x64": {
         "npm_name": "@motyga/cli-linux-x64",
         "npm_tag": "linux-x64",
-        "target_triple": "x86_64-unknown-linux-musl",
+        "target_triple": "x86_64-unknown-linux-gnu",
         "os": "linux",
         "cpu": "x64",
     },
     "codex-linux-arm64": {
         "npm_name": "@motyga/cli-linux-arm64",
         "npm_tag": "linux-arm64",
-        "target_triple": "aarch64-unknown-linux-musl",
+        "target_triple": "aarch64-unknown-linux-gnu",
         "os": "linux",
         "cpu": "arm64",
     },
