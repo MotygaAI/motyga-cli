@@ -153,7 +153,7 @@ jobs:
           esac
 
       - name: Upload payload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-${{ matrix.pkg }}
           path: dist/${{ matrix.pkg }}.tgz
@@ -178,7 +178,7 @@ jobs:
             --release-version "${{ needs.prepare.outputs.version }}" \
             --pack-output dist/motyga-cli.tgz
       - name: Upload meta
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-meta
           path: dist/motyga-cli.tgz
