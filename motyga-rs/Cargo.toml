@@ -525,11 +525,13 @@ strip = "symbols"
 
 [profile.release]
 lto = "thin"
-debug = "line-tables-only"
-split-debuginfo = "off"
-# Keep release binaries symbolicateable until packaging has archived the
-# sidecar symbols and stripped the binaries.
-strip = false
+# Strip debuginfo + symbols from the SHIPPED binary. Motyga has no symbol-upload /
+# crash-symbolication backend, so the upstream "keep symbols, strip at packaging" design
+# does not apply — and the unstripped line-tables debuginfo bloated the Windows binary to
+# ~290 MB. For x86_64-pc-windows-msvc the cargo/rustc strip is the reliable path (a GNU
+# `strip` step would no-op on an MSVC PE), so strip at the profile level, not in packaging.
+debug = false
+strip = "symbols"
 
 # Balance parallel release code generation against binary size.
 codegen-units = 4

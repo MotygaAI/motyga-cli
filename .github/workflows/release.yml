@@ -113,6 +113,25 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libcap-dev pkg-config
 
+      # The workspace version is a 0.0.0 dev-sentinel; stamp the real release
+      # version into Cargo.toml BEFORE the cargo build so the compiled binary's
+      # `--version` matches the published npm package (env!("CARGO_PKG_VERSION")).
+      # Python (already set up above) keeps this portable across win/mac/linux runners.
+      - name: Stamp release version into workspace
+        shell: bash
+        run: |
+          python - "${{ needs.prepare.outputs.version }}" <<'PY'
+          import pathlib, sys
+          version = sys.argv[1]
+          path = pathlib.Path("motyga-rs/Cargo.toml")
+          text = path.read_text()
+          stamped = text.replace('version = "0.0.0"', f'version = "{version}"', 1)
+          if stamped == text:
+              sys.exit("dev-sentinel `version = \"0.0.0\"` not found in motyga-rs/Cargo.toml")
+          path.write_text(stamped)
+          print(f"stamped workspace version -> {version}")
+          PY
+
       # Builds the RELEASE entrypoint + platform helpers via cargo and
       # self-fetches ripgrep from the checked-in DotSlash manifest, then
       # assembles + validates the vendor payload.

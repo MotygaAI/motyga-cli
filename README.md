@@ -11,7 +11,13 @@ against Motyga with your <code>nb-…</code> key (or your own provider) — no O
 npm install -g @motyga/cli
 ```
 
-Point it at Motyga in `~/.codex/config.toml` (becomes `~/.motyga/config.toml` after the Rust rebrand lands):
+> **Supported platforms.** Prebuilt binaries are currently published for **Windows** (`x64` and `arm64`).
+> **macOS and Linux builds are produced on request** — open an issue (or ask the maintainers) and we'll
+> publish the platform package for your OS/arch. The release pipeline already covers all six targets
+> (win/mac/linux × x64/arm64); the non-Windows legs are simply gated off for now, so an unpublished
+> platform is a clean skip rather than a broken install.
+
+Point it at Motyga in `~/.motyga/config.toml`:
 
 ```toml
 model_provider = "motyga"
