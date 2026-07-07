@@ -94,6 +94,8 @@ pub(crate) enum SignInOption {
 }
 
 const API_KEY_DISABLED_MESSAGE: &str = "API key login is disabled.";
+// Where a keyless user signs up and creates a Motyga API key.
+const MOTYGA_SIGNUP_URL: &str = "https://motyga.com";
 fn onboarding_request_id() -> codex_app_server_protocol::RequestId {
     codex_app_server_protocol::RequestId::String(Uuid::new_v4().to_string())
 }
@@ -639,6 +641,11 @@ impl AuthModeWidget {
                     .into(),
             );
             intro_lines.push("".into());
+        } else {
+            intro_lines.push(
+                format!("  Don't have a key yet? Create one at {MOTYGA_SIGNUP_URL}").into(),
+            );
+            intro_lines.push("".into());
         }
         Paragraph::new(intro_lines)
             .wrap(Wrap { trim: false })
@@ -671,6 +678,13 @@ impl AuthModeWidget {
                 self.cancel_binding().into(),
                 " to go back".dim(),
             ]),
+            Line::from(vec![
+                "  Press ".dim(),
+                "Ctrl+O".into(),
+                " to open ".dim(),
+                MOTYGA_SIGNUP_URL.dim(),
+                " in your browser".dim(),
+            ]),
         ];
         if let Some(error) = self.error_message() {
             footer_lines.push("".into());
@@ -684,11 +698,16 @@ impl AuthModeWidget {
     fn handle_api_key_entry_key_event(&mut self, key_event: &KeyEvent) -> bool {
         let mut should_save: Option<String> = None;
         let mut should_request_frame = false;
+        let mut should_open_signup = false;
 
         {
             let mut guard = self.sign_in_state.write().unwrap();
             if let SignInState::ApiKeyEntry(state) = &mut *guard {
-                if keys::CANCEL.is_pressed(*key_event) {
+                if key_event.code == KeyCode::Char('o')
+                    && key_event.modifiers.contains(KeyModifiers::CONTROL)
+                {
+                    should_open_signup = true;
+                } else if keys::CANCEL.is_pressed(*key_event) {
                     *guard = SignInState::PickMode;
                     self.set_error(/*message*/ None);
                     should_request_frame = true;
@@ -735,7 +754,9 @@ impl AuthModeWidget {
             }
         }
 
-        if let Some(api_key) = should_save {
+        if should_open_signup {
+            maybe_open_auth_url_in_browser(&self.app_server_request_handle, MOTYGA_SIGNUP_URL);
+        } else if let Some(api_key) = should_save {
             self.save_api_key(api_key);
         } else if should_request_frame {
             self.request_frame.schedule_frame();
@@ -774,6 +795,7 @@ impl AuthModeWidget {
         }
         self.set_error(/*message*/ None);
         let prefill_from_env = read_codex_api_key_from_env();
+        let had_env_key = prefill_from_env.is_some();
         let mut guard = self.sign_in_state.write().unwrap();
         match &mut *guard {
             SignInState::ApiKeyEntry(state) => {
@@ -794,6 +816,11 @@ impl AuthModeWidget {
             }
         }
         drop(guard);
+        // No key in the environment yet: open the signup page so a first-time user
+        // can create a Motyga API key instead of hitting a dead end.
+        if !had_env_key {
+            maybe_open_auth_url_in_browser(&self.app_server_request_handle, MOTYGA_SIGNUP_URL);
+        }
         self.request_frame.schedule_frame();
     }
 
