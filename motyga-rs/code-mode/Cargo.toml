@@ -10,7 +10,12 @@ name = "codex_code_mode"
 path = "src/lib.rs"
 
 [features]
-sandbox = ["v8/v8_enable_sandbox"]
+# Code mode = model-authored JavaScript executed in an embedded V8 isolate. It is experimental
+# (Stage::UnderDevelopment) and disabled at runtime by default, but V8 statically links ~200 MB
+# into the binary — so V8 and its ICU data are OPTIONAL and OFF by default. Build with
+# `--features v8_runtime` to compile the real V8-backed runtime and ship working code mode.
+v8_runtime = ["dep:v8", "dep:deno_core_icudata"]
+sandbox = ["v8_runtime", "v8/v8_enable_sandbox"]
 
 [lints]
 workspace = true
@@ -18,13 +23,13 @@ workspace = true
 [dependencies]
 codex-code-mode-protocol = { workspace = true }
 codex-protocol = { workspace = true }
-deno_core_icudata = { workspace = true }
+deno_core_icudata = { workspace = true, optional = true }
 futures = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["io-util", "macros", "process", "rt", "sync", "time"] }
 tokio-util = { workspace = true, features = ["rt"] }
 tracing = { workspace = true }
-v8 = { workspace = true }
+v8 = { workspace = true, optional = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

@@ -70,6 +70,11 @@ pub(crate) enum RuntimeEvent {
     ThreadPanicked,
 }
 
+/// Handle used to terminate a running isolate. Aliased so `cell_actor` can name the type
+/// identically whether or not V8 is compiled in (the `v8_runtime`-off build supplies a stub
+/// of the same name in `runtime_stub.rs`).
+pub(crate) type RuntimeTerminateHandle = v8::IsolateHandle;
+
 pub(crate) fn spawn_runtime(
     stored_values: HashMap<String, JsonValue>,
     request: ExecuteRequest,
@@ -80,7 +85,7 @@ pub(crate) fn spawn_runtime(
     (
         std_mpsc::Sender<RuntimeCommand>,
         std_mpsc::Sender<RuntimeControlCommand>,
-        v8::IsolateHandle,
+        RuntimeTerminateHandle,
     ),
     String,
 > {
