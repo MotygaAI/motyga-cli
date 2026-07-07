@@ -23,7 +23,7 @@ tests unless the test needs more precise control over its executor.
 ### app-server
 
 Start the server with `TestAppServer::new_with_auto_env()` unless the test defines its own
-`$CODEX_HOME/environments.toml` or will define custom environments at runtime.
+`$MOTYGA_HOME/environments.toml` or will define custom environments at runtime.
 
 Start threads with `TestAppServer::send_thread_start_request_with_auto_env()` if you've created the
 server with the `auto_env` approach. Omit `ThreadStartParams.environments` (leave it as `None`) when

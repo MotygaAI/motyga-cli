@@ -28,7 +28,8 @@ separated from the mechanical identity layer.
    `codex-code-mode-host`/`codex-write-config-schema`). 32 `cargo_bin("codex")` test refs → `"motyga"`.
    `[package]`/`[lib]` names unchanged. **Verified:** `motyga.exe --version` → `codex-cli 0.0.0`.
 2. ✅ **Config dir** — `motyga-rs/utils/home-dir/src/lib.rs::find_codex_home()`: read `MOTYGA_HOME`
-   (**back-compat**: falls back to `CODEX_HOME` — keeps ~20 integration tests green), default `~/.codex` → `~/.motyga`.
+   reads `MOTYGA_HOME` only (the legacy `CODEX_HOME` fallback was removed — the CLI has no OpenAI/Codex ties;
+   all tests/harnesses set `MOTYGA_HOME`), default `~/.codex` → `~/.motyga`.
    Project-local `.codex/` → `.motyga/` intentionally DEFERRED (would churn `external_agent_config` tests). **Verified:**
    `MOTYGA_HOME=… motyga exec` honored the override.
 3. ✅ **Default provider = Motyga** — `model-provider-info/src/lib.rs`: `MOTYGA_PROVIDER_ID`/name/base-url/env-key

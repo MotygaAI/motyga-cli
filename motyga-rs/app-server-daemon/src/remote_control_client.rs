@@ -364,7 +364,7 @@ mod tests {
     const INITIALIZE_REQUEST_ID: RequestId = RequestId::Integer(1);
     const TEST_INSTALLATION_ID: &str = "11111111-1111-4111-8111-111111111111";
     const TEST_SERVER_NAME: &str = "owen-mbp";
-    const TEST_CODEX_HOME: &str = "/tmp/codex-home";
+    const TEST_MOTYGA_HOME: &str = "/tmp/codex-home";
 
     #[tokio::test]
     async fn enable_remote_control_uses_connected_enable_response_without_later_notification()
@@ -723,7 +723,7 @@ mod tests {
                 id: INITIALIZE_REQUEST_ID,
                 result: serde_json::json!({
                     "userAgent": "codex_app_server/1.2.3",
-                    "codexHome": TEST_CODEX_HOME,
+                    "codexHome": TEST_MOTYGA_HOME,
                     "platformFamily": "unix",
                     "platformOs": "macos",
                 }),

@@ -1,116 +1,66 @@
 <h1 align="center">Motyga CLI</h1>
 
-<p align="center"><strong><code>motyga</code></strong> is a local coding agent — a fork of
-<a href="https://github.com/openai/codex">OpenAI Codex CLI</a> (Apache-2.0), rebranded and pointed at
-<a href="https://motyga.com">Motyga</a> by default. It speaks the OpenAI <b>Responses API</b>, so it runs
-against Motyga with your <code>nb-…</code> key (or your own provider) — no OpenAI subscription needed.</p>
+<p align="center"><strong><code>motyga</code></strong> is a local coding agent that runs on your machine
+and talks to <a href="https://motyga.com">Motyga</a> by default. It speaks the <b>Responses API</b>, so it
+runs against Motyga with your <code>nb-…</code> key (or any provider you configure) — no third-party account
+or subscription needed.</p>
 
-## Quickstart (Motyga)
+## Quickstart
 
 ```shell
 npm install -g @motyga/cli
 ```
 
-> **Supported platforms.** Prebuilt binaries are currently published for **Windows** (`x64` and `arm64`).
-> **macOS and Linux builds are produced on request** — open an issue (or ask the maintainers) and we'll
-> publish the platform package for your OS/arch. The release pipeline already covers all six targets
-> (win/mac/linux × x64/arm64); the non-Windows legs are simply gated off for now, so an unpublished
-> platform is a clean skip rather than a broken install.
+> **Supported platforms.** Prebuilt binaries are published for **Windows** (`x64` and `arm64`).
+> macOS and Linux builds are produced on request — open an issue and we'll publish the package for your
+> OS/arch. The release pipeline already covers all six targets (win/mac/linux × x64/arm64); the
+> non-Windows legs are gated off for now, so an unpublished platform is a clean skip, not a broken install.
 
-Point it at Motyga in `~/.motyga/config.toml`:
+Motyga is the **built-in default provider**, so all you need is your API key:
 
-```toml
-model_provider = "motyga"
-disable_response_storage = true          # Motyga's /v1/responses is stateless
+```shell
+# macOS / Linux
+export MOTYGA_API_KEY=nb-YOUR_KEY
 
-[model_providers.motyga]
-name = "Motyga"
-base_url = "https://api.motyga.com/v1"   # RU mirror: https://ru.motyga.com/v1
-env_key = "MOTYGA_API_KEY"
-wire_api = "responses"
+# Windows PowerShell
+$env:MOTYGA_API_KEY = "nb-YOUR_KEY"
 ```
 
 ```shell
-export MOTYGA_API_KEY=nb-YOUR_KEY
 motyga              # interactive
 motyga exec "..."   # headless
 ```
 
-> **Status: rebrand in progress.** This layer applies the npm identity (`@motyga/cli`, bin `motyga`) +
-> attribution. The Rust-side changes (default provider baked in, `~/.codex`→`~/.motyga`, disabling the
-> ChatGPT login + telemetry) are tracked in [`MOTYGA_REBRAND.md`](MOTYGA_REBRAND.md) and need a `cargo build`.
-> The original OpenAI Codex README is kept below for reference until fully rewritten.
+Get an `nb-…` key at [motyga.com](https://motyga.com).
 
----
+### Configuration (optional)
 
-<p align="center"><strong>Codex CLI</strong> is a coding agent from OpenAI that runs locally on your computer.
-<p align="center">
-  <img src="https://github.com/openai/codex/blob/main/.github/codex-cli-splash.png" alt="Codex CLI splash" width="80%" />
-</p>
-</br>
-If you want Codex in your code editor (VS Code, Cursor, Windsurf), <a href="https://developers.openai.com/codex/ide">install in your IDE.</a>
-</br>If you want the desktop app experience, run <code>codex app</code> or visit <a href="https://chatgpt.com/codex?app-landing-page=true">the Codex App page</a>.
-</br>If you are looking for the <em>cloud-based agent</em> from OpenAI, <strong>Codex Web</strong>, go to <a href="https://chatgpt.com/codex">chatgpt.com/codex</a>.</p>
+`motyga` keeps its config and credentials in `~/.motyga/` — override with the `MOTYGA_HOME` environment
+variable. You only need a `~/.motyga/config.toml` to change a default, for example to use the
+**RU mirror** or point at another provider:
 
----
-
-## Quickstart
-
-### Installing and running Codex CLI
-
-Run the following on Mac or Linux to install Codex CLI:
-
-```shell
-curl -fsSL https://chatgpt.com/codex/install.sh | sh
+```toml
+[model_providers.motyga]
+name = "Motyga"
+base_url = "https://ru.motyga.com/v1"   # RU mirror; default is https://api.motyga.com/v1
+env_key = "MOTYGA_API_KEY"
+wire_api = "responses"
 ```
 
-Run the following on Windows to install Codex CLI:
+## Highlights
 
-```shell
-powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"
-```
-
-Codex CLI can also be installed via the following package managers:
-
-```shell
-# Install using npm
-npm install -g @openai/codex
-```
-
-```shell
-# Install using Homebrew
-brew install --cask codex
-```
-
-Then simply run `codex` to get started.
-
-<details>
-<summary>You can also go to the <a href="https://github.com/openai/codex/releases/latest">latest GitHub Release</a> and download the appropriate binary for your platform.</summary>
-
-Each GitHub Release contains many executables, but in practice, you likely want one of these:
-
-- macOS
-  - Apple Silicon/arm64: `codex-aarch64-apple-darwin.tar.gz`
-  - x86_64 (older Mac hardware): `codex-x86_64-apple-darwin.tar.gz`
-- Linux
-  - x86_64: `codex-x86_64-unknown-linux-musl.tar.gz`
-  - arm64: `codex-aarch64-unknown-linux-musl.tar.gz`
-
-Each archive contains a single entry with the platform baked into the name (e.g., `codex-x86_64-unknown-linux-musl`), so you likely want to rename it to `codex` after extracting it.
-
-</details>
-
-### Using Codex with your ChatGPT plan
-
-Run `codex` and select **Sign in with ChatGPT**. We recommend signing into your ChatGPT account to use Codex as part of your Plus, Pro, Business, Edu, or Enterprise plan. [Learn more about what's included in your ChatGPT plan](https://help.openai.com/en/articles/11369540-codex-in-chatgpt).
-
-You can also use Codex with an API key, but this requires [additional setup](https://developers.openai.com/codex/auth#sign-in-with-an-api-key).
+- **Default provider is Motyga** — `https://api.motyga.com/v1`, Responses API, auth via `MOTYGA_API_KEY`.
+- **API-key auth only** — no third-party login; no identity or telemetry calls.
+- **Telemetry is off by default.**
+- **Config directory is `~/.motyga`.**
 
 ## Docs
 
-- [**Codex Documentation**](https://developers.openai.com/codex)
-- [**Contributing**](./docs/contributing.md)
-- [**Installing & building**](./docs/install.md)
-- [**Open source fund**](./docs/open-source-fund.md)
+- Using Motyga with the CLI: [motyga.com](https://motyga.com)
 
-This repository is licensed under the [Apache-2.0 License](LICENSE).
+---
+
+## Notice
+
+Motyga CLI is a fork of [OpenAI Codex CLI](https://github.com/openai/codex), licensed under the
+[Apache-2.0 License](LICENSE). The upstream `LICENSE` and `NOTICE` are retained as required.

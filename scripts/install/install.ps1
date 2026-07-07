@@ -728,10 +728,10 @@ switch ($architecture) {
     }
 }
 
-$codexHome = if ([string]::IsNullOrWhiteSpace($env:CODEX_HOME)) {
+$codexHome = if ([string]::IsNullOrWhiteSpace($env:MOTYGA_HOME)) {
     Join-Path $env:USERPROFILE ".codex"
 } else {
-    $env:CODEX_HOME
+    $env:MOTYGA_HOME
 }
 $standaloneRoot = Join-Path $codexHome "packages\standalone"
 $releasesDir = Join-Path $standaloneRoot "releases"

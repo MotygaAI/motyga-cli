@@ -279,7 +279,7 @@ mod tests {
 
     use super::*;
 
-    static NEXT_CODEX_HOME_ID: AtomicUsize = AtomicUsize::new(0);
+    static NEXT_MOTYGA_HOME_ID: AtomicUsize = AtomicUsize::new(0);
     const TEST_CHATGPT_ID_TOKEN: &str = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJlbWFpbCI6InVzZXJAZXhhbXBsZS5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS9hdXRoIjp7ImNoYXRncHRfdXNlcl9pZCI6InVzZXItMTIzNDUiLCJ1c2VyX2lkIjoidXNlci0xMjM0NSIsImNoYXRncHRfcGxhbl90eXBlIjoicHJvIiwiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjb3VudC0xMjMifX0.c2ln";
 
     async fn agent_identity_auth(chatgpt_account_is_fedramp: bool) -> AgentIdentityAuth {
@@ -314,7 +314,7 @@ mod tests {
     }
 
     fn test_codex_home() -> PathBuf {
-        let id = NEXT_CODEX_HOME_ID.fetch_add(1, Ordering::Relaxed);
+        let id = NEXT_MOTYGA_HOME_ID.fetch_add(1, Ordering::Relaxed);
         let path = std::env::temp_dir().join(format!(
             "codex-model-provider-agent-identity-{pid}-{id}",
             pid = std::process::id()

@@ -3,8 +3,7 @@ use dirs::home_dir;
 use std::path::PathBuf;
 
 /// Returns the path to the Motyga configuration directory, which can be
-/// specified by the `MOTYGA_HOME` environment variable (falling back to the
-/// legacy `CODEX_HOME` for backward compatibility). If not set, defaults to
+/// specified by the `MOTYGA_HOME` environment variable. If not set, defaults to
 /// `~/.motyga`.
 ///
 /// - If the variable is set, the value must exist and be a directory. The
@@ -12,11 +11,10 @@ use std::path::PathBuf;
 /// - If the variable is not set, this function does not verify that the
 ///   directory exists.
 pub fn find_codex_home() -> std::io::Result<AbsolutePathBuf> {
-    let codex_home_env = std::env::var("MOTYGA_HOME")
-        .or_else(|_| std::env::var("CODEX_HOME"))
+    let motyga_home_env = std::env::var("MOTYGA_HOME")
         .ok()
         .filter(|val| !val.is_empty());
-    find_codex_home_from_env(codex_home_env.as_deref())
+    find_codex_home_from_env(motyga_home_env.as_deref())
 }
 
 fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<AbsolutePathBuf> {
@@ -82,7 +80,7 @@ mod tests {
             .to_str()
             .expect("missing codex home path should be valid utf-8");
 
-        let err = find_codex_home_from_env(Some(missing_str)).expect_err("missing CODEX_HOME");
+        let err = find_codex_home_from_env(Some(missing_str)).expect_err("missing MOTYGA_HOME");
         assert_eq!(err.kind(), ErrorKind::NotFound);
         assert!(
             err.to_string().contains("MOTYGA_HOME"),
@@ -99,7 +97,7 @@ mod tests {
             .to_str()
             .expect("file codex home path should be valid utf-8");
 
-        let err = find_codex_home_from_env(Some(file_str)).expect_err("file CODEX_HOME");
+        let err = find_codex_home_from_env(Some(file_str)).expect_err("file MOTYGA_HOME");
         assert_eq!(err.kind(), ErrorKind::InvalidInput);
         assert!(
             err.to_string().contains("not a directory"),
@@ -115,7 +113,7 @@ mod tests {
             .to_str()
             .expect("temp codex home path should be valid utf-8");
 
-        let resolved = find_codex_home_from_env(Some(temp_str)).expect("valid CODEX_HOME");
+        let resolved = find_codex_home_from_env(Some(temp_str)).expect("valid MOTYGA_HOME");
         let expected = temp_home
             .path()
             .canonicalize()
@@ -127,7 +125,7 @@ mod tests {
     #[test]
     fn find_codex_home_without_env_uses_default_home_dir() {
         let resolved =
-            find_codex_home_from_env(/*codex_home_env*/ None).expect("default CODEX_HOME");
+            find_codex_home_from_env(/*motyga_home_env*/ None).expect("default MOTYGA_HOME");
         let mut expected = home_dir().expect("home dir");
         expected.push(".motyga");
         let expected = AbsolutePathBuf::from_absolute_path(expected).expect("absolute home");

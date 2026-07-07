@@ -829,7 +829,7 @@ mod tests {
     use std::sync::Arc;
     use std::sync::Mutex;
 
-    // Managed MITM CA files live under the shared test CODEX_HOME, so MITM-enabled config state
+    // Managed MITM CA files live under the shared test MOTYGA_HOME, so MITM-enabled config state
     // must be materialized one test at a time.
     static MITM_CONFIG_STATE_LOCK: Mutex<()> = Mutex::new(());
 
