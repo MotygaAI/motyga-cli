@@ -217,9 +217,12 @@ jobs:
           NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
         run: |
           shopt -s nullglob
+          # Prefix with ./ so npm treats the argument as a local tarball path.
+          # A bare "dist/foo.tgz" (slash, no ./) is parsed as a GitHub shorthand
+          # spec and npm tries `git ls-remote` over SSH, failing with exit 128.
           for tgz in dist/codex-*.tgz; do
             echo "publish $tgz"
-            npm publish "$tgz" --access public
+            npm publish "./$tgz" --access public
           done
           echo "publish dist/motyga-cli.tgz (meta)"
-          npm publish dist/motyga-cli.tgz --access public
+          npm publish ./dist/motyga-cli.tgz --access public
