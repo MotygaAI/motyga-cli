@@ -47,7 +47,7 @@ async fn init_backend(user_agent_suffix: &str) -> anyhow::Result<BackendContext>
         Some("mock") | Some("MOCK")
     );
     let base_url = std::env::var("CODEX_CLOUD_TASKS_BASE_URL")
-        .unwrap_or_else(|_| "https://chatgpt.com/backend-api".to_string());
+        .unwrap_or_else(|_| "https://api.motyga.com/backend-api".to_string());
 
     set_user_agent_suffix(user_agent_suffix);
 
@@ -843,7 +843,7 @@ pub async fn run_main(cli: Cli, _codex_linux_sandbox_exe: Option<PathBuf>) -> an
         tokio::spawn(async move {
             let base_url = util::normalize_base_url(
                 &std::env::var("CODEX_CLOUD_TASKS_BASE_URL")
-                    .unwrap_or_else(|_| "https://chatgpt.com/backend-api".to_string()),
+                    .unwrap_or_else(|_| "https://api.motyga.com/backend-api".to_string()),
             );
             let headers = util::build_chatgpt_headers().await;
             let res = crate::env_detect::list_environments(&base_url, &headers).await;
@@ -858,7 +858,7 @@ pub async fn run_main(cli: Cli, _codex_linux_sandbox_exe: Option<PathBuf>) -> an
         tokio::spawn(async move {
             let base_url = util::normalize_base_url(
                 &std::env::var("CODEX_CLOUD_TASKS_BASE_URL")
-                    .unwrap_or_else(|_| "https://chatgpt.com/backend-api".to_string()),
+                    .unwrap_or_else(|_| "https://api.motyga.com/backend-api".to_string()),
             );
             // Build headers: UA + ChatGPT auth if available
             let headers = util::build_chatgpt_headers().await;
@@ -1084,7 +1084,7 @@ pub async fn run_main(cli: Cli, _codex_linux_sandbox_exe: Option<PathBuf>) -> an
                                         tokio::spawn(async move {
                                             let base_url = crate::util::normalize_base_url(
                                                 &std::env::var("CODEX_CLOUD_TASKS_BASE_URL")
-                                                    .unwrap_or_else(|_| "https://chatgpt.com/backend-api".to_string()),
+                                                    .unwrap_or_else(|_| "https://api.motyga.com/backend-api".to_string()),
                                             );
                                             let headers = crate::util::build_chatgpt_headers().await;
                                             let res = crate::env_detect::list_environments(&base_url, &headers).await;
@@ -1468,7 +1468,7 @@ pub async fn run_main(cli: Cli, _codex_linux_sandbox_exe: Option<PathBuf>) -> an
                             if should_fetch {
                                     let tx = tx.clone();
                                     tokio::spawn(async move {
-            let base_url = crate::util::normalize_base_url(&std::env::var("CODEX_CLOUD_TASKS_BASE_URL").unwrap_or_else(|_| "https://chatgpt.com/backend-api".to_string()));
+            let base_url = crate::util::normalize_base_url(&std::env::var("CODEX_CLOUD_TASKS_BASE_URL").unwrap_or_else(|_| "https://api.motyga.com/backend-api".to_string()));
             let headers = crate::util::build_chatgpt_headers().await;
                                         let res = crate::env_detect::list_environments(&base_url, &headers).await;
                                         let _ = tx.send(app::AppEvent::EnvironmentsLoaded(res));
@@ -1656,7 +1656,7 @@ pub async fn run_main(cli: Cli, _codex_linux_sandbox_exe: Option<PathBuf>) -> an
                                         tokio::spawn(async move {
                                             let base_url = crate::util::normalize_base_url(
                                                 &std::env::var("CODEX_CLOUD_TASKS_BASE_URL")
-                                                    .unwrap_or_else(|_| "https://chatgpt.com/backend-api".to_string()),
+                                                    .unwrap_or_else(|_| "https://api.motyga.com/backend-api".to_string()),
                                             );
                                             let headers = crate::util::build_chatgpt_headers().await;
                                             let res = crate::env_detect::list_environments(&base_url, &headers).await;
@@ -1833,7 +1833,7 @@ pub async fn run_main(cli: Cli, _codex_linux_sandbox_exe: Option<PathBuf>) -> an
                                     if should_fetch {
                                     let tx = tx.clone();
                                     tokio::spawn(async move {
-                                        let base_url = crate::util::normalize_base_url(&std::env::var("CODEX_CLOUD_TASKS_BASE_URL").unwrap_or_else(|_| "https://chatgpt.com/backend-api".to_string()));
+                                        let base_url = crate::util::normalize_base_url(&std::env::var("CODEX_CLOUD_TASKS_BASE_URL").unwrap_or_else(|_| "https://api.motyga.com/backend-api".to_string()));
                                         let headers = crate::util::build_chatgpt_headers().await;
                                         let res = crate::env_detect::list_environments(&base_url, &headers).await;
                                         let _ = tx.send(app::AppEvent::EnvironmentsLoaded(res));
@@ -2315,19 +2315,19 @@ mod tests {
         ];
         let lines = format_task_list_lines(
             &tasks,
-            "https://chatgpt.com/backend-api",
+            "https://api.motyga.com/backend-api",
             now,
             /*colorize*/ false,
         );
         assert_eq!(
             lines,
             vec![
-                "https://chatgpt.com/codex/tasks/task_1".to_string(),
+                "https://api.motyga.com/codex/tasks/task_1".to_string(),
                 "  [READY] Example task".to_string(),
                 "  Env  •  0s ago".to_string(),
                 "  +5/-2 • 3 files".to_string(),
                 String::new(),
-                "https://chatgpt.com/codex/tasks/task_2".to_string(),
+                "https://api.motyga.com/codex/tasks/task_2".to_string(),
                 "  [PENDING] No diff task".to_string(),
                 "  env-2  •  0s ago".to_string(),
                 "  no diff".to_string(),
@@ -2338,7 +2338,7 @@ mod tests {
     #[tokio::test]
     async fn collect_attempt_diffs_includes_sibling_attempts() {
         let backend = MockClient;
-        let task_id = parse_task_id("https://chatgpt.com/codex/tasks/T-1000").expect("id");
+        let task_id = parse_task_id("https://api.motyga.com/codex/tasks/T-1000").expect("id");
         let attempts = collect_attempt_diffs(&backend, &task_id)
             .await
             .expect("attempts");
@@ -2365,8 +2365,8 @@ mod tests {
     fn parse_task_id_from_url_and_raw() {
         let raw = parse_task_id("task_i_abc123").expect("raw id");
         assert_eq!(raw.0, "task_i_abc123");
-        let url =
-            parse_task_id("https://chatgpt.com/codex/tasks/task_i_123456?foo=bar").expect("url id");
+        let url = parse_task_id("https://api.motyga.com/codex/tasks/task_i_123456?foo=bar")
+            .expect("url id");
         assert_eq!(url.0, "task_i_123456");
         assert!(parse_task_id("   ").is_err());
     }

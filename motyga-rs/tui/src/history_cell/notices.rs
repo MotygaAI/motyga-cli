@@ -28,7 +28,7 @@ impl HistoryCell for UpdateAvailableHistoryCell {
         } else {
             line![
                 "See ",
-                "https://github.com/openai/codex".cyan().underlined(),
+                "https://motyga.com/docs".cyan().underlined(),
                 " for installation options."
             ]
         };
@@ -43,9 +43,7 @@ impl HistoryCell for UpdateAvailableHistoryCell {
             update_instruction,
             "",
             "See full release notes:",
-            "https://github.com/openai/codex/releases/latest"
-                .cyan()
-                .underlined(),
+            "https://motyga.com/release-notes".cyan().underlined(),
         ];
 
         let inner_width = content
@@ -60,7 +58,7 @@ impl HistoryCell for UpdateAvailableHistoryCell {
         let update_instruction = if let Some(update_action) = self.update_action {
             format!("Run {} to update.", update_action.command_str())
         } else {
-            "See https://github.com/openai/codex for installation options.".to_string()
+            "See https://motyga.com/docs for installation options.".to_string()
         };
         vec![
             Line::from("Update available!"),
@@ -68,7 +66,7 @@ impl HistoryCell for UpdateAvailableHistoryCell {
             Line::from(update_instruction),
             Line::from(""),
             Line::from("See full release notes:"),
-            Line::from("https://github.com/openai/codex/releases/latest"),
+            Line::from("https://motyga.com/release-notes"),
         ]
     }
 
@@ -92,19 +90,19 @@ pub(crate) struct SafetyAccessBlockCell {
 }
 
 const SAFETY_ACCESS_BLOCK_TITLE: &str = "This content can't be shown";
-const SAFETY_ACCESS_BLOCK_LEARN_MORE_URL: &str = "https://help.openai.com/en/articles/20001326";
+const SAFETY_ACCESS_BLOCK_LEARN_MORE_URL: &str = "https://motyga.com/docs";
 
 pub(crate) fn new_safety_access_block_event() -> SafetyAccessBlockCell {
     SafetyAccessBlockCell {
         body: "We take extra caution with requests involving biological research and applications that could pose safety risks. Eligible researchers can apply for Trusted Access.",
-        trusted_access_url: "https://www.openai.com/form/trusted-access-for-biology-research/",
+        trusted_access_url: "https://motyga.com/docs",
     }
 }
 
 pub(crate) fn new_cyber_policy_error_event() -> SafetyAccessBlockCell {
     SafetyAccessBlockCell {
         body: "We take extra caution with cybersecurity requests. If you’re a security professional, you may be able to apply for Trusted Access.",
-        trusted_access_url: "https://openai.com/form/enterprise-trusted-access-for-cyber/",
+        trusted_access_url: "https://motyga.com/docs",
     }
 }
 

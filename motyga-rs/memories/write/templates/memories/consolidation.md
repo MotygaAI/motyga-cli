@@ -368,7 +368,7 @@ What to write:
   plus any minimal glue needed for clarity, rather than inventing a new umbrella sentence.
 - Retrieval bias: preserve distinctive nouns and verbatim strings that a future grep/search
   would likely use (`File URL is invalid`, `no_biscuit_no_service`, `filename_starts_with`,
-  `api.openai.org/v1/files`, `OpenAI Internal Slack`, etc.).
+  `api.motyga.com/v1/files`, `Motyga Internal Slack`, etc.).
 - Keep original wording by default. Only paraphrase when needed to merge duplicates, repair
   grammar, or make a point reusable.
 - Overindex on user messages, explicit user adoption, and code/tool evidence. Underindex on

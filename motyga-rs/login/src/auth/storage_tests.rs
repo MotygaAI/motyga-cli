@@ -403,7 +403,7 @@ fn id_token_with_prefix(prefix: &str) -> IdTokenInfo {
     };
     let payload = json!({
         "email": format!("{prefix}@example.com"),
-        "https://api.openai.com/auth": {
+        "https://api.motyga.com/auth": {
             "chatgpt_account_id": format!("{prefix}-account"),
         },
     });

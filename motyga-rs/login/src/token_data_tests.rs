@@ -30,7 +30,7 @@ fn fake_jwt(payload: serde_json::Value) -> String {
 fn id_token_info_parses_email_and_plan() {
     let fake_jwt = fake_jwt(serde_json::json!({
         "email": "user@example.com",
-        "https://api.openai.com/auth": {
+        "https://api.motyga.com/auth": {
             "chatgpt_plan_type": "pro"
         }
     }));
@@ -44,7 +44,7 @@ fn id_token_info_parses_email_and_plan() {
 fn id_token_info_parses_go_plan() {
     let fake_jwt = fake_jwt(serde_json::json!({
         "email": "user@example.com",
-        "https://api.openai.com/auth": {
+        "https://api.motyga.com/auth": {
             "chatgpt_plan_type": "go"
         }
     }));
@@ -58,7 +58,7 @@ fn id_token_info_parses_go_plan() {
 fn id_token_info_parses_hc_plan_as_enterprise() {
     let fake_jwt = fake_jwt(serde_json::json!({
         "email": "user@example.com",
-        "https://api.openai.com/auth": {
+        "https://api.motyga.com/auth": {
             "chatgpt_plan_type": "hc"
         }
     }));
@@ -73,7 +73,7 @@ fn id_token_info_parses_hc_plan_as_enterprise() {
 fn id_token_info_parses_usage_based_business_plans() {
     let self_serve_business_jwt = fake_jwt(serde_json::json!({
         "email": "user@example.com",
-        "https://api.openai.com/auth": {
+        "https://api.motyga.com/auth": {
             "chatgpt_plan_type": "self_serve_business_usage_based"
         }
     }));
@@ -91,7 +91,7 @@ fn id_token_info_parses_usage_based_business_plans() {
 
     let enterprise_cbp_jwt = fake_jwt(serde_json::json!({
         "email": "user@example.com",
-        "https://api.openai.com/auth": {
+        "https://api.motyga.com/auth": {
             "chatgpt_plan_type": "enterprise_cbp_usage_based"
         }
     }));
@@ -121,7 +121,7 @@ fn id_token_info_handles_missing_fields() {
 fn id_token_info_parses_fedramp_account_claim() {
     let fake_jwt = fake_jwt(serde_json::json!({
         "email": "user@example.com",
-        "https://api.openai.com/auth": {
+        "https://api.motyga.com/auth": {
             "chatgpt_account_id": "account-fed",
             "chatgpt_account_is_fedramp": true,
         }

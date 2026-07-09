@@ -2161,6 +2161,10 @@ pub enum RateLimitReachedType {
     WorkspaceMemberCreditsDepleted,
     WorkspaceOwnerUsageLimitReached,
     WorkspaceMemberUsageLimitReached,
+    /// The model's upstream provider capacity is still being provisioned, so an
+    /// upstream limit error is surfaced to the user as a transient "warming up"
+    /// state rather than as the user's own spend/usage limit.
+    ModelWarmingUp,
 }
 
 impl FromStr for RateLimitReachedType {
@@ -2173,6 +2177,7 @@ impl FromStr for RateLimitReachedType {
             "workspace_member_credits_depleted" => Ok(Self::WorkspaceMemberCreditsDepleted),
             "workspace_owner_usage_limit_reached" => Ok(Self::WorkspaceOwnerUsageLimitReached),
             "workspace_member_usage_limit_reached" => Ok(Self::WorkspaceMemberUsageLimitReached),
+            "model_warming_up" => Ok(Self::ModelWarmingUp),
             other => Err(format!("unknown rate limit reached type: {other}")),
         }
     }

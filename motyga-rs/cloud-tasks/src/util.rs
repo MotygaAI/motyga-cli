@@ -26,16 +26,13 @@ pub fn append_error_log(message: impl AsRef<str>) {
 
 /// Normalize the configured base URL to a canonical form used by the backend client.
 /// - trims trailing '/'
-/// - appends '/backend-api' for ChatGPT hosts when missing
+/// - appends '/backend-api' for the Motyga host when missing
 pub fn normalize_base_url(input: &str) -> String {
     let mut base_url = input.to_string();
     while base_url.ends_with('/') {
         base_url.pop();
     }
-    if (base_url.starts_with("https://chatgpt.com")
-        || base_url.starts_with("https://chat.openai.com"))
-        && !base_url.contains("/backend-api")
-    {
+    if base_url.starts_with("https://api.motyga.com") && !base_url.contains("/backend-api") {
         base_url = format!("{base_url}/backend-api");
     }
     base_url

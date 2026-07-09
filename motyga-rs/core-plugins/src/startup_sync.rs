@@ -19,11 +19,13 @@ use codex_login::default_client::build_reqwest_client;
 const GITHUB_API_BASE_URL: &str = "https://api.github.com";
 const GITHUB_API_ACCEPT_HEADER: &str = "application/vnd.github+json";
 const GITHUB_API_VERSION_HEADER: &str = "2022-11-28";
+// Curated-plugins sync points at Motyga's own sources. If the repo/endpoint is not
+// published yet, the sync is best-effort and no-ops on fetch failure.
 const CURATED_PLUGINS_BACKUP_ARCHIVE_API_URL: &str =
-    "https://chatgpt.com/backend-api/plugins/export/curated";
-const OPENAI_PLUGINS_OWNER: &str = "openai";
-const OPENAI_PLUGINS_REPO: &str = "plugins";
-const OPENAI_PLUGINS_GIT_URL: &str = "https://github.com/openai/plugins.git";
+    "https://motyga.com/backend-api/plugins/export/curated";
+const MOTYGA_PLUGINS_OWNER: &str = "MotygaAI";
+const MOTYGA_PLUGINS_REPO: &str = "plugins";
+const MOTYGA_PLUGINS_GIT_URL: &str = "https://github.com/MotygaAI/plugins.git";
 const CURATED_PLUGINS_FETCH_REF: &str = "refs/codex/curated-sync";
 const CURATED_PLUGINS_RELATIVE_DIR: &str = ".tmp/plugins";
 const CURATED_PLUGINS_SHA_FILE: &str = ".tmp/plugins.sha";
@@ -233,7 +235,7 @@ fn fetch_curated_plugins_commit(
 ) -> Result<(), String> {
     fetch_curated_plugins_commit_from(
         repo_path,
-        OPENAI_PLUGINS_GIT_URL.as_ref(),
+        MOTYGA_PLUGINS_GIT_URL.as_ref(),
         remote_sha,
         git_binary,
         "git fetch curated plugins repo",
@@ -598,7 +600,7 @@ fn git_ls_remote_head_sha(git_binary: &str) -> Result<String, String> {
     let mut command = git_command(git_binary);
     command
         .arg("ls-remote")
-        .arg("https://github.com/openai/plugins.git")
+        .arg(MOTYGA_PLUGINS_GIT_URL)
         .arg("HEAD");
     let output = run_git_command_with_timeout(
         &mut command,
@@ -727,7 +729,7 @@ fn ensure_git_success(output: &Output, context: &str) -> Result<(), String> {
 
 async fn fetch_curated_repo_remote_sha(api_base_url: &str) -> Result<String, String> {
     let api_base_url = api_base_url.trim_end_matches('/');
-    let repo_url = format!("{api_base_url}/repos/{OPENAI_PLUGINS_OWNER}/{OPENAI_PLUGINS_REPO}");
+    let repo_url = format!("{api_base_url}/repos/{MOTYGA_PLUGINS_OWNER}/{MOTYGA_PLUGINS_REPO}");
     let client = build_reqwest_client();
     let repo_body = fetch_github_text(&client, &repo_url, "get curated plugins repository").await?;
     let repo_summary: GitHubRepositorySummary =
@@ -760,7 +762,7 @@ async fn fetch_curated_repo_zipball(
     remote_sha: &str,
 ) -> Result<Vec<u8>, String> {
     let api_base_url = api_base_url.trim_end_matches('/');
-    let repo_url = format!("{api_base_url}/repos/{OPENAI_PLUGINS_OWNER}/{OPENAI_PLUGINS_REPO}");
+    let repo_url = format!("{api_base_url}/repos/{MOTYGA_PLUGINS_OWNER}/{MOTYGA_PLUGINS_REPO}");
     let zipball_url = format!("{repo_url}/zipball/{remote_sha}");
     let client = build_reqwest_client();
     fetch_github_bytes(&client, &zipball_url, "download curated plugins archive").await

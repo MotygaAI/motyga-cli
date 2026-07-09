@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
 pub struct AppCommand {
-    /// Workspace path to open in Codex Desktop.
+    /// Workspace path to open in the Motyga desktop app.
     #[arg(value_name = "PATH", default_value = ".")]
     pub path: PathBuf,
 
@@ -13,13 +13,12 @@ pub struct AppCommand {
 }
 
 pub async fn run_app(cmd: AppCommand) -> anyhow::Result<()> {
-    let workspace = std::fs::canonicalize(&cmd.path).unwrap_or(cmd.path);
-    #[cfg(target_os = "macos")]
-    {
-        crate::desktop_app::run_app_open_or_install(workspace, cmd.download_url_override).await
-    }
-    #[cfg(target_os = "windows")]
-    {
-        crate::desktop_app::run_app_open_or_install(workspace, cmd.download_url_override).await
-    }
+    // Motyga Desktop is not shipping yet. The install/open path lives in
+    // `crate::desktop_app` (kept for later) but is intentionally NOT invoked here,
+    // so `motyga app` can never download a third-party desktop build. Re-enable
+    // this once Motyga Desktop ships with its own installer URL.
+    let _ = cmd;
+    anyhow::bail!(
+        "The Motyga desktop app is not available yet — use the `motyga` CLI in your terminal for now."
+    )
 }

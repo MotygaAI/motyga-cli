@@ -1437,7 +1437,7 @@ fn host_owned_codex_apps_matches_reserved_name_with_server_metadata() {
         /*prefix_mcp_tool_names*/ true,
     );
     let server = EffectiveMcpServer::configured(crate::codex_apps_mcp_server_config(
-        "https://chatgpt.com",
+        "https://api.motyga.com",
         /*apps_mcp_product_sku*/ None,
     ));
     manager.server_metadata.insert(

@@ -1569,7 +1569,7 @@ enabled = false
     assert_eq!(response.plugin.apps[0].name, "gmail");
     assert_eq!(
         response.plugin.apps[0].install_url.as_deref(),
-        Some("https://chatgpt.com/apps/gmail/gmail")
+        Some("https://motyga.com/apps/gmail/gmail")
     );
     assert_eq!(
         response.plugin.apps[0].category.as_deref(),

@@ -1,8 +1,8 @@
-/// Returns whether `host` is one of the ChatGPT hosts Codex is allowed to treat
-/// as first-party ChatGPT traffic.
+/// Returns whether `host` is one of the first-party Motyga hosts we are allowed
+/// to treat as first-party traffic (e.g. for Cloudflare cookie affinity).
 pub fn is_allowed_chatgpt_host(host: &str) -> bool {
-    const EXACT_HOSTS: &[&str] = &["chatgpt.com", "chat.openai.com", "chatgpt-staging.com"];
-    const SUBDOMAIN_SUFFIXES: &[&str] = &[".chatgpt.com", ".chatgpt-staging.com"];
+    const EXACT_HOSTS: &[&str] = &["motyga.com"];
+    const SUBDOMAIN_SUFFIXES: &[&str] = &[".motyga.com"];
 
     EXACT_HOSTS.contains(&host)
         || SUBDOMAIN_SUFFIXES
@@ -15,23 +15,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn recognizes_chatgpt_hosts_without_suffix_tricks() {
+    fn recognizes_motyga_hosts_without_suffix_tricks() {
         for host in [
-            "chatgpt.com",
-            "foo.chatgpt.com",
-            "staging.chatgpt.com",
-            "chat.openai.com",
-            "chatgpt-staging.com",
-            "api.chatgpt-staging.com",
+            "motyga.com",
+            "api.motyga.com",
+            "ru.motyga.com",
+            "foo.motyga.com",
         ] {
             assert!(is_allowed_chatgpt_host(host));
         }
 
         for host in [
-            "evilchatgpt.com",
-            "chatgpt.com.evil.example",
+            "evilmotyga.com",
+            "motyga.com.evil.example",
             "api.openai.com",
-            "foo.chat.openai.com",
+            "chatgpt.com",
         ] {
             assert!(!is_allowed_chatgpt_host(host));
         }

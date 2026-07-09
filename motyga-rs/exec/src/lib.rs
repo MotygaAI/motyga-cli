@@ -243,7 +243,10 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     }
 
     if let Err(err) = set_default_originator("codex_exec".to_string()) {
-        tracing::warn!(?err, "Failed to set motyga exec originator override {err:?}");
+        tracing::warn!(
+            ?err,
+            "Failed to set motyga exec originator override {err:?}"
+        );
     }
 
     let Cli {
@@ -349,7 +352,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     let chatgpt_base_url = bootstrap_config_toml
         .chatgpt_base_url
         .clone()
-        .unwrap_or_else(|| "https://chatgpt.com/backend-api/".to_string());
+        .unwrap_or_else(|| "https://api.motyga.com/backend-api/".to_string());
     let auth_route_config = resolve_bootstrap_auth_route_config(
         bootstrap_config_toml,
         bootstrap_config

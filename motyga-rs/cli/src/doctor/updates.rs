@@ -22,8 +22,9 @@ use super::npm_global_root_check;
 use super::run_command;
 
 const VERSION_FILE_NAME: &str = "version.json";
-const GITHUB_LATEST_RELEASE_URL: &str = "https://api.github.com/repos/openai/codex/releases/latest";
-const HOMEBREW_CASK_API_URL: &str = "https://formulae.brew.sh/api/cask/codex.json";
+const GITHUB_LATEST_RELEASE_URL: &str =
+    "https://api.github.com/repos/MotygaAI/motyga-cli/releases/latest";
+const HOMEBREW_CASK_API_URL: &str = "https://formulae.brew.sh/api/cask/motyga.json";
 
 /// Builds the update-health row for the current installation.
 ///
@@ -133,7 +134,7 @@ fn update_action_label(context: &InstallContext) -> &'static str {
     match &context.method {
         InstallMethod::Npm => "npm install -g @motyga/cli",
         InstallMethod::Bun => "bun install -g @motyga/cli",
-        InstallMethod::Brew => "brew upgrade --cask codex",
+        InstallMethod::Brew => "brew upgrade --cask motyga",
         InstallMethod::Standalone { .. } => "standalone installer",
         InstallMethod::Other => "manual or unknown",
     }

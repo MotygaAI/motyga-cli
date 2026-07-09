@@ -4,7 +4,7 @@
 //! interactive-session layers. Direct `codex login` intentionally does less: it preserves the
 //! existing stderr/browser UX and adds only a small file-backed tracing layer for login-specific
 //! targets. Keeping that setup local avoids pulling the TUI's session-oriented logging machinery
-//! into a one-shot CLI command while still producing a durable `codex-login.log` artifact that
+//! into a one-shot CLI command while still producing a durable `motyga-login.log` artifact that
 //! support can request from users.
 
 use codex_config::types::AuthCredentialsStoreMode;
@@ -13,12 +13,14 @@ use codex_login::AuthKeyringBackendKind;
 use codex_login::AuthRouteConfig;
 use codex_login::CLIENT_ID;
 use codex_login::CodexAuth;
+use codex_login::MotygaDeviceLoginOptions;
 use codex_login::ServerOptions;
 use codex_login::login_with_access_token;
 use codex_login::login_with_api_key;
 use codex_login::logout_with_revoke;
 use codex_login::run_device_code_login;
 use codex_login::run_login_server;
+use codex_login::run_motyga_device_login;
 use codex_protocol::auth::AuthMode;
 use codex_protocol::config_types::ForcedLoginMethod;
 use codex_utils_cli::CliConfigOverrides;
@@ -34,20 +36,21 @@ use tracing_subscriber::Layer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-const CHATGPT_LOGIN_DISABLED_MESSAGE: &str =
-    "ChatGPT login is disabled. Use API key login instead.";
+const CHATGPT_LOGIN_DISABLED_MESSAGE: &str = "Interactive browser login is disabled. Run `motyga login` or `motyga login --with-api-key` instead.";
 const API_KEY_LOGIN_DISABLED_MESSAGE: &str =
-    "API key login is disabled. Use ChatGPT login instead.";
+    "API key login is disabled. Use interactive browser login instead.";
 const ACCESS_TOKEN_LOGIN_DISABLED_MESSAGE: &str =
     "Access token login is disabled. Use API key login instead.";
 const LOGIN_SUCCESS_MESSAGE: &str = "Successfully logged in";
+const MOTYGA_PROVIDER_ID: &str = "motyga";
+const DEFAULT_MOTYGA_API_BASE_URL: &str = "https://api.motyga.com/v1";
 
 /// Installs a small file-backed tracing layer for direct `codex login` flows.
 ///
 /// This deliberately duplicates a narrow slice of the TUI logging setup instead of reusing it
 /// wholesale. The TUI stack includes session-oriented layers that are valuable for interactive
 /// runs but unnecessary for a one-shot login command. Keeping the direct CLI path local lets this
-/// command produce a durable `codex-login.log` artifact without coupling it to the TUI's broader
+/// command produce a durable `motyga-login.log` artifact without coupling it to the TUI's broader
 /// telemetry and feedback initialization.
 fn init_login_file_logging(config: &Config) -> Option<WorkerGuard> {
     let log_dir = match codex_core::config::log_dir(config) {
@@ -75,7 +78,7 @@ fn init_login_file_logging(config: &Config) -> Option<WorkerGuard> {
         log_file_opts.mode(0o600);
     }
 
-    let log_path = log_dir.join("codex-login.log");
+    let log_path = log_dir.join("motyga-login.log");
     let log_file = match log_file_opts.open(&log_path) {
         Ok(log_file) => log_file,
         Err(err) => {
@@ -112,7 +115,7 @@ fn init_login_file_logging(config: &Config) -> Option<WorkerGuard> {
 
 fn print_login_server_start(actual_port: u16, auth_url: &str) {
     eprintln!(
-        "Starting local login server on http://localhost:{actual_port}.\nIf your browser did not open, navigate to this URL to authenticate:\n\n{auth_url}\n\nOn a remote or headless machine? Use `motyga login --device-auth` instead."
+        "Starting local login server on http://localhost:{actual_port}.\nIf your browser did not open, navigate to this URL to authenticate:\n\n{auth_url}\n\nOn a remote or headless machine? Run `motyga login` and open the printed URL in a browser."
     );
 }
 
@@ -225,6 +228,54 @@ pub async fn run_login_with_api_key(
     }
 }
 
+fn motyga_device_auth_base_url(config: &Config) -> String {
+    config
+        .model_providers
+        .get(MOTYGA_PROVIDER_ID)
+        .and_then(|provider| provider.base_url.clone())
+        .unwrap_or_else(|| DEFAULT_MOTYGA_API_BASE_URL.to_string())
+}
+
+pub async fn run_login_with_motyga_device(cli_config_overrides: CliConfigOverrides) -> ! {
+    let config = load_config_or_exit(cli_config_overrides).await;
+    let _login_log_guard = init_login_file_logging(&config);
+    tracing::info!("starting motyga device login flow");
+
+    if matches!(config.forced_login_method, Some(ForcedLoginMethod::Chatgpt)) {
+        eprintln!("{API_KEY_LOGIN_DISABLED_MESSAGE}");
+        std::process::exit(1);
+    }
+
+    let auth_route_config = config.auth_route_config();
+    clear_existing_auth_before_login(
+        &config.codex_home,
+        config.cli_auth_credentials_store_mode,
+        config.auth_keyring_backend_kind(),
+        auth_route_config.as_ref(),
+    )
+    .await;
+
+    let opts = MotygaDeviceLoginOptions {
+        base_url: motyga_device_auth_base_url(&config),
+        codex_home: config.codex_home.to_path_buf(),
+        cli_auth_credentials_store_mode: config.cli_auth_credentials_store_mode,
+        auth_keyring_backend_kind: config.auth_keyring_backend_kind(),
+        auth_route_config,
+        open_browser: true,
+    };
+
+    match run_motyga_device_login(opts).await {
+        Ok(()) => {
+            eprintln!("{LOGIN_SUCCESS_MESSAGE}");
+            std::process::exit(0);
+        }
+        Err(e) => {
+            eprintln!("Error logging in: {e}");
+            std::process::exit(1);
+        }
+    }
+}
+
 pub async fn run_login_with_access_token(
     cli_config_overrides: CliConfigOverrides,
     access_token: String,
@@ -263,7 +314,7 @@ pub async fn run_login_with_access_token(
 
 pub fn read_api_key_from_stdin() -> String {
     read_stdin_secret(
-        "--with-api-key expects the API key on stdin. Try piping it, e.g. `printenv OPENAI_API_KEY | motyga login --with-api-key`.",
+        "--with-api-key expects the API key on stdin. Try piping it, e.g. `printenv MOTYGA_API_KEY | motyga login --with-api-key`.",
         "Reading API key from stdin...",
         "No API key provided via stdin.",
     )
@@ -271,7 +322,7 @@ pub fn read_api_key_from_stdin() -> String {
 
 pub fn read_access_token_from_stdin() -> String {
     read_stdin_secret(
-        "--with-access-token expects the access token on stdin. Try piping it, e.g. `printenv CODEX_ACCESS_TOKEN | motyga login --with-access-token`.",
+        "--with-access-token expects the access token on stdin. Try piping it, e.g. `printenv MOTYGA_ACCESS_TOKEN | motyga login --with-access-token`.",
         "Reading access token from stdin...",
         "No access token provided via stdin.",
     )
@@ -446,7 +497,7 @@ pub async fn run_login_status(cli_config_overrides: CliConfigOverrides) -> ! {
                 }
             },
             AuthMode::Chatgpt | AuthMode::ChatgptAuthTokens => {
-                eprintln!("Logged in using ChatGPT");
+                eprintln!("Logged in using browser session");
                 std::process::exit(0);
             }
             AuthMode::AgentIdentity => {

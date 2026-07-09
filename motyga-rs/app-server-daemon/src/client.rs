@@ -167,7 +167,7 @@ mod tests {
     fn parses_version_from_codex_user_agent() {
         assert_eq!(
             parse_version_from_user_agent(
-                "codex_app_server_daemon/1.2.3 (Linux 6.8.0; x86_64) codex_cli_rs/1.2.3",
+                "codex_app_server_daemon/1.2.3 (Linux 6.8.0; x86_64) motyga_cli/1.2.3",
             )
             .expect("version"),
             "1.2.3"

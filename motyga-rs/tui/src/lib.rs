@@ -961,7 +961,7 @@ pub async fn run_main(
     let chatgpt_base_url = bootstrap_config_toml
         .chatgpt_base_url
         .clone()
-        .unwrap_or_else(|| "https://chatgpt.com/backend-api/".to_string());
+        .unwrap_or_else(|| "https://api.motyga.com/backend-api/".to_string());
     let auth_route_config = resolve_bootstrap_auth_route_config(
         bootstrap_config_toml,
         bootstrap_config

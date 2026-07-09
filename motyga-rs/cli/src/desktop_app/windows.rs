@@ -3,9 +3,10 @@ use std::path::Path;
 use std::path::PathBuf;
 use tokio::process::Command;
 
-const CODEX_WINDOWS_INSTALLER_URL: &str =
-    "https://get.microsoft.com/installer/download/9PLM9XGG6VKS?cid=website_cta_psi";
-const CODEX_MICROSOFT_STORE_WEB_URL: &str = "https://apps.microsoft.com/detail/9plm9xgg6vks";
+// Placeholder Motyga Desktop URLs. This path is not invoked yet (see app_cmd::run_app);
+// wire these to the real Motyga Desktop installer/listing when it ships.
+const CODEX_WINDOWS_INSTALLER_URL: &str = "https://motyga.com/desktop/windows";
+const CODEX_MICROSOFT_STORE_WEB_URL: &str = "https://motyga.com/desktop";
 
 pub async fn run_windows_app_open_or_install(
     workspace: PathBuf,
@@ -14,19 +15,19 @@ pub async fn run_windows_app_open_or_install(
     let workspace_path = workspace.display().to_string();
     let display_workspace = display_workspace_path(&workspace);
     if codex_app_is_installed().await? {
-        eprintln!("Opening Codex Desktop workspace {display_workspace}...");
+        eprintln!("Opening Motyga Desktop workspace {display_workspace}...");
         open_url(&codex_new_thread_url(&workspace_path)).await?;
         return Ok(());
     }
 
-    eprintln!("Codex Desktop not found; opening Windows installer...");
+    eprintln!("Motyga Desktop not found; opening Windows installer...");
     let download_url = download_url_override
         .as_deref()
         .unwrap_or(CODEX_WINDOWS_INSTALLER_URL);
     if open_url(download_url).await.is_err() && download_url_override.is_none() {
         open_url(CODEX_MICROSOFT_STORE_WEB_URL).await?;
     }
-    eprintln!("After installing Codex Desktop, open workspace {display_workspace}.");
+    eprintln!("After installing Motyga Desktop, open workspace {display_workspace}.");
     Ok(())
 }
 

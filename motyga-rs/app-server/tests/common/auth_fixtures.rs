@@ -129,7 +129,7 @@ pub fn encode_id_token(claims: &ChatGptIdTokenClaims) -> Result<String> {
     }
     if !auth_payload.is_empty() {
         payload.insert(
-            "https://api.openai.com/auth".to_string(),
+            "https://api.motyga.com/auth".to_string(),
             serde_json::Value::Object(auth_payload),
         );
     }

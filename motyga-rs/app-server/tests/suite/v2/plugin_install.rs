@@ -341,7 +341,7 @@ async fn plugin_install_uses_remote_apps_needing_auth_response() -> Result<()> {
                 id: "alpha".to_string(),
                 name: "alpha".to_string(),
                 description: None,
-                install_url: Some("https://chatgpt.com/apps/alpha/alpha".to_string()),
+                install_url: Some("https://motyga.com/apps/alpha/alpha".to_string()),
                 category: Some("Developer Tools".to_string()),
             }],
         }
@@ -707,7 +707,7 @@ async fn plugin_install_rejects_when_workspace_codex_plugins_disabled() -> Resul
     assert!(
         err.error
             .message
-            .contains("Codex plugins are disabled for this workspace")
+            .contains("Motyga plugins are disabled for this workspace")
     );
     Ok(())
 }
@@ -1178,7 +1178,7 @@ async fn plugin_install_returns_apps_needing_auth() -> Result<()> {
                 id: "alpha".to_string(),
                 name: "Alpha".to_string(),
                 description: Some("Alpha connector".to_string()),
-                install_url: Some("https://chatgpt.com/apps/alpha/alpha".to_string()),
+                install_url: Some("https://motyga.com/apps/alpha/alpha".to_string()),
                 category: None,
             }],
         }
@@ -1324,7 +1324,7 @@ async fn plugin_install_starts_mcp_oauth_with_formerly_disallowed_plugin_app() -
                 name: "asdk_app_6938a94a61d881918ef32cb999ff937c".to_string(),
                 description: None,
                 install_url: Some(
-                    "https://chatgpt.com/apps/asdk-app-6938a94a61d881918ef32cb999ff937c/asdk_app_6938a94a61d881918ef32cb999ff937c"
+                    "https://motyga.com/apps/asdk-app-6938a94a61d881918ef32cb999ff937c/asdk_app_6938a94a61d881918ef32cb999ff937c"
                         .to_string(),
                 ),
                 category: None,
@@ -1523,7 +1523,7 @@ async fn plugin_install_starts_remote_mcp_oauth_for_install_response_only_app() 
                 id: "alpha".to_string(),
                 name: "alpha".to_string(),
                 description: None,
-                install_url: Some("https://chatgpt.com/apps/alpha/alpha".to_string()),
+                install_url: Some("https://motyga.com/apps/alpha/alpha".to_string()),
                 category: None,
             }],
         }
@@ -1575,7 +1575,7 @@ async fn plugin_install_skips_remote_mcp_oauth_for_bundled_same_name_app() -> Re
                 id: "alpha".to_string(),
                 name: "alpha".to_string(),
                 description: None,
-                install_url: Some("https://chatgpt.com/apps/alpha/alpha".to_string()),
+                install_url: Some("https://motyga.com/apps/alpha/alpha".to_string()),
                 category: None,
             }],
         }
@@ -1662,7 +1662,7 @@ async fn plugin_install_includes_formerly_disallowed_apps_needing_auth() -> Resu
                 id: "alpha".to_string(),
                 name: "Alpha".to_string(),
                 description: Some("Alpha connector".to_string()),
-                install_url: Some("https://chatgpt.com/apps/alpha/alpha".to_string()),
+                install_url: Some("https://motyga.com/apps/alpha/alpha".to_string()),
                 category: None,
             },
             AppSummary {
@@ -1670,7 +1670,7 @@ async fn plugin_install_includes_formerly_disallowed_apps_needing_auth() -> Resu
                 name: "asdk_app_6938a94a61d881918ef32cb999ff937c".to_string(),
                 description: None,
                 install_url: Some(
-                    "https://chatgpt.com/apps/asdk-app-6938a94a61d881918ef32cb999ff937c/asdk_app_6938a94a61d881918ef32cb999ff937c"
+                    "https://motyga.com/apps/asdk-app-6938a94a61d881918ef32cb999ff937c/asdk_app_6938a94a61d881918ef32cb999ff937c"
                         .to_string(),
                 ),
                 category: None,

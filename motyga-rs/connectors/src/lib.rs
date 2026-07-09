@@ -464,7 +464,7 @@ fn directory_app_to_app_info(app: DirectoryApp) -> AppInfo {
 
 fn connector_install_url(name: &str, connector_id: &str) -> String {
     let slug = connector_name_slug(name);
-    format!("https://chatgpt.com/apps/{slug}/{connector_id}")
+    format!("https://motyga.com/apps/{slug}/{connector_id}")
 }
 
 fn connector_name_slug(name: &str) -> String {
@@ -709,7 +709,7 @@ mod tests {
         );
         assert_eq!(
             connectors[0].install_url.as_deref(),
-            Some("https://chatgpt.com/apps/alpha/alpha")
+            Some("https://motyga.com/apps/alpha/alpha")
         );
         assert_eq!(
             connectors[0]

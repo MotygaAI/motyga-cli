@@ -170,7 +170,7 @@ fn chatgpt_auth_json_with_mode(
     });
     let payload = json!({
         "email": "user@example.com",
-        "https://api.openai.com/auth": auth_payload,
+        "https://api.motyga.com/auth": auth_payload,
     });
     let header_b64 = URL_SAFE_NO_PAD.encode(serde_json::to_vec(&header).expect("header"));
     let payload_b64 = URL_SAFE_NO_PAD.encode(serde_json::to_vec(&payload).expect("payload"));

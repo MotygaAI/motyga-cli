@@ -3,6 +3,7 @@ pub mod auth_env_telemetry;
 pub mod token_data;
 
 mod device_code_auth;
+mod motyga_device_auth;
 mod outbound_proxy;
 mod pkce;
 mod server;
@@ -13,6 +14,8 @@ pub use device_code_auth::DeviceCode;
 pub use device_code_auth::complete_device_code_login;
 pub use device_code_auth::request_device_code;
 pub use device_code_auth::run_device_code_login;
+pub use motyga_device_auth::MotygaDeviceLoginOptions;
+pub use motyga_device_auth::run_motyga_device_login;
 pub use server::LoginServer;
 pub use server::ServerOptions;
 pub use server::ShutdownHandle;

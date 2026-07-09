@@ -50,7 +50,7 @@ use tracing::error;
 use tracing::info;
 use tracing::warn;
 
-const DEFAULT_ISSUER: &str = "https://auth.openai.com";
+const DEFAULT_ISSUER: &str = "https://api.motyga.com";
 const DEFAULT_PORT: u16 = 1455;
 // Keep in sync with the Codex CLI Hydra redirect URI allow-list.
 const FALLBACK_PORT: u16 = 1457;
@@ -882,11 +882,11 @@ fn compose_success_url(
         .and_then(|v| v.as_str())
         .unwrap_or("");
 
-    let platform_url = if issuer == DEFAULT_ISSUER {
-        "https://platform.openai.com"
-    } else {
-        "https://platform.api.openai.org"
-    };
+    // The hosted OAuth browser-login success redirect is dormant under Motyga (device-auth
+    // is used instead); this only feeds the post-login "manage account" link. Point it at the
+    // real Motyga developer platform regardless of issuer.
+    let _ = issuer;
+    let platform_url = "https://motyga.com/platform";
 
     let mut params = vec![
         ("id_token", id_token.to_string()),
@@ -920,12 +920,12 @@ fn jwt_auth_claims(jwt: &str) -> serde_json::Map<String, serde_json::Value> {
         Ok(bytes) => match serde_json::from_slice::<serde_json::Value>(&bytes) {
             Ok(mut v) => {
                 if let Some(obj) = v
-                    .get_mut("https://api.openai.com/auth")
+                    .get_mut("https://api.motyga.com/auth")
                     .and_then(|x| x.as_object_mut())
                 {
                     return obj.clone();
                 }
-                eprintln!("JWT payload missing expected 'https://api.openai.com/auth' object");
+                eprintln!("JWT payload missing expected 'https://api.motyga.com/auth' object");
             }
             Err(e) => {
                 eprintln!("Failed to parse JWT JSON payload: {e}");

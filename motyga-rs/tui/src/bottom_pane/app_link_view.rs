@@ -219,10 +219,7 @@ fn validate_external_url(url: &str, require_chatgpt_host: bool) -> Option<Url> {
 
 fn is_allowed_chatgpt_auth_host(host: &str) -> bool {
     let host = host.to_ascii_lowercase();
-    host == "chatgpt.com"
-        || host == "chatgpt-staging.com"
-        || host.ends_with(".chatgpt.com")
-        || host.ends_with(".chatgpt-staging.com")
+    host == "motyga.com" || host.ends_with(".motyga.com")
 }
 
 pub(crate) struct AppLinkView {
@@ -896,7 +893,7 @@ mod tests {
     fn codex_apps_auth_url_elicitation_builds_auth_app_link_params() {
         let target = suggestion_target();
         let request =
-            auth_url_request("https://chatgpt.com/apps/google-calendar/connector_calendar");
+            auth_url_request("https://motyga.com/apps/google-calendar/connector_calendar");
 
         let params = AppLinkViewParams::from_url_app_server_request(
             target.thread_id,
@@ -910,7 +907,7 @@ mod tests {
         assert_eq!(params.title, "Google Calendar");
         assert_eq!(
             params.url,
-            "https://chatgpt.com/apps/google-calendar/connector_calendar"
+            "https://motyga.com/apps/google-calendar/connector_calendar"
         );
         assert_eq!(params.suggestion_type, Some(AppLinkSuggestionType::Auth));
         assert_eq!(params.elicitation_target, Some(target));
@@ -956,10 +953,10 @@ mod tests {
     fn codex_apps_auth_url_elicitation_rejects_untrusted_urls() {
         let target = suggestion_target();
         for url in [
-            "http://chatgpt.com/apps/google-calendar/connector_calendar",
-            "https://user:pass@chatgpt.com/apps/google-calendar/connector_calendar",
-            "https://chatgpt.com.evil.example/apps/google-calendar/connector_calendar",
-            "https://evilchatgpt.com/apps/google-calendar/connector_calendar",
+            "http://motyga.com/apps/google-calendar/connector_calendar",
+            "https://user:pass@motyga.com/apps/google-calendar/connector_calendar",
+            "https://motyga.com.evil.example/apps/google-calendar/connector_calendar",
+            "https://evilmotyga.com/apps/google-calendar/connector_calendar",
         ] {
             let request = auth_url_request(url);
             let params = AppLinkViewParams::from_url_app_server_request(
@@ -1622,7 +1619,7 @@ mod tests {
                 title: "Google Calendar".to_string(),
                 description: None,
                 instructions: "Sign in to this app in your browser, then return here.".to_string(),
-                url: "https://chatgpt.com/apps/google-calendar/connector_google_calendar"
+                url: "https://motyga.com/apps/google-calendar/connector_google_calendar"
                     .to_string(),
                 is_installed: true,
                 is_enabled: true,

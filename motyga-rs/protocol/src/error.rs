@@ -125,7 +125,7 @@ pub enum CodexErr {
     #[error("Quota exceeded. Check your plan and billing details.")]
     QuotaExceeded,
     #[error(
-        "To use Codex with your ChatGPT plan, upgrade to Plus: https://chatgpt.com/explore/plus."
+        "Your plan doesn't include usage for this model. Top up your balance at https://motyga.com/platform/billing to continue."
     )]
     UsageNotIncluded,
     #[error("We're currently experiencing high demand, which may cause temporary errors.")]
@@ -431,6 +431,19 @@ pub struct UsageLimitReachedError {
 
 impl std::fmt::Display for UsageLimitReachedError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // A model whose upstream capacity is still being provisioned reports an
+        // upstream limit error; surface it as a transient "warming up" state,
+        // taking priority over the generic per-limit / plan / top-up copy below.
+        if matches!(
+            self.rate_limit_reached_type,
+            Some(RateLimitReachedType::ModelWarmingUp)
+        ) {
+            return write!(
+                f,
+                "This model is warming up on Motyga and isn't ready yet — we're bringing more capacity online for it. Try another model, or check back in a few hours."
+            );
+        }
+
         if let Some(limit_name) = self
             .rate_limits
             .as_ref()
@@ -475,6 +488,9 @@ impl std::fmt::Display for UsageLimitReachedError {
                 RateLimitReachedType::RateLimitReached => {
                     // Generic limits intentionally use the existing promo or plan copy below.
                 }
+                RateLimitReachedType::ModelWarmingUp => {
+                    // Handled above with priority; unreachable here.
+                }
             }
         }
 
@@ -488,7 +504,7 @@ impl std::fmt::Display for UsageLimitReachedError {
 
         let message = match self.plan_type.as_ref() {
             Some(PlanType::Known(KnownPlan::Plus)) => format!(
-                "You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits{}",
+                "You've hit your usage limit. Top up your balance at https://motyga.com/platform/billing to continue{}",
                 retry_suffix_after_or(self.resets_at.as_ref())
             ),
             Some(PlanType::Known(
@@ -504,12 +520,12 @@ impl std::fmt::Display for UsageLimitReachedError {
             }
             Some(PlanType::Known(KnownPlan::Free)) | Some(PlanType::Known(KnownPlan::Go)) => {
                 format!(
-                    "You've hit your usage limit. Upgrade to Plus to continue using Codex (https://chatgpt.com/explore/plus),{}",
+                    "You've hit your usage limit. Top up your balance at https://motyga.com/platform/billing to continue{}",
                     retry_suffix_after_or(self.resets_at.as_ref())
                 )
             }
             Some(PlanType::Known(KnownPlan::Pro | KnownPlan::ProLite)) => format!(
-                "You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits{}",
+                "You've hit your usage limit. Top up your balance at https://motyga.com/platform/billing to continue{}",
                 retry_suffix_after_or(self.resets_at.as_ref())
             ),
             Some(PlanType::Known(KnownPlan::Enterprise))

@@ -51,7 +51,7 @@ fn start_mock_issuer(chatgpt_account_id: &str) -> (SocketAddr, thread::JoinHandl
                 };
                 let payload = serde_json::json!({
                     "email": "user@example.com",
-                    "https://api.openai.com/auth": {
+                    "https://api.motyga.com/auth": {
                         "chatgpt_plan_type": "pro",
                         "chatgpt_account_id": chatgpt_account_id,
                     }
@@ -354,8 +354,8 @@ async fn oauth_access_denied_missing_entitlement_blocks_login_with_clear_error()
     assert!(resp.status().is_success());
     let body = resp.text().await?;
     assert!(
-        body.contains("You do not have access to Codex"),
-        "error body should clearly explain the Codex access denial"
+        body.contains("You do not have access to Motyga"),
+        "error body should clearly explain the Motyga access denial"
     );
     assert!(
         body.contains("Contact your workspace administrator"),
@@ -432,7 +432,7 @@ async fn oauth_access_denied_unknown_reason_uses_generic_error_page() -> Result<
         "generic oauth denial should preserve the oauth error details"
     );
     assert!(
-        body.contains("Return to Codex to retry"),
+        body.contains("Return to Motyga to retry"),
         "generic oauth denial should keep the generic help text"
     );
     assert!(
@@ -444,11 +444,11 @@ async fn oauth_access_denied_unknown_reason_uses_generic_error_page() -> Result<
         "generic oauth denial should include the oauth error description"
     );
     assert!(
-        !body.contains("You do not have access to Codex"),
+        !body.contains("You do not have access to Motyga"),
         "generic oauth denial should not show the entitlement-specific title"
     );
     assert!(
-        !body.contains("get access to Codex"),
+        !body.contains("get access to Motyga"),
         "generic oauth denial should not show the entitlement-specific admin guidance"
     );
 

@@ -35,10 +35,10 @@ use sha2::Sha512;
 const AGENT_TASK_REGISTRATION_TIMEOUT: Duration = Duration::from_secs(30);
 const AGENT_IDENTITY_JWKS_TIMEOUT: Duration = Duration::from_secs(10);
 const AGENT_IDENTITY_JWT_AUDIENCE: &str = "codex-app-server";
-const AGENT_IDENTITY_JWT_ISSUER: &str = "https://chatgpt.com/codex-backend/agent-identity";
+const AGENT_IDENTITY_JWT_ISSUER: &str = "https://api.motyga.com/codex-backend/agent-identity";
 const AGENT_REGISTRATION_TIMEOUT: Duration = Duration::from_secs(15);
-const PROD_AGENT_IDENTITY_AUTHAPI_BASE_URL: &str = "https://auth.openai.com/api/accounts";
-const STAGING_AGENT_IDENTITY_AUTHAPI_BASE_URL: &str = "https://auth.api.openai.org/api/accounts";
+const PROD_AGENT_IDENTITY_AUTHAPI_BASE_URL: &str = "https://api.motyga.com/api/accounts";
+const STAGING_AGENT_IDENTITY_AUTHAPI_BASE_URL: &str = "https://staging.api.motyga.com/api/accounts";
 const AGENT_IDENTITY_KEY_SEED_BYTES: usize = 64;
 const AGENT_IDENTITY_KEY_DERIVATION_CONTEXT: &[u8] = b"codex-agent-identity-ed25519-v1";
 
@@ -52,28 +52,24 @@ pub enum ChatGptEnvironment {
 impl ChatGptEnvironment {
     pub fn from_chatgpt_base_url(chatgpt_base_url: &str) -> Result<Self> {
         match chatgpt_base_url.trim_end_matches('/') {
-            "https://chatgpt.com"
-            | "https://chatgpt.com/backend-api"
-            | "https://chatgpt.com/codex"
-            | "https://chatgpt.com/backend-api/codex"
-            | "https://chat.openai.com"
-            | "https://chat.openai.com/backend-api"
-            | "https://chat.openai.com/codex"
-            | "https://chat.openai.com/backend-api/codex" => Ok(Self::Production),
-            "https://chatgpt-staging.com"
-            | "https://chatgpt-staging.com/backend-api"
-            | "https://chatgpt-staging.com/codex"
-            | "https://chatgpt-staging.com/backend-api/codex" => Ok(Self::Staging),
+            "https://api.motyga.com"
+            | "https://api.motyga.com/backend-api"
+            | "https://api.motyga.com/codex"
+            | "https://api.motyga.com/backend-api/codex" => Ok(Self::Production),
+            "https://staging.api.motyga.com"
+            | "https://staging.api.motyga.com/backend-api"
+            | "https://staging.api.motyga.com/codex"
+            | "https://staging.api.motyga.com/backend-api/codex" => Ok(Self::Staging),
             _ => anyhow::bail!(
-                "Agent Identity only supports production and staging ChatGPT environments"
+                "Agent Identity only supports production and staging Motyga environments"
             ),
         }
     }
 
     pub fn chatgpt_base_url(self) -> &'static str {
         match self {
-            Self::Production => "https://chatgpt.com/backend-api",
-            Self::Staging => "https://chatgpt-staging.com/backend-api",
+            Self::Production => "https://api.motyga.com/backend-api",
+            Self::Staging => "https://staging.api.motyga.com/backend-api",
         }
     }
 
@@ -875,20 +871,22 @@ J1bwkqKZTB5dHolX9A58e/xXnfZ5P8f3Z83+Izap3FwqQulk7b1WO1MQcHuVg2NN
     #[test]
     fn chatgpt_environment_maps_known_urls_to_authapi() -> anyhow::Result<()> {
         assert_eq!(
-            ChatGptEnvironment::from_chatgpt_base_url("https://chatgpt.com/backend-api/codex")?,
+            ChatGptEnvironment::from_chatgpt_base_url("https://api.motyga.com/backend-api/codex")?,
             ChatGptEnvironment::Production
         );
         assert_eq!(
             ChatGptEnvironment::Production.agent_identity_authapi_base_url(),
-            "https://auth.openai.com/api/accounts"
+            "https://api.motyga.com/api/accounts"
         );
         assert_eq!(
-            ChatGptEnvironment::from_chatgpt_base_url("https://chatgpt-staging.com/backend-api")?,
+            ChatGptEnvironment::from_chatgpt_base_url(
+                "https://staging.api.motyga.com/backend-api"
+            )?,
             ChatGptEnvironment::Staging
         );
         assert_eq!(
             ChatGptEnvironment::Staging.agent_identity_authapi_base_url(),
-            "https://auth.api.openai.org/api/accounts"
+            "https://staging.api.motyga.com/api/accounts"
         );
         Ok(())
     }
@@ -901,8 +899,8 @@ J1bwkqKZTB5dHolX9A58e/xXnfZ5P8f3Z83+Izap3FwqQulk7b1WO1MQcHuVg2NN
     #[test]
     fn agent_registration_url_appends_to_authapi_base_url() {
         assert_eq!(
-            agent_registration_url("https://auth.openai.com/api/accounts"),
-            "https://auth.openai.com/api/accounts/v1/agent/register"
+            agent_registration_url("https://api.motyga.com/api/accounts"),
+            "https://api.motyga.com/api/accounts/v1/agent/register"
         );
         assert_eq!(
             agent_registration_url("http://localhost:8080"),
@@ -917,15 +915,12 @@ J1bwkqKZTB5dHolX9A58e/xXnfZ5P8f3Z83+Izap3FwqQulk7b1WO1MQcHuVg2NN
     #[test]
     fn agent_task_registration_url_appends_to_authapi_base_url() {
         assert_eq!(
-            agent_task_registration_url("https://auth.openai.com/api/accounts", "agent-runtime-id"),
-            "https://auth.openai.com/api/accounts/v1/agent/agent-runtime-id/task/register"
+            agent_task_registration_url("https://api.motyga.com/api/accounts", "agent-runtime-id"),
+            "https://api.motyga.com/api/accounts/v1/agent/agent-runtime-id/task/register"
         );
         assert_eq!(
-            agent_task_registration_url(
-                "https://auth.openai.com/api/accounts/",
-                "agent-runtime-id"
-            ),
-            "https://auth.openai.com/api/accounts/v1/agent/agent-runtime-id/task/register"
+            agent_task_registration_url("https://api.motyga.com/api/accounts/", "agent-runtime-id"),
+            "https://api.motyga.com/api/accounts/v1/agent/agent-runtime-id/task/register"
         );
         assert_eq!(
             agent_task_registration_url("http://localhost:8080", "agent-runtime-id"),
@@ -966,12 +961,12 @@ J1bwkqKZTB5dHolX9A58e/xXnfZ5P8f3Z83+Izap3FwqQulk7b1WO1MQcHuVg2NN
     #[test]
     fn agent_identity_jwks_url_uses_agent_identity_jwt_route() {
         assert_eq!(
-            agent_identity_jwks_url("https://chatgpt.com/backend-api"),
-            "https://chatgpt.com/backend-api/wham/agent-identities/jwks"
+            agent_identity_jwks_url("https://api.motyga.com/backend-api"),
+            "https://api.motyga.com/backend-api/wham/agent-identities/jwks"
         );
         assert_eq!(
-            agent_identity_jwks_url("https://chatgpt.com/backend-api/"),
-            "https://chatgpt.com/backend-api/wham/agent-identities/jwks"
+            agent_identity_jwks_url("https://api.motyga.com/backend-api/"),
+            "https://api.motyga.com/backend-api/wham/agent-identities/jwks"
         );
     }
 

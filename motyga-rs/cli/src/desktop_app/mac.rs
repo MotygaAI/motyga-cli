@@ -5,9 +5,10 @@ use std::path::PathBuf;
 use tempfile::Builder;
 use tokio::process::Command;
 
-const CODEX_DMG_URL_ARM64: &str = "https://persistent.oaistatic.com/codex-app-prod/Codex.dmg";
-const CODEX_DMG_URL_X64: &str =
-    "https://persistent.oaistatic.com/codex-app-prod/Codex-latest-x64.dmg";
+// Placeholder Motyga Desktop download URLs. This path is not invoked yet (see
+// app_cmd::run_app); wire these to the real Motyga Desktop installers when it ships.
+const CODEX_DMG_URL_ARM64: &str = "https://motyga.com/desktop/Motyga.dmg";
+const CODEX_DMG_URL_X64: &str = "https://motyga.com/desktop/Motyga-latest-x64.dmg";
 
 pub async fn run_mac_app_open_or_install(
     workspace: PathBuf,
@@ -15,13 +16,13 @@ pub async fn run_mac_app_open_or_install(
 ) -> anyhow::Result<()> {
     if let Some(app_path) = find_existing_codex_app_path() {
         eprintln!(
-            "Opening Codex Desktop at {app_path}...",
+            "Opening Motyga Desktop at {app_path}...",
             app_path = app_path.display()
         );
         open_codex_app(&app_path, &workspace).await?;
         return Ok(());
     }
-    eprintln!("Codex Desktop not found; downloading installer...");
+    eprintln!("Motyga Desktop not found; downloading installer...");
     let download_url = download_url_override.unwrap_or_else(|| {
         let default_url = if is_apple_silicon_mac() {
             CODEX_DMG_URL_ARM64
@@ -32,9 +33,9 @@ pub async fn run_mac_app_open_or_install(
     });
     let installed_app = download_and_install_codex_to_user_applications(&download_url)
         .await
-        .context("failed to download/install Codex Desktop")?;
+        .context("failed to download/install Motyga Desktop")?;
     eprintln!(
-        "Launching Codex Desktop from {installed_app}...",
+        "Launching Motyga Desktop from {installed_app}...",
         installed_app = installed_app.display()
     );
     open_codex_app(&installed_app, &workspace).await?;
@@ -121,7 +122,7 @@ async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyho
     let dmg_path = tmp_root.join("Codex.dmg");
     download_dmg(dmg_url, &dmg_path).await?;
 
-    eprintln!("Mounting Codex Desktop installer...");
+    eprintln!("Mounting Motyga Desktop installer...");
     let mount_point = mount_dmg(&dmg_path).await?;
     eprintln!(
         "Installer mounted at {mount_point}.",
@@ -148,7 +149,7 @@ async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyho
 async fn install_codex_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBuf> {
     for applications_dir in candidate_applications_dirs()? {
         eprintln!(
-            "Installing Codex Desktop into {applications_dir}...",
+            "Installing Motyga Desktop into {applications_dir}...",
             applications_dir = applications_dir.display()
         );
         std::fs::create_dir_all(&applications_dir).with_context(|| {

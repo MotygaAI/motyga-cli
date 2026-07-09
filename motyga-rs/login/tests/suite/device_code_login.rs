@@ -136,7 +136,7 @@ async fn device_code_login_integration_succeeds() -> anyhow::Result<()> {
     .await;
 
     let jwt = make_jwt(json!({
-        "https://api.openai.com/auth": {
+        "https://api.motyga.com/auth": {
             "chatgpt_account_id": WORKSPACE_ID_ALLOWED
         }
     }));
@@ -183,7 +183,7 @@ async fn device_code_login_rejects_workspace_mismatch() -> anyhow::Result<()> {
     .await;
 
     let jwt = make_jwt(json!({
-        "https://api.openai.com/auth": {
+        "https://api.motyga.com/auth": {
             "chatgpt_account_id": WORKSPACE_ID_DISALLOWED,
             "organization_id": WORKSPACE_ID_DISALLOWED
         }

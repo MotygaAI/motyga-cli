@@ -545,7 +545,7 @@ fn sync_openai_plugins_repo_via_git_succeeds_with_local_rewritten_remote() {
     let curated_repo_path = curated_plugins_repo_path(tmp.path());
     assert!(incremental_sync_invocations.iter().any(|invocation| {
         invocation.starts_with(&format!("-C {} fetch ", curated_repo_path.display()))
-            && invocation.contains(" https://github.com/openai/plugins.git ")
+            && invocation.contains(" https://github.com/MotygaAI/plugins.git ")
             && invocation.contains(updated_sha.as_str())
             && invocation.ends_with(CURATED_PLUGINS_FETCH_REF)
     }));

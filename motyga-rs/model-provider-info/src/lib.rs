@@ -39,7 +39,7 @@ pub const MOTYGA_PROVIDER_ID: &str = "motyga";
 const MOTYGA_PROVIDER_NAME: &str = "Motyga";
 const MOTYGA_DEFAULT_BASE_URL: &str = "https://api.motyga.com/v1";
 const MOTYGA_API_KEY_ENV_VAR: &str = "MOTYGA_API_KEY";
-pub const CHATGPT_CODEX_BASE_URL: &str = "https://chatgpt.com/backend-api/codex";
+pub const CHATGPT_CODEX_BASE_URL: &str = "https://api.motyga.com/backend-api/codex";
 const AMAZON_BEDROCK_PROVIDER_NAME: &str = "Amazon Bedrock";
 pub const AMAZON_BEDROCK_PROVIDER_ID: &str = "amazon-bedrock";
 pub const AMAZON_BEDROCK_GPT_5_5_MODEL_ID: &str = "openai.gpt-5.5";
@@ -51,9 +51,9 @@ pub const AMAZON_BEDROCK_DEFAULT_BASE_URL: &str =
     "https://bedrock-mantle.us-east-1.api.aws/openai/v1";
 const AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_HEADER: &str = "x-amzn-mantle-client-agent";
 const AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_VALUE: &str = "codex";
-const CHAT_WIRE_API_REMOVED_ERROR: &str = "`wire_api = \"chat\"` is no longer supported.\nHow to fix: set `wire_api = \"responses\"` in your provider config.\nMore info: https://github.com/openai/codex/discussions/7782";
+const CHAT_WIRE_API_REMOVED_ERROR: &str = "`wire_api = \"chat\"` is no longer supported.\nHow to fix: set `wire_api = \"responses\"` in your provider config.\nMore info: https://motyga.com/docs";
 pub const LEGACY_OLLAMA_CHAT_PROVIDER_ID: &str = "ollama-chat";
-pub const OLLAMA_CHAT_PROVIDER_REMOVED_ERROR: &str = "`ollama-chat` is no longer supported.\nHow to fix: replace `ollama-chat` with `ollama` in `model_provider`, `oss_provider`, or `--local-provider`.\nMore info: https://github.com/openai/codex/discussions/7782";
+pub const OLLAMA_CHAT_PROVIDER_REMOVED_ERROR: &str = "`ollama-chat` is no longer supported.\nHow to fix: replace `ollama-chat` with `ollama` in `model_provider`, `oss_provider`, or `--local-provider`.\nMore info: https://motyga.com/docs";
 
 /// Wire protocol that the provider speaks.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, JsonSchema)]
@@ -401,7 +401,10 @@ impl ModelProviderInfo {
             name: MOTYGA_PROVIDER_NAME.into(),
             base_url: Some(MOTYGA_DEFAULT_BASE_URL.into()),
             env_key: Some(MOTYGA_API_KEY_ENV_VAR.into()),
-            env_key_instructions: None,
+            env_key_instructions: Some(
+                "Create one at https://motyga.com/platform/keys and set it as the MOTYGA_API_KEY environment variable."
+                    .to_string(),
+            ),
             experimental_bearer_token: None,
             auth: None,
             aws: None,

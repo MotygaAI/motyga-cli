@@ -86,6 +86,8 @@ pub enum RateLimitReachedKind {
     WorkspaceOwnerUsageLimitReached,
     #[serde(rename = "workspace_member_usage_limit_reached")]
     WorkspaceMemberUsageLimitReached,
+    #[serde(rename = "model_warming_up")]
+    ModelWarmingUp,
     #[serde(rename = "unknown", other)]
     #[default]
     Unknown,

@@ -3938,7 +3938,7 @@ fn turn_event_serializes_expected_shape() {
                 "turn_id": "turn-2",
                 "submission_type": null,
                 "app_server_client": {
-                    "product_client_id": "codex_cli_rs",
+                    "product_client_id": "motyga_cli",
                     "client_name": "codex-tui",
                     "client_version": "1.0.0",
                     "rpc_transport": "stdio",

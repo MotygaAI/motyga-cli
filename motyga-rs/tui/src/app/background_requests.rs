@@ -898,7 +898,7 @@ pub(super) async fn fetch_additional_plugin_remote_sections(
     if !remote_plugin_enabled {
         sections.push((
             "vertical",
-            "OpenAI Curated",
+            "Motyga Curated",
             vec![PluginListMarketplaceKind::Vertical],
         ));
     }
@@ -951,7 +951,7 @@ fn plugin_remote_section_error_message(label: &str, err: &str) -> String {
 fn plugin_remote_section_error_next_step(label: &str, err: &str) -> &'static str {
     let err = err.to_ascii_lowercase();
     if err.contains("api key auth is not supported") {
-        "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs."
+        "Remote plugin catalogs aren't available with API-key auth."
     } else if err.contains("authentication required")
         || err.contains("not signed in")
         || err.contains("not logged in")
@@ -1382,9 +1382,9 @@ mod tests {
                 "Sign in to ChatGPT, then try loading this section again.",
             ),
             (
-                "OpenAI Curated",
+                "Motyga Curated",
                 "chatgpt authentication required for remote plugin catalog; api key auth is not supported",
-                "Sign in with ChatGPT auth; API key auth cannot load remote plugin catalogs.",
+                "Remote plugin catalogs aren't available with API-key auth.",
             ),
             (
                 "Shared with me",

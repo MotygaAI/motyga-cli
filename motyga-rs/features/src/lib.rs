@@ -224,7 +224,7 @@ pub enum Feature {
     CurrentTimeReminder,
     /// Route MCP tool approval prompts through the MCP elicitation request path.
     ToolCallMcpElicitation,
-    /// Prompt Codex Apps connector auth failures through MCP URL elicitations.
+    /// Prompt Motyga apps connector auth failures through MCP URL elicitations.
     AuthElicitation,
     /// Enable personality selection in the TUI.
     Personality,
@@ -596,7 +596,7 @@ fn legacy_usage_notice(alias: &str, feature: Feature) -> (String, Option<String>
                 None
             } else {
                 Some(format!(
-                    "Enable it with `--enable {canonical}` or `[features].{canonical}` in config.toml. See https://developers.openai.com/codex/config-basic#feature-flags for details."
+                    "Enable it with `--enable {canonical}` or `[features].{canonical}` in config.toml. See https://motyga.com/docs for details."
                 ))
             };
             (summary, details)

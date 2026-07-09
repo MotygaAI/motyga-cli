@@ -2022,7 +2022,7 @@ mod tests {
         };
         let payload = serde_json::json!({
             "email": "user@example.com",
-            "https://api.openai.com/auth": {
+            "https://api.motyga.com/auth": {
                 "chatgpt_user_id": "user-12345",
                 "user_id": "user-12345",
                 "chatgpt_account_id": "account_id"

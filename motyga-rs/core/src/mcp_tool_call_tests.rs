@@ -1409,7 +1409,7 @@ async fn host_owned_codex_apps_manager(
     let mcp_servers = HashMap::from([(
         CODEX_APPS_MCP_SERVER_NAME.to_string(),
         codex_mcp::EffectiveMcpServer::configured(codex_mcp::codex_apps_mcp_server_config(
-            "https://chatgpt.com",
+            "https://api.motyga.com",
             /*apps_mcp_product_sku*/ None,
         )),
     )]);

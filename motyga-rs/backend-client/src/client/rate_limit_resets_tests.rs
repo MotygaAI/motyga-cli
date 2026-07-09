@@ -15,14 +15,14 @@ fn rate_limit_reset_contract_uses_expected_paths_and_payloads() {
         "https://example.test/api/codex/rate-limit-reset-credits/consume"
     );
     assert_eq!(
-        test_client("https://chatgpt.com/backend-api", PathStyle::ChatGptApi)
+        test_client("https://api.motyga.com/backend-api", PathStyle::ChatGptApi)
             .rate_limit_status_url(),
-        "https://chatgpt.com/backend-api/wham/usage"
+        "https://api.motyga.com/backend-api/wham/usage"
     );
     assert_eq!(
-        test_client("https://chatgpt.com/backend-api", PathStyle::ChatGptApi)
+        test_client("https://api.motyga.com/backend-api", PathStyle::ChatGptApi)
             .consume_rate_limit_reset_credit_url(),
-        "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits/consume"
+        "https://api.motyga.com/backend-api/wham/rate-limit-reset-credits/consume"
     );
 
     assert_eq!(
@@ -65,7 +65,6 @@ fn test_client(base_url: &str, path_style: PathStyle) -> Client {
         auth_provider: codex_model_provider::unauthenticated_auth_provider(),
         user_agent: None,
         chatgpt_account_id: None,
-        chatgpt_account_is_fedramp: false,
         path_style,
     }
 }

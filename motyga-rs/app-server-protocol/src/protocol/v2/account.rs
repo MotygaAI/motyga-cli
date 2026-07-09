@@ -489,6 +489,7 @@ pub enum RateLimitReachedType {
     WorkspaceMemberCreditsDepleted,
     WorkspaceOwnerUsageLimitReached,
     WorkspaceMemberUsageLimitReached,
+    ModelWarmingUp,
 }
 
 impl From<CoreRateLimitReachedType> for RateLimitReachedType {
@@ -507,6 +508,7 @@ impl From<CoreRateLimitReachedType> for RateLimitReachedType {
             CoreRateLimitReachedType::WorkspaceMemberUsageLimitReached => {
                 Self::WorkspaceMemberUsageLimitReached
             }
+            CoreRateLimitReachedType::ModelWarmingUp => Self::ModelWarmingUp,
         }
     }
 }
@@ -527,6 +529,7 @@ impl From<RateLimitReachedType> for CoreRateLimitReachedType {
             RateLimitReachedType::WorkspaceMemberUsageLimitReached => {
                 Self::WorkspaceMemberUsageLimitReached
             }
+            RateLimitReachedType::ModelWarmingUp => Self::ModelWarmingUp,
         }
     }
 }

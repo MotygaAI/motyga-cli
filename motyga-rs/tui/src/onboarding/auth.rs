@@ -95,7 +95,7 @@ pub(crate) enum SignInOption {
 
 const API_KEY_DISABLED_MESSAGE: &str = "API key login is disabled.";
 // Where a keyless user signs up and creates a Motyga API key.
-const MOTYGA_SIGNUP_URL: &str = "https://motyga.com";
+const MOTYGA_SIGNUP_URL: &str = "https://motyga.com/platform/keys";
 fn onboarding_request_id() -> codex_app_server_protocol::RequestId {
     codex_app_server_protocol::RequestId::String(Uuid::new_v4().to_string())
 }
@@ -392,7 +392,7 @@ impl AuthModeWidget {
         let mut lines: Vec<Line> = vec![
             Line::from(vec![
                 "  ".into(),
-                "Sign in with ChatGPT to use Motyga as part of your paid plan".into(),
+                "Sign in on motyga.com to use your Motyga plan".into(),
             ]),
             Line::from(vec![
                 "  ".into(),
@@ -431,9 +431,9 @@ impl AuthModeWidget {
         };
 
         let chatgpt_description = if !self.is_chatgpt_login_allowed() {
-            "ChatGPT login is disabled"
+            "Browser sign-in is disabled"
         } else {
-            "Usage included with Plus, Pro, Business, and Enterprise plans"
+            "Usage billed to your Motyga account"
         };
         let device_code_description = "Sign in from another device with a one-time code";
 
@@ -443,7 +443,7 @@ impl AuthModeWidget {
                     lines.extend(create_mode_item(
                         idx,
                         option,
-                        "Sign in with ChatGPT",
+                        "Sign in with your browser",
                         chatgpt_description,
                     ));
                 }
@@ -469,7 +469,7 @@ impl AuthModeWidget {
 
         if !self.is_api_login_allowed() {
             lines.push(
-                "  API key login is disabled by this workspace. Sign in with ChatGPT to continue."
+                "  API key login is disabled by this workspace. Sign in with your browser to continue."
                     .dim()
                     .into(),
             );
@@ -557,7 +557,7 @@ impl AuthModeWidget {
             Line::from(vec![
                 "  For more details see the ".into(),
                 crate::terminal_hyperlinks::osc8_hyperlink(
-                    "https://developers.openai.com/codex/security",
+                    "https://motyga.com/docs",
                     "Motyga docs",
                 )
                 .underlined(),
@@ -573,7 +573,7 @@ impl AuthModeWidget {
             Line::from(vec![
                 "  Uses your plan's rate limits and ".into(),
                 crate::terminal_hyperlinks::osc8_hyperlink(
-                    "https://chatgpt.com/#settings",
+                    "https://motyga.com/platform/settings",
                     "training data preferences",
                 )
                 .underlined(),
@@ -642,9 +642,8 @@ impl AuthModeWidget {
             );
             intro_lines.push("".into());
         } else {
-            intro_lines.push(
-                format!("  Don't have a key yet? Create one at {MOTYGA_SIGNUP_URL}").into(),
-            );
+            intro_lines
+                .push(format!("  Don't have a key yet? Create one at {MOTYGA_SIGNUP_URL}").into());
             intro_lines.push("".into());
         }
         Paragraph::new(intro_lines)

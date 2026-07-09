@@ -17,7 +17,7 @@ const MISSING_BWRAP_WARNING: &str = concat!(
     "Motyga could not find bubblewrap on PATH. ",
     "Install bubblewrap with your OS package manager. ",
     "See the sandbox prerequisites: ",
-    "https://developers.openai.com/codex/concepts/sandboxing#prerequisites. ",
+    "https://motyga.com/docs. ",
     "Motyga will use the bundled bubblewrap in the meantime.",
 );
 const USER_NAMESPACE_WARNING: &str =

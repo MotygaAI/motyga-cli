@@ -2,4 +2,4 @@
 source: tui/src/chatwidget/tests/slash_commands.rs
 expression: rendered
 ---
-■ Sign in with ChatGPT to use /usage.
+■ View your usage at https://motyga.com/platform/usage

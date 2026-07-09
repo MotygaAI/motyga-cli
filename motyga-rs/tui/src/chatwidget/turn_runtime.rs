@@ -410,6 +410,13 @@ impl ChatWidget {
                 self.on_error(message);
                 self.open_workspace_owner_nudge_prompt(AddCreditsNudgeCreditType::UsageLimit);
             }
+            Some(RateLimitReachedType::ModelWarmingUp) => {
+                // Keep this copy in sync with UsageLimitReachedError::fmt in codex-protocol.
+                self.on_error(
+                    "This model is warming up on Motyga and isn't ready yet — we're bringing more capacity online for it. Try another model, or check back in a few hours."
+                        .to_string(),
+                );
+            }
             Some(RateLimitReachedType::RateLimitReached) | None => {
                 self.on_error(message);
             }

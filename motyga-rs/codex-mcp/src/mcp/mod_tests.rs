@@ -19,7 +19,7 @@ use std::path::PathBuf;
 
 fn test_mcp_config(codex_home: PathBuf) -> McpConfig {
     McpConfig {
-        chatgpt_base_url: "https://chatgpt.com".to_string(),
+        chatgpt_base_url: "https://api.motyga.com".to_string(),
         apps_mcp_product_sku: None,
         codex_home,
         mcp_oauth_credentials_store_mode: OAuthCredentialsStoreMode::default(),
@@ -233,12 +233,12 @@ fn selected_mcp_attribution_does_not_join_an_unrelated_local_summary() {
 #[test]
 fn codex_apps_mcp_url_for_base_url_keeps_existing_paths() {
     assert_eq!(
-        codex_apps_mcp_url_for_base_url("https://chatgpt.com/backend-api"),
-        "https://chatgpt.com/backend-api/wham/apps"
+        codex_apps_mcp_url_for_base_url("https://api.motyga.com/backend-api"),
+        "https://api.motyga.com/backend-api/wham/apps"
     );
     assert_eq!(
-        codex_apps_mcp_url_for_base_url("https://chat.openai.com"),
-        "https://chat.openai.com/backend-api/wham/apps"
+        codex_apps_mcp_url_for_base_url("https://api.motyga.com"),
+        "https://api.motyga.com/backend-api/wham/apps"
     );
     assert_eq!(
         codex_apps_mcp_url_for_base_url("http://localhost:8080/api/codex"),
@@ -253,18 +253,18 @@ fn codex_apps_mcp_url_for_base_url_keeps_existing_paths() {
 #[test]
 fn codex_apps_server_config_uses_legacy_codex_apps_path() {
     let config =
-        codex_apps_mcp_server_config("https://chatgpt.com", /*apps_mcp_product_sku*/ None);
+        codex_apps_mcp_server_config("https://api.motyga.com", /*apps_mcp_product_sku*/ None);
     let url = match &config.transport {
         McpServerTransportConfig::StreamableHttp { url, .. } => url,
         _ => panic!("expected streamable http transport for codex apps"),
     };
 
-    assert_eq!(url, "https://chatgpt.com/backend-api/wham/apps");
+    assert_eq!(url, "https://api.motyga.com/backend-api/wham/apps");
 }
 
 #[test]
 fn codex_apps_server_config_forwards_configured_product_sku_header() {
-    let config = codex_apps_mcp_server_config("https://chatgpt.com", Some("tpp"));
+    let config = codex_apps_mcp_server_config("https://api.motyga.com", Some("tpp"));
 
     match &config.transport {
         McpServerTransportConfig::StreamableHttp {
@@ -388,7 +388,7 @@ async fn effective_mcp_servers_preserve_runtime_servers() {
     }
     match &codex_apps.transport {
         McpServerTransportConfig::StreamableHttp { url, .. } => {
-            assert_eq!(url, "https://chatgpt.com/backend-api/wham/apps");
+            assert_eq!(url, "https://api.motyga.com/backend-api/wham/apps");
         }
         other => panic!("expected streamable http transport, got {other:?}"),
     }

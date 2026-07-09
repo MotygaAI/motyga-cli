@@ -53,7 +53,7 @@ use crate::wrapping::word_wrap_lines;
 use std::sync::Arc;
 use std::sync::RwLock;
 
-const CHATGPT_USAGE_URL: &str = "https://chatgpt.com/codex/settings/usage";
+const CHATGPT_USAGE_URL: &str = "https://motyga.com/platform/usage";
 
 #[derive(Debug, Clone)]
 struct StatusContextWindowData {
@@ -727,9 +727,7 @@ impl HistoryCell for StatusHistoryCell {
                 (None, Some(plan)) => plan.clone(),
                 (None, None) => "ChatGPT".to_string(),
             },
-            StatusAccountDisplay::ApiKey => {
-                "API key configured (run motyga login to use ChatGPT)".to_string()
-            }
+            StatusAccountDisplay::ApiKey => "API key configured".to_string(),
         });
 
         let mut labels: Vec<String> = vec!["Model", "Directory", "Permissions", "Agents.md"]

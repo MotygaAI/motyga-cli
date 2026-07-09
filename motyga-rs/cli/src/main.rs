@@ -15,8 +15,7 @@ use codex_cli::read_api_key_from_stdin;
 use codex_cli::run_login_status;
 use codex_cli::run_login_with_access_token;
 use codex_cli::run_login_with_api_key;
-use codex_cli::run_login_with_chatgpt;
-use codex_cli::run_login_with_device_code;
+use codex_cli::run_login_with_motyga_device;
 use codex_cli::run_logout;
 use codex_cloud_tasks::Cli as CloudTasksCli;
 use codex_exec::Cli as ExecCli;
@@ -46,7 +45,10 @@ use supports_color::Stream;
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 mod app_cmd;
+// Kept for the future Motyga Desktop app; intentionally not invoked yet (see app_cmd::run_app),
+// so `motyga app` can never download a third-party desktop build.
 #[cfg(any(target_os = "macos", target_os = "windows"))]
+#[allow(dead_code)]
 mod desktop_app;
 mod doctor;
 mod exec_server_telemetry;
@@ -144,8 +146,9 @@ enum Subcommand {
     /// [experimental] Manage the app-server daemon with remote control enabled.
     RemoteControl(RemoteControlCommand),
 
-    /// Launch the Codex desktop app (opens the app installer if missing).
+    /// Launch the Motyga desktop app (coming soon).
     #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[clap(hide = true)]
     App(app_cmd::AppCommand),
 
     /// Generate shell completion scripts.
@@ -186,7 +189,7 @@ enum Subcommand {
     /// Fork a previous interactive session (picker by default; use --last to fork the most recent).
     Fork(ForkCommand),
 
-    /// [EXPERIMENTAL] Browse tasks from Codex Cloud and apply changes locally.
+    /// [EXPERIMENTAL] Browse tasks from Motyga Cloud and apply changes locally.
     #[clap(name = "cloud", alias = "cloud-tasks")]
     Cloud(CloudTasksCli),
 
@@ -477,7 +480,7 @@ struct LoginCommand {
     )]
     api_key: Option<String>,
 
-    #[arg(long = "device-auth")]
+    #[arg(long = "device-auth", hide = true)]
     use_device_code: bool,
 
     /// EXPERIMENTAL: Use custom OAuth issuer base URL (advanced)
@@ -546,7 +549,7 @@ struct AppServerCommand {
     /// enabled = false
     /// ```
     ///
-    /// See https://developers.openai.com/codex/config-advanced/#metrics for more details.
+    /// See https://motyga.com/docs for more details.
     #[arg(long = "analytics-default-enabled")]
     analytics_default_enabled: bool,
 
@@ -1314,13 +1317,13 @@ async fn cli_main(
                             "Choose one login credential source: --with-api-key or --with-access-token."
                         );
                         std::process::exit(1);
+                    } else if login_cli.issuer_base_url.is_some() || login_cli.client_id.is_some() {
+                        eprintln!(
+                            "Custom OAuth issuer/client login is no longer supported. Run `motyga login` to authorize through Motyga."
+                        );
+                        std::process::exit(1);
                     } else if login_cli.use_device_code {
-                        run_login_with_device_code(
-                            login_cli.config_overrides,
-                            login_cli.issuer_base_url,
-                            login_cli.client_id,
-                        )
-                        .await;
+                        run_login_with_motyga_device(login_cli.config_overrides).await;
                     } else if login_cli.api_key.is_some() {
                         eprintln!(
                             "The --api-key flag is no longer supported. Pipe the key instead, e.g. `printenv MOTYGA_API_KEY | motyga login --with-api-key`."
@@ -1333,7 +1336,7 @@ async fn cli_main(
                         let access_token = read_access_token_from_stdin();
                         run_login_with_access_token(login_cli.config_overrides, access_token).await;
                     } else {
-                        run_login_with_chatgpt(login_cli.config_overrides).await;
+                        run_login_with_motyga_device(login_cli.config_overrides).await;
                     }
                 }
             }
@@ -1709,13 +1712,13 @@ async fn load_exec_server_remote_auth_provider(
 
     let auth = load_exec_server_remote_auth(
         config,
-        "remote exec-server registration requires ChatGPT authentication or API key authentication; run `motyga login` or set CODEX_API_KEY",
+        "remote exec-server registration requires Motyga authentication or API key authentication; run `motyga login` or set CODEX_API_KEY",
     )
     .await?;
 
     if !is_supported_exec_server_remote_auth(&auth) {
         anyhow::bail!(
-            "remote exec-server registration requires ChatGPT authentication or API key authentication; Agent Identity auth requires --use-agent-identity-auth"
+            "remote exec-server registration requires Motyga authentication or API key authentication; Agent Identity auth requires --use-agent-identity-auth"
         );
     }
 
@@ -1742,22 +1745,22 @@ fn validate_api_key_remote_host(base_url: &str) -> anyhow::Result<()> {
         url::Host::Ipv4(ip) => ip.is_loopback(),
         url::Host::Ipv6(ip) => ip.is_loopback(),
     };
-    let is_openai_host = match &host {
-        url::Host::Domain(host) => ["openai.com", "openai.org"].into_iter().any(|domain| {
-            host.eq_ignore_ascii_case(domain)
-                || host.to_ascii_lowercase().ends_with(&format!(".{domain}"))
-        }),
+    let is_motyga_host = match &host {
+        url::Host::Domain(host) => {
+            host.eq_ignore_ascii_case("motyga.com")
+                || host.to_ascii_lowercase().ends_with(".motyga.com")
+        }
         _ => false,
     };
     let is_allowed = match url.scheme() {
-        "https" => is_loopback || is_openai_host,
+        "https" => is_loopback || is_motyga_host,
         "http" => is_loopback,
         _ => false,
     };
 
     if !is_allowed {
         anyhow::bail!(
-            "remote exec-server API-key authentication is restricted to HTTPS openai.com and openai.org hosts and subdomains or loopback hosts"
+            "remote exec-server API-key authentication is restricted to HTTPS motyga.com hosts and subdomains or loopback hosts"
         );
     }
 
@@ -2463,12 +2466,11 @@ mod tests {
     }
 
     #[test]
-    fn exec_server_remote_api_key_auth_accepts_https_openai_domains() {
+    fn exec_server_remote_api_key_auth_accepts_https_motyga_domains() {
         for base_url in [
-            "https://openai.com/api",
-            "https://service.openai.com/api",
-            "https://openai.org/api",
-            "https://service.openai.org/api",
+            "https://motyga.com/api",
+            "https://service.motyga.com/api",
+            "https://api.motyga.com/api",
         ] {
             assert!(validate_api_key_remote_host(base_url).is_ok());
         }
@@ -2486,29 +2488,26 @@ mod tests {
     }
 
     #[test]
-    fn exec_server_remote_api_key_auth_rejects_http_openai_domain() {
-        for base_url in [
-            "http://service.openai.com/api",
-            "http://service.openai.org/api",
-        ] {
+    fn exec_server_remote_api_key_auth_rejects_http_motyga_domain() {
+        for base_url in ["http://service.motyga.com/api", "http://api.motyga.com/api"] {
             let error = validate_api_key_remote_host(base_url)
-                .expect_err("reject plaintext OpenAI destination");
+                .expect_err("reject plaintext Motyga destination");
 
             assert_eq!(
                 error.to_string(),
-                "remote exec-server API-key authentication is restricted to HTTPS openai.com and openai.org hosts and subdomains or loopback hosts"
+                "remote exec-server API-key authentication is restricted to HTTPS motyga.com hosts and subdomains or loopback hosts"
             );
         }
     }
 
     #[test]
     fn exec_server_remote_api_key_auth_rejects_suffix_spoof() {
-        let error = validate_api_key_remote_host("https://service.openai.org.evil.example/api")
+        let error = validate_api_key_remote_host("https://service.motyga.com.evil.example/api")
             .expect_err("reject suffix spoof");
 
         assert_eq!(
             error.to_string(),
-            "remote exec-server API-key authentication is restricted to HTTPS openai.com and openai.org hosts and subdomains or loopback hosts"
+            "remote exec-server API-key authentication is restricted to HTTPS motyga.com hosts and subdomains or loopback hosts"
         );
     }
 

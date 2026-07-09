@@ -830,8 +830,7 @@ fn installation_check(show_details: bool) -> DoctorCheck {
                 npm_package_root,
             } => {
                 status = CheckStatus::Fail;
-                summary =
-                    "npm install -g @motyga/cli would update a different install".to_string();
+                summary = "npm install -g @motyga/cli would update a different install".to_string();
                 remediation = Some(format!(
                     "Fix PATH or npm prefix so the running package root ({}) matches the npm global package root ({}).",
                     running_package_root.display(),
@@ -1000,7 +999,7 @@ fn npm_global_root_check() -> NpmRootCheck {
 }
 
 fn compare_npm_package_roots(running_package_root: &Path, npm_root: &Path) -> NpmRootCheck {
-    let npm_package_root = npm_root.join("@openai").join("codex");
+    let npm_package_root = npm_root.join("@motyga").join("cli");
     let running = normalize_path_for_compare(running_package_root);
     let target = normalize_path_for_compare(&npm_package_root);
     if running == target {
@@ -1205,7 +1204,7 @@ fn auth_check(config: &Config) -> DoctorCheck {
         Ok(Some(auth)) => {
             details.push(format!("stored auth mode: {}", stored_auth_mode(&auth)));
             details.push(format!("stored API key: {}", auth.openai_api_key.is_some()));
-            details.push(format!("stored ChatGPT tokens: {}", auth.tokens.is_some()));
+            details.push(format!("stored session tokens: {}", auth.tokens.is_some()));
             details.push(format!(
                 "stored agent identity: {}",
                 auth.agent_identity.is_some()
@@ -1236,8 +1235,8 @@ fn auth_check(config: &Config) -> DoctorCheck {
             let mut check =
                 DoctorCheck::new("auth.credentials", "auth", status, summary).details(details);
             if status == CheckStatus::Fail {
-                check =
-                    check.remediation("Run motyga login again or provide a supported auth env var.");
+                check = check
+                    .remediation("Run motyga login again or provide a supported auth env var.");
             }
             check
         }
@@ -1275,7 +1274,7 @@ fn provider_specific_auth_check(
     env_var_present: impl Fn(&str) -> bool,
 ) -> Option<DoctorCheck> {
     details.push(format!(
-        "model provider requires OpenAI auth: {requires_openai_auth}"
+        "model provider requires browser sign-in: {requires_openai_auth}"
     ));
     if requires_openai_auth {
         return None;
@@ -2575,14 +2574,16 @@ fn provider_reachability_plan(config: &Config) -> ReachabilityPlan {
 }
 
 fn default_reachability_plan() -> ReachabilityPlan {
+    // Fallback used when the config fails to load: describe the default Motyga provider
+    // (API-key auth against api.motyga.com), never probe a third-party host.
     provider_reachability_plan_from_parts(
-        ProviderAuthReachabilityMode::Chatgpt,
-        "openai",
-        "OpenAI",
-        /*provider_base_url*/ None,
+        ProviderAuthReachabilityMode::NotRequired,
+        "motyga",
+        "Motyga",
+        /*provider_base_url*/ Some("https://api.motyga.com/v1"),
         /*provider_query_params*/ None,
         /*is_amazon_bedrock*/ false,
-        "https://chatgpt.com/backend-api/",
+        /*chatgpt_base_url*/ "",
     )
 }
 
@@ -2621,20 +2622,14 @@ fn provider_reachability_plan_from_parts(
     is_amazon_bedrock: bool,
     chatgpt_base_url: &str,
 ) -> ReachabilityPlan {
-    let provider_route_probe_url = provider_base_url
-        .or_else(|| {
-            (mode == ProviderAuthReachabilityMode::ApiKey).then_some("https://api.openai.com/v1")
-        })
-        .and_then(|url| {
-            should_probe_models_route(provider_name, url, is_amazon_bedrock)
-                .then(|| provider_url_for_path(url, "models", provider_query_params))
-        });
+    let provider_route_probe_url = provider_base_url.and_then(|url| {
+        should_probe_models_route(provider_name, url, is_amazon_bedrock)
+            .then(|| provider_url_for_path(url, "models", provider_query_params))
+    });
     let endpoints = match mode {
         ProviderAuthReachabilityMode::ApiKey => vec![ReachabilityEndpoint {
             label: format!("{provider_id} API"),
-            url: provider_base_url
-                .unwrap_or("https://api.openai.com/v1")
-                .to_string(),
+            url: provider_base_url.unwrap_or_default().to_string(),
             required: true,
             route_probe_url: provider_route_probe_url,
         }],
@@ -2768,7 +2763,7 @@ async fn provider_reachability_check(plan: ReachabilityPlan) -> DoctorCheck {
                     )
                     .measured(format!("{route_probe_url} returned {status}"))
                     .expected("GET /models returns 2xx, 401, or 403")
-                    .remedy("Set base_url to the provider API root, for example https://api.openai.com/v1")
+                    .remedy("Set base_url to the provider API root, for example https://api.motyga.com/v1")
                     .field("route probe"),
                 );
             }
@@ -3174,25 +3169,25 @@ mod tests {
 
     #[test]
     fn compare_npm_package_roots_detects_match() {
-        let running = PathBuf::from("/prefix/lib/node_modules/@openai/codex");
+        let running = PathBuf::from("/prefix/lib/node_modules/@motyga/cli");
         let npm_root = PathBuf::from("/prefix/lib/node_modules");
         assert_eq!(
             compare_npm_package_roots(&running, &npm_root),
             NpmRootCheck::Match {
-                package_root: npm_root.join("@openai").join("codex")
+                package_root: npm_root.join("@motyga").join("cli")
             }
         );
     }
 
     #[test]
     fn compare_npm_package_roots_detects_mismatch() {
-        let running = PathBuf::from("/old/lib/node_modules/@openai/codex");
+        let running = PathBuf::from("/old/lib/node_modules/@motyga/cli");
         let npm_root = PathBuf::from("/new/lib/node_modules");
         assert_eq!(
             compare_npm_package_roots(&running, &npm_root),
             NpmRootCheck::Mismatch {
                 running_package_root: running,
-                npm_package_root: npm_root.join("@openai").join("codex"),
+                npm_package_root: npm_root.join("@motyga").join("cli"),
             }
         );
     }
@@ -3678,24 +3673,24 @@ mod tests {
     }
 
     #[test]
-    fn provider_reachability_api_key_does_not_require_chatgpt() {
+    fn provider_reachability_api_key_uses_provider_base_url() {
         let plan = provider_reachability_plan_from_parts(
             ProviderAuthReachabilityMode::ApiKey,
-            "openai",
-            "OpenAI",
-            /*provider_base_url*/ None,
+            "motyga",
+            "Motyga",
+            /*provider_base_url*/ Some("https://api.motyga.com/v1"),
             /*provider_query_params*/ None,
             /*is_amazon_bedrock*/ false,
-            "https://chatgpt.com/backend-api/",
+            /*chatgpt_base_url*/ "",
         );
 
         assert_eq!(
             plan.endpoints,
             vec![ReachabilityEndpoint {
-                label: "openai API".to_string(),
-                url: "https://api.openai.com/v1".to_string(),
+                label: "motyga API".to_string(),
+                url: "https://api.motyga.com/v1".to_string(),
                 required: true,
-                route_probe_url: Some("https://api.openai.com/v1/models".to_string()),
+                route_probe_url: Some("https://api.motyga.com/v1/models".to_string()),
             }]
         );
     }
@@ -3755,7 +3750,7 @@ mod tests {
         assert_eq!(check.issues.len(), 1);
         assert_eq!(
             check.issues[0].remedy.as_deref(),
-            Some("Set base_url to the provider API root, for example https://api.openai.com/v1")
+            Some("Set base_url to the provider API root, for example https://api.motyga.com/v1")
         );
     }
 

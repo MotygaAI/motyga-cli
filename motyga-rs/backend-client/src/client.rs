@@ -127,7 +127,6 @@ pub struct Client {
     auth_provider: SharedAuthProvider,
     user_agent: Option<HeaderValue>,
     chatgpt_account_id: Option<String>,
-    chatgpt_account_is_fedramp: bool,
     path_style: PathStyle,
 }
 
@@ -138,10 +137,6 @@ impl fmt::Debug for Client {
             .field("auth_provider", &"<provider>")
             .field("user_agent", &self.user_agent)
             .field("chatgpt_account_id", &self.chatgpt_account_id)
-            .field(
-                "chatgpt_account_is_fedramp",
-                &self.chatgpt_account_is_fedramp,
-            )
             .field("path_style", &self.path_style)
             .finish_non_exhaustive()
     }
@@ -150,15 +145,12 @@ impl fmt::Debug for Client {
 impl Client {
     pub fn new(base_url: impl Into<String>) -> Result<Self> {
         let mut base_url = base_url.into();
-        // Normalize common ChatGPT hostnames to include /backend-api so we hit the WHAM paths.
+        // Normalize the bare Motyga host to include /backend-api so we hit the WHAM paths.
         // Also trim trailing slashes for consistent URL building.
         while base_url.ends_with('/') {
             base_url.pop();
         }
-        if (base_url.starts_with("https://chatgpt.com")
-            || base_url.starts_with("https://chat.openai.com"))
-            && !base_url.contains("/backend-api")
-        {
+        if base_url.starts_with("https://api.motyga.com") && !base_url.contains("/backend-api") {
             base_url = format!("{base_url}/backend-api");
         }
         let http = build_reqwest_client_with_custom_ca(with_chatgpt_cloudflare_cookie_store(
@@ -171,7 +163,6 @@ impl Client {
             auth_provider: codex_model_provider::unauthenticated_auth_provider(),
             user_agent: None,
             chatgpt_account_id: None,
-            chatgpt_account_is_fedramp: false,
             path_style,
         })
     }
@@ -199,11 +190,6 @@ impl Client {
         self
     }
 
-    pub fn with_fedramp_routing_header(mut self) -> Self {
-        self.chatgpt_account_is_fedramp = true;
-        self
-    }
-
     pub fn with_path_style(mut self, style: PathStyle) -> Self {
         self.path_style = style;
         self
@@ -222,11 +208,6 @@ impl Client {
             && let Ok(hv) = HeaderValue::from_str(acc)
         {
             h.insert(name, hv);
-        }
-        if self.chatgpt_account_is_fedramp
-            && let Ok(name) = HeaderName::from_bytes(b"X-OpenAI-Fedramp")
-        {
-            h.insert(name, HeaderValue::from_static("true"));
         }
         h
     }
@@ -567,6 +548,9 @@ impl Client {
             BackendRateLimitReachedKind::WorkspaceMemberUsageLimitReached => {
                 Some(RateLimitReachedType::WorkspaceMemberUsageLimitReached)
             }
+            BackendRateLimitReachedKind::ModelWarmingUp => {
+                Some(RateLimitReachedType::ModelWarmingUp)
+            }
             BackendRateLimitReachedKind::Unknown => None,
         }
     }
@@ -881,6 +865,10 @@ mod tests {
                 RateLimitReachedKind::WorkspaceMemberUsageLimitReached,
                 Some(RateLimitReachedType::WorkspaceMemberUsageLimitReached),
             ),
+            (
+                RateLimitReachedKind::ModelWarmingUp,
+                Some(RateLimitReachedType::ModelWarmingUp),
+            ),
             (RateLimitReachedKind::Unknown, None),
         ];
 
@@ -922,10 +910,11 @@ mod tests {
             "https://example.test/api/codex/accounts/send_add_credits_nudge_email"
         );
 
-        let chatgpt_client = test_client("https://chatgpt.com/backend-api", PathStyle::ChatGptApi);
+        let chatgpt_client =
+            test_client("https://api.motyga.com/backend-api", PathStyle::ChatGptApi);
         assert_eq!(
             chatgpt_client.send_add_credits_nudge_email_url(),
-            "https://chatgpt.com/backend-api/wham/accounts/send_add_credits_nudge_email"
+            "https://api.motyga.com/backend-api/wham/accounts/send_add_credits_nudge_email"
         );
 
         assert_eq!(
@@ -952,10 +941,11 @@ mod tests {
             "https://example.test/api/codex/profiles/me"
         );
 
-        let chatgpt_client = test_client("https://chatgpt.com/backend-api", PathStyle::ChatGptApi);
+        let chatgpt_client =
+            test_client("https://api.motyga.com/backend-api", PathStyle::ChatGptApi);
         assert_eq!(
             chatgpt_client.token_usage_profile_url(),
-            "https://chatgpt.com/backend-api/wham/profiles/me"
+            "https://api.motyga.com/backend-api/wham/profiles/me"
         );
     }
 
@@ -967,10 +957,11 @@ mod tests {
             "https://example.test/api/codex/workspace-messages"
         );
 
-        let chatgpt_client = test_client("https://chatgpt.com/backend-api", PathStyle::ChatGptApi);
+        let chatgpt_client =
+            test_client("https://api.motyga.com/backend-api", PathStyle::ChatGptApi);
         assert_eq!(
             chatgpt_client.workspace_messages_url(),
-            "https://chatgpt.com/backend-api/wham/workspace-messages"
+            "https://api.motyga.com/backend-api/wham/workspace-messages"
         );
     }
 
@@ -981,7 +972,6 @@ mod tests {
             auth_provider: codex_model_provider::unauthenticated_auth_provider(),
             user_agent: None,
             chatgpt_account_id: None,
-            chatgpt_account_is_fedramp: false,
             path_style,
         }
     }

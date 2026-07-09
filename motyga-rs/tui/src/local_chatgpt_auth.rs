@@ -87,7 +87,7 @@ mod tests {
         };
         let payload = json!({
             "email": email,
-            "https://api.openai.com/auth": {
+            "https://api.motyga.com/auth": {
                 "chatgpt_account_id": account_id,
                 "chatgpt_plan_type": plan_type,
             },

@@ -93,7 +93,7 @@ impl SlashCommand {
             SlashCommand::Delete => "permanently delete this session and exit",
             SlashCommand::Clear => "clear the terminal and start a new chat",
             SlashCommand::Fork => "fork the current chat",
-            SlashCommand::App => "continue this session in Codex Desktop",
+            SlashCommand::App => "continue this session in the Motyga desktop app",
             SlashCommand::Quit | SlashCommand::Exit => "exit Motyga",
             SlashCommand::Copy => "copy last response as markdown",
             SlashCommand::Raw => "toggle raw scrollback mode for copy-friendly terminal selection",
@@ -247,7 +247,9 @@ impl SlashCommand {
         match self {
             SlashCommand::SandboxReadRoot => cfg!(target_os = "windows"),
             SlashCommand::Copy => !cfg!(target_os = "android"),
-            SlashCommand::App => cfg!(any(target_os = "macos", target_os = "windows")),
+            // Hidden until Motyga Desktop ships; the dispatch is also neutralized so `/app`
+            // can never launch a third-party desktop app.
+            SlashCommand::App => false,
             SlashCommand::Rollout | SlashCommand::TestApproval => cfg!(debug_assertions),
             _ => true,
         }

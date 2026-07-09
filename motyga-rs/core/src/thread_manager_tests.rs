@@ -153,7 +153,7 @@ fn effective_originator_prefers_thread_scoped_sources_before_env_originator() {
                 Some("Codex Desktop".to_string()),
                 persisted_originator.map(str::to_string),
                 inherited_originator.map(str::to_string),
-                "codex_cli_rs".to_string(),
+                "motyga_cli".to_string(),
             ),
             expected_originator
         );

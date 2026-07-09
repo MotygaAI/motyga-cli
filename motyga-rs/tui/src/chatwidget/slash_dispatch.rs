@@ -36,7 +36,7 @@ const SIDE_SLASH_COMMAND_UNAVAILABLE_HINT: &str =
     "Press Ctrl+C to return to the main thread first.";
 const GOAL_USAGE_HINT: &str = "Example: /goal improve benchmark coverage";
 const RAW_USAGE: &str = "Usage: /raw [on|off]";
-const USAGE_CHATGPT_LOGIN_REQUIRED: &str = "Sign in with ChatGPT to use /usage.";
+const USAGE_CHATGPT_LOGIN_REQUIRED: &str = "View your usage at https://motyga.com/platform/usage";
 
 impl ChatWidget {
     /// Dispatch a bare slash command and record its staged local-history entry.
@@ -240,14 +240,11 @@ impl ChatWidget {
                 self.app_event_tx.send(AppEvent::ForkCurrentSession);
             }
             SlashCommand::App => {
-                let Some(thread_id) = self.thread_id else {
-                    self.add_error_message(
-                        "Session is still starting; try /app again in a moment.".to_string(),
-                    );
-                    return;
-                };
-                self.app_event_tx
-                    .send(AppEvent::OpenDesktopThread { thread_id });
+                // Motyga Desktop is not shipping yet; do not launch a third-party desktop app.
+                // Re-enable this dispatch once Motyga Desktop exists (see app_cmd::run_app).
+                self.add_error_message(
+                    "The Motyga desktop app is not available yet — use the `motyga` CLI in your terminal for now.".to_string(),
+                );
             }
             SlashCommand::Init => {
                 const INIT_PROMPT: &str = include_str!("../../prompt_for_init_command.md");

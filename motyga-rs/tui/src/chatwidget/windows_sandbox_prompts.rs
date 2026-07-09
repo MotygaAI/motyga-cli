@@ -238,12 +238,12 @@ impl ChatWidget {
         header.push(*Box::new(
             Paragraph::new(if allow_unelevated {
                 vec![
-                    line!["Set up the Motyga agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>"],
+                    line!["Set up the Motyga agent sandbox to protect your files and control network access. Learn more <https://motyga.com/docs>"],
                 ]
             } else {
                 vec![
                     line!["Your organization requires the default Motyga agent sandbox to continue. Set it up to protect your files and control network access."],
-                    line!["Learn more <https://developers.openai.com/codex/windows>"],
+                    line!["Learn more <https://motyga.com/docs>"],
                 ]
             })
             .wrap(Wrap { trim: false }),
@@ -358,9 +358,7 @@ impl ChatWidget {
                 "Your organization requires the default sandbox before Motyga can continue."
             ]);
         }
-        lines.push(line![
-            "Learn more <https://developers.openai.com/codex/windows>"
-        ]);
+        lines.push(line!["Learn more <https://motyga.com/docs>"]);
 
         let mut header = ColumnRenderable::new();
         header.push(*Box::new(Paragraph::new(lines).wrap(Wrap { trim: false })));

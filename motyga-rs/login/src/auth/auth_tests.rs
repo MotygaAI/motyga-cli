@@ -1284,7 +1284,7 @@ fn fake_jwt_for_auth_file_params(params: &AuthFileParams) -> std::io::Result<Str
     let payload = serde_json::json!({
         "email": "user@example.com",
         "email_verified": true,
-        "https://api.openai.com/auth": auth_payload,
+        "https://api.motyga.com/auth": auth_payload,
     });
     let b64 = |b: &[u8]| base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(b);
     let header_b64 = b64(&serde_json::to_vec(&header)?);
@@ -1962,7 +1962,7 @@ fn fake_agent_identity_jwt_with_plan_type(
     let encode = |bytes: &[u8]| base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes);
     let header_b64 = encode(br#"{"alg":"EdDSA","typ":"JWT"}"#);
     let payload = json!({
-        "iss": "https://chatgpt.com/codex-backend/agent-identity",
+        "iss": "https://api.motyga.com/codex-backend/agent-identity",
         "aud": "codex-app-server",
         "iat": 1_700_000_000usize,
         "exp": 4_000_000_000usize,
@@ -1988,7 +1988,7 @@ fn signed_agent_identity_jwt(
     jsonwebtoken::encode(
         &header,
         &json!({
-            "iss": "https://chatgpt.com/codex-backend/agent-identity",
+            "iss": "https://api.motyga.com/codex-backend/agent-identity",
             "aud": "codex-app-server",
             "iat": 1_700_000_000usize,
             "exp": 4_000_000_000usize,

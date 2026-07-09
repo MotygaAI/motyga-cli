@@ -64,13 +64,13 @@ const OPENAI_CURATED_TAB_ID: &str = "marketplace:openai-curated";
 const PLUGIN_ROW_PREFIX_WIDTH: usize = 6;
 const LOADING_ANIMATION_DELAY: Duration = Duration::from_secs(1);
 const LOADING_ANIMATION_INTERVAL: Duration = Duration::from_millis(100);
-const APPS_HELP_ARTICLE_URL: &str = "https://help.openai.com/en/articles/11487775-apps-in-chatgpt";
+const APPS_HELP_ARTICLE_URL: &str = "https://motyga.com/docs";
 const PERSONAL_MARKETPLACE_RELATIVE_PATH: &str = ".agents/plugins/marketplace.json";
 const REMOTE_LOADING_TAB_ID_PREFIX: &str = "remote-loading:";
 const REMOTE_EMPTY_TAB_ID_PREFIX: &str = "remote-empty:";
 const REMOTE_ERROR_TAB_ID_PREFIX: &str = "remote-error:";
 const OPENAI_CURATED_LOADING_DESCRIPTION: &str =
-    "This updates when OpenAI Curated plugins finish loading.";
+    "This updates when Motyga Curated plugins finish loading.";
 const WORKSPACE_SECTION_TAB_ORDER: u8 = 0;
 const SHARED_WITH_ME_SECTION_TAB_ORDER: u8 = 1;
 const SHARED_WITH_ME_LINK_SECTION_TAB_ORDER: u8 = 2;
@@ -129,7 +129,7 @@ impl MarketplaceProduct {
 
     fn label(self) -> Option<&'static str> {
         match self {
-            Self::OpenAiCurated => Some("OpenAI Curated"),
+            Self::OpenAiCurated => Some("Motyga Curated"),
             Self::Workspace => Some("Workspace"),
             Self::SharedWithMe => Some("Shared with me"),
             Self::SharedWithMeLink => Some("Shared with me (link)"),
@@ -815,17 +815,17 @@ impl ChatWidget {
         let (curated_empty_name, curated_empty_description) =
             if curated_loading && !curated_has_entries {
                 (
-                    "Loading OpenAI Curated plugins...",
+                    "Loading Motyga Curated plugins...",
                     OPENAI_CURATED_LOADING_DESCRIPTION,
                 )
             } else if let Some(section_error) = by_openai_section_error
                 && !curated_has_entries
             {
-                ("OpenAI Curated unavailable", section_error.message.as_str())
+                ("Motyga Curated unavailable", section_error.message.as_str())
             } else {
                 (
-                    "No OpenAI Curated plugins available",
-                    "No OpenAI Curated plugins available.",
+                    "No Motyga Curated plugins available",
+                    "No Motyga Curated plugins available.",
                 )
             };
         let mut curated_items = self.plugin_selection_items(
@@ -837,7 +837,7 @@ impl ChatWidget {
         );
         if curated_loading && curated_has_entries {
             curated_items.push(remote_section_loading_item(
-                "OpenAI Curated",
+                "Motyga Curated",
                 OPENAI_CURATED_LOADING_DESCRIPTION,
             ));
         }
@@ -851,10 +851,10 @@ impl ChatWidget {
         }
         tabs.push(SelectionTab {
             id: OPENAI_CURATED_TAB_ID.to_string(),
-            label: "OpenAI Curated".to_string(),
+            label: "Motyga Curated".to_string(),
             header: plugins_header(
-                "OpenAI Curated marketplace.".to_string(),
-                format!("Installed {curated_installed} of {curated_total} OpenAI Curated plugins."),
+                "Motyga Curated marketplace.".to_string(),
+                format!("Installed {curated_installed} of {curated_total} Motyga Curated plugins."),
             ),
             items: curated_items,
         });

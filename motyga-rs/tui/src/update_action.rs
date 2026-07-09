@@ -12,11 +12,11 @@ pub enum UpdateAction {
     NpmGlobalLatest,
     /// Update via `bun install -g @motyga/cli@latest`.
     BunGlobalLatest,
-    /// Update via `brew upgrade codex`.
+    /// Update via `brew upgrade motyga`.
     BrewUpgrade,
-    /// Update via `curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh`.
+    /// Update via `curl -fsSL https://motyga.com/install.sh | MOTYGA_NON_INTERACTIVE=1 sh`.
     StandaloneUnix,
-    /// Update via `$env:CODEX_NON_INTERACTIVE=1; irm https://chatgpt.com/codex/install.ps1 | iex`.
+    /// Update via `$env:MOTYGA_NON_INTERACTIVE=1; irm https://motyga.com/install.ps1 | iex`.
     StandaloneWindows,
 }
 
@@ -40,12 +40,12 @@ impl UpdateAction {
         match self {
             UpdateAction::NpmGlobalLatest => ("npm", &["install", "-g", "@motyga/cli"]),
             UpdateAction::BunGlobalLatest => ("bun", &["install", "-g", "@motyga/cli"]),
-            UpdateAction::BrewUpgrade => ("brew", &["upgrade", "--cask", "codex"]),
+            UpdateAction::BrewUpgrade => ("brew", &["upgrade", "--cask", "motyga"]),
             UpdateAction::StandaloneUnix => (
                 "sh",
                 &[
                     "-c",
-                    "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh",
+                    "curl -fsSL https://motyga.com/install.sh | MOTYGA_NON_INTERACTIVE=1 sh",
                 ],
             ),
             UpdateAction::StandaloneWindows => (
@@ -54,7 +54,7 @@ impl UpdateAction {
                     "-ExecutionPolicy",
                     "Bypass",
                     "-c",
-                    "$env:CODEX_NON_INTERACTIVE=1; irm https://chatgpt.com/codex/install.ps1 | iex",
+                    "$env:MOTYGA_NON_INTERACTIVE=1; irm https://motyga.com/install.ps1 | iex",
                 ],
             ),
         }
@@ -145,7 +145,7 @@ mod tests {
                 "sh",
                 &[
                     "-c",
-                    "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh"
+                    "curl -fsSL https://motyga.com/install.sh | MOTYGA_NON_INTERACTIVE=1 sh"
                 ][..],
             )
         );
@@ -157,7 +157,7 @@ mod tests {
                     "-ExecutionPolicy",
                     "Bypass",
                     "-c",
-                    "$env:CODEX_NON_INTERACTIVE=1; irm https://chatgpt.com/codex/install.ps1 | iex"
+                    "$env:MOTYGA_NON_INTERACTIVE=1; irm https://motyga.com/install.ps1 | iex"
                 ][..],
             )
         );

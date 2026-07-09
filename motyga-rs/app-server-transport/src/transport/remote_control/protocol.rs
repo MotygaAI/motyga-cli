@@ -194,10 +194,7 @@ fn is_allowed_remote_control_chatgpt_host(host: &Option<Host<&str>>) -> bool {
     let Some(Host::Domain(host)) = *host else {
         return false;
     };
-    host == "chatgpt.com"
-        || host == "chatgpt-staging.com"
-        || host.ends_with(".chatgpt.com")
-        || host.ends_with(".chatgpt-staging.com")
+    host == "api.motyga.com" || host.ends_with(".api.motyga.com")
 }
 
 fn is_localhost(host: &Option<Host<&str>>) -> bool {
@@ -268,7 +265,7 @@ pub(super) fn normalize_remote_control_base_url(remote_control_url: &str) -> io:
         io::Error::new(
             ErrorKind::InvalidInput,
             format!(
-                "invalid remote control URL `{remote_control_url}`; expected HTTPS URL for chatgpt.com or chatgpt-staging.com, or HTTP/HTTPS URL for localhost"
+                "invalid remote control URL `{remote_control_url}`; expected HTTPS URL for api.motyga.com, or HTTP/HTTPS URL for localhost"
             ),
         )
     };
@@ -295,42 +292,41 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn normalize_remote_control_url_accepts_chatgpt_https_urls() {
+    fn normalize_remote_control_url_accepts_motyga_https_urls() {
         assert_eq!(
-            normalize_remote_control_url("https://chatgpt.com/backend-api")
-                .expect("chatgpt.com URL should normalize"),
+            normalize_remote_control_url("https://api.motyga.com/backend-api")
+                .expect("api.motyga.com URL should normalize"),
             RemoteControlTarget {
-                websocket_url: "wss://chatgpt.com/backend-api/wham/remote/control/server"
+                websocket_url: "wss://api.motyga.com/backend-api/wham/remote/control/server"
                     .to_string(),
-                enroll_url: "https://chatgpt.com/backend-api/wham/remote/control/server/enroll"
+                enroll_url: "https://api.motyga.com/backend-api/wham/remote/control/server/enroll"
                     .to_string(),
-                refresh_url: "https://chatgpt.com/backend-api/wham/remote/control/server/refresh"
-                    .to_string(),
-                pair_url: "https://chatgpt.com/backend-api/wham/remote/control/server/pair"
+                refresh_url:
+                    "https://api.motyga.com/backend-api/wham/remote/control/server/refresh"
+                        .to_string(),
+                pair_url: "https://api.motyga.com/backend-api/wham/remote/control/server/pair"
                     .to_string(),
                 pair_status_url:
-                    "https://chatgpt.com/backend-api/wham/remote/control/server/pair/status"
+                    "https://api.motyga.com/backend-api/wham/remote/control/server/pair/status"
                         .to_string(),
             }
         );
         assert_eq!(
-            normalize_remote_control_url("https://api.chatgpt-staging.com/backend-api")
-                .expect("chatgpt-staging.com subdomain URL should normalize"),
+            normalize_remote_control_url("https://sub.api.motyga.com/backend-api")
+                .expect("api.motyga.com subdomain URL should normalize"),
             RemoteControlTarget {
-                websocket_url:
-                    "wss://api.chatgpt-staging.com/backend-api/wham/remote/control/server"
-                        .to_string(),
+                websocket_url: "wss://sub.api.motyga.com/backend-api/wham/remote/control/server"
+                    .to_string(),
                 enroll_url:
-                    "https://api.chatgpt-staging.com/backend-api/wham/remote/control/server/enroll"
+                    "https://sub.api.motyga.com/backend-api/wham/remote/control/server/enroll"
                         .to_string(),
                 refresh_url:
-                    "https://api.chatgpt-staging.com/backend-api/wham/remote/control/server/refresh"
+                    "https://sub.api.motyga.com/backend-api/wham/remote/control/server/refresh"
                         .to_string(),
-                pair_url:
-                    "https://api.chatgpt-staging.com/backend-api/wham/remote/control/server/pair"
-                        .to_string(),
+                pair_url: "https://sub.api.motyga.com/backend-api/wham/remote/control/server/pair"
+                    .to_string(),
                 pair_status_url:
-                    "https://api.chatgpt-staging.com/backend-api/wham/remote/control/server/pair/status"
+                    "https://sub.api.motyga.com/backend-api/wham/remote/control/server/pair/status"
                         .to_string(),
             }
         );
@@ -378,12 +374,11 @@ mod tests {
     #[test]
     fn normalize_remote_control_url_rejects_unsupported_urls() {
         for remote_control_url in [
-            "http://chatgpt.com/backend-api",
+            "http://api.motyga.com/backend-api",
             "http://example.com/backend-api",
             "https://example.com/backend-api",
-            "https://chat.openai.com/backend-api",
-            "https://chatgpt.com.evil.com/backend-api",
-            "https://evilchatgpt.com/backend-api",
+            "https://api.motyga.com.evil.com/backend-api",
+            "https://evilapi.motyga.com/backend-api",
             "https://foo.localhost/backend-api",
         ] {
             let err = normalize_remote_control_url(remote_control_url)
@@ -393,7 +388,7 @@ mod tests {
             assert_eq!(
                 err.to_string(),
                 format!(
-                    "invalid remote control URL `{remote_control_url}`; expected HTTPS URL for chatgpt.com or chatgpt-staging.com, or HTTP/HTTPS URL for localhost"
+                    "invalid remote control URL `{remote_control_url}`; expected HTTPS URL for api.motyga.com, or HTTP/HTTPS URL for localhost"
                 )
             );
         }

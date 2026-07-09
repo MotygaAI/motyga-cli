@@ -4,7 +4,7 @@ use super::*;
 use codex_app_server_protocol::ModelSafetyBufferingUpdatedNotification;
 
 const SAFETY_BUFFERING_PROMPT_VIEW_ID: &str = "safety-buffering-prompt";
-const SAFETY_BUFFERING_LEARN_MORE_URL: &str = "https://help.openai.com/en/articles/20001326";
+const SAFETY_BUFFERING_LEARN_MORE_URL: &str = "https://motyga.com/docs";
 
 const SAFETY_BUFFERING_MESSAGE_WITH_RETRY: &str = "This request requires additional safety checks, which can take extra time. Hang tight or retry with a faster model for a quicker response, though it may be less capable of handling complex requests.";
 const SAFETY_BUFFERING_MESSAGE_WITHOUT_RETRY: &str =

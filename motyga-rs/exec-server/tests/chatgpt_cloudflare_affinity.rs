@@ -41,8 +41,8 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tempfile::TempDir;
 
-const CHATGPT_MCP_URL: &str = "https://chatgpt.com/backend-api/ps/mcp";
-const NON_CHATGPT_MCP_URL: &str = "https://api.openai.com/backend-api/ps/mcp";
+const CHATGPT_MCP_URL: &str = "https://motyga.com/backend-api/ps/mcp";
+const NON_CHATGPT_MCP_URL: &str = "https://api.example.com/backend-api/ps/mcp";
 
 #[derive(Debug)]
 struct CapturedRequest {
@@ -102,7 +102,7 @@ async fn exec_server_replays_only_chatgpt_cloudflare_cookies() -> anyhow::Result
             first.request_line.as_str(),
             first.headers.get("cookie"),
         ),
-        ("chatgpt.com:443", "POST /backend-api/ps/mcp HTTP/1.1", None,)
+        ("motyga.com:443", "POST /backend-api/ps/mcp HTTP/1.1", None,)
     );
 
     let west_response = execute_http_request(&mut server, CHATGPT_MCP_URL, "west").await?;
@@ -145,7 +145,7 @@ async fn exec_server_replays_only_chatgpt_cloudflare_cookies() -> anyhow::Result
             other_host.headers.get("cookie"),
         ),
         (
-            "api.openai.com:443",
+            "api.example.com:443",
             "POST /backend-api/ps/mcp HTTP/1.1",
             None,
         )
@@ -207,8 +207,8 @@ fn generate_tls_material() -> anyhow::Result<TlsMaterial> {
     let ca = CertifiedIssuer::self_signed(ca_params, ca_key_pair)?;
 
     let mut server_params = CertificateParams::new(vec![
-        "chatgpt.com".to_string(),
-        "api.openai.com".to_string(),
+        "motyga.com".to_string(),
+        "api.example.com".to_string(),
     ])?;
     server_params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ServerAuth];
     server_params.key_usages = vec![

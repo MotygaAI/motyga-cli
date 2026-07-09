@@ -253,9 +253,9 @@ mod tests {
                 "Disable terminal pets",
                 "BSOD",
                 "Chefito",
-                "Codex",
                 "Dewey",
                 "Fireball",
+                "Motyga",
                 "Null Signal",
                 "Rocky",
                 "Seedy",
@@ -270,7 +270,7 @@ mod tests {
     }
 
     #[test]
-    fn picker_preselects_codex_without_marking_it_current_when_no_pet_is_configured() {
+    fn picker_preselects_motyga_without_marking_it_current_when_no_pet_is_configured() {
         let codex_home = tempfile::tempdir().unwrap();
         let params = build_pet_picker_params(
             /*current_pet*/ None,
@@ -278,9 +278,9 @@ mod tests {
             PetPickerPreviewState::default(),
         );
 
-        assert_eq!(params.initial_selected_idx, Some(2));
-        assert_eq!(params.items[2].name, "Codex");
-        assert!(!params.items[2].is_current);
+        assert_eq!(params.initial_selected_idx, Some(4));
+        assert_eq!(params.items[4].name, "Motyga");
+        assert!(!params.items[4].is_current);
     }
 
     #[test]

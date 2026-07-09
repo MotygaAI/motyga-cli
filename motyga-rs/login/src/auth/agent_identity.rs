@@ -41,7 +41,7 @@ pub(super) fn require_agent_identity_authapi_base_url(
 ) -> std::io::Result<&str> {
     agent_identity_authapi_base_url.ok_or_else(|| {
         std::io::Error::other(
-            "Agent Identity only supports production and staging ChatGPT environments",
+            "Agent Identity only supports production and staging Motyga environments",
         )
     })
 }
@@ -496,7 +496,7 @@ mod tests {
         jsonwebtoken::encode(
             &header,
             &json!({
-                "iss": "https://chatgpt.com/codex-backend/agent-identity",
+                "iss": "https://api.motyga.com/codex-backend/agent-identity",
                 "aud": "codex-app-server",
                 "iat": 1_700_000_000usize,
                 "exp": 4_000_000_000usize,

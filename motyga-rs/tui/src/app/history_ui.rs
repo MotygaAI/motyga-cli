@@ -5,7 +5,7 @@
 
 use super::*;
 
-const DESKTOP_THREAD_OPENED_MESSAGE: &str = "Opened this session in Codex Desktop.";
+const DESKTOP_THREAD_OPENED_MESSAGE: &str = "Opened this session in the Motyga desktop app.";
 
 impl App {
     pub(super) fn insert_history_cell(&mut self, tui: &mut tui::Tui, cell: Box<dyn HistoryCell>) {
@@ -179,7 +179,7 @@ impl App {
 
 fn desktop_thread_open_error_message(err: &str) -> String {
     format!(
-        "Failed to open this session in Codex Desktop: {err}. Install or launch Codex Desktop and try again."
+        "Failed to open this session in the Motyga desktop app: {err}. Install or launch the Motyga desktop app and try again."
     )
 }
 
@@ -205,7 +205,7 @@ fn open_desktop_thread_url(url: &str) -> Result<(), String> {
         .arg("-Command")
         .arg(&script)
         .output()
-        .map_err(|err| format!("failed to launch Codex Desktop through PowerShell: {err}"))?;
+        .map_err(|err| format!("failed to launch Motyga Desktop through PowerShell: {err}"))?;
 
     if output.status.success() {
         return Ok(());
@@ -214,7 +214,7 @@ fn open_desktop_thread_url(url: &str) -> Result<(), String> {
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
     if stderr.is_empty() {
         Err(format!(
-            "failed to launch Codex Desktop through PowerShell with {}",
+            "failed to launch Motyga Desktop through PowerShell with {}",
             output.status
         ))
     } else {
@@ -232,7 +232,7 @@ $url = {url}
 
 $installLocation = (Get-AppxPackage -Name OpenAI.Codex -ErrorAction SilentlyContinue).InstallLocation
 if ([string]::IsNullOrWhiteSpace($installLocation)) {{
-    Write-Error 'Codex Desktop package is not installed'
+    Write-Error 'Motyga Desktop package is not installed'
     exit 1
 }}
 
@@ -240,11 +240,11 @@ $appDir = Join-Path $installLocation 'app'
 $exe = Join-Path $appDir 'Codex.exe'
 $app = Join-Path $appDir 'resources\app.asar'
 if (-not (Test-Path $exe)) {{
-    Write-Error "Codex Desktop executable not found at $exe"
+    Write-Error "Motyga Desktop executable not found at $exe"
     exit 1
 }}
 if (-not (Test-Path $app)) {{
-    Write-Error "Codex Desktop app bundle not found at $app"
+    Write-Error "Motyga Desktop app bundle not found at $app"
     exit 1
 }}
 
@@ -260,7 +260,7 @@ fn powershell_single_quoted_string(value: &str) -> String {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 fn open_desktop_thread_url(_url: &str) -> Result<(), String> {
-    Err("Codex Desktop is only available on macOS and Windows".to_string())
+    Err("Motyga Desktop is only available on macOS and Windows".to_string())
 }
 
 #[cfg(test)]

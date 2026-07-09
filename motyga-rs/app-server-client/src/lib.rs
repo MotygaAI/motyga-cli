@@ -1125,7 +1125,7 @@ mod tests {
             JSONRPCMessage::Response(JSONRPCResponse {
                 id: request.id,
                 result: serde_json::json!({
-                    "userAgent": "codex_cli_rs/9.8.7-test (Test OS; x86_64) rust",
+                    "userAgent": "motyga_cli/9.8.7-test (Test OS; x86_64) rust",
                     "codexHome": "/server/.codex",
                 }),
             }),

@@ -1,10 +1,10 @@
 # Configuration
 
-For basic configuration instructions, see [this documentation](https://developers.openai.com/codex/config-basic).
+For basic configuration instructions, see [this documentation](https://motyga.com/docs).
 
-For advanced configuration instructions, see [this documentation](https://developers.openai.com/codex/config-advanced).
+For advanced configuration instructions, see [this documentation](https://motyga.com/docs).
 
-For a full configuration reference, see [this documentation](https://developers.openai.com/codex/config-reference).
+For a full configuration reference, see [this documentation](https://motyga.com/docs).
 
 ## Lifecycle hooks
 
