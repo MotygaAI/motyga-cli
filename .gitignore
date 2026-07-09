@@ -94,3 +94,11 @@ CHANGELOG.ignore.md
 # Python bytecode files
 __pycache__/
 *.pyc
+
+# Plans & handoffs (working docs — kept local, never committed)
+docs/Plans/
+docs/handoffs/
+HANDOFF-*.md
+
+# junk
+*.stackdump
