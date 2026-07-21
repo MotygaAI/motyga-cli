@@ -272,14 +272,19 @@ fn build_reqwest_client_with_env(
     env_source: &dyn EnvSource,
     mut builder: reqwest::ClientBuilder,
 ) -> Result<reqwest::Client, BuildCustomCaTransportError> {
+    // Always use the rustls TLS backend, never reqwest's platform default. On Windows that default is
+    // Schannel, whose AcquireCredentialsHandle fails with SEC_E_NO_CREDENTIALS under restricted sandbox
+    // identities (e.g. Codex's CodexSandboxOnline) — rustls performs the handshake in-process with no
+    // Windows security context, so the client connects the same everywhere. Custom-CA handling below
+    // just layers extra roots onto this rustls builder.
+    ensure_rustls_crypto_provider();
+    builder = builder.use_rustls_tls();
     if let Some(bundle) = env_source.configured_ca_bundle() {
-        ensure_rustls_crypto_provider();
         info!(
             source_env = bundle.source_env,
             ca_path = %bundle.path.display(),
             "building HTTP client with rustls backend for custom CA bundle"
         );
-        builder = builder.use_rustls_tls();
 
         let certificates = bundle.load_certificates()?;
 
