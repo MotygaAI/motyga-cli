@@ -677,6 +677,7 @@ async fn drain_to_completed(
             // Rollout tracing currently models remote compaction only; local compaction streams
             // are left untraced until the reducer has a first-class local compaction lifecycle.
             &InferenceTraceContext::disabled(),
+            None, // compaction is not a billable sampling request; no idempotency key
         )
         .await?;
     loop {

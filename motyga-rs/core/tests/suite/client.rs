@@ -1359,6 +1359,7 @@ async fn send_provider_auth_request(server: &MockServer, auth: ModelProviderAuth
             /*service_tier*/ None,
             &responses_metadata,
             &codex_rollout_trace::InferenceTraceContext::disabled(),
+            None,
         )
         .await
         .expect("responses stream to start");
@@ -3037,6 +3038,7 @@ async fn azure_responses_request_includes_store_and_reasoning_ids() {
             /*service_tier*/ None,
             &responses_metadata,
             &codex_rollout_trace::InferenceTraceContext::disabled(),
+            None,
         )
         .await
         .expect("responses stream to start");

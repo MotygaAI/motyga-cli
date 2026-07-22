@@ -1358,6 +1358,7 @@ impl ModelClientSession {
         service_tier: Option<String>,
         responses_metadata: &CodexResponsesMetadata,
         inference_trace: &InferenceTraceContext,
+        idempotency_key: Option<String>,
     ) -> Result<ResponseStream> {
         let auth_manager = self.client.state.provider.auth_manager();
         let mut auth_recovery = auth_manager
@@ -1404,6 +1405,15 @@ impl ModelClientSession {
                 session_telemetry_for_request(session_telemetry, &request);
             let inference_trace_attempt = inference_trace.start_attempt();
             inference_trace_attempt.add_request_headers(&mut options.extra_headers);
+            // Stable per-sampling idempotency key (reused across this turn's stream retries) so the Motyga
+            // proxy can map a retry after a lost `response.completed` frame onto the one billed attempt.
+            if let Some(k) = idempotency_key.as_deref()
+                && let Ok(v) = HeaderValue::from_str(k)
+            {
+                options
+                    .extra_headers
+                    .insert(http::HeaderName::from_static("idempotency-key"), v);
+            }
             inference_trace_attempt.record_started(&request);
             let client = ApiResponsesClient::new(
                 transport,
@@ -1735,6 +1745,7 @@ impl ModelClientSession {
         service_tier: Option<String>,
         responses_metadata: &CodexResponsesMetadata,
         inference_trace: &InferenceTraceContext,
+        idempotency_key: Option<String>,
     ) -> Result<ResponseStream> {
         let wire_api = self.client.state.provider.info().wire_api;
         match wire_api {
@@ -1772,6 +1783,7 @@ impl ModelClientSession {
                     service_tier,
                     responses_metadata,
                     inference_trace,
+                    idempotency_key,
                 )
                 .await
             }

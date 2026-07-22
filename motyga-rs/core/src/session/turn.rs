@@ -1059,6 +1059,37 @@ pub(crate) fn build_prompt(
     }
 }
 
+/// Classify a proxy 409 by its typed idempotency error code. Returns a NON-retryable terminal error for
+/// `idempotency_already_delivered` (and the legacy plain `duplicate_request` a registry-off proxy returns —
+/// treated the same so the CLI stops cleanly instead of looping) and `idempotency_mismatch`. Returns None for
+/// `idempotency_in_progress` (and any other 409), letting the normal retry/backoff path handle it — the
+/// in-progress attempt resolves within a few retries as the original settles or refunds.
+fn terminal_idempotency_error(err: &CodexErr) -> Option<CodexErr> {
+    let CodexErr::UnexpectedStatus(e) = err else {
+        return None;
+    };
+    if e.status.as_u16() != 409 {
+        return None;
+    }
+    let code = serde_json::from_str::<serde_json::Value>(&e.body)
+        .ok()
+        .and_then(|v| {
+            v.get("error")
+                .and_then(|er| er.get("code"))
+                .and_then(|c| c.as_str())
+                .map(str::to_string)
+        });
+    match code.as_deref() {
+        Some("idempotency_already_delivered") | Some("duplicate_request") => Some(CodexErr::Fatal(
+            "this request was already completed on the server; no additional charge was made".to_string(),
+        )),
+        Some("idempotency_mismatch") => Some(CodexErr::InvalidRequest(
+            "idempotency key was reused with a different request".to_string(),
+        )),
+        _ => None,
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 #[allow(deprecated)]
 #[instrument(level = "trace",
@@ -1100,6 +1131,12 @@ async fn run_sampling_request(
     let mut retries = 0;
     let mut initial_input = Some(input);
     let mut original_input = None;
+    // One stable idempotency key per logical sampling request, REUSED across this turn's stream retries so the
+    // Motyga proxy can collapse a retry (after a lost `response.completed` frame) onto the single billed
+    // attempt. A new sampling request (e.g. after a tool result) gets a fresh key: run_sampling_request is
+    // called anew for it. The proxy's fingerprint is retry-normalized, so the retry rebuilt from mutated
+    // history still maps to the same request — no need to freeze the original body.
+    let idempotency_key = uuid::Uuid::new_v4().simple().to_string();
     loop {
         let prompt_input = if let Some(input) = initial_input.take() {
             input
@@ -1123,6 +1160,7 @@ async fn run_sampling_request(
             responses_metadata,
             Arc::clone(&turn_diff_tracker),
             &prompt,
+            Some(idempotency_key.clone()),
             cancellation_token.child_token(),
         )
         .await
@@ -1146,6 +1184,12 @@ async fn run_sampling_request(
 
         if original_input.is_none() {
             original_input = Some(prompt.input);
+        }
+
+        // A typed idempotency 409 from the Motyga proxy that must not be retried (the answer was already
+        // committed, or the key was misused) -> stop cleanly instead of re-generating / looping.
+        if let Some(terminal) = terminal_idempotency_error(&err) {
+            return Err(terminal);
         }
 
         if !err.is_retryable() {
@@ -1893,6 +1937,7 @@ async fn try_run_sampling_request(
     responses_metadata: &CodexResponsesMetadata,
     turn_diff_tracker: SharedTurnDiffTracker,
     prompt: &Prompt,
+    idempotency_key: Option<String>,
     cancellation_token: CancellationToken,
 ) -> CodexResult<SamplingRequestResult> {
     feedback_tags!(
@@ -1919,6 +1964,7 @@ async fn try_run_sampling_request(
             turn_context.config.service_tier.clone(),
             responses_metadata,
             &inference_trace,
+            idempotency_key,
         )
         .instrument(trace_span!("stream_request"))
         .or_cancel(&cancellation_token)

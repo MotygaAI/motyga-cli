@@ -286,6 +286,7 @@ impl MemoryStartupContext {
                 context.service_tier.clone(),
                 &responses_metadata,
                 &InferenceTraceContext::disabled(),
+                None,
             )
             .await?;
 

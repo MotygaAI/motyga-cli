@@ -368,6 +368,7 @@ async fn run_remote_compaction_request_v2(
                 turn_context.config.service_tier.clone(),
                 responses_metadata,
                 &InferenceTraceContext::disabled(),
+                None, // remote compaction is not a billable sampling request; no idempotency key
             )
             .await
         {
