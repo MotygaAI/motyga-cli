@@ -180,7 +180,7 @@ jobs:
           esac
 
       - name: Upload payload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-${{ matrix.pkg }}
           path: dist/${{ matrix.pkg }}.tgz
@@ -205,7 +205,7 @@ jobs:
             --release-version "${{ needs.prepare.outputs.version }}" \
             --pack-output dist/motyga-cli.tgz
       - name: Upload meta
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-meta
           path: dist/motyga-cli.tgz
@@ -223,7 +223,7 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
       - name: Download all payloads
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
@@ -245,3 +245,23 @@ jobs:
           done
           echo "publish dist/motyga-cli.tgz (meta)"
           npm publish ./dist/motyga-cli.tgz --access public
+
+  # Guards the upload-artifact -> download-artifact round-trip (incl. merge-multiple)
+  # on every build — the real download otherwise runs only in the publish job.
+  verify-artifacts:
+    needs: [build, meta]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all payloads (download-artifact@v8, merge-multiple)
+        uses: actions/download-artifact@v8
+        with:
+          path: dl
+          merge-multiple: true
+      - name: Assert payloads arrived
+        shell: bash
+        run: |
+          ls -R dl
+          for f in codex-win32-x64.tgz codex-win32-arm64.tgz motyga-cli.tgz; do
+            test -f "dl/$f" || { echo "MISSING dl/$f"; exit 1; }
+          done
+          echo "artifact round-trip upload@v7 -> download@v8 + merge-multiple OK"
