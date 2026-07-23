@@ -12,6 +12,8 @@
   },
   "resolutions": {
     "@modelcontextprotocol/sdk": "1.26.0",
+    "body-parser@2.2.2": "2.3.0",
+    "brace-expansion@5.0.5": "5.0.7",
     "braces": "^3.0.3",
     "esbuild": "0.28.1",
     "fast-uri": "3.1.1",
@@ -19,6 +21,7 @@
     "glob@10.4.5": "10.5.0",
     "handlebars": "4.7.9",
     "hono": "4.12.25",
+    "js-yaml@4.1.0": "4.2.0",
     "micromatch": "^4.0.8",
     "minimatch@3.1.2": "3.1.4",
     "minimatch@9.0.5": "9.0.7",
