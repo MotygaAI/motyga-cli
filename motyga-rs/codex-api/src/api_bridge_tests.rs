@@ -254,6 +254,40 @@ fn map_api_error_ignores_unparseable_rate_limit_reached_type_headers() {
 }
 
 #[test]
+fn map_api_error_surfaces_rate_limit_body_message() {
+    // A plain rate-limit 429 (e.g. the daily free-model trial cap) is NOT a usage_limit_reached upgrade
+    // prompt — it must still reach the user with the server's actionable message, not a bare status.
+    let mut headers = HeaderMap::new();
+    headers.insert(CF_RAY_HEADER, http::HeaderValue::from_static("ray-429"));
+    let body = serde_json::json!({
+        "error": {
+            "message": "Daily free-model trial limit reached (5/day). Use a paid model or the in-app chat.",
+            "type": "rate_limit_error",
+        }
+    })
+    .to_string();
+    let err = map_api_error(ApiError::Transport(TransportError::Http {
+        status: http::StatusCode::TOO_MANY_REQUESTS,
+        url: Some("http://example.com/v1/responses".to_string()),
+        headers: Some(headers),
+        body: Some(body),
+    }));
+
+    let CodexErr::RetryLimit(retry_limit) = err else {
+        panic!("expected CodexErr::RetryLimit, got {err:?}");
+    };
+    assert_eq!(
+        retry_limit.server_message.as_deref(),
+        Some("Daily free-model trial limit reached (5/day). Use a paid model or the in-app chat.")
+    );
+    let rendered = retry_limit.to_string();
+    assert!(
+        rendered.contains("Daily free-model trial limit reached (5/day)"),
+        "rendered error should surface the server message, got: {rendered}"
+    );
+}
+
+#[test]
 fn map_api_error_extracts_identity_auth_details_from_headers() {
     let mut headers = HeaderMap::new();
     headers.insert(REQUEST_ID_HEADER, http::HeaderValue::from_static("req-401"));
