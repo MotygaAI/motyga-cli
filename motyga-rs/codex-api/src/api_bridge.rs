@@ -111,6 +111,7 @@ pub fn map_api_error(err: ApiError) -> CodexErr {
                     CodexErr::RetryLimit(RetryLimitReachedError {
                         status,
                         request_id: extract_request_tracking_id(headers.as_ref()),
+                        server_message: extract_body_error_message(&body_text),
                     })
                 } else {
                     CodexErr::UnexpectedStatus(UnexpectedResponseError {
@@ -131,6 +132,7 @@ pub fn map_api_error(err: ApiError) -> CodexErr {
             TransportError::RetryLimit => CodexErr::RetryLimit(RetryLimitReachedError {
                 status: http::StatusCode::INTERNAL_SERVER_ERROR,
                 request_id: None,
+                server_message: None,
             }),
             TransportError::Timeout => CodexErr::RequestTimeout,
             TransportError::Network(msg) | TransportError::Build(msg) => {
@@ -159,6 +161,23 @@ mod tests;
 
 fn extract_request_tracking_id(headers: Option<&HeaderMap>) -> Option<String> {
     extract_request_id(headers).or_else(|| extract_header(headers, CF_RAY_HEADER))
+}
+
+/// Pull the human-readable `error.message` out of an OpenAI-shape error body, if present and non-empty.
+/// Used to surface a rate-limit / quota 429 explanation (e.g. a daily free-model trial cap) instead of a
+/// bare "exceeded retry limit".
+fn extract_body_error_message(body: &str) -> Option<String> {
+    let value = serde_json::from_str::<Value>(body).ok()?;
+    let message = value
+        .get("error")
+        .and_then(|error| error.get("message"))
+        .and_then(Value::as_str)?
+        .trim();
+    if message.is_empty() {
+        None
+    } else {
+        Some(message.to_string())
+    }
 }
 
 fn api_error_user_message(status: http::StatusCode, body: &str) -> Option<String> {

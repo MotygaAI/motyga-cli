@@ -404,19 +404,30 @@ fn truncate_text(content: &str, policy: TruncationPolicy) -> String {
 pub struct RetryLimitReachedError {
     pub status: StatusCode,
     pub request_id: Option<String>,
+    /// Server-provided explanation (the `error.message` from the response body), when the upstream sent
+    /// one. A rate-limit 429 (e.g. a daily free-model trial cap) carries an actionable message here that
+    /// the bare "exceeded retry limit" text would otherwise hide.
+    pub server_message: Option<String>,
 }
 
 impl std::fmt::Display for RetryLimitReachedError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "exceeded retry limit, last status: {}{}",
-            self.status,
-            self.request_id
-                .as_ref()
-                .map(|id| format!(", request id: {id}"))
-                .unwrap_or_default()
-        )
+        let request_id = self
+            .request_id
+            .as_ref()
+            .map(|id| format!(", request id: {id}"))
+            .unwrap_or_default();
+        // When the server explained why (typically a rate-limit / quota 429), lead with its message —
+        // "exceeded retry limit" is misleading when the very first request is rejected and never retried.
+        if let Some(message) = self.server_message.as_ref().map(|m| m.trim()).filter(|m| !m.is_empty()) {
+            write!(f, "{message} (status: {}{request_id})", self.status)
+        } else {
+            write!(
+                f,
+                "exceeded retry limit, last status: {}{request_id}",
+                self.status
+            )
+        }
     }
 }
 
