@@ -29,6 +29,7 @@ members = [
     "cloud-tasks-client",
     "cloud-tasks-mock-client",
     "cli",
+    "supply",
     "collaboration-mode-templates",
     "connectors",
     "config",
@@ -156,6 +157,7 @@ codex-async-utils = { path = "async-utils" }
 codex-backend-client = { path = "backend-client" }
 codex-chatgpt = { path = "chatgpt" }
 codex-cli = { path = "cli" }
+motyga-supply = { path = "supply" }
 codex-client = { path = "codex-client" }
 codex-collaboration-mode-templates = { path = "collaboration-mode-templates" }
 codex-cloud-config = { path = "cloud-config" }

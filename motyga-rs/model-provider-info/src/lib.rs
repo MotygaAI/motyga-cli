@@ -416,8 +416,19 @@ impl ModelProviderInfo {
                     .collect(),
             ),
             env_http_headers: None,
-            request_max_retries: None,
-            stream_max_retries: None,
+            // Retry ownership is split by layer, and the Motyga gateway already owns provider failover: it
+            // walks its own candidate waterfall server-side before any output is committed. Inheriting the
+            // global defaults (4 request + 5 stream retries) multiplied a single logical turn into up to two
+            // dozen upstream attempts, which is how one stalled turn became minutes of silence.
+            //   request_max_retries = 0 -> the HTTP layer never silently re-POSTs. A re-POST after the body
+            //     went out is financially ambiguous: upstream may already be generating and billing.
+            //   stream_max_retries  = 1 -> exactly one recovery for a genuine transport break between the CLI
+            //     and the gateway (TLS/LB blip, dropped SSE, gateway redeploy). Zero would make any single
+            //     flap terminal and merely push the retry onto the user, with a fresh idempotency key.
+            // Deliberately provider-scoped: the global defaults stay put, because other providers have no
+            // server-side waterfall of their own to lean on.
+            request_max_retries: Some(0),
+            stream_max_retries: Some(1),
             stream_idle_timeout_ms: None,
             websocket_connect_timeout_ms: None,
             requires_openai_auth: false,

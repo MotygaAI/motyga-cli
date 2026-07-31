@@ -158,6 +158,9 @@ pub enum CodexErrKind {
     UsageLimitReached,
     ServerOverloaded,
     CyberPolicy,
+    /// Terminal verdict from an upstream gateway (waterfall exhausted / timed out / stream cut after
+    /// content). Kept distinct from `Stream` so telemetry can tell "we gave up" from "we retried".
+    Gateway,
     ResponseStreamFailed,
     ConnectionFailed,
     QuotaExceeded,
@@ -217,6 +220,7 @@ impl From<&CodexErr> for CodexErrKind {
             CodexErr::UsageLimitReached(_) => CodexErrKind::UsageLimitReached,
             CodexErr::ServerOverloaded => CodexErrKind::ServerOverloaded,
             CodexErr::CyberPolicy { .. } => CodexErrKind::CyberPolicy,
+            CodexErr::Gateway(_) => CodexErrKind::Gateway,
             CodexErr::ResponseStreamFailed(_) => CodexErrKind::ResponseStreamFailed,
             CodexErr::ConnectionFailed(_) => CodexErrKind::ConnectionFailed,
             CodexErr::QuotaExceeded => CodexErrKind::QuotaExceeded,

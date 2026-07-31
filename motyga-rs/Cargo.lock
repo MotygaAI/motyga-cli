@@ -2365,6 +2365,7 @@ dependencies = [
  "http 1.4.0",
  "insta",
  "libc",
+ "motyga-supply",
  "os_info",
  "owo-colors",
  "predicates",
@@ -9225,6 +9226,25 @@ dependencies = [
  "smallvec",
  "tagptr",
  "uuid",
+]
+
+[[package]]
+name = "motyga-supply"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "bytes",
+ "clap",
+ "dirs",
+ "futures",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-tungstenite",
+ "tracing",
 ]
 
 [[package]]

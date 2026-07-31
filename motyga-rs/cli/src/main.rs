@@ -206,6 +206,9 @@ enum Subcommand {
 
     /// Inspect feature flags.
     Features(FeaturesCli),
+
+    /// Sell part of your own Codex/Claude subscription through Motyga.
+    Supply(motyga_supply::SupplyCli),
 }
 
 #[derive(Debug, Parser)]
@@ -995,6 +998,11 @@ async fn cli_main(
             )
             .await?;
             handle_app_exit(exit_info)?;
+        }
+        Some(Subcommand::Supply(supply_cli)) => {
+            // Supply mode is a standalone daemon: it must NOT build the agent runtime (no sandbox, no
+            // exec policy, no session). Dispatching before any of that setup keeps that guarantee obvious.
+            motyga_supply::run_main(supply_cli).await?;
         }
         Some(Subcommand::Exec(mut exec_cli)) => {
             reject_remote_mode_for_subcommand(
@@ -2095,6 +2103,8 @@ fn unsupported_subcommand_name_for_strict_config(
         Some(Subcommand::ResponsesApiProxy(_)) => Some("responses-api-proxy"),
         Some(Subcommand::StdioToUds(_)) => Some("stdio-to-uds"),
         Some(Subcommand::Features(_)) => Some("features"),
+        // Supply mode never loads the agent config, so root `--strict-config` has nothing to apply to it.
+        Some(Subcommand::Supply(_)) => Some("supply"),
     }
 }
 

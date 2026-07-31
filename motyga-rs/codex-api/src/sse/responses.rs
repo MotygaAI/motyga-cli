@@ -18,6 +18,8 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::sync::Arc;
 use std::sync::OnceLock;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::Instant;
@@ -30,6 +32,11 @@ const X_CODEX_TURN_STATE_HEADER: &str = "x-codex-turn-state";
 const OPENAI_MODEL_HEADER: &str = "openai-model";
 const REQUEST_ID_HEADER: &str = "x-request-id";
 const TRUSTED_ACCESS_FOR_CYBER_VERIFICATION: &str = "trusted_access_for_cyber";
+/// How many idle windows a stream may stay byte-alive without producing a single dispatchable event before
+/// we call it stuck. Generous on purpose — legitimate keepalive-only stretches are exactly what the raw-byte
+/// liveness check exists to protect — but finite, so a peer emitting endless non-event bytes cannot pin the
+/// connection open and grow the decoder buffer forever.
+const NO_EVENT_PROGRESS_WINDOWS: u32 = 12;
 
 pub fn spawn_response_stream(
     stream_response: StreamResponse,
@@ -383,6 +390,11 @@ pub fn process_responses_event(
                         response_error = ApiError::InvalidRequest { message };
                     } else if is_server_overloaded_error(&error) {
                         response_error = ApiError::ServerOverloaded;
+                    } else if is_gateway_terminal_error(&error) {
+                        let message = error.message.unwrap_or_else(|| {
+                            "The gateway could not complete this request.".to_string()
+                        });
+                        response_error = ApiError::Gateway { message };
                     } else {
                         let delay = try_parse_retry_after(&error);
                         let message = error.message.unwrap_or_default();
@@ -472,13 +484,52 @@ async fn process_sse_with_treatment(
     telemetry: Option<Arc<dyn SseTelemetry>>,
     safety_buffering_treatment: SafetyBufferingTreatment,
 ) {
+    // The idle timeout must measure NETWORK SILENCE, not "time until the next dispatchable event".
+    //
+    // A conforming SSE keepalive is a comment line (`: keepalive`), and the spec requires decoders to
+    // discard comments — eventsource-stream does exactly that (`RawEventLine::Comment(_) => {}`), so it
+    // never yields an item for one. Timing `stream.next()` alone therefore cannot see a server that is
+    // faithfully keeping the connection warm: a long-running turn behind a gateway waterfall looked
+    // identical to a dead socket, tripped the idle timeout, and was retried as a stream error.
+    //
+    // So watch the RAW byte stream for liveness and only fail when nothing at all arrived.
+    // Timestamp (not a flag) of the last raw byte. A bare "did any byte arrive in the last window?" boolean
+    // would grant a FULL fresh window on every re-arm, so one byte early in a window buys nearly `2 *
+    // idle_timeout` of tolerated silence — ten minutes at the 300s default. The deadline must be measured
+    // from the last byte, so re-arming waits only for the REMAINDER of the window.
+    let epoch = Instant::now();
+    let last_byte_ms = Arc::new(AtomicU64::new(0));
+    let observed = Arc::clone(&last_byte_ms);
+    let stream: ByteStream = Box::pin(stream.inspect(move |_| {
+        observed.store(epoch.elapsed().as_millis() as u64, Ordering::Relaxed);
+    }));
     let mut stream = stream.eventsource();
     let mut response_error: Option<ApiError> = None;
     let mut last_server_model: Option<String> = None;
 
+    // Raw-byte liveness answers "is the transport alive", which is deliberately NOT the same as "is the
+    // server making progress". A peer that emits valid bytes forming no SSE event keeps re-arming the idle
+    // timer forever while the decoder's internal buffer grows unbounded. Bound the wait for the next
+    // DISPATCHABLE event separately, so liveness can never substitute for progress.
+    let no_event_budget = idle_timeout.saturating_mul(NO_EVENT_PROGRESS_WINDOWS);
+
     loop {
         let start = Instant::now();
-        let response = timeout(idle_timeout, stream.next()).await;
+        let mut response = timeout(idle_timeout, stream.next()).await;
+        // Elapsed with raw bytes still flowing = keepalive comments, not a stall. Re-arm for whatever is
+        // left of the window measured from the last byte. Dropping the pending `next()` future is safe: it
+        // holds no partial item — the decoder owns its buffer and the `EventBuilder`.
+        while response.is_err() {
+            let last = epoch + Duration::from_millis(last_byte_ms.load(Ordering::Relaxed));
+            let quiet_for = Instant::now().saturating_duration_since(last);
+            if quiet_for >= idle_timeout {
+                break; // genuinely silent for a full window -> the stream really is dead
+            }
+            if start.elapsed() >= no_event_budget {
+                break; // bytes keep coming but none of them ever become an event -> not progress
+            }
+            response = timeout(idle_timeout - quiet_for, stream.next()).await;
+        }
         if let Some(t) = telemetry.as_ref() {
             t.on_sse_poll(&response, start.elapsed());
         }
@@ -568,7 +619,18 @@ async fn process_sse_with_treatment(
             }
             Ok(None) => {}
             Err(error) => {
-                response_error = Some(error.into_api_error());
+                let api_error = error.into_api_error();
+                // A TERMINAL gateway verdict is the answer — deliver it now and stop reading.
+                //
+                // Stashing it and waiting for a clean EOF means a delayed/lost FIN, a transport hiccup or an
+                // idle timeout replaces the verdict with a retryable `ApiError::Stream`, and the CLI replays
+                // the whole turn against a waterfall that already told us it is exhausted. Keepalive comments
+                // could postpone the verdict indefinitely.
+                if matches!(api_error, ApiError::Gateway { .. }) {
+                    let _ = tx_event.send(Err(api_error)).await;
+                    return;
+                }
+                response_error = Some(api_error);
             }
         };
     }
@@ -623,6 +685,26 @@ fn is_cyber_policy_error(error: &Error) -> bool {
 fn is_server_overloaded_error(error: &Error) -> bool {
     error.code.as_deref() == Some("server_is_overloaded")
         || error.code.as_deref() == Some("slow_down")
+}
+
+/// Terminal verdicts from a Motyga-style gateway that owns its own provider waterfall.
+///
+/// Everything not matched by a specific classifier falls through to `ApiError::Retryable`, so a gateway that
+/// had already exhausted its routing plan used to be retried five more times in silence — the client kept
+/// spinning while nothing new was being attempted. These codes say "stop": the gateway made a terminal
+/// decision, or it cannot vouch for what upstream did with the request it already sent.
+fn is_gateway_terminal_error(error: &Error) -> bool {
+    matches!(
+        error.code.as_deref(),
+        Some(
+            "gateway_exhausted"
+                | "gateway_upstream_exhausted"
+                | "gateway_timeout_before_output"
+                | "gateway_pre_dispatch_unavailable"
+                | "upstream_outcome_ambiguous"
+                | "upstream_stream_interrupted"
+        )
+    )
 }
 
 fn cyber_policy_fallback_message() -> String {
@@ -720,6 +802,156 @@ mod tests {
 
     fn idle_timeout() -> Duration {
         Duration::from_millis(1000)
+    }
+
+    /// Drive `process_sse` over a stream whose chunks are separated by real delays, so the idle timeout is
+    /// exercised for what it is meant to measure: network silence.
+    async fn collect_events_timed(
+        idle: Duration,
+        chunks: Vec<(Duration, Vec<u8>)>,
+    ) -> Vec<Result<ResponseEvent, ApiError>> {
+        let stream = stream::unfold(chunks.into_iter(), |mut it| async move {
+            let (delay, bytes) = it.next()?;
+            tokio::time::sleep(delay).await;
+            Some((Ok::<_, TransportError>(bytes::Bytes::from(bytes)), it))
+        });
+
+        let (tx, mut rx) = mpsc::channel::<Result<ResponseEvent, ApiError>>(64);
+        tokio::spawn(process_sse(Box::pin(stream), tx, idle, /*telemetry*/ None));
+
+        let mut events = Vec::new();
+        while let Some(ev) = rx.recv().await {
+            events.push(ev);
+        }
+        events
+    }
+
+    /// A conforming SSE keepalive is a COMMENT, which the decoder discards per spec — so it yields no event.
+    /// Timing only `stream.next()` therefore mistook a healthy, deliberately-warmed connection for a dead one
+    /// and tripped the idle timeout on any turn slower than it. Raw bytes must count as liveness.
+    #[tokio::test]
+    async fn sse_comment_keepalives_hold_the_stream_open_past_the_idle_timeout() {
+        let idle = Duration::from_millis(120);
+        let completed = json!({"type": "response.completed", "response": {"id": "resp-ka"}}).to_string();
+
+        // Ten keepalives at 60ms each = 600ms of "no dispatchable event", five times the idle timeout.
+        let mut chunks: Vec<(Duration, Vec<u8>)> = (0..10)
+            .map(|_| (Duration::from_millis(60), b": keepalive\n\n".to_vec()))
+            .collect();
+        chunks.push((
+            Duration::from_millis(60),
+            format!("event: response.completed\ndata: {completed}\n\n").into_bytes(),
+        ));
+
+        let events = collect_events_timed(idle, chunks).await;
+
+        // Exactly one event: the completion. Comments must never surface to the caller.
+        assert_eq!(events.len(), 1, "comments must not produce caller-visible events: {events:?}");
+        assert_matches!(
+            &events[0],
+            Ok(ResponseEvent::Completed { response_id, .. }) if response_id == "resp-ka"
+        );
+    }
+
+    /// A terminal gateway verdict must reach the caller immediately, not wait for the server to close the
+    /// stream. If it is stashed until clean EOF, a delayed FIN — or keepalive comments — let a later
+    /// transport error or idle timeout overwrite it with a RETRYABLE `Stream` error, and the CLI replays a
+    /// whole turn against a waterfall that already reported itself exhausted.
+    #[tokio::test]
+    async fn terminal_gateway_failure_is_delivered_without_waiting_for_eof() {
+        let idle = Duration::from_millis(150);
+        let failed = json!({
+            "type": "response.failed",
+            "response": {"error": {"code": "gateway_exhausted", "message": "all candidates failed"}}
+        })
+        .to_string();
+        let chunks = vec![
+            (
+                Duration::from_millis(10),
+                format!("event: response.failed\ndata: {failed}\n\n").into_bytes(),
+            ),
+            // The server never closes: keepalives keep the socket warm long past the idle timeout.
+            (Duration::from_millis(50), b": keepalive\n\n".to_vec()),
+            (Duration::from_millis(50), b": keepalive\n\n".to_vec()),
+            (Duration::from_millis(50), b": keepalive\n\n".to_vec()),
+            (Duration::from_millis(50), b": keepalive\n\n".to_vec()),
+            (Duration::from_millis(50), b": keepalive\n\n".to_vec()),
+        ];
+
+        let events = collect_events_timed(idle, chunks).await;
+
+        assert_eq!(events.len(), 1, "expected exactly the terminal verdict: {events:?}");
+        assert_matches!(&events[0], Err(ApiError::Gateway { message }) if message == "all candidates failed");
+    }
+
+    /// One early keepalive must NOT buy a whole extra window. Measuring liveness with a bare "saw a byte in
+    /// this window" flag grants a fresh full window on re-arm, so a byte arriving just after a window opens
+    /// stretches tolerated silence to nearly 2x the idle timeout — ten minutes at the 300s default.
+    #[tokio::test]
+    async fn an_early_keepalive_does_not_buy_a_second_idle_window() {
+        let idle = Duration::from_millis(200);
+        let completed = json!({"type": "response.completed", "response": {"id": "resp-late"}}).to_string();
+        let chunks = vec![
+            // One byte early in the first window, then silence far longer than one window.
+            (Duration::from_millis(20), b": keepalive\n\n".to_vec()),
+            (
+                Duration::from_millis(2_000),
+                format!("event: response.completed\ndata: {completed}\n\n").into_bytes(),
+            ),
+        ];
+
+        let started = tokio::time::Instant::now();
+        let events = collect_events_timed(idle, chunks).await;
+        let elapsed = started.elapsed();
+
+        assert_matches!(
+            events.first(),
+            Some(Err(ApiError::Stream(msg))) if msg == "idle timeout waiting for SSE"
+        );
+        // Deadline is measured from the LAST BYTE (20ms) + idle (200ms) ≈ 220ms, not 20ms + 2*idle ≈ 420ms.
+        assert!(
+            elapsed < Duration::from_millis(380),
+            "idle deadline stretched to {elapsed:?}: an early byte bought a second full window"
+        );
+    }
+
+    /// Byte liveness is not progress. A peer emitting endless valid bytes that never form an event would
+    /// otherwise re-arm the idle timer forever while the decoder's buffer grows without bound.
+    #[tokio::test]
+    async fn endless_non_event_bytes_do_not_pin_the_connection_open() {
+        let idle = Duration::from_millis(50);
+        // Far more keepalive-only windows than NO_EVENT_PROGRESS_WINDOWS allows, and never an event.
+        let chunks: Vec<(Duration, Vec<u8>)> = (0..200)
+            .map(|_| (Duration::from_millis(10), b": keepalive\n\n".to_vec()))
+            .collect();
+
+        let events = collect_events_timed(idle, chunks).await;
+
+        assert_matches!(
+            events.first(),
+            Some(Err(ApiError::Stream(msg))) if msg == "idle timeout waiting for SSE"
+        );
+    }
+
+    /// Control for the test above: genuine silence — no bytes at all — must still time out. Otherwise the fix
+    /// above would have simply disabled the idle timeout.
+    #[tokio::test]
+    async fn silence_with_no_bytes_still_trips_the_idle_timeout() {
+        let idle = Duration::from_millis(80);
+        let completed = json!({"type": "response.completed", "response": {"id": "resp-dead"}}).to_string();
+        // One chunk, arriving well after the idle timeout, with nothing on the wire before it.
+        let chunks = vec![(
+            Duration::from_millis(500),
+            format!("event: response.completed\ndata: {completed}\n\n").into_bytes(),
+        )];
+
+        let events = collect_events_timed(idle, chunks).await;
+
+        assert_eq!(events.len(), 1, "expected exactly the timeout error: {events:?}");
+        assert_matches!(
+            &events[0],
+            Err(ApiError::Stream(msg)) if msg == "idle timeout waiting for SSE"
+        );
     }
 
     #[tokio::test]
@@ -949,6 +1181,49 @@ mod tests {
             }
             other => panic!("unexpected second event: {other:?}"),
         }
+    }
+
+    #[tokio::test]
+    async fn gateway_exhausted_is_terminal_not_retryable() {
+        // The gateway walked its whole provider waterfall and refused. Retrying replays a decided failure —
+        // that is what left a user staring at a spinner while five identical attempts went out in silence.
+        let raw_error = r#"{"type":"response.failed","sequence_number":3,"response":{"id":"resp_gw_exhausted","object":"response","created_at":1759510081,"status":"failed","background":false,"error":{"code":"gateway_exhausted","message":"every provider refused this request"},"usage":null,"user":null,"metadata":{}}}"#;
+        let sse1 = format!("event: response.failed\ndata: {raw_error}\n\n");
+
+        let events = collect_events(&[sse1.as_bytes()]).await;
+
+        assert_eq!(events.len(), 1);
+        match &events[0] {
+            Err(ApiError::Gateway { message }) => {
+                assert_eq!(message, "every provider refused this request");
+            }
+            other => panic!("expected a terminal Gateway error, got: {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn interrupted_upstream_stream_is_terminal() {
+        // Upstream already generated part of the answer (and may already have billed for it), so a silent
+        // client retry would buy the same turn twice.
+        let raw_error = r#"{"type":"response.failed","sequence_number":3,"response":{"id":"resp_gw_interrupted","object":"response","created_at":1759510082,"status":"failed","background":false,"error":{"code":"upstream_stream_interrupted","message":"upstream stream ended before completion"},"usage":null,"user":null,"metadata":{}}}"#;
+        let sse1 = format!("event: response.failed\ndata: {raw_error}\n\n");
+
+        let events = collect_events(&[sse1.as_bytes()]).await;
+
+        assert_eq!(events.len(), 1);
+        assert_matches!(events[0], Err(ApiError::Gateway { .. }));
+    }
+
+    #[tokio::test]
+    async fn unknown_failure_code_stays_retryable() {
+        // Guard the fallthrough: only the codes we explicitly recognise become terminal.
+        let raw_error = r#"{"type":"response.failed","sequence_number":3,"response":{"id":"resp_unknown","object":"response","created_at":1759510083,"status":"failed","background":false,"error":{"code":"some_new_transient_thing","message":"try again"},"usage":null,"user":null,"metadata":{}}}"#;
+        let sse1 = format!("event: response.failed\ndata: {raw_error}\n\n");
+
+        let events = collect_events(&[sse1.as_bytes()]).await;
+
+        assert_eq!(events.len(), 1);
+        assert_matches!(events[0], Err(ApiError::Retryable { .. }));
     }
 
     #[tokio::test]

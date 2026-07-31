@@ -83,6 +83,9 @@ pub fn telemetry_api_error_message(error: &ApiError) -> String {
         ApiError::InvalidRequest { .. } => "invalid request".to_string(),
         ApiError::CyberPolicy { .. } => "cyber policy".to_string(),
         ApiError::ServerOverloaded => "server overloaded".to_string(),
+        // Terminal gateway verdict (the waterfall is exhausted / timed out / the stream was cut after
+        // content). Distinct from Stream/Retryable in telemetry precisely because retrying it is pointless.
+        ApiError::Gateway { .. } => "gateway error".to_string(),
     }
 }
 

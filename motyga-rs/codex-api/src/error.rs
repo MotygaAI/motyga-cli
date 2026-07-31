@@ -31,6 +31,12 @@ pub enum ApiError {
     CyberPolicy { message: String },
     #[error("server overloaded")]
     ServerOverloaded,
+    /// The gateway finished its own provider waterfall without an answer, or ended a turn whose upstream
+    /// outcome it cannot vouch for. Terminal on purpose: retrying re-runs a whole turn the gateway already
+    /// decided against, and when the outcome is ambiguous it may pay for a second generation. Distinct from
+    /// `InvalidRequest`, which would wrongly blame the caller's input.
+    #[error("gateway error: {message}")]
+    Gateway { message: String },
 }
 
 impl From<RateLimitError> for ApiError {

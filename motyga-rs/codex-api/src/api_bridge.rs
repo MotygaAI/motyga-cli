@@ -23,6 +23,8 @@ pub fn map_api_error(err: ApiError) -> CodexErr {
         ApiError::Retryable { message, delay } => CodexErr::Stream(message, delay),
         ApiError::Stream(msg) => CodexErr::Stream(msg, None),
         ApiError::ServerOverloaded => CodexErr::ServerOverloaded,
+        // Terminal on purpose: keep it OUT of CodexErr::Stream, which the turn loop treats as retryable.
+        ApiError::Gateway { message } => CodexErr::Gateway(message),
         ApiError::Api { status, message } => {
             let user_message = api_error_user_message(status, &message);
             CodexErr::UnexpectedStatus(UnexpectedResponseError {

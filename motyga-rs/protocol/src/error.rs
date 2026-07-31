@@ -106,6 +106,12 @@ pub enum CodexErr {
     /// Unexpected HTTP status code.
     #[error("{0}")]
     UnexpectedStatus(UnexpectedResponseError),
+    /// The gateway made a terminal decision about this turn: it exhausted its own provider waterfall, or it
+    /// cannot vouch for what upstream did with a request it had already sent. NOT retryable — the gateway has
+    /// already tried every route it was willing to try, so retrying only repeats a decided failure, and when
+    /// the outcome is ambiguous it can pay for a second generation of the same turn.
+    #[error("{0}")]
+    Gateway(String),
     /// Invalid request.
     #[error("{0}")]
     InvalidRequest(String),
@@ -183,6 +189,7 @@ impl CodexErr {
             | CodexErr::UsageNotIncluded
             | CodexErr::QuotaExceeded
             | CodexErr::InvalidImageRequest()
+            | CodexErr::Gateway(_)
             | CodexErr::InvalidRequest(_)
             | CodexErr::RefreshTokenFailed(_)
             | CodexErr::UnsupportedOperation(_)
