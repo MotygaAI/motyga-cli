@@ -112,7 +112,9 @@ async fn cmd_login(args: LoginArgs) -> Result<()> {
     config::save(&cfg)?;
     println!("This machine is connected.");
     println!("Next: motyga supply models        # see what is being bought and at what rate");
-    println!("      motyga supply enable claude --model claude-opus-4-7 --share 50");
+    // No model id here on purpose: this text ships inside the npm binary, so a retired model would keep
+    // being suggested until every supplier upgrades.
+    println!("      motyga supply enable claude --model <id from the list above> --share 50");
     println!("Then: motyga supply run");
     Ok(())
 }
@@ -180,13 +182,19 @@ async fn cmd_models() -> Result<()> {
     }
 
     let cfg = config::load()?;
-    let resp = reqwest::Client::new()
-        .get(format!("{}/api/web/fleet/catalog", cfg.base()))
+    // The node token is the only credential a terminal has — there is no browser session here. Without it
+    // this request was answered 401 for everyone, so the command documented as "see the live rates" had
+    // never once worked.
+    let mut req = reqwest::Client::new().get(format!("{}/api/web/fleet/catalog", cfg.base()));
+    if let Some(token) = cfg.node_token.as_deref() {
+        req = req.bearer_auth(token);
+    }
+    let resp = req
         .send()
         .await
         .with_context(|| format!("cannot reach {}", cfg.base()))?;
     if resp.status() == reqwest::StatusCode::UNAUTHORIZED {
-        return Err(anyhow!("sign in on the website first, then run this again"));
+        return Err(anyhow!("run `motyga supply login` first, then run this again"));
     }
     let body: Resp = resp
         .error_for_status()
