@@ -71,7 +71,13 @@ jobs:
           # OPTIONAL dependency, so a leg that fails is a clean skip for that platform, not a broken release.
           - { target: x86_64-unknown-linux-gnu,  os: ubuntu-latest,    pkg: codex-linux-x64 }
           - { target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm, pkg: codex-linux-arm64 }
-          - { target: x86_64-apple-darwin,       os: macos-13,         pkg: codex-darwin-x64 }
+          # macOS Intel (x86_64-apple-darwin) needs a macos-13 runner, and that pool no longer picks jobs
+          # up: in run 30648975444 it sat QUEUED for two hours with no runner ever assigned, while every
+          # other leg — including Apple Silicon — built and finished. GitHub is retiring macos-13, so this
+          # leg blocks the publish indefinitely rather than merely being slow. Left out until there is a
+          # runner that serves it; Apple Silicon covers the overwhelming majority of Macs, and the meta
+          # package treats each platform as optional, so an absent one is "not available there", not a break.
+          # - { target: x86_64-apple-darwin,     os: macos-13,         pkg: codex-darwin-x64 }
           - { target: aarch64-apple-darwin,      os: macos-latest,     pkg: codex-darwin-arm64 }
           - { target: x86_64-pc-windows-msvc,    os: windows-latest,   pkg: codex-win32-x64 }
           - { target: aarch64-pc-windows-msvc,   os: windows-11-arm,   pkg: codex-win32-arm64 }
