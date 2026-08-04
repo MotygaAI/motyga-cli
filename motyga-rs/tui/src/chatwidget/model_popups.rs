@@ -30,6 +30,54 @@ impl ChatWidget {
         self.open_model_popup_with_presets(presets);
     }
 
+    /// Apply `/model <name>` directly, without opening the picker.
+    ///
+    /// The argument used to be dropped on the floor: the picker opened, the name was discarded,
+    /// and the session kept running the previous model with no indication anything was ignored.
+    /// An unmatched name is now an error rather than a silent no-op.
+    pub(crate) fn apply_model_slash_arg(&mut self, requested: &str) {
+        if !self.is_session_configured() {
+            self.add_info_message(
+                "Model selection is disabled until startup completes.".to_string(),
+                /*hint*/ None,
+            );
+            return;
+        }
+
+        let presets: Vec<ModelPreset> = match self.model_catalog.try_list_models() {
+            Ok(models) => models,
+            Err(_) => {
+                self.add_info_message(
+                    "Models are being updated; please try /model again in a moment.".to_string(),
+                    /*hint*/ None,
+                );
+                return;
+            }
+        };
+
+        // Match the catalog id the user typed. Deliberately not filtered by `show_in_picker`:
+        // naming a model outright is a more explicit act than browsing for one.
+        let Some(preset) = presets
+            .iter()
+            .find(|preset| preset.model.eq_ignore_ascii_case(requested))
+            .cloned()
+        else {
+            self.add_error_message(format!(
+                "Unknown model '{requested}'. Run /model with no argument to pick from the catalog."
+            ));
+            return;
+        };
+
+        let effort = Some(preset.default_reasoning_effort.clone());
+        let should_prompt_plan_mode_scope =
+            self.should_prompt_plan_mode_reasoning_scope(preset.model.as_str(), effort.clone());
+        for action in
+            Self::model_selection_actions(preset.model.clone(), effort, should_prompt_plan_mode_scope)
+        {
+            action(&self.app_event_tx);
+        }
+    }
+
     fn model_menu_header(&self, title: &str, subtitle: &str) -> Box<dyn Renderable> {
         let title = title.to_string();
         let subtitle = subtitle.to_string();
