@@ -145,8 +145,22 @@ pub(crate) fn resolve_provider_auth(
         ));
     }
 
-    if let Some(auth) = bearer_auth_for_provider(provider)? {
-        return Ok(Arc::new(auth));
+    match bearer_auth_for_provider(provider) {
+        Ok(Some(bearer)) => return Ok(Arc::new(bearer)),
+        Ok(None) => {}
+        Err(err) => {
+            // A declared `env_key` is a hard requirement only when there is nothing else to
+            // authenticate with. A stored device login is a first-class credential source, so
+            // hard-failing here made `motyga login` a no-op for the default provider: it wrote a
+            // live key to auth.json that nothing ever read, and a stale env var silently outranked
+            // the fresh login. Kept deliberately narrow — first-party provider and an API-key login
+            // only, so a third-party provider can never be handed a credential minted for us.
+            let stored_login_usable =
+                provider.is_motyga() && matches!(auth, Some(CodexAuth::ApiKey(_)));
+            if !(stored_login_usable && matches!(err, CodexErr::EnvVar(_))) {
+                return Err(err);
+            }
+        }
     }
 
     Ok(match auth {
@@ -579,5 +593,83 @@ mod tests {
         assert!(first_fallback.is_engaged());
         assert!(second_fallback.is_engaged());
         assert_eq!(registration_count.load(Ordering::SeqCst), 3);
+    }
+
+    /// An env var no test may set, so these cases never depend on the ambient environment.
+    const ABSENT_ENV_KEY: &str = "MOTYGA_API_KEY_DELIBERATELY_UNSET_FOR_TESTS";
+
+    fn motyga_provider_without_env_key() -> ModelProviderInfo {
+        let mut provider = ModelProviderInfo::create_motyga_provider();
+        provider.env_key = Some(ABSENT_ENV_KEY.to_string());
+        provider
+    }
+
+    #[test]
+    fn motyga_provider_uses_stored_login_when_env_key_is_absent() {
+        let provider = motyga_provider_without_env_key();
+        let auth = CodexAuth::from_api_key("nb-stored-login-secret");
+
+        let resolved = resolve_provider_auth(Some(&auth), &provider)
+            .expect("a stored device login should authenticate without the env var");
+
+        assert_eq!(
+            resolved
+                .to_auth_headers()
+                .get(http::header::AUTHORIZATION)
+                .and_then(|value| value.to_str().ok()),
+            Some("Bearer nb-stored-login-secret"),
+        );
+    }
+
+    #[test]
+    fn motyga_provider_prefers_env_key_over_stored_login() {
+        // The env var stays an override; only its absence hands over to the stored login.
+        let provider = ModelProviderInfo {
+            env_key: None,
+            experimental_bearer_token: Some("nb-env-override".to_string()),
+            ..ModelProviderInfo::create_motyga_provider()
+        };
+        let auth = CodexAuth::from_api_key("nb-stored-login-secret");
+
+        let resolved =
+            resolve_provider_auth(Some(&auth), &provider).expect("override should resolve");
+
+        assert_eq!(
+            resolved
+                .to_auth_headers()
+                .get(http::header::AUTHORIZATION)
+                .and_then(|value| value.to_str().ok()),
+            Some("Bearer nb-env-override"),
+        );
+    }
+
+    #[test]
+    fn motyga_provider_still_reports_missing_env_key_without_a_stored_login() {
+        // Without any credential the actionable "set MOTYGA_API_KEY" error must survive; the
+        // fallback must not degrade this into an unauthenticated request that 401s later.
+        let provider = motyga_provider_without_env_key();
+
+        let Err(err) = resolve_provider_auth(/*auth*/ None, &provider) else {
+            panic!("no env var and no login is still a hard error");
+        };
+
+        assert!(matches!(err, CodexErr::EnvVar(_)), "unexpected error: {err}");
+    }
+
+    #[test]
+    fn third_party_provider_never_borrows_the_stored_login() {
+        // The stored key is minted for Motyga. A provider that merely declares an `env_key` must
+        // never be handed it just because the env var happens to be missing.
+        let provider = ModelProviderInfo {
+            name: "Some Other Provider".to_string(),
+            ..motyga_provider_without_env_key()
+        };
+        let auth = CodexAuth::from_api_key("nb-stored-login-secret");
+
+        let Err(err) = resolve_provider_auth(Some(&auth), &provider) else {
+            panic!("a third-party provider must not fall back to the Motyga login");
+        };
+
+        assert!(matches!(err, CodexErr::EnvVar(_)), "unexpected error: {err}");
     }
 }
