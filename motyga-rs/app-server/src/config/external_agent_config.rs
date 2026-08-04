@@ -451,7 +451,7 @@ impl ExternalAgentConfigService {
         let settings = effective_external_settings(&source_settings)?;
         let target_config = repo_root.map_or_else(
             || self.codex_home.join("config.toml"),
-            |repo_root| repo_root.join(".codex").join("config.toml"),
+            |repo_root| repo_root.join(".motyga").join("config.toml"),
         );
         if let Some(settings) = settings.as_ref() {
             let migrated = build_config_from_external(settings)?;
@@ -538,7 +538,7 @@ impl ExternalAgentConfigService {
         );
         let target_hooks = repo_root.map_or_else(
             || self.codex_home.join("hooks.json"),
-            |repo_root| repo_root.join(".codex").join("hooks.json"),
+            |repo_root| repo_root.join(".motyga").join("hooks.json"),
         );
         let hook_event_names =
             hook_migration_event_names(source_external_agent_dir.as_path(), &target_hooks)?;
@@ -625,7 +625,7 @@ impl ExternalAgentConfigService {
         let source_subagents = source_external_agent_dir.join("agents");
         let target_subagents = repo_root.map_or_else(
             || self.codex_home.join("agents"),
-            |repo_root| repo_root.join(".codex").join("agents"),
+            |repo_root| repo_root.join(".motyga").join("agents"),
         );
         let subagents_count = count_missing_subagents(&source_subagents, &target_subagents)?;
         if subagents_count > 0 {
@@ -1028,7 +1028,7 @@ impl ExternalAgentConfigService {
         let (source_settings, target_config) = if let Some(repo_root) = repo_root.as_ref() {
             (
                 repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
-                repo_root.join(".codex").join("config.toml"),
+                repo_root.join(".motyga").join("config.toml"),
             )
         } else if cwd.is_some_and(|cwd| !cwd.as_os_str().is_empty()) {
             return Ok(None);
@@ -1083,7 +1083,7 @@ impl ExternalAgentConfigService {
         let (source_settings, target_config) = if let Some(repo_root) = repo_root.as_ref() {
             (
                 repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
-                repo_root.join(".codex").join("config.toml"),
+                repo_root.join(".motyga").join("config.toml"),
             )
         } else if cwd.is_some_and(|cwd| !cwd.as_os_str().is_empty()) {
             return Ok(Vec::new());
@@ -1134,7 +1134,7 @@ impl ExternalAgentConfigService {
         let (source_agents, target_agents) = if let Some(repo_root) = find_repo_root(cwd)? {
             (
                 repo_root.join(EXTERNAL_AGENT_DIR).join("agents"),
-                repo_root.join(".codex").join("agents"),
+                repo_root.join(".motyga").join("agents"),
             )
         } else if cwd.is_some_and(|cwd| !cwd.as_os_str().is_empty()) {
             return Ok(Vec::new());
@@ -1153,7 +1153,7 @@ impl ExternalAgentConfigService {
             if let Some(repo_root) = find_repo_root(cwd)? {
                 (
                     repo_root.join(EXTERNAL_AGENT_DIR),
-                    repo_root.join(".codex").join("hooks.json"),
+                    repo_root.join(".motyga").join("hooks.json"),
                 )
             } else if cwd.is_some_and(|cwd| !cwd.as_os_str().is_empty()) {
                 return Ok(Vec::new());
@@ -1671,7 +1671,7 @@ fn rewrite_external_agent_terms(content: &str) -> String {
         "claudecode",
         "claude",
     ] {
-        rewritten = replace_case_insensitive_with_boundaries(&rewritten, from, "Codex");
+        rewritten = replace_case_insensitive_with_boundaries(&rewritten, from, "Motyga");
     }
     rewritten
 }

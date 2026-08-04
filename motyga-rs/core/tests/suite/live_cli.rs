@@ -23,7 +23,7 @@ fn run_live(prompt: &str) -> (assert_cmd::assert::Assert, TempDir) {
 
     let dir = TempDir::new().unwrap();
     let home = TempDir::new().unwrap();
-    let codex_home = home.path().join(".codex");
+    let codex_home = home.path().join(".motyga");
     std::fs::create_dir_all(&codex_home).unwrap();
 
     // Build a plain `std::process::Command` so we have full control over the underlying stdio

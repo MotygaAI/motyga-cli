@@ -28,7 +28,7 @@ Precedence is **top overrides bottom**:
 1. `LegacyManagedConfigTomlFromMdm` (MDM-delivered `managed_config.toml`, while it is being phased out)
 2. `LegacyManagedConfigTomlFromFile` (`managed_config.toml`, while it is being phased out)
 3. `SessionFlags` (CLI overrides, applied as dotted-path TOML writes)
-4. `Project` config (`.codex/config.toml`)
+4. `Project` config (`.motyga/config.toml`)
 5. `User` profile config, when present
 6. `User` config (`config.toml`)
 7. `EnterpriseManaged` cloud-managed config bundle layers

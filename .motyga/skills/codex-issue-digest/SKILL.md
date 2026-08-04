@@ -23,7 +23,7 @@ Include only issues that currently have `bug` or `enhancement` plus at least one
 1. Run the collector from a current Codex repo checkout:
 
 ```bash
-python3 .codex/skills/codex-issue-digest/scripts/collect_issue_digest.py --labels tui exec --window-hours 24
+python3 .motyga/skills/codex-issue-digest/scripts/collect_issue_digest.py --labels tui exec --window-hours 24
 ```
 
 Use `--window "past week"` or `--window-hours 168` when the user asks for a non-default duration. Use `--all-labels` when the user says all areas or all labels.
@@ -113,15 +113,15 @@ Use $codex-issue-digest to run the Codex issue digest for all areas over the pas
 Dry run the collector against recent issues:
 
 ```bash
-python3 .codex/skills/codex-issue-digest/scripts/collect_issue_digest.py --labels tui exec --window-hours 24
+python3 .motyga/skills/codex-issue-digest/scripts/collect_issue_digest.py --labels tui exec --window-hours 24
 ```
 
 ```bash
-python3 .codex/skills/codex-issue-digest/scripts/collect_issue_digest.py --all-labels --window "past week" --limit-issues 10
+python3 .motyga/skills/codex-issue-digest/scripts/collect_issue_digest.py --all-labels --window "past week" --limit-issues 10
 ```
 
 Run the focused script tests:
 
 ```bash
-pytest .codex/skills/codex-issue-digest/scripts/test_collect_issue_digest.py
+pytest .motyga/skills/codex-issue-digest/scripts/test_collect_issue_digest.py
 ```

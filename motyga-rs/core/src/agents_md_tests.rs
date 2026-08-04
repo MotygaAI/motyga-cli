@@ -1220,8 +1220,8 @@ async fn project_layers_do_not_override_project_root_markers() {
     };
     config.config_layer_stack = ConfigLayerStack::new(
         vec![
-            project_layer(root.path().join(".codex").abs(), ".ignored-root-marker"),
-            project_layer(config.cwd.join(".codex"), ".ignored-nested-marker"),
+            project_layer(root.path().join(".motyga").abs(), ".ignored-root-marker"),
+            project_layer(config.cwd.join(".motyga"), ".ignored-nested-marker"),
         ],
         ConfigRequirements::default(),
         ConfigRequirementsToml::default(),

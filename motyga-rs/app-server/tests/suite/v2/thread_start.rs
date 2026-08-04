@@ -739,7 +739,7 @@ async fn thread_start_respects_project_config_from_cwd() -> Result<()> {
     create_config_toml_without_approval_policy(codex_home.path(), &server.uri())?;
 
     let workspace = TempDir::new()?;
-    let project_config_dir = workspace.path().join(".codex");
+    let project_config_dir = workspace.path().join(".motyga");
     std::fs::create_dir_all(&project_config_dir)?;
     std::fs::write(
         project_config_dir.join("config.toml"),
@@ -1134,7 +1134,7 @@ async fn thread_start_with_elevated_sandbox_trusts_project_and_followup_loads_pr
     create_config_toml_without_approval_policy(codex_home.path(), &server.uri())?;
 
     let workspace = TempDir::new()?;
-    let project_config_dir = workspace.path().join(".codex");
+    let project_config_dir = workspace.path().join(".motyga");
     std::fs::create_dir_all(&project_config_dir)?;
     std::fs::write(
         project_config_dir.join("config.toml"),
@@ -1309,7 +1309,7 @@ async fn thread_start_skips_trust_write_when_project_is_already_trusted() -> Res
     create_config_toml_without_approval_policy(codex_home.path(), &server.uri())?;
 
     let workspace = TempDir::new()?;
-    let project_config_dir = workspace.path().join(".codex");
+    let project_config_dir = workspace.path().join(".motyga");
     std::fs::create_dir_all(&project_config_dir)?;
     std::fs::write(
         project_config_dir.join("config.toml"),

@@ -1168,7 +1168,7 @@ mod tests {
         let temp = tempfile::tempdir().expect("tempdir");
         let codex_home = temp.path().join("codex-home");
         let workspace = temp.path().join("workspace");
-        let protected_dir = workspace.join(".codex");
+        let protected_dir = workspace.join(".motyga");
         let nested_root = protected_dir.join("nested-root");
         fs::create_dir_all(&codex_home).expect("create motyga home");
         fs::create_dir_all(&workspace).expect("create workspace");

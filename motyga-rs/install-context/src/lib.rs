@@ -43,7 +43,7 @@ pub enum InstallMethod {
     Standalone {
         /// The managed standalone release directory. Legacy installs use paths
         /// such as
-        /// `~/.codex/packages/standalone/releases/0.111.0-x86_64-unknown-linux-musl`.
+        /// `~/.motyga/packages/standalone/releases/0.111.0-x86_64-unknown-linux-musl`.
         /// Package-layout installs use the package root that contains `bin/`,
         /// `codex-resources/`, and `codex-path/`.
         release_dir: AbsolutePathBuf,

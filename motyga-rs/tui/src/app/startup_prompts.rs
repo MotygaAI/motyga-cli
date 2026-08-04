@@ -434,7 +434,7 @@ mod tests {
     #[test]
     fn skill_load_warning_state_suppresses_repeated_active_errors() {
         let mut state = SkillLoadWarningState::default();
-        let error = skill_error("/repo/.codex/skills/abc/SKILL.md", "invalid description");
+        let error = skill_error("/repo/.motyga/skills/abc/SKILL.md", "invalid description");
 
         assert_eq!(
             state.newly_active_errors(std::slice::from_ref(&error)),
@@ -449,7 +449,7 @@ mod tests {
     #[test]
     fn skill_load_warning_state_reemits_after_error_clears() {
         let mut state = SkillLoadWarningState::default();
-        let error = skill_error("/repo/.codex/skills/abc/SKILL.md", "invalid description");
+        let error = skill_error("/repo/.motyga/skills/abc/SKILL.md", "invalid description");
 
         assert_eq!(
             state.newly_active_errors(std::slice::from_ref(&error)),
@@ -465,8 +465,8 @@ mod tests {
     #[test]
     fn skill_load_warning_state_displays_new_message_for_active_path() {
         let mut state = SkillLoadWarningState::default();
-        let initial = skill_error("/repo/.codex/skills/abc/SKILL.md", "invalid description");
-        let changed = skill_error("/repo/.codex/skills/abc/SKILL.md", "invalid frontmatter");
+        let initial = skill_error("/repo/.motyga/skills/abc/SKILL.md", "invalid description");
+        let changed = skill_error("/repo/.motyga/skills/abc/SKILL.md", "invalid frontmatter");
 
         assert_eq!(
             state.newly_active_errors(std::slice::from_ref(&initial)),
@@ -481,7 +481,7 @@ mod tests {
     #[test]
     fn skill_load_warning_state_clear_allows_active_error_again() {
         let mut state = SkillLoadWarningState::default();
-        let error = skill_error("/repo/.codex/skills/abc/SKILL.md", "invalid description");
+        let error = skill_error("/repo/.motyga/skills/abc/SKILL.md", "invalid description");
 
         assert_eq!(
             state.newly_active_errors(std::slice::from_ref(&error)),
@@ -503,7 +503,7 @@ mod tests {
     #[test]
     fn repeated_active_skill_load_warning_renders_once() {
         let mut state = SkillLoadWarningState::default();
-        let error = skill_error("/repo/.codex/skills/abc/SKILL.md", "invalid description");
+        let error = skill_error("/repo/.motyga/skills/abc/SKILL.md", "invalid description");
 
         let first_errors = state.newly_active_errors(std::slice::from_ref(&error));
         let repeated_errors = state.newly_active_errors(std::slice::from_ref(&error));
@@ -518,7 +518,7 @@ mod tests {
 
         insta::assert_snapshot!(rendered, @r"
 ⚠ Skipped loading 1 skill(s) due to invalid SKILL.md files.
-⚠ /repo/.codex/skills/abc/SKILL.md: invalid description
+⚠ /repo/.motyga/skills/abc/SKILL.md: invalid description
 ");
     }
 }

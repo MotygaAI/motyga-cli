@@ -30,8 +30,15 @@ separated from the mechanical identity layer.
 2. ✅ **Config dir** — `motyga-rs/utils/home-dir/src/lib.rs::find_codex_home()`: read `MOTYGA_HOME`
    reads `MOTYGA_HOME` only (the legacy `CODEX_HOME` fallback was removed — the CLI has no OpenAI/Codex ties;
    all tests/harnesses set `MOTYGA_HOME`), default `~/.codex` → `~/.motyga`.
-   Project-local `.codex/` → `.motyga/` intentionally DEFERRED (would churn `external_agent_config` tests). **Verified:**
-   `MOTYGA_HOME=… motyga exec` honored the override.
+   Project-local `.codex/` → `.motyga/` **DONE 2026-08-04** (was deferred): the loader, the import targets in
+   `external_agent_config`, both sandboxes' protected-subpath lists, the Windows cwd junction root and the
+   `state` log-dir fallback all follow `.motyga/` now, and this repo's own `.codex/` was renamed. Left alone on
+   purpose: `supply/vendor.rs` reads `~/.codex/auth.json` deliberately — that is the EXTERNAL OpenAI Codex CLI's
+   credential, which supply mode resells — and the hyphenated names (`.codex-plugin`, `.codex-log`) are ecosystem
+   conventions, not our config dir. **Verified:** `cargo check --workspace --all-targets` clean.
+   Why it mattered: with project-local still `.codex/`, starting the CLI from `~` loaded `~/.codex/config.toml`
+   — the *OpenAI Codex* config — as a project layer, silently importing its `model`/`model_reasoning_effort`.
+   **Verified:** `MOTYGA_HOME=… motyga exec` honored the override.
 3. ✅ **Default provider = Motyga** — `model-provider-info/src/lib.rs`: `MOTYGA_PROVIDER_ID`/name/base-url/env-key
    consts + `create_motyga_provider()` (base_url `https://api.motyga.com/v1`, `wire_api=Responses`,
    `env_key=MOTYGA_API_KEY`, `requires_openai_auth=false`) registered first in `built_in_model_providers`.

@@ -1879,7 +1879,7 @@ mod tests {
         let command_cwd = tmp.path().join("workspace");
         let extra_write_root = tmp.path().join("extra-write-root");
         let command_git = command_cwd.join(".git");
-        let extra_codex = extra_write_root.join(".codex");
+        let extra_codex = extra_write_root.join(".motyga");
         let explicit_deny = tmp.path().join("explicit-deny");
         fs::create_dir_all(&command_git).expect("create command .git");
         fs::create_dir_all(&extra_codex).expect("create extra .codex");

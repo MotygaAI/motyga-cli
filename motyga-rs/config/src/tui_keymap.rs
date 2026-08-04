@@ -1,7 +1,7 @@
 //! TUI keymap config schema and canonical key-spec normalization.
 //!
 //! This module defines the on-disk `[tui.keymap]` contract used by
-//! `~/.codex/config.toml` and normalizes user-entered key specs into canonical
+//! `~/.motyga/config.toml` and normalizes user-entered key specs into canonical
 //! forms consumed by runtime keymap resolution in `motyga-rs/tui/src/keymap.rs`.
 //!
 //! Responsibilities:

@@ -645,7 +645,7 @@ mod tests {
         let temp = TempDir::new().expect("tempdir");
         let codex_home = temp.path().join("codex-home");
         let workspace = temp.path().join("workspace");
-        let protected_dir = workspace.join(".codex");
+        let protected_dir = workspace.join(".motyga");
         let nested_root = protected_dir.join("nested-root");
         let unrelated_root = temp.path().join("unrelated-root");
         std::fs::create_dir_all(&codex_home).expect("create motyga home");

@@ -897,7 +897,7 @@ fn create_seatbelt_args_with_read_only_git_and_codex_subpaths() {
     };
 
     // Create the Seatbelt command to wrap a shell command that tries to
-    // write to .codex/config.toml in the vulnerable root.
+    // write to .motyga/config.toml in the vulnerable root.
     let shell_command: Vec<String> = [
         "bash",
         "-c",
@@ -969,7 +969,7 @@ fn create_seatbelt_args_with_read_only_git_and_codex_subpaths() {
             "-DWRITABLE_ROOT_0_EXCLUDED_0={}",
             cwd.canonicalize()
                 .expect("canonicalize cwd")
-                .join(".codex")
+                .join(".motyga")
                 .display()
         ),
         format!(
@@ -1018,7 +1018,7 @@ fn create_seatbelt_args_with_read_only_git_and_codex_subpaths() {
         .expect("seatbelt args should include command separator");
     assert_eq!(args[command_index + 1..], shell_command);
 
-    // Verify that .codex/config.toml cannot be modified under the generated
+    // Verify that .motyga/config.toml cannot be modified under the generated
     // Seatbelt policy.
     let config_toml = dot_codex_canonical.join("config.toml");
     let output = Command::new(MACOS_PATH_TO_SEATBELT_EXECUTABLE)
@@ -1133,7 +1133,7 @@ fn create_seatbelt_args_block_first_time_dot_codex_creation_with_metadata_name_r
         .output()
         .expect("git init .");
 
-    let dot_codex = repo_root.join(".codex");
+    let dot_codex = repo_root.join(".motyga");
     let config_toml = dot_codex.join("config.toml");
     let policy = SandboxPolicy::WorkspaceWrite {
         writable_roots: vec![repo_root.as_path().try_into().expect("absolute repo root")],
@@ -1392,7 +1392,7 @@ struct PopulatedTmp {
     /// For the purposes of this test, we consider this a "vulnerable" root
     /// because a bad actor could write to .git/hooks/pre-commit so an
     /// unsuspecting user would run code as privileged the next time they
-    /// ran `git commit` themselves, or modified .codex/config.toml to
+    /// ran `git commit` themselves, or modified .motyga/config.toml to
     /// contain `sandbox_mode = "danger-full-access"` so the agent would
     /// have full privileges the next time it ran in that repo.
     vulnerable_root: PathBuf,
@@ -1420,12 +1420,12 @@ fn populate_tmpdir(tmp: &Path) -> PopulatedTmp {
         .output()
         .expect("git init .");
 
-    fs::create_dir_all(vulnerable_root.join(".codex")).expect("create .codex");
+    fs::create_dir_all(vulnerable_root.join(".motyga")).expect("create .codex");
     fs::write(
-        vulnerable_root.join(".codex").join("config.toml"),
+        vulnerable_root.join(".motyga").join("config.toml"),
         "sandbox_mode = \"read-only\"\n",
     )
-    .expect("write .codex/config.toml");
+    .expect("write .motyga/config.toml");
 
     let empty_root = tmp.join("empty_root");
     fs::create_dir_all(&empty_root).expect("create empty_root");
@@ -1436,7 +1436,7 @@ fn populate_tmpdir(tmp: &Path) -> PopulatedTmp {
         .expect("canonicalize vulnerable_root");
     let dot_git_canonical = vulnerable_root_canonical.join(".git");
     let dot_agents_canonical = vulnerable_root_canonical.join(".agents");
-    let dot_codex_canonical = vulnerable_root_canonical.join(".codex");
+    let dot_codex_canonical = vulnerable_root_canonical.join(".motyga");
     let empty_root_canonical = empty_root.canonicalize().expect("canonicalize empty_root");
     PopulatedTmp {
         vulnerable_root,

@@ -37,7 +37,7 @@ For a new remote machine:
 
 ```sh
 curl -fsSL https://chatgpt.com/codex/install.sh | sh
-$HOME/.codex/packages/standalone/current/codex app-server daemon bootstrap --remote-control
+$HOME/.motyga/packages/standalone/current/codex app-server daemon bootstrap --remote-control
 ```
 
 `bootstrap` requires the standalone managed install. It records the daemon

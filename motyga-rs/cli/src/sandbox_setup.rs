@@ -150,7 +150,7 @@ mod tests {
             "--user",
             "DOMAIN\\alice",
             "--codex-home",
-            r"C:\Users\alice\.codex",
+            r"C:\Users\alice\.motyga",
         ])
         .expect("parse");
 
@@ -159,7 +159,7 @@ mod tests {
         assert!(!command.current_user);
         assert_eq!(
             command.codex_home.as_deref(),
-            Some(std::path::Path::new(r"C:\Users\alice\.codex"))
+            Some(std::path::Path::new(r"C:\Users\alice\.motyga"))
         );
     }
 
@@ -188,7 +188,7 @@ mod tests {
             "--user".to_string(),
             r"DOMAIN\alice".to_string(),
             "--codex-home".to_string(),
-            r"C:\Users\alice\.codex".to_string(),
+            r"C:\Users\alice\.motyga".to_string(),
         ])
         .expect("parse")
         .expect("setup command");

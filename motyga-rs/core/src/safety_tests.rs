@@ -310,7 +310,7 @@ fn missing_project_dot_codex_config_requires_approval() {
     let tmp = TempDir::new().unwrap();
     let cwd = tmp.path().abs();
     let cwd_uri = PathUri::from_abs_path(&cwd);
-    let config_path = cwd.join(".codex").join("config.toml");
+    let config_path = cwd.join(".motyga").join("config.toml");
     let action =
         ApplyPatchAction::new_add_for_test(&PathUri::from_abs_path(&config_path), "".to_string());
     let permission_profile = PermissionProfile::workspace_write_with(
@@ -324,7 +324,7 @@ fn missing_project_dot_codex_config_requires_approval() {
         .entries
         .push(FileSystemSandboxEntry {
             path: FileSystemPath::Path {
-                path: cwd.join(".codex"),
+                path: cwd.join(".motyga"),
             },
             access: FileSystemAccessMode::Read,
         });

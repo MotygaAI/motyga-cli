@@ -1127,7 +1127,7 @@
     },
     "History": {
       "additionalProperties": false,
-      "description": "Settings that govern if and what will be written to `~/.codex/history.jsonl`.",
+      "description": "Settings that govern if and what will be written to `~/.motyga/history.jsonl`.",
       "properties": {
         "max_bytes": {
           "default": null,
@@ -4597,7 +4597,7 @@
       "type": "object"
     }
   },
-  "description": "Base config deserialized from ~/.codex/config.toml.",
+  "description": "Base config deserialized from ~/.motyga/config.toml.",
   "properties": {
     "agents": {
       "allOf": [
@@ -5145,7 +5145,7 @@
         "max_bytes": null,
         "persistence": "save-all"
       },
-      "description": "Settings that govern if and what will be written to `~/.codex/history.jsonl`."
+      "description": "Settings that govern if and what will be written to `~/.motyga/history.jsonl`."
     },
     "hooks": {
       "allOf": [
@@ -5391,7 +5391,7 @@
     },
     "project_root_markers": {
       "default": null,
-      "description": "Markers used to detect the project root when searching parent directories for `.codex` folders. Defaults to [\".git\"] when unset.",
+      "description": "Markers used to detect the project root when searching parent directories for `.motyga` folders. Defaults to [\".git\"] when unset.",
       "items": {
         "type": "string"
       },

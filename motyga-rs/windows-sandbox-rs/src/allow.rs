@@ -320,7 +320,7 @@ mod tests {
     fn denies_codex_and_agents_inside_writable_root() {
         let tmp = TempDir::new().expect("tempdir");
         let command_cwd = tmp.path().join("workspace");
-        let codex_dir = command_cwd.join(".codex");
+        let codex_dir = command_cwd.join(".motyga");
         let agents_dir = command_cwd.join(".agents");
         let _ = fs::create_dir_all(&codex_dir);
         let _ = fs::create_dir_all(&agents_dir);

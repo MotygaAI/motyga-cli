@@ -22,7 +22,7 @@ use crate::protocol::WritableRoot;
 
 const PROTECTED_METADATA_GIT_PATH_NAME: &str = ".git";
 const PROTECTED_METADATA_AGENTS_PATH_NAME: &str = ".agents";
-const PROTECTED_METADATA_CODEX_PATH_NAME: &str = ".codex";
+const PROTECTED_METADATA_CODEX_PATH_NAME: &str = ".motyga";
 
 /// Top-level workspace metadata paths that stay protected under writable roots.
 pub const PROTECTED_METADATA_PATH_NAMES: &[&str] = &[
@@ -613,7 +613,7 @@ impl FileSystemSandboxPolicy {
 
         append_default_read_only_project_root_subpath_if_no_explicit_rule(&mut entries, ".git");
         append_default_read_only_project_root_subpath_if_no_explicit_rule(&mut entries, ".agents");
-        append_default_read_only_project_root_subpath_if_no_explicit_rule(&mut entries, ".codex");
+        append_default_read_only_project_root_subpath_if_no_explicit_rule(&mut entries, ".motyga");
         for writable_root in writable_roots {
             for protected_path in default_read_only_subpaths_for_writable_root(
                 writable_root,
@@ -1972,7 +1972,7 @@ mod tests {
             cwd.path().canonicalize().expect("canonicalize cwd"),
         )
         .expect("absolute canonical root");
-        let expected_dot_codex = expected_root.join(".codex");
+        let expected_dot_codex = expected_root.join(".motyga");
 
         let policy = FileSystemSandboxPolicy::restricted(vec![FileSystemSandboxEntry {
             path: FileSystemPath::Special {
@@ -2029,7 +2029,7 @@ mod tests {
                 },
                 FileSystemSandboxEntry {
                     path: FileSystemPath::Special {
-                        value: FileSystemSpecialPath::project_roots(Some(".codex".into())),
+                        value: FileSystemSpecialPath::project_roots(Some(".motyga".into())),
                     },
                     access: FileSystemAccessMode::Read,
                 },
@@ -2066,7 +2066,7 @@ mod tests {
             cwd.path().canonicalize().expect("canonicalize cwd"),
         )
         .expect("absolute canonical root");
-        let explicit_dot_codex = expected_root.join(".codex");
+        let explicit_dot_codex = expected_root.join(".motyga");
 
         let policy = FileSystemSandboxPolicy::restricted(vec![
             FileSystemSandboxEntry {
@@ -2091,7 +2091,7 @@ mod tests {
         assert!(
             !workspace_root
                 .protected_metadata_names
-                .contains(&".codex".to_string()),
+                .contains(&".motyga".to_string()),
             "explicit .codex rule should remove the metadata-name protection"
         );
         assert!(
@@ -2113,7 +2113,7 @@ mod tests {
         let cwd = TempDir::new().expect("tempdir");
         let dot_git_config = cwd.path().join(".git").join("config");
         let dot_agents_config = cwd.path().join(".agents").join("config");
-        let dot_codex_config = cwd.path().join(".codex").join("config.toml");
+        let dot_codex_config = cwd.path().join(".motyga").join("config.toml");
         let root = AbsolutePathBuf::from_absolute_path(cwd.path()).expect("absolute cwd");
         let file_system_policy =
             FileSystemSandboxPolicy::restricted(vec![FileSystemSandboxEntry {
@@ -2132,7 +2132,7 @@ mod tests {
             vec![
                 ".git".to_string(),
                 ".agents".to_string(),
-                ".codex".to_string(),
+                ".motyga".to_string(),
             ]
         );
         assert!(!writable_roots[0].is_path_writable(&dot_git_config));
@@ -2207,7 +2207,7 @@ mod tests {
         );
         assert!(
             !file_system_policy
-                .can_write_path_with_cwd(Path::new(".codex/config.toml"), relative_cwd,)
+                .can_write_path_with_cwd(Path::new(".motyga/config.toml"), relative_cwd,)
         );
         assert!(
             !file_system_policy.can_write_path_with_cwd(
@@ -2224,7 +2224,7 @@ mod tests {
         let real_root = cwd.path().join("real");
         let link_root = cwd.path().join("link");
         let blocked = real_root.join("blocked");
-        let codex_dir = real_root.join(".codex");
+        let codex_dir = real_root.join(".motyga");
 
         fs::create_dir_all(&blocked).expect("create blocked");
         fs::create_dir_all(&codex_dir).expect("create .codex");
@@ -2235,7 +2235,7 @@ mod tests {
         let link_blocked = link_root.join("blocked");
         let expected_root = link_root.clone();
         let expected_blocked = link_blocked.clone();
-        let expected_codex = link_root.join(".codex");
+        let expected_codex = link_root.join(".motyga");
 
         let policy = FileSystemSandboxPolicy::restricted(vec![
             FileSystemSandboxEntry {
@@ -2276,7 +2276,7 @@ mod tests {
         let link_root = cwd.path().join("link");
         let blocked = real_root.join("blocked");
         let agents_dir = real_root.join(".agents");
-        let codex_dir = real_root.join(".codex");
+        let codex_dir = real_root.join(".motyga");
 
         fs::create_dir_all(&blocked).expect("create blocked");
         fs::create_dir_all(&agents_dir).expect("create .agents");
@@ -2289,7 +2289,7 @@ mod tests {
             AbsolutePathBuf::from_absolute_path(&link_root).expect("absolute symlinked root");
         let expected_blocked = link_blocked.clone();
         let expected_agents = expected_root.join(".agents");
-        let expected_codex = expected_root.join(".codex");
+        let expected_codex = expected_root.join(".motyga");
 
         let policy = FileSystemSandboxPolicy::restricted(vec![
             FileSystemSandboxEntry {
@@ -2345,7 +2345,7 @@ mod tests {
         let cwd = TempDir::new().expect("tempdir");
         let root = cwd.path().join("root");
         let decoy = root.join("decoy-codex");
-        let dot_codex = root.join(".codex");
+        let dot_codex = root.join(".motyga");
         fs::create_dir_all(&decoy).expect("create decoy");
         symlink_dir(&decoy, &dot_codex).expect("create .codex symlink");
 
@@ -2354,7 +2354,7 @@ mod tests {
             root.as_path()
                 .canonicalize()
                 .expect("canonicalize root")
-                .join(".codex"),
+                .join(".motyga"),
         )
         .expect("absolute .codex symlink");
         let unexpected_decoy =
@@ -2530,7 +2530,7 @@ mod tests {
         let real_tmpdir = cwd.path().join("real-tmpdir");
         let link_tmpdir = cwd.path().join("link-tmpdir");
         let blocked = real_tmpdir.join("blocked");
-        let codex_dir = real_tmpdir.join(".codex");
+        let codex_dir = real_tmpdir.join(".motyga");
 
         fs::create_dir_all(&blocked).expect("create blocked");
         fs::create_dir_all(&codex_dir).expect("create .codex");
@@ -2541,7 +2541,7 @@ mod tests {
         let expected_root =
             AbsolutePathBuf::from_absolute_path(&link_tmpdir).expect("absolute symlinked tmpdir");
         let expected_blocked = link_blocked.clone();
-        let expected_codex = expected_root.join(".codex");
+        let expected_codex = expected_root.join(".motyga");
 
         unsafe {
             std::env::set_var("TMPDIR", &link_tmpdir);

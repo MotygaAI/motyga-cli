@@ -2423,7 +2423,7 @@ async fn maybe_persist_mcp_tool_approval_writes_project_config_for_project_serve
     let codex_home = session.codex_home().await;
     let project_dir = tempdir().expect("tempdir");
     std::fs::write(project_dir.path().join(".git"), "gitdir: nowhere").expect("seed git marker");
-    let project_codex_dir = project_dir.path().join(".codex");
+    let project_codex_dir = project_dir.path().join(".motyga");
     std::fs::create_dir_all(&project_codex_dir).expect("create project .codex dir");
     std::fs::write(
         project_codex_dir.join(CONFIG_TOML_FILE),

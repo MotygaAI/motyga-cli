@@ -15,7 +15,7 @@ pub enum ConfigLayerSource {
         file: AbsolutePathBuf,
         profile: Option<String>,
     },
-    /// Configuration loaded from a project's `.codex` directory.
+    /// Configuration loaded from a project's `.motyga` directory.
     Project { dot_codex_folder: AbsolutePathBuf },
     /// Overrides supplied for the current session.
     SessionFlags,
