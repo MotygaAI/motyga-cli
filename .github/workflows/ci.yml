@@ -1,0 +1,159 @@
+name: CI
+
+# Until this existed the repository had NO test CI at all: release.yml was the only
+# workflow, and it runs on a `v*` tag or a manual dispatch. Nothing ran `cargo test`
+# on a push, which is how ~15 tests sat broken for weeks after a partial rebrand.
+#
+# Runs on Linux even though release.yml currently ships Windows only, because the
+# workspace depends on rusty_v8 and `.github/actions/setup-rusty-v8` — the repo's own
+# helper for fetching prebuilt V8 — only understands the Unix artifact naming
+# (`librusty_v8_release_<triple>.a.gz`). Upstream publishes Windows V8 under a
+# different scheme (`rusty_v8_ptrcomp_sandbox_release_<triple>.lib.gz`), so a Windows
+# job would have to build V8 from source. Compile errors and logic regressions are
+# not platform-specific; the Windows-only packaging is already covered by release.yml.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push supersedes an in-flight run for the same ref; a full workspace build
+# is far too expensive to keep stale copies of running.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Parts of the suite overflow the default test-thread stack; the justfile sets the
+  # same value for local runs.
+  RUST_MIN_STACK: 8388608
+  # A hosted runner has far less disk than this workspace wants. Locally its target/
+  # reached 158 GB, of which 106 GB was incremental state and most of the rest debug
+  # info. Neither buys CI anything: nothing here compiles twice, and failures are
+  # identified by test name rather than by backtrace line numbers.
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
+  CARGO_PROFILE_TEST_DEBUG: 0
+  CARGO_TERM_COLOR: always
+  V8_TARGET: x86_64-unknown-linux-gnu
+
+jobs:
+  # Compiles every crate AND every test target across the workspace. This is the broad
+  # net: it catches a rename or a signature change breaking any of the 131 crates,
+  # including the ones whose tests are not run below.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Run from motyga-rs so rustup reads its pinned rust-toolchain.toml.
+      - name: Rust toolchain
+        shell: bash
+        working-directory: motyga-rs
+        run: rustup show
+
+      - name: Cache cargo
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            motyga-rs/target
+          key: ci-check-${{ hashFiles('motyga-rs/Cargo.lock') }}
+          restore-keys: ci-check-
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      # The bwrap sandbox compiles vendored bubblewrap and links libcap.
+      - name: Install build deps
+        run: sudo apt-get update && sudo apt-get install -y libcap-dev pkg-config
+
+      # `--all-targets` pulls in rusty_v8, whose build script would otherwise try to
+      # build V8 from source. release.yml never hit this because it builds named
+      # binaries rather than the whole target graph.
+      - uses: ./.github/actions/setup-rusty-v8
+        with:
+          target: x86_64-unknown-linux-gnu
+
+      - name: cargo check
+        shell: bash
+        working-directory: motyga-rs
+        run: cargo check --workspace --all-targets --locked
+
+  # Runs the crates whose suites are known green. Keep this list honest: add a crate
+  # only once its tests actually pass, so a red mark here always means a regression
+  # rather than inherited debt. The rest of the workspace is untriaged — several
+  # suites were left broken by an earlier partial rebrand and have not been audited.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Rust toolchain
+        shell: bash
+        working-directory: motyga-rs
+        run: rustup show
+
+      - name: Cache cargo
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            motyga-rs/target
+          key: ci-test-${{ hashFiles('motyga-rs/Cargo.lock') }}
+          restore-keys: ci-test-
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install build deps
+        run: sudo apt-get update && sudo apt-get install -y libcap-dev pkg-config
+
+      # All three crates below have rusty_v8 in their dependency graph.
+      - uses: ./.github/actions/setup-rusty-v8
+        with:
+          target: x86_64-unknown-linux-gnu
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+
+      - name: cargo nextest (verified crates)
+        shell: bash
+        working-directory: motyga-rs
+        run: |
+          cargo nextest run --no-fail-fast --locked \
+            -p motyga-tui -p motyga-login -p motyga-git-utils
+
+  # The repo's own Python helpers under .github/scripts. Cheap, and nothing else
+  # exercises them.
+  github-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: unittest
+        run: python -m unittest discover -s .github/scripts -p 'test_*.py'
+
+  # Guards the npm side: `resolutions` in package.json and pnpm-lock.yaml must agree,
+  # otherwise a security pin silently fails to apply.
+  pnpm-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --lockfile-only
