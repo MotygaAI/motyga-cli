@@ -64,23 +64,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # All six platforms. The initial publish was Windows-only to skip the slow macOS/arm runner
-          # queue; supply mode changes the calculus, because an always-on node is exactly the thing people
-          # run on a Linux box, and a supplier who cannot install the CLI cannot sell anything. The Linux
-          # and macOS legs built green in run 28775778997. The meta package lists every platform as an
-          # OPTIONAL dependency, so a leg that fails is a clean skip for that platform, not a broken release.
-          - { target: x86_64-unknown-linux-gnu,  os: ubuntu-latest,    pkg: motyga-linux-x64 }
-          - { target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm, pkg: motyga-linux-arm64 }
-          # macOS Intel (x86_64-apple-darwin) needs a macos-13 runner, and that pool no longer picks jobs
-          # up: in run 30648975444 it sat QUEUED for two hours with no runner ever assigned, while every
-          # other leg — including Apple Silicon — built and finished. GitHub is retiring macos-13, so this
-          # leg blocks the publish indefinitely rather than merely being slow. Left out until there is a
-          # runner that serves it; Apple Silicon covers the overwhelming majority of Macs, and the meta
-          # package treats each platform as optional, so an absent one is "not available there", not a break.
-          # - { target: x86_64-apple-darwin,     os: macos-13,         pkg: motyga-darwin-x64 }
-          - { target: aarch64-apple-darwin,      os: macos-latest,     pkg: motyga-darwin-arm64 }
+          # Windows only, by decision — the other platforms are not being built for now.
+          # The meta package still lists every platform as an OPTIONAL dependency, so an
+          # unbuilt one resolves to nothing and installs as "not available there" rather
+          # than as a broken install. Re-enabling a platform is just uncommenting its line.
           - { target: x86_64-pc-windows-msvc,    os: windows-latest,   pkg: motyga-win32-x64 }
           - { target: aarch64-pc-windows-msvc,   os: windows-11-arm,   pkg: motyga-win32-arm64 }
+          # Built green through 0.1.9 (run 31075916846) — kept here so turning them back
+          # on needs no archaeology:
+          # - { target: x86_64-unknown-linux-gnu,  os: ubuntu-latest,    pkg: motyga-linux-x64 }
+          # - { target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm, pkg: motyga-linux-arm64 }
+          # - { target: aarch64-apple-darwin,      os: macos-latest,     pkg: motyga-darwin-arm64 }
+          # macOS Intel additionally needs a macos-13 runner, and that pool no longer picks
+          # jobs up: in run 30648975444 it sat QUEUED for two hours with no runner assigned.
+          # - { target: x86_64-apple-darwin,       os: macos-13,         pkg: motyga-darwin-x64 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7

@@ -13,8 +13,10 @@ npm install -g @motyga/cli
 
 > **Supported platforms.** Prebuilt binaries are published for **Windows** (`x64` and `arm64`).
 > macOS and Linux builds are produced on request — open an issue and we'll publish the package for your
-> OS/arch. The release pipeline already covers all six targets (win/mac/linux × x64/arm64); the
-> non-Windows legs are gated off for now, so an unpublished platform is a clean skip, not a broken install.
+> OS/arch. Their legs are commented out in the release workflow rather than missing: Linux (x64/arm64) and
+> Apple Silicon all built green in 0.1.9, so re-enabling one is a one-line change. Apple Intel is the
+> exception — it needs a `macos-13` runner, and that pool no longer picks jobs up. An unpublished platform
+> is a clean skip (the payloads are optional dependencies), not a broken install.
 
 Motyga is the **built-in default provider**, so all you need is your API key:
 
