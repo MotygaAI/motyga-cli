@@ -133,6 +133,83 @@ jobs:
           cargo nextest run --no-fail-fast --locked \
             -p motyga-tui -p motyga-login -p motyga-git-utils
 
+  # Regenerates the snapshots and uploads the result as a patch. Manual only.
+  #
+  # A contributor on Windows cannot produce these bytes locally: several suites are
+  # skipped there outright ("snapshot path rendering differs on Windows"), and the
+  # fixed-width TUI output wraps and truncates differently, so `cargo insta accept`
+  # on Windows silently leaves the Linux-rendered snapshots stale — which is how one
+  # of them ended up committed containing `C:\tmp\project`.
+  #
+  # Run from Actions -> CI -> Run workflow, download `snapshots-patch`, then
+  # `git apply snapshots.patch`.
+  snapshots:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Rust toolchain
+        shell: bash
+        working-directory: motyga-rs
+        run: rustup show
+
+      - name: Cache cargo
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            motyga-rs/target
+          key: ci-test-${{ hashFiles('motyga-rs/Cargo.lock') }}
+          restore-keys: ci-test-
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install build deps
+        run: sudo apt-get update && sudo apt-get install -y libcap-dev pkg-config
+
+      - uses: ./.github/actions/setup-rusty-v8
+        with:
+          target: x86_64-unknown-linux-gnu
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-insta
+
+      # `--accept` writes the new values; the run itself is expected to pass, so do
+      # not fail the job on the test exit code — the patch is the deliverable.
+      - name: Regenerate snapshots
+        shell: bash
+        working-directory: motyga-rs
+        continue-on-error: true
+        run: |
+          cargo insta test --accept --test-runner nextest \
+            -p motyga-tui -p motyga-login -p motyga-git-utils
+
+      - name: Collect patch
+        shell: bash
+        run: |
+          git diff > snapshots.patch
+          if [ -s snapshots.patch ]; then
+            echo "changed files:"
+            git diff --stat
+          else
+            echo "no snapshot changes — nothing to apply"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: snapshots-patch
+          path: snapshots.patch
+          if-no-files-found: warn
+
   # The repo's own Python helpers under .github/scripts. Cheap, and nothing else
   # exercises them.
   github-scripts:
