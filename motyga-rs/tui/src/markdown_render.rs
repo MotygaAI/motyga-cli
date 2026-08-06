@@ -52,7 +52,7 @@ use crate::terminal_hyperlinks::web_destination;
 use crate::wrapping::RtOptions;
 use crate::wrapping::adaptive_wrap_line;
 use crate::wrapping::word_wrap_line;
-use codex_utils_string::normalize_markdown_hash_location_suffix;
+use motyga_utils_string::normalize_markdown_hash_location_suffix;
 use dirs::home_dir;
 use pulldown_cmark::Alignment;
 use pulldown_cmark::CodeBlockKind;
@@ -2005,7 +2005,7 @@ fn is_local_path_like_link(dest_url: &str) -> bool {
 
 /// Parse a local link target into normalized path text plus an optional location suffix.
 ///
-/// This accepts the path shapes Codex emits today: `file://` URLs, absolute and relative paths,
+/// This accepts the path shapes Motyga emits today: `file://` URLs, absolute and relative paths,
 /// `~/...`, Windows paths, and `#L..C..` or `:line:col` suffixes.
 fn render_local_link_target(dest_url: &str, cwd: Option<&Path>) -> Option<String> {
     let (path_text, location_suffix) = parse_local_link_target(dest_url)?;

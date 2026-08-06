@@ -19,25 +19,25 @@ use axum::http::StatusCode;
 use axum::http::Uri;
 use axum::http::header::AUTHORIZATION;
 use axum::routing::get;
-use codex_app_server_protocol::AppBranding;
-use codex_app_server_protocol::AppInfo;
-use codex_app_server_protocol::AppListUpdatedNotification;
-use codex_app_server_protocol::AppMetadata;
-use codex_app_server_protocol::AppReview;
-use codex_app_server_protocol::AppScreenshot;
-use codex_app_server_protocol::AppsListParams;
-use codex_app_server_protocol::AppsListResponse;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_login::AuthDotJson;
-use codex_login::AuthKeyringBackendKind;
-use codex_login::save_auth;
-use codex_protocol::auth::AuthMode;
+use motyga_app_server_protocol::AppBranding;
+use motyga_app_server_protocol::AppInfo;
+use motyga_app_server_protocol::AppListUpdatedNotification;
+use motyga_app_server_protocol::AppMetadata;
+use motyga_app_server_protocol::AppReview;
+use motyga_app_server_protocol::AppScreenshot;
+use motyga_app_server_protocol::AppsListParams;
+use motyga_app_server_protocol::AppsListResponse;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_login::AuthDotJson;
+use motyga_login::AuthKeyringBackendKind;
+use motyga_login::save_auth;
+use motyga_protocol::auth::AuthMode;
 use pretty_assertions::assert_eq;
 use rmcp::handler::server::ServerHandler;
 use rmcp::model::JsonObject;
@@ -62,8 +62,8 @@ const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[tokio::test]
 async fn list_apps_returns_empty_when_connectors_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
 
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
@@ -112,10 +112,10 @@ async fn list_apps_returns_empty_with_api_key_auth() -> Result<()> {
     let (server_url, server_handle) =
         start_apps_server_with_delays(connectors, tools, Duration::ZERO, Duration::ZERO).await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     save_auth(
-        codex_home.path(),
+        motyga_home.path(),
         &AuthDotJson {
             auth_mode: Some(AuthMode::ApiKey),
             openai_api_key: Some("test-api-key".to_string()),
@@ -129,7 +129,7 @@ async fn list_apps_returns_empty_with_api_key_auth() -> Result<()> {
         AuthKeyringBackendKind::default(),
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -157,7 +157,7 @@ async fn list_apps_returns_empty_with_api_key_auth() -> Result<()> {
 }
 
 #[tokio::test]
-async fn list_apps_returns_empty_when_workspace_codex_plugins_disabled() -> Result<()> {
+async fn list_apps_returns_empty_when_workspace_motyga_plugins_disabled() -> Result<()> {
     let connectors = vec![AppInfo {
         id: "beta".to_string(),
         name: "Beta".to_string(),
@@ -181,10 +181,10 @@ async fn list_apps_returns_empty_when_workspace_codex_plugins_disabled() -> Resu
     )
     .await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -193,7 +193,7 @@ async fn list_apps_returns_empty_when_workspace_codex_plugins_disabled() -> Resu
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new_without_managed_config(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_without_managed_config(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -226,11 +226,11 @@ async fn list_apps_includes_plugin_apps_for_chatgpt_auth() -> Result<()> {
         start_apps_server_with_delays(Vec::new(), Vec::new(), Duration::ZERO, Duration::ZERO)
             .await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_and_plugins_config(codex_home.path(), &server_url)?;
-    write_plugin_app_fixture(codex_home.path(), "sample", "connector_sample")?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_and_plugins_config(motyga_home.path(), &server_url)?;
+    write_plugin_app_fixture(motyga_home.path(), "sample", "connector_sample")?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-plugin-apps")
@@ -238,7 +238,7 @@ async fn list_apps_includes_plugin_apps_for_chatgpt_auth() -> Result<()> {
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -287,10 +287,10 @@ async fn list_apps_uses_thread_feature_flag_when_thread_id_is_provided() -> Resu
     let (server_url, server_handle) =
         start_apps_server_with_delays(connectors, tools, Duration::ZERO, Duration::ZERO).await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -298,7 +298,7 @@ async fn list_apps_uses_thread_feature_flag_when_thread_id_is_provided() -> Resu
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let start_request = mcp
@@ -312,7 +312,7 @@ async fn list_apps_uses_thread_feature_flag_when_thread_id_is_provided() -> Resu
     let ThreadStartResponse { thread, .. } = to_response(start_response)?;
 
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{server_url}"
@@ -400,10 +400,10 @@ async fn list_apps_keeps_apps_with_app_only_tools_accessible() -> Result<()> {
     let (server_url, server_handle) =
         start_apps_server_with_delays(connectors, tools, Duration::ZERO, Duration::ZERO).await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-app-only")
@@ -411,7 +411,7 @@ async fn list_apps_keeps_apps_with_app_only_tools_accessible() -> Result<()> {
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -462,9 +462,9 @@ async fn list_apps_reports_is_enabled_from_config() -> Result<()> {
     let (server_url, server_handle) =
         start_apps_server_with_delays(connectors, tools, Duration::ZERO, Duration::ZERO).await?;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{server_url}"
@@ -478,7 +478,7 @@ enabled = false
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -486,7 +486,7 @@ enabled = false
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -598,10 +598,10 @@ async fn list_apps_emits_updates_and_returns_after_both_lists_load() -> Result<(
     )
     .await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -609,7 +609,7 @@ async fn list_apps_emits_updates_and_returns_after_both_lists_load() -> Result<(
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -748,10 +748,10 @@ async fn list_apps_waits_for_accessible_data_before_emitting_directory_updates()
     )
     .await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-directory-first")
@@ -759,7 +759,7 @@ async fn list_apps_waits_for_accessible_data_before_emitting_directory_updates()
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -860,10 +860,10 @@ async fn list_apps_does_not_emit_empty_interim_updates() -> Result<()> {
     )
     .await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-empty-interim")
@@ -871,7 +871,7 @@ async fn list_apps_does_not_emit_empty_interim_updates() -> Result<()> {
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -975,10 +975,10 @@ async fn list_apps_paginates_results() -> Result<()> {
     )
     .await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -986,7 +986,7 @@ async fn list_apps_paginates_results() -> Result<()> {
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let first_request = mcp
@@ -1101,10 +1101,10 @@ async fn list_apps_force_refetch_preserves_previous_cache_on_failure() -> Result
     let (server_url, server_handle) =
         start_apps_server_with_delays(connectors, tools, Duration::ZERO, Duration::ZERO).await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1112,7 +1112,7 @@ async fn list_apps_force_refetch_preserves_previous_cache_on_failure() -> Result
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let initial_request = mcp
@@ -1137,7 +1137,7 @@ async fn list_apps_force_refetch_preserves_previous_cache_on_failure() -> Result
     assert!(initial_data.iter().all(|app| app.is_accessible));
 
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token-invalid")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1231,10 +1231,10 @@ async fn list_apps_force_refetch_patches_updates_from_cached_snapshots() -> Resu
     )
     .await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1242,7 +1242,7 @@ async fn list_apps_force_refetch_patches_updates_from_cached_snapshots() -> Resu
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let warm_request = mcp
@@ -1625,7 +1625,7 @@ async fn start_apps_server_with_delays_and_control_inner(
             get(workspace_settings_response),
         )
         .with_state(state)
-        .nest_service("/api/codex/ps/mcp", mcp_service);
+        .nest_service("/api/motyga/ps/mcp", mcp_service);
 
     let handle = tokio::spawn(async move {
         let _ = axum::serve(listener, router).await;
@@ -1714,8 +1714,8 @@ pub(super) fn connector_tool(connector_id: &str, connector_name: &str) -> Result
     Ok(tool)
 }
 
-fn write_connectors_config(codex_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn write_connectors_config(motyga_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
@@ -1730,8 +1730,8 @@ connectors = true
     )
 }
 
-fn write_connectors_and_plugins_config(codex_home: &Path, base_url: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn write_connectors_and_plugins_config(motyga_home: &Path, base_url: &str) -> std::io::Result<()> {
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
@@ -1750,8 +1750,8 @@ enabled = true
     )
 }
 
-fn write_plugin_app_fixture(codex_home: &Path, plugin_name: &str, app_id: &str) -> Result<()> {
-    let plugin_root = codex_home
+fn write_plugin_app_fixture(motyga_home: &Path, plugin_name: &str, app_id: &str) -> Result<()> {
+    let plugin_root = motyga_home
         .join("plugins/cache")
         .join("test")
         .join(plugin_name)

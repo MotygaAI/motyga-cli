@@ -5,11 +5,11 @@ use super::protocol::RemoteControlTarget;
 use super::protocol::StartRemoteControlPairingRequest;
 use super::protocol::StartRemoteControlPairingResponse;
 use axum::http::HeaderMap;
-use codex_app_server_protocol::RemoteControlPairingStartResponse;
-use codex_app_server_protocol::RemoteControlPairingStatusResponse;
-use codex_login::default_client::build_reqwest_client;
-use codex_state::RemoteControlEnrollmentRecord;
-use codex_state::StateRuntime;
+use motyga_app_server_protocol::RemoteControlPairingStartResponse;
+use motyga_app_server_protocol::RemoteControlPairingStatusResponse;
+use motyga_login::default_client::build_reqwest_client;
+use motyga_state::RemoteControlEnrollmentRecord;
+use motyga_state::StateRuntime;
 use std::io;
 use std::io::ErrorKind;
 use time::OffsetDateTime;
@@ -431,7 +431,7 @@ mod tests {
     use crate::transport::remote_control::auth::RemoteControlConnectionAuth;
     use crate::transport::remote_control::protocol::normalize_remote_control_url;
     use crate::transport::remote_control::server_api::enroll_remote_control_server;
-    use codex_state::StateRuntime;
+    use motyga_state::StateRuntime;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use std::sync::Arc;
@@ -444,8 +444,8 @@ mod tests {
     use tokio::time::Duration;
     use tokio::time::timeout;
 
-    async fn remote_control_state_runtime(codex_home: &TempDir) -> Arc<StateRuntime> {
-        StateRuntime::init(codex_home.path().to_path_buf(), "test-provider".to_string())
+    async fn remote_control_state_runtime(motyga_home: &TempDir) -> Arc<StateRuntime> {
+        StateRuntime::init(motyga_home.path().to_path_buf(), "test-provider".to_string())
             .await
             .expect("state runtime should initialize")
     }
@@ -468,8 +468,8 @@ mod tests {
 
     #[tokio::test]
     async fn persisted_remote_control_enrollment_round_trips_by_target_and_account() {
-        let codex_home = TempDir::new().expect("temp dir should create");
-        let state_db = remote_control_state_runtime(&codex_home).await;
+        let motyga_home = TempDir::new().expect("temp dir should create");
+        let state_db = remote_control_state_runtime(&motyga_home).await;
         let first_target = normalize_remote_control_url("https://api.motyga.com/remote/control")
             .expect("first target should parse");
         let second_target =
@@ -554,8 +554,8 @@ mod tests {
 
     #[tokio::test]
     async fn clearing_persisted_remote_control_enrollment_removes_only_matching_entry() {
-        let codex_home = TempDir::new().expect("temp dir should create");
-        let state_db = remote_control_state_runtime(&codex_home).await;
+        let motyga_home = TempDir::new().expect("temp dir should create");
+        let state_db = remote_control_state_runtime(&motyga_home).await;
         let first_target = normalize_remote_control_url("https://api.motyga.com/remote/control")
             .expect("first target should parse");
         let second_target =
@@ -666,7 +666,7 @@ mod tests {
         let err = enroll_remote_control_server(
             &remote_control_target,
             &RemoteControlConnectionAuth {
-                auth_provider: codex_model_provider::unauthenticated_auth_provider(),
+                auth_provider: motyga_model_provider::unauthenticated_auth_provider(),
                 account_id: "account_id".to_string(),
             },
             "11111111-1111-4111-8111-111111111111",

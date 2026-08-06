@@ -22,39 +22,39 @@ use crate::protocol::v2::TurnItemsView;
 use crate::protocol::v2::TurnStatus;
 use crate::protocol::v2::UserInput;
 use crate::protocol::v2::WebSearchAction;
-use codex_protocol::items::parse_hook_prompt_message;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::protocol::AgentReasoningEvent;
-use codex_protocol::protocol::AgentReasoningRawContentEvent;
-use codex_protocol::protocol::AgentStatus;
-use codex_protocol::protocol::ApplyPatchApprovalRequestEvent;
-use codex_protocol::protocol::CompactedItem;
-use codex_protocol::protocol::ContextCompactedEvent;
-use codex_protocol::protocol::DynamicToolCallResponseEvent;
-use codex_protocol::protocol::ErrorEvent;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExecCommandBeginEvent;
-use codex_protocol::protocol::ExecCommandEndEvent;
-use codex_protocol::protocol::GuardianAssessmentEvent;
-use codex_protocol::protocol::GuardianAssessmentStatus;
-use codex_protocol::protocol::ImageGenerationBeginEvent;
-use codex_protocol::protocol::ImageGenerationEndEvent;
-use codex_protocol::protocol::ItemCompletedEvent;
-use codex_protocol::protocol::ItemStartedEvent;
-use codex_protocol::protocol::McpToolCallBeginEvent;
-use codex_protocol::protocol::McpToolCallEndEvent;
-use codex_protocol::protocol::PatchApplyBeginEvent;
-use codex_protocol::protocol::PatchApplyEndEvent;
-use codex_protocol::protocol::ReviewOutputEvent;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::ThreadRolledBackEvent;
-use codex_protocol::protocol::TurnAbortedEvent;
-use codex_protocol::protocol::TurnCompleteEvent;
-use codex_protocol::protocol::TurnStartedEvent;
-use codex_protocol::protocol::UserMessageEvent;
-use codex_protocol::protocol::ViewImageToolCallEvent;
-use codex_protocol::protocol::WebSearchBeginEvent;
-use codex_protocol::protocol::WebSearchEndEvent;
+use motyga_protocol::items::parse_hook_prompt_message;
+use motyga_protocol::models::MessagePhase;
+use motyga_protocol::protocol::AgentReasoningEvent;
+use motyga_protocol::protocol::AgentReasoningRawContentEvent;
+use motyga_protocol::protocol::AgentStatus;
+use motyga_protocol::protocol::ApplyPatchApprovalRequestEvent;
+use motyga_protocol::protocol::CompactedItem;
+use motyga_protocol::protocol::ContextCompactedEvent;
+use motyga_protocol::protocol::DynamicToolCallResponseEvent;
+use motyga_protocol::protocol::ErrorEvent;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExecCommandBeginEvent;
+use motyga_protocol::protocol::ExecCommandEndEvent;
+use motyga_protocol::protocol::GuardianAssessmentEvent;
+use motyga_protocol::protocol::GuardianAssessmentStatus;
+use motyga_protocol::protocol::ImageGenerationBeginEvent;
+use motyga_protocol::protocol::ImageGenerationEndEvent;
+use motyga_protocol::protocol::ItemCompletedEvent;
+use motyga_protocol::protocol::ItemStartedEvent;
+use motyga_protocol::protocol::McpToolCallBeginEvent;
+use motyga_protocol::protocol::McpToolCallEndEvent;
+use motyga_protocol::protocol::PatchApplyBeginEvent;
+use motyga_protocol::protocol::PatchApplyEndEvent;
+use motyga_protocol::protocol::ReviewOutputEvent;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::ThreadRolledBackEvent;
+use motyga_protocol::protocol::TurnAbortedEvent;
+use motyga_protocol::protocol::TurnCompleteEvent;
+use motyga_protocol::protocol::TurnStartedEvent;
+use motyga_protocol::protocol::UserMessageEvent;
+use motyga_protocol::protocol::ViewImageToolCallEvent;
+use motyga_protocol::protocol::WebSearchBeginEvent;
+use motyga_protocol::protocol::WebSearchEndEvent;
 use std::collections::HashMap;
 use tracing::warn;
 use uuid::Uuid;
@@ -68,9 +68,9 @@ use crate::protocol::v2::PatchApplyStatus;
 #[cfg(test)]
 use crate::protocol::v2::PatchChangeKind;
 #[cfg(test)]
-use codex_protocol::protocol::ExecCommandStatus as CoreExecCommandStatus;
+use motyga_protocol::protocol::ExecCommandStatus as CoreExecCommandStatus;
 #[cfg(test)]
-use codex_protocol::protocol::PatchApplyStatus as CorePatchApplyStatus;
+use motyga_protocol::protocol::PatchApplyStatus as CorePatchApplyStatus;
 
 /// Convert persisted [`RolloutItem`] entries into a sequence of [`Turn`] values.
 ///
@@ -429,8 +429,8 @@ impl ThreadHistoryBuilder {
         self.active_change_set.take().unwrap_or_default()
     }
 
-    fn handle_response_item(&mut self, item: &codex_protocol::models::ResponseItem) {
-        let codex_protocol::models::ResponseItem::Message {
+    fn handle_response_item(&mut self, item: &motyga_protocol::models::ResponseItem) {
+        let motyga_protocol::models::ResponseItem::Message {
             role, content, id, ..
         } = item
         else {
@@ -584,25 +584,25 @@ impl ThreadHistoryBuilder {
     fn handle_materialized_item_lifecycle(
         &mut self,
         turn_id: &str,
-        item: &codex_protocol::items::TurnItem,
+        item: &motyga_protocol::items::TurnItem,
     ) {
         let should_upsert = match item {
-            codex_protocol::items::TurnItem::Plan(plan) => !plan.text.is_empty(),
-            codex_protocol::items::TurnItem::Sleep(_)
-            | codex_protocol::items::TurnItem::CommandExecution(_)
-            | codex_protocol::items::TurnItem::DynamicToolCall(_)
-            | codex_protocol::items::TurnItem::CollabAgentToolCall(_)
-            | codex_protocol::items::TurnItem::SubAgentActivity(_) => true,
-            codex_protocol::items::TurnItem::UserMessage(_)
-            | codex_protocol::items::TurnItem::HookPrompt(_)
-            | codex_protocol::items::TurnItem::AgentMessage(_)
-            | codex_protocol::items::TurnItem::Reasoning(_)
-            | codex_protocol::items::TurnItem::WebSearch(_)
-            | codex_protocol::items::TurnItem::ImageView(_)
-            | codex_protocol::items::TurnItem::ImageGeneration(_)
-            | codex_protocol::items::TurnItem::FileChange(_)
-            | codex_protocol::items::TurnItem::McpToolCall(_)
-            | codex_protocol::items::TurnItem::ContextCompaction(_) => false,
+            motyga_protocol::items::TurnItem::Plan(plan) => !plan.text.is_empty(),
+            motyga_protocol::items::TurnItem::Sleep(_)
+            | motyga_protocol::items::TurnItem::CommandExecution(_)
+            | motyga_protocol::items::TurnItem::DynamicToolCall(_)
+            | motyga_protocol::items::TurnItem::CollabAgentToolCall(_)
+            | motyga_protocol::items::TurnItem::SubAgentActivity(_) => true,
+            motyga_protocol::items::TurnItem::UserMessage(_)
+            | motyga_protocol::items::TurnItem::HookPrompt(_)
+            | motyga_protocol::items::TurnItem::AgentMessage(_)
+            | motyga_protocol::items::TurnItem::Reasoning(_)
+            | motyga_protocol::items::TurnItem::WebSearch(_)
+            | motyga_protocol::items::TurnItem::ImageView(_)
+            | motyga_protocol::items::TurnItem::ImageGeneration(_)
+            | motyga_protocol::items::TurnItem::FileChange(_)
+            | motyga_protocol::items::TurnItem::McpToolCall(_)
+            | motyga_protocol::items::TurnItem::ContextCompaction(_) => false,
         };
 
         if should_upsert {
@@ -691,7 +691,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_dynamic_tool_call_request(
         &mut self,
-        payload: &codex_protocol::dynamic_tools::DynamicToolCallRequest,
+        payload: &motyga_protocol::dynamic_tools::DynamicToolCallRequest,
     ) {
         let item = ThreadItem::DynamicToolCall {
             id: payload.call_id.clone(),
@@ -850,7 +850,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_collab_agent_spawn_begin(
         &mut self,
-        payload: &codex_protocol::protocol::CollabAgentSpawnBeginEvent,
+        payload: &motyga_protocol::protocol::CollabAgentSpawnBeginEvent,
     ) {
         let item = ThreadItem::CollabAgentToolCall {
             id: payload.call_id.clone(),
@@ -868,7 +868,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_collab_agent_spawn_end(
         &mut self,
-        payload: &codex_protocol::protocol::CollabAgentSpawnEndEvent,
+        payload: &motyga_protocol::protocol::CollabAgentSpawnEndEvent,
     ) {
         let has_receiver = payload.new_thread_id.is_some();
         let status = match &payload.status {
@@ -902,7 +902,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_collab_agent_interaction_begin(
         &mut self,
-        payload: &codex_protocol::protocol::CollabAgentInteractionBeginEvent,
+        payload: &motyga_protocol::protocol::CollabAgentInteractionBeginEvent,
     ) {
         let item = ThreadItem::CollabAgentToolCall {
             id: payload.call_id.clone(),
@@ -920,7 +920,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_collab_agent_interaction_end(
         &mut self,
-        payload: &codex_protocol::protocol::CollabAgentInteractionEndEvent,
+        payload: &motyga_protocol::protocol::CollabAgentInteractionEndEvent,
     ) {
         let status = match &payload.status {
             AgentStatus::Errored(_) | AgentStatus::NotFound => CollabAgentToolCallStatus::Failed,
@@ -943,7 +943,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_sub_agent_activity(
         &mut self,
-        payload: &codex_protocol::protocol::SubAgentActivityEvent,
+        payload: &motyga_protocol::protocol::SubAgentActivityEvent,
     ) {
         self.upsert_item_in_current_turn(ThreadItem::SubAgentActivity {
             id: payload.event_id.clone(),
@@ -955,7 +955,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_collab_waiting_begin(
         &mut self,
-        payload: &codex_protocol::protocol::CollabWaitingBeginEvent,
+        payload: &motyga_protocol::protocol::CollabWaitingBeginEvent,
     ) {
         let item = ThreadItem::CollabAgentToolCall {
             id: payload.call_id.clone(),
@@ -977,7 +977,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_collab_waiting_end(
         &mut self,
-        payload: &codex_protocol::protocol::CollabWaitingEndEvent,
+        payload: &motyga_protocol::protocol::CollabWaitingEndEvent,
     ) {
         let status = if payload
             .statuses
@@ -1011,7 +1011,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_collab_close_begin(
         &mut self,
-        payload: &codex_protocol::protocol::CollabCloseBeginEvent,
+        payload: &motyga_protocol::protocol::CollabCloseBeginEvent,
     ) {
         let item = ThreadItem::CollabAgentToolCall {
             id: payload.call_id.clone(),
@@ -1027,7 +1027,7 @@ impl ThreadHistoryBuilder {
         self.upsert_item_in_current_turn(item);
     }
 
-    fn handle_collab_close_end(&mut self, payload: &codex_protocol::protocol::CollabCloseEndEvent) {
+    fn handle_collab_close_end(&mut self, payload: &motyga_protocol::protocol::CollabCloseEndEvent) {
         let status = match &payload.status {
             AgentStatus::Errored(_) | AgentStatus::NotFound => CollabAgentToolCallStatus::Failed,
             _ => CollabAgentToolCallStatus::Completed,
@@ -1054,7 +1054,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_collab_resume_begin(
         &mut self,
-        payload: &codex_protocol::protocol::CollabResumeBeginEvent,
+        payload: &motyga_protocol::protocol::CollabResumeBeginEvent,
     ) {
         let item = ThreadItem::CollabAgentToolCall {
             id: payload.call_id.clone(),
@@ -1072,7 +1072,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_collab_resume_end(
         &mut self,
-        payload: &codex_protocol::protocol::CollabResumeEndEvent,
+        payload: &motyga_protocol::protocol::CollabResumeEndEvent,
     ) {
         let status = match &payload.status {
             AgentStatus::Errored(_) | AgentStatus::NotFound => CollabAgentToolCallStatus::Failed,
@@ -1103,7 +1103,7 @@ impl ThreadHistoryBuilder {
         self.push_item_in_current_turn(ThreadItem::ContextCompaction { id });
     }
 
-    fn handle_entered_review_mode(&mut self, payload: &codex_protocol::protocol::ReviewRequest) {
+    fn handle_entered_review_mode(&mut self, payload: &motyga_protocol::protocol::ReviewRequest) {
         let review = payload
             .user_facing_hint
             .clone()
@@ -1114,7 +1114,7 @@ impl ThreadHistoryBuilder {
 
     fn handle_exited_review_mode(
         &mut self,
-        payload: &codex_protocol::protocol::ExitedReviewModeEvent,
+        payload: &motyga_protocol::protocol::ExitedReviewModeEvent,
     ) {
         let review = payload
             .review_output
@@ -1134,7 +1134,7 @@ impl ThreadHistoryBuilder {
             turn.status = TurnStatus::Failed;
             turn.error = Some(V2TurnError {
                 message: payload.message.clone(),
-                codex_error_info: payload.codex_error_info.clone().map(Into::into),
+                motyga_error_info: payload.motyga_error_info.clone().map(Into::into),
                 additional_details: None,
             });
             tracking_changes.then(|| ThreadHistoryTurnChange::from_pending_turn(turn))
@@ -1450,16 +1450,16 @@ fn render_review_output_text(output: &ReviewOutputEvent) -> String {
 }
 
 fn convert_dynamic_tool_content_items(
-    items: &[codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem],
+    items: &[motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem],
 ) -> Vec<DynamicToolCallOutputContentItem> {
     items
         .iter()
         .cloned()
         .map(|item| match item {
-            codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputText { text } => {
+            motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputText { text } => {
                 DynamicToolCallOutputContentItem::InputText { text }
             }
-            codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputImage {
+            motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputImage {
                 image_url,
             } => DynamicToolCallOutputContentItem::InputImage { image_url },
         })
@@ -1548,43 +1548,43 @@ impl From<&PendingTurn> for Turn {
 mod tests {
     use super::*;
     use crate::protocol::v2::CommandExecutionSource;
-    use codex_protocol::ThreadId;
-    use codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem as CoreDynamicToolCallOutputContentItem;
-    use codex_protocol::items::CommandExecutionItem as CoreCommandExecutionItem;
-    use codex_protocol::items::CommandExecutionStatus as CoreCommandExecutionStatus;
-    use codex_protocol::items::HookPromptFragment as CoreHookPromptFragment;
-    use codex_protocol::items::SleepItem as CoreSleepItem;
-    use codex_protocol::items::TurnItem as CoreTurnItem;
-    use codex_protocol::items::UserMessageItem as CoreUserMessageItem;
-    use codex_protocol::items::build_hook_prompt_message;
-    use codex_protocol::mcp::CallToolResult;
-    use codex_protocol::models::ImageDetail;
-    use codex_protocol::models::MessagePhase as CoreMessagePhase;
-    use codex_protocol::models::WebSearchAction as CoreWebSearchAction;
-    use codex_protocol::parse_command::ParsedCommand;
-    use codex_protocol::protocol::AgentMessageEvent;
-    use codex_protocol::protocol::AgentReasoningEvent;
-    use codex_protocol::protocol::AgentReasoningRawContentEvent;
-    use codex_protocol::protocol::ApplyPatchApprovalRequestEvent;
-    use codex_protocol::protocol::CodexErrorInfo;
-    use codex_protocol::protocol::CompactedItem;
-    use codex_protocol::protocol::DynamicToolCallResponseEvent;
-    use codex_protocol::protocol::ExecCommandEndEvent;
-    use codex_protocol::protocol::ExecCommandSource;
-    use codex_protocol::protocol::ItemStartedEvent;
-    use codex_protocol::protocol::McpInvocation;
-    use codex_protocol::protocol::McpToolCallEndEvent;
-    use codex_protocol::protocol::PatchApplyBeginEvent;
-    use codex_protocol::protocol::ThreadRolledBackEvent;
-    use codex_protocol::protocol::TurnAbortReason;
-    use codex_protocol::protocol::TurnAbortedEvent;
-    use codex_protocol::protocol::TurnCompleteEvent;
-    use codex_protocol::protocol::TurnStartedEvent;
-    use codex_protocol::protocol::UserMessageEvent;
-    use codex_protocol::protocol::WebSearchBeginEvent;
-    use codex_protocol::protocol::WebSearchEndEvent;
-    use codex_utils_absolute_path::test_support::PathBufExt;
-    use codex_utils_absolute_path::test_support::test_path_buf;
+    use motyga_protocol::ThreadId;
+    use motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem as CoreDynamicToolCallOutputContentItem;
+    use motyga_protocol::items::CommandExecutionItem as CoreCommandExecutionItem;
+    use motyga_protocol::items::CommandExecutionStatus as CoreCommandExecutionStatus;
+    use motyga_protocol::items::HookPromptFragment as CoreHookPromptFragment;
+    use motyga_protocol::items::SleepItem as CoreSleepItem;
+    use motyga_protocol::items::TurnItem as CoreTurnItem;
+    use motyga_protocol::items::UserMessageItem as CoreUserMessageItem;
+    use motyga_protocol::items::build_hook_prompt_message;
+    use motyga_protocol::mcp::CallToolResult;
+    use motyga_protocol::models::ImageDetail;
+    use motyga_protocol::models::MessagePhase as CoreMessagePhase;
+    use motyga_protocol::models::WebSearchAction as CoreWebSearchAction;
+    use motyga_protocol::parse_command::ParsedCommand;
+    use motyga_protocol::protocol::AgentMessageEvent;
+    use motyga_protocol::protocol::AgentReasoningEvent;
+    use motyga_protocol::protocol::AgentReasoningRawContentEvent;
+    use motyga_protocol::protocol::ApplyPatchApprovalRequestEvent;
+    use motyga_protocol::protocol::MotygaErrorInfo;
+    use motyga_protocol::protocol::CompactedItem;
+    use motyga_protocol::protocol::DynamicToolCallResponseEvent;
+    use motyga_protocol::protocol::ExecCommandEndEvent;
+    use motyga_protocol::protocol::ExecCommandSource;
+    use motyga_protocol::protocol::ItemStartedEvent;
+    use motyga_protocol::protocol::McpInvocation;
+    use motyga_protocol::protocol::McpToolCallEndEvent;
+    use motyga_protocol::protocol::PatchApplyBeginEvent;
+    use motyga_protocol::protocol::ThreadRolledBackEvent;
+    use motyga_protocol::protocol::TurnAbortReason;
+    use motyga_protocol::protocol::TurnAbortedEvent;
+    use motyga_protocol::protocol::TurnCompleteEvent;
+    use motyga_protocol::protocol::TurnStartedEvent;
+    use motyga_protocol::protocol::UserMessageEvent;
+    use motyga_protocol::protocol::WebSearchBeginEvent;
+    use motyga_protocol::protocol::WebSearchEndEvent;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
+    use motyga_utils_absolute_path::test_support::test_path_buf;
     use pretty_assertions::assert_eq;
     use std::path::PathBuf;
     use std::time::Duration;
@@ -1935,7 +1935,7 @@ mod tests {
                 item: CoreTurnItem::UserMessage(CoreUserMessageItem {
                     id: "user-item-id".to_string(),
                     client_id: Some("client-message-1".to_string()),
-                    content: vec![codex_protocol::user_input::UserInput::Text {
+                    content: vec![motyga_protocol::user_input::UserInput::Text {
                         text: "hello".into(),
                         text_elements: Vec::new(),
                     }],
@@ -2438,9 +2438,9 @@ mod tests {
             }),
             EventMsg::WebSearchEnd(WebSearchEndEvent {
                 call_id: "search-1".into(),
-                query: "codex".into(),
+                query: "motyga".into(),
                 action: CoreWebSearchAction::Search {
-                    query: Some("codex".into()),
+                    query: Some("motyga".into()),
                     queries: None,
                 },
             }),
@@ -2494,9 +2494,9 @@ mod tests {
             turns[0].items[1],
             ThreadItem::WebSearch {
                 id: "search-1".into(),
-                query: "codex".into(),
+                query: "motyga".into(),
                 action: Some(WebSearchAction::Search {
-                    query: Some("codex".into()),
+                    query: Some("motyga".into()),
                     queries: None,
                 }),
             }
@@ -2636,11 +2636,11 @@ mod tests {
                 ..Default::default()
             }),
             EventMsg::DynamicToolCallRequest(
-                codex_protocol::dynamic_tools::DynamicToolCallRequest {
+                motyga_protocol::dynamic_tools::DynamicToolCallRequest {
                     call_id: "dyn-1".into(),
                     turn_id: "turn-1".into(),
                     started_at_ms: 0,
-                    namespace: Some("codex_app".into()),
+                    namespace: Some("motyga_app".into()),
                     tool: "lookup_ticket".into(),
                     arguments: serde_json::json!({"id":"ABC-123"}),
                 },
@@ -2649,7 +2649,7 @@ mod tests {
                 call_id: "dyn-1".into(),
                 turn_id: "turn-1".into(),
                 completed_at_ms: 0,
-                namespace: Some("codex_app".into()),
+                namespace: Some("motyga_app".into()),
                 tool: "lookup_ticket".into(),
                 arguments: serde_json::json!({"id":"ABC-123"}),
                 content_items: vec![CoreDynamicToolCallOutputContentItem::InputText {
@@ -2672,7 +2672,7 @@ mod tests {
             turns[0].items[1],
             ThreadItem::DynamicToolCall {
                 id: "dyn-1".into(),
-                namespace: Some("codex_app".into()),
+                namespace: Some("motyga_app".into()),
                 tool: "lookup_ticket".into(),
                 arguments: serde_json::json!({"id":"ABC-123"}),
                 status: DynamicToolCallStatus::Completed,
@@ -2729,7 +2729,7 @@ mod tests {
                 success: false,
                 changes: [(
                     PathBuf::from("README.md"),
-                    codex_protocol::protocol::FileChange::Add {
+                    motyga_protocol::protocol::FileChange::Add {
                         content: "hello\n".into(),
                     },
                 )]
@@ -2821,11 +2821,11 @@ mod tests {
                 started_at_ms: 1_000,
                 completed_at_ms: Some(1_042),
                 status: GuardianAssessmentStatus::Denied,
-                risk_level: Some(codex_protocol::protocol::GuardianRiskLevel::High),
-                user_authorization: Some(codex_protocol::protocol::GuardianUserAuthorization::Low),
+                risk_level: Some(motyga_protocol::protocol::GuardianRiskLevel::High),
+                user_authorization: Some(motyga_protocol::protocol::GuardianUserAuthorization::Low),
                 rationale: Some("Would delete user data.".into()),
                 decision_source: Some(
-                    codex_protocol::protocol::GuardianAssessmentDecisionSource::Agent,
+                    motyga_protocol::protocol::GuardianAssessmentDecisionSource::Agent,
                 ),
                 action: serde_json::from_value(serde_json::json!({
                     "type": "command",
@@ -3145,7 +3145,7 @@ mod tests {
                 auto_approved: false,
                 changes: [(
                     PathBuf::from("README.md"),
-                    codex_protocol::protocol::FileChange::Add {
+                    motyga_protocol::protocol::FileChange::Add {
                         content: "hello\n".into(),
                     },
                 )]
@@ -3213,7 +3213,7 @@ mod tests {
                 started_at_ms: 0,
                 changes: [(
                     PathBuf::from("README.md"),
-                    codex_protocol::protocol::FileChange::Add {
+                    motyga_protocol::protocol::FileChange::Add {
                         content: "hello\n".into(),
                     },
                 )]
@@ -3448,7 +3448,7 @@ mod tests {
                 local_images: Vec::new(),
                 ..Default::default()
             }),
-            EventMsg::CollabResumeEnd(codex_protocol::protocol::CollabResumeEndEvent {
+            EventMsg::CollabResumeEnd(motyga_protocol::protocol::CollabResumeEndEvent {
                 call_id: "resume-1".into(),
                 completed_at_ms: 0,
                 sender_thread_id: ThreadId::try_from("00000000-0000-0000-0000-000000000001")
@@ -3507,7 +3507,7 @@ mod tests {
                 local_images: Vec::new(),
                 ..Default::default()
             }),
-            EventMsg::CollabAgentSpawnEnd(codex_protocol::protocol::CollabAgentSpawnEndEvent {
+            EventMsg::CollabAgentSpawnEnd(motyga_protocol::protocol::CollabAgentSpawnEndEvent {
                 call_id: "spawn-1".into(),
                 completed_at_ms: 0,
                 sender_thread_id,
@@ -3516,7 +3516,7 @@ mod tests {
                 new_agent_role: Some("explorer".into()),
                 prompt: "inspect the repo".into(),
                 model: "gpt-5.4-mini".into(),
-                reasoning_effort: codex_protocol::openai_models::ReasoningEffort::Medium,
+                reasoning_effort: motyga_protocol::openai_models::ReasoningEffort::Medium,
                 status: AgentStatus::Running,
             }),
         ];
@@ -3538,7 +3538,7 @@ mod tests {
                 receiver_thread_ids: vec!["00000000-0000-0000-0000-000000000002".into()],
                 prompt: Some("inspect the repo".into()),
                 model: Some("gpt-5.4-mini".into()),
-                reasoning_effort: Some(codex_protocol::openai_models::ReasoningEffort::Medium),
+                reasoning_effort: Some(motyga_protocol::openai_models::ReasoningEffort::Medium),
                 agents_states: [(
                     "00000000-0000-0000-0000-000000000002".into(),
                     CollabAgentState {
@@ -3571,7 +3571,7 @@ mod tests {
                 ..Default::default()
             }),
             EventMsg::CollabAgentInteractionBegin(
-                codex_protocol::protocol::CollabAgentInteractionBeginEvent {
+                motyga_protocol::protocol::CollabAgentInteractionBeginEvent {
                     call_id: "send-1".into(),
                     started_at_ms: 0,
                     sender_thread_id: sender,
@@ -3580,7 +3580,7 @@ mod tests {
                 },
             ),
             EventMsg::CollabAgentInteractionEnd(
-                codex_protocol::protocol::CollabAgentInteractionEndEvent {
+                motyga_protocol::protocol::CollabAgentInteractionEndEvent {
                     call_id: "send-1".into(),
                     completed_at_ms: 0,
                     sender_thread_id: sender,
@@ -3642,7 +3642,7 @@ mod tests {
             }),
             EventMsg::Error(ErrorEvent {
                 message: "rollback failed".into(),
-                codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
+                motyga_error_info: Some(MotygaErrorInfo::ThreadRollbackFailed),
             }),
         ];
 
@@ -3683,7 +3683,7 @@ mod tests {
             }),
             EventMsg::Error(ErrorEvent {
                 message: "request-level failure".into(),
-                codex_error_info: Some(CodexErrorInfo::BadRequest),
+                motyga_error_info: Some(MotygaErrorInfo::BadRequest),
             }),
         ];
 
@@ -3735,7 +3735,7 @@ mod tests {
             }),
             EventMsg::Error(ErrorEvent {
                 message: "stream failure".into(),
-                codex_error_info: Some(CodexErrorInfo::ResponseStreamDisconnected {
+                motyga_error_info: Some(MotygaErrorInfo::ResponseStreamDisconnected {
                     http_status_code: Some(502),
                 }),
             }),
@@ -3760,8 +3760,8 @@ mod tests {
             turns[0].error,
             Some(TurnError {
                 message: "stream failure".into(),
-                codex_error_info: Some(
-                    crate::protocol::v2::CodexErrorInfo::ResponseStreamDisconnected {
+                motyga_error_info: Some(
+                    crate::protocol::v2::MotygaErrorInfo::ResponseStreamDisconnected {
                         http_status_code: Some(502),
                     }
                 ),
@@ -3835,10 +3835,10 @@ mod tests {
                 model_context_window: None,
                 collaboration_mode_kind: Default::default(),
             })),
-            RolloutItem::ResponseItem(codex_protocol::models::ResponseItem::Message {
+            RolloutItem::ResponseItem(motyga_protocol::models::ResponseItem::Message {
                 id: Some("msg-1".into()),
                 role: "user".into(),
-                content: vec![codex_protocol::models::ContentItem::InputText {
+                content: vec![motyga_protocol::models::ContentItem::InputText {
                     text: "plain text".into(),
                 }],
                 phase: None,
@@ -3912,9 +3912,9 @@ mod tests {
         let changes = builder.handle_rollout_item_with_changes(&RolloutItem::EventMsg(
             EventMsg::WebSearchEnd(WebSearchEndEvent {
                 call_id: "search-1".into(),
-                query: "codex".into(),
+                query: "motyga".into(),
                 action: CoreWebSearchAction::Search {
-                    query: Some("codex".into()),
+                    query: Some("motyga".into()),
                     queries: None,
                 },
             }),
@@ -3927,9 +3927,9 @@ mod tests {
                     turn_id: "rollout-0".into(),
                     item: ThreadItem::WebSearch {
                         id: "search-1".into(),
-                        query: "codex".into(),
+                        query: "motyga".into(),
                         action: Some(WebSearchAction::Search {
-                            query: Some("codex".into()),
+                            query: Some("motyga".into()),
                             queries: None,
                         }),
                     },
@@ -4047,9 +4047,9 @@ mod tests {
             })),
             RolloutItem::EventMsg(EventMsg::WebSearchEnd(WebSearchEndEvent {
                 call_id: "search-1".into(),
-                query: "codex".into(),
+                query: "motyga".into(),
                 action: CoreWebSearchAction::Search {
-                    query: Some("codex".into()),
+                    query: Some("motyga".into()),
                     queries: None,
                 },
             })),
@@ -4062,9 +4062,9 @@ mod tests {
                     turn_id: "rollout-0".into(),
                     item: ThreadItem::WebSearch {
                         id: "search-1".into(),
-                        query: "codex".into(),
+                        query: "motyga".into(),
                         action: Some(WebSearchAction::Search {
-                            query: Some("codex".into()),
+                            query: Some("motyga".into()),
                             queries: None,
                         }),
                     },

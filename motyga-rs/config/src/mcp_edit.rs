@@ -19,9 +19,9 @@ use crate::McpServerEnvVar;
 use crate::McpServerTransportConfig;
 
 pub async fn load_global_mcp_servers(
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> std::io::Result<BTreeMap<String, McpServerConfig>> {
-    let config_path = codex_home.join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.join(CONFIG_TOML_FILE);
     let raw = match tokio::fs::read_to_string(&config_path).await {
         Ok(raw) => raw,
         Err(err) if err.kind() == ErrorKind::NotFound => return Ok(BTreeMap::new()),
@@ -61,14 +61,14 @@ fn ensure_no_inline_bearer_tokens(value: &TomlValue) -> std::io::Result<()> {
 }
 
 pub struct ConfigEditsBuilder {
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     mcp_servers: Option<BTreeMap<String, McpServerConfig>>,
 }
 
 impl ConfigEditsBuilder {
-    pub fn new(codex_home: &Path) -> Self {
+    pub fn new(motyga_home: &Path) -> Self {
         Self {
-            codex_home: codex_home.to_path_buf(),
+            motyga_home: motyga_home.to_path_buf(),
             mcp_servers: None,
         }
     }
@@ -87,12 +87,12 @@ impl ConfigEditsBuilder {
     }
 
     fn apply_blocking(self) -> std::io::Result<()> {
-        let config_path = self.codex_home.join(CONFIG_TOML_FILE);
+        let config_path = self.motyga_home.join(CONFIG_TOML_FILE);
         let mut doc = read_or_create_document(&config_path)?;
         if let Some(servers) = self.mcp_servers.as_ref() {
             replace_mcp_servers(&mut doc, servers);
         }
-        fs::create_dir_all(&self.codex_home)?;
+        fs::create_dir_all(&self.motyga_home)?;
         fs::write(config_path, doc.to_string())
     }
 }

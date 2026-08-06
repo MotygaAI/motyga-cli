@@ -1,12 +1,12 @@
 use anyhow::Result;
 use clap::Parser;
 use clap::Subcommand;
-use codex_execpolicy_legacy::ExecCall;
-use codex_execpolicy_legacy::MatchedExec;
-use codex_execpolicy_legacy::Policy;
-use codex_execpolicy_legacy::PolicyParser;
-use codex_execpolicy_legacy::ValidExec;
-use codex_execpolicy_legacy::get_default_policy;
+use motyga_execpolicy_legacy::ExecCall;
+use motyga_execpolicy_legacy::MatchedExec;
+use motyga_execpolicy_legacy::Policy;
+use motyga_execpolicy_legacy::PolicyParser;
+use motyga_execpolicy_legacy::ValidExec;
+use motyga_execpolicy_legacy::get_default_policy;
 use serde::Deserialize;
 use serde::Serialize;
 use serde::de;
@@ -140,13 +140,13 @@ pub enum Output {
     #[serde(rename = "forbidden")]
     Forbidden {
         reason: String,
-        cause: codex_execpolicy_legacy::Forbidden,
+        cause: motyga_execpolicy_legacy::Forbidden,
     },
 
     /// The safety of the command could not be verified.
     #[serde(rename = "unverified")]
     Unverified {
-        error: codex_execpolicy_legacy::Error,
+        error: motyga_execpolicy_legacy::Error,
     },
 }
 

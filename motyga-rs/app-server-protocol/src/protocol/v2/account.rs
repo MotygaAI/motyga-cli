@@ -1,13 +1,13 @@
 use crate::protocol::common::AuthMode;
-use codex_experimental_api_macros::ExperimentalApi;
-use codex_protocol::account::AmazonBedrockCredentialSource;
-use codex_protocol::account::PlanType;
-use codex_protocol::account::ProviderAccount;
-use codex_protocol::protocol::CreditsSnapshot as CoreCreditsSnapshot;
-use codex_protocol::protocol::RateLimitReachedType as CoreRateLimitReachedType;
-use codex_protocol::protocol::RateLimitSnapshot as CoreRateLimitSnapshot;
-use codex_protocol::protocol::RateLimitWindow as CoreRateLimitWindow;
-use codex_protocol::protocol::SpendControlLimitSnapshot as CoreSpendControlLimitSnapshot;
+use motyga_experimental_api_macros::ExperimentalApi;
+use motyga_protocol::account::AmazonBedrockCredentialSource;
+use motyga_protocol::account::PlanType;
+use motyga_protocol::account::ProviderAccount;
+use motyga_protocol::protocol::CreditsSnapshot as CoreCreditsSnapshot;
+use motyga_protocol::protocol::RateLimitReachedType as CoreRateLimitReachedType;
+use motyga_protocol::protocol::RateLimitSnapshot as CoreRateLimitSnapshot;
+use motyga_protocol::protocol::RateLimitWindow as CoreRateLimitWindow;
+use motyga_protocol::protocol::SpendControlLimitSnapshot as CoreSpendControlLimitSnapshot;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -77,13 +77,13 @@ pub enum LoginAccountParams {
     #[ts(rename = "chatgpt", rename_all = "camelCase")]
     Chatgpt {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-        codex_streamlined_login: bool,
+        motyga_streamlined_login: bool,
     },
     #[serde(rename = "chatgptDeviceCode")]
     #[ts(rename = "chatgptDeviceCode")]
     ChatgptDeviceCode,
     /// [UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE.
-    /// The access token must contain the same scopes that Codex-managed ChatGPT auth tokens have.
+    /// The access token must contain the same scopes that Motyga-managed ChatGPT auth tokens have.
     #[experimental("account/login/start.chatgptAuthTokens")]
     #[serde(rename = "chatgptAuthTokens", rename_all = "camelCase")]
     #[ts(rename = "chatgptAuthTokens", rename_all = "camelCase")]
@@ -95,7 +95,7 @@ pub enum LoginAccountParams {
         chatgpt_account_id: String,
         /// Optional plan type supplied by the client.
         ///
-        /// When `null`, Codex attempts to derive the plan type from access-token
+        /// When `null`, Motyga attempts to derive the plan type from access-token
         /// claims. If unavailable, the plan defaults to `unknown`.
         #[ts(optional = nullable)]
         chatgpt_plan_type: Option<String>,
@@ -239,7 +239,7 @@ pub struct LogoutAccountResponse {}
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
 pub enum ChatgptAuthTokensRefreshReason {
-    /// Codex attempted a backend request and received `401 Unauthorized`.
+    /// Motyga attempted a backend request and received `401 Unauthorized`.
     Unauthorized,
 }
 
@@ -248,7 +248,7 @@ pub enum ChatgptAuthTokensRefreshReason {
 #[ts(export_to = "v2/")]
 pub struct ChatgptAuthTokensRefreshParams {
     pub reason: ChatgptAuthTokensRefreshReason,
-    /// Workspace/account identifier that Codex was previously using.
+    /// Workspace/account identifier that Motyga was previously using.
     ///
     /// Clients that manage multiple accounts/workspaces can use this as a hint
     /// to refresh the token for the correct workspace.
@@ -274,7 +274,7 @@ pub struct ChatgptAuthTokensRefreshResponse {
 pub struct GetAccountRateLimitsResponse {
     /// Backward-compatible single-bucket view; mirrors the historical payload.
     pub rate_limits: RateLimitSnapshot,
-    /// Multi-bucket view keyed by metered `limit_id` (for example, `codex`).
+    /// Multi-bucket view keyed by metered `limit_id` (for example, `motyga`).
     pub rate_limits_by_limit_id: Option<HashMap<String, RateLimitSnapshot>>,
     pub rate_limit_reset_credits: Option<RateLimitResetCreditsSummary>,
 }

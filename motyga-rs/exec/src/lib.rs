@@ -13,96 +13,96 @@ pub(crate) mod exec_events;
 pub use cli::Cli;
 pub use cli::Command;
 pub use cli::ReviewArgs;
-use codex_app_server_client::DEFAULT_IN_PROCESS_CHANNEL_CAPACITY;
-use codex_app_server_client::EnvironmentManager;
-use codex_app_server_client::ExecServerRuntimePaths;
-use codex_app_server_client::InProcessAppServerClient;
-use codex_app_server_client::InProcessClientStartArgs;
-use codex_app_server_client::InProcessServerEvent;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::ConfigWarningNotification;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::McpServerElicitationAction;
-use codex_app_server_protocol::McpServerElicitationRequestResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ReviewStartParams;
-use codex_app_server_protocol::ReviewStartResponse;
-use codex_app_server_protocol::ReviewTarget as ApiReviewTarget;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::Thread as AppServerThread;
-use codex_app_server_protocol::ThreadItem as AppServerThreadItem;
-use codex_app_server_protocol::ThreadListParams;
-use codex_app_server_protocol::ThreadListResponse;
-use codex_app_server_protocol::ThreadReadParams;
-use codex_app_server_protocol::ThreadReadResponse;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadResumeResponse;
-use codex_app_server_protocol::ThreadSortKey;
-use codex_app_server_protocol::ThreadSource;
-use codex_app_server_protocol::ThreadSourceKind;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::ThreadUnsubscribeParams;
-use codex_app_server_protocol::ThreadUnsubscribeResponse;
-use codex_app_server_protocol::TurnInterruptParams;
-use codex_app_server_protocol::TurnInterruptResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::TurnStartedNotification;
-use codex_arg0::Arg0DispatchPaths;
-use codex_cloud_config::cloud_config_bundle_loader_for_storage;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::ConfigLoadError;
-use codex_config::ConfigLoadOptions;
-use codex_config::LoaderOverrides;
-use codex_config::format_config_error_with_source;
-use codex_core::StateDbHandle;
-use codex_core::check_execpolicy_for_warnings;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core::config::ConfigOverrides;
-use codex_core::config::ConfigTomlLoadResult;
-use codex_core::config::find_codex_home;
-use codex_core::config::load_config_toml_with_layer_stack;
-use codex_core::config::resolve_bootstrap_auth_keyring_backend_kind;
-use codex_core::config::resolve_bootstrap_auth_route_config;
-use codex_core::config::resolve_oss_provider;
-use codex_core::config::resolve_profile_v2_config_path;
-use codex_core::find_thread_meta_by_name_str;
-use codex_core::format_exec_policy_error_with_source;
-use codex_core::path_utils;
-use codex_feedback::CodexFeedback;
-use codex_git_utils::get_git_repo_root;
-use codex_login::AuthConfig;
-use codex_login::default_client::set_default_client_residency_requirement;
-use codex_login::default_client::set_default_originator;
-use codex_login::enforce_login_restrictions;
-use codex_model_provider_info::LMSTUDIO_OSS_PROVIDER_ID;
-use codex_model_provider_info::OLLAMA_OSS_PROVIDER_ID;
-use codex_otel::set_parent_from_context;
-use codex_otel::traceparent_context_from_env;
-use codex_protocol::SessionId;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::ReviewRequest;
-use codex_protocol::protocol::ReviewTarget;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SessionConfiguredEvent;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_absolute_path::canonicalize_existing_preserving_symlinks;
-use codex_utils_cli::SharedCliOptions;
-use codex_utils_oss::ensure_oss_provider_ready;
-use codex_utils_oss::get_default_model_for_oss_provider;
+use motyga_app_server_client::DEFAULT_IN_PROCESS_CHANNEL_CAPACITY;
+use motyga_app_server_client::EnvironmentManager;
+use motyga_app_server_client::ExecServerRuntimePaths;
+use motyga_app_server_client::InProcessAppServerClient;
+use motyga_app_server_client::InProcessClientStartArgs;
+use motyga_app_server_client::InProcessServerEvent;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::ConfigWarningNotification;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::McpServerElicitationAction;
+use motyga_app_server_protocol::McpServerElicitationRequestResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ReviewStartParams;
+use motyga_app_server_protocol::ReviewStartResponse;
+use motyga_app_server_protocol::ReviewTarget as ApiReviewTarget;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::Thread as AppServerThread;
+use motyga_app_server_protocol::ThreadItem as AppServerThreadItem;
+use motyga_app_server_protocol::ThreadListParams;
+use motyga_app_server_protocol::ThreadListResponse;
+use motyga_app_server_protocol::ThreadReadParams;
+use motyga_app_server_protocol::ThreadReadResponse;
+use motyga_app_server_protocol::ThreadResumeParams;
+use motyga_app_server_protocol::ThreadResumeResponse;
+use motyga_app_server_protocol::ThreadSortKey;
+use motyga_app_server_protocol::ThreadSource;
+use motyga_app_server_protocol::ThreadSourceKind;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::ThreadUnsubscribeParams;
+use motyga_app_server_protocol::ThreadUnsubscribeResponse;
+use motyga_app_server_protocol::TurnInterruptParams;
+use motyga_app_server_protocol::TurnInterruptResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::TurnStartedNotification;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_cloud_config::cloud_config_bundle_loader_for_storage;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::ConfigLoadError;
+use motyga_config::ConfigLoadOptions;
+use motyga_config::LoaderOverrides;
+use motyga_config::format_config_error_with_source;
+use motyga_core::StateDbHandle;
+use motyga_core::check_execpolicy_for_warnings;
+use motyga_core::config::Config;
+use motyga_core::config::ConfigBuilder;
+use motyga_core::config::ConfigOverrides;
+use motyga_core::config::ConfigTomlLoadResult;
+use motyga_core::config::find_motyga_home;
+use motyga_core::config::load_config_toml_with_layer_stack;
+use motyga_core::config::resolve_bootstrap_auth_keyring_backend_kind;
+use motyga_core::config::resolve_bootstrap_auth_route_config;
+use motyga_core::config::resolve_oss_provider;
+use motyga_core::config::resolve_profile_v2_config_path;
+use motyga_core::find_thread_meta_by_name_str;
+use motyga_core::format_exec_policy_error_with_source;
+use motyga_core::path_utils;
+use motyga_feedback::MotygaFeedback;
+use motyga_git_utils::get_git_repo_root;
+use motyga_login::AuthConfig;
+use motyga_login::default_client::set_default_client_residency_requirement;
+use motyga_login::default_client::set_default_originator;
+use motyga_login::enforce_login_restrictions;
+use motyga_model_provider_info::LMSTUDIO_OSS_PROVIDER_ID;
+use motyga_model_provider_info::OLLAMA_OSS_PROVIDER_ID;
+use motyga_otel::set_parent_from_context;
+use motyga_otel::traceparent_context_from_env;
+use motyga_protocol::SessionId;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::SandboxMode;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::ReviewRequest;
+use motyga_protocol::protocol::ReviewTarget;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::protocol::SessionConfiguredEvent;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::canonicalize_existing_preserving_symlinks;
+use motyga_utils_cli::SharedCliOptions;
+use motyga_utils_oss::ensure_oss_provider_ready;
+use motyga_utils_oss::get_default_model_for_oss_provider;
 use event_processor_with_human_output::EventProcessorWithHumanOutput;
-pub use event_processor_with_jsonl_output::CodexStatus;
+pub use event_processor_with_jsonl_output::MotygaStatus;
 pub use event_processor_with_jsonl_output::CollectedThreadEvents;
 pub use event_processor_with_jsonl_output::EventProcessorWithJsonOutput;
 pub use exec_events::AgentMessageItem;
@@ -175,9 +175,9 @@ enum InitialOperation {
 
 enum StdinPromptBehavior {
     /// Read stdin only when there is no positional prompt, which is the legacy
-    /// `codex exec` behavior for `codex exec` with piped input.
+    /// `motyga exec` behavior for `motyga exec` with piped input.
     RequiredIfPiped,
-    /// Always treat stdin as the prompt, used for the explicit `codex exec -`
+    /// Always treat stdin as the prompt, used for the explicit `motyga exec -`
     /// sentinel and similar forced-stdin call sites.
     Forced,
     /// If stdin is piped alongside a positional prompt, treat stdin as
@@ -221,7 +221,7 @@ struct ExecRunArgs {
 
 fn exec_root_span() -> tracing::Span {
     info_span!(
-        "codex.exec",
+        "motyga.exec",
         otel.kind = "internal",
         thread.id = field::Empty,
         turn.id = field::Empty,
@@ -242,7 +242,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         eprintln!("{message}");
     }
 
-    if let Err(err) = set_default_originator("codex_exec".to_string()) {
+    if let Err(err) = set_default_originator("motyga_exec".to_string()) {
         tracing::warn!(
             ?err,
             "Failed to set motyga exec originator override {err:?}"
@@ -320,8 +320,8 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
 
     // we load config.toml here to determine project state.
     #[allow(clippy::print_stderr)]
-    let codex_home = match find_codex_home() {
-        Ok(codex_home) => codex_home,
+    let motyga_home = match find_motyga_home() {
+        Ok(motyga_home) => motyga_home,
         Err(err) => {
             eprintln!("Error finding motyga home: {err}");
             std::process::exit(1);
@@ -329,7 +329,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     };
     let user_config_path = config_profile_v2
         .as_ref()
-        .map(|profile_v2| resolve_profile_v2_config_path(&codex_home, profile_v2));
+        .map(|profile_v2| resolve_profile_v2_config_path(&motyga_home, profile_v2));
     let loader_overrides = LoaderOverrides {
         user_config_path,
         user_config_profile: config_profile_v2,
@@ -339,7 +339,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     };
 
     let bootstrap_config = load_bootstrap_config_or_exit(
-        &codex_home,
+        &motyga_home,
         Some(&config_cwd),
         cli_kv_overrides.clone(),
         loader_overrides.clone(),
@@ -362,8 +362,8 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             .as_ref(),
     )?;
     let cloud_config_bundle = cloud_config_bundle_loader_for_storage(
-        codex_home.to_path_buf(),
-        /*enable_codex_api_key_env*/ false,
+        motyga_home.to_path_buf(),
+        /*enable_motyga_api_key_env*/ false,
         bootstrap_config_toml
             .cli_auth_credentials_store
             .unwrap_or_default(),
@@ -383,7 +383,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             // auth/base-url settings needed to fetch the bundle. If OSS mode
             // needs a default provider from config, reload with the bundle.
             bootstrap_config_with_cloud_config = load_bootstrap_config_or_exit(
-                &codex_home,
+                &motyga_home,
                 Some(&config_cwd),
                 cli_kv_overrides.clone(),
                 loader_overrides.clone(),
@@ -435,8 +435,8 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         workspace_roots: None,
         model_provider: model_provider.clone(),
         service_tier: None,
-        codex_self_exe: arg0_paths.codex_self_exe.clone(),
-        codex_linux_sandbox_exe: arg0_paths.codex_linux_sandbox_exe.clone(),
+        motyga_self_exe: arg0_paths.motyga_self_exe.clone(),
+        motyga_linux_sandbox_exe: arg0_paths.motyga_linux_sandbox_exe.clone(),
         main_execve_wrapper_exe: arg0_paths.main_execve_wrapper_exe.clone(),
         default_zsh_path: None,
         base_instructions: None,
@@ -452,7 +452,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
 
     let build_config = |overrides| {
         ConfigBuilder::default()
-            .codex_home(codex_home.to_path_buf())
+            .motyga_home(motyga_home.to_path_buf())
             .cli_overrides(cli_kv_overrides.clone())
             .harness_overrides(overrides)
             .loader_overrides(loader_overrides.clone())
@@ -483,7 +483,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
 
     let auth_route_config = config.auth_route_config();
     if let Err(err) = enforce_login_restrictions(&AuthConfig {
-        codex_home: config.codex_home.to_path_buf(),
+        motyga_home: config.motyga_home.to_path_buf(),
         auth_credentials_store_mode: config.cli_auth_credentials_store_mode,
         keyring_backend_kind: config.auth_keyring_backend_kind(),
         forced_login_method: config.forced_login_method,
@@ -498,7 +498,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
     }
 
     let otel = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        codex_core::otel_init::build_provider(
+        motyga_core::otel_init::build_provider(
             &config,
             env!("CARGO_PKG_VERSION"),
             /*service_name_override*/ None,
@@ -515,8 +515,8 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
             None
         }
     };
-    codex_core::otel_init::record_process_start(otel.as_ref(), "codex_exec");
-    codex_core::otel_init::install_sqlite_telemetry(otel.as_ref(), "codex_exec");
+    motyga_core::otel_init::record_process_start(otel.as_ref(), "motyga_exec");
+    motyga_core::otel_init::install_sqlite_telemetry(otel.as_ref(), "motyga_exec");
 
     let otel_logger_layer = otel.as_ref().and_then(|o| o.logger_layer());
 
@@ -543,14 +543,14 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         })
         .collect();
     let local_runtime_paths = ExecServerRuntimePaths::from_optional_paths(
-        arg0_paths.codex_self_exe.clone(),
-        arg0_paths.codex_linux_sandbox_exe.clone(),
+        arg0_paths.motyga_self_exe.clone(),
+        arg0_paths.motyga_linux_sandbox_exe.clone(),
     )?;
-    let state_db = codex_core::init_state_db(&config).await;
+    let state_db = motyga_core::init_state_db(&config).await;
     let environment_manager = if run_loader_overrides.ignore_user_config {
         EnvironmentManager::from_env(Some(local_runtime_paths)).await?
     } else {
-        EnvironmentManager::from_codex_home(config.codex_home.clone(), Some(local_runtime_paths))
+        EnvironmentManager::from_motyga_home(config.motyga_home.clone(), Some(local_runtime_paths))
             .await?
     };
     let in_process_start_args = InProcessClientStartArgs {
@@ -560,14 +560,14 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         loader_overrides: run_loader_overrides,
         strict_config,
         cloud_config_bundle: run_cloud_config_bundle,
-        feedback: CodexFeedback::new(),
+        feedback: MotygaFeedback::new(),
         log_db: None,
         state_db: state_db.clone(),
         environment_manager: std::sync::Arc::new(environment_manager),
         config_warnings,
         session_source: SessionSource::Exec,
-        enable_codex_api_key_env: true,
-        client_name: "codex_exec".to_string(),
+        enable_motyga_api_key_env: true,
+        client_name: "motyga_exec".to_string(),
         client_version: env!("CARGO_PKG_VERSION").to_string(),
         experimental_api: true,
         mcp_server_openai_form_elicitation: false,
@@ -632,15 +632,15 @@ where
 
 #[allow(clippy::print_stderr)]
 async fn load_bootstrap_config_or_exit(
-    codex_home: &Path,
+    motyga_home: &Path,
     cwd: Option<&AbsolutePathBuf>,
-    cli_kv_overrides: Vec<(String, codex_config::TomlValue)>,
+    cli_kv_overrides: Vec<(String, motyga_config::TomlValue)>,
     loader_overrides: LoaderOverrides,
     strict_config: bool,
     cloud_config_bundle: CloudConfigBundleLoader,
 ) -> ConfigTomlLoadResult {
     match load_config_toml_with_layer_stack(
-        codex_home,
+        motyga_home,
         cwd,
         cli_kv_overrides,
         ConfigLoadOptions {
@@ -721,7 +721,7 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
     let (initial_operation, prompt_summary) = match (command.as_ref(), prompt, images) {
         (Some(ExecCommand::Review(review_cli)), _, _) => {
             let review_request = build_review_request(review_cli)?;
-            let summary = codex_core::review_prompts::user_facing_hint(&review_request.target);
+            let summary = motyga_core::review_prompts::user_facing_hint(&review_request.target);
             (InitialOperation::Review { review_request }, summary)
         }
         (Some(ExecCommand::Resume(args)), root_prompt, imgs) => {
@@ -857,12 +857,12 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
 
     exec_span.record("thread.id", primary_thread_id_for_span.as_str());
 
-    // Print the effective configuration and initial request so users can see what Codex
+    // Print the effective configuration and initial request so users can see what Motyga
     // is using.
     event_processor.print_config_summary(&config, &prompt_summary, &session_configured);
     if !json_mode
         && let Some(message) =
-            codex_core::config::system_bwrap_warning(config.permissions.permission_profile())
+            motyga_core::config::system_bwrap_warning(config.permissions.permission_profile())
     {
         event_processor.process_warning(message);
     }
@@ -999,8 +999,8 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
                     && payload.turn.id == task_id
                     && matches!(
                         payload.turn.status,
-                        codex_app_server_protocol::TurnStatus::Failed
-                            | codex_app_server_protocol::TurnStatus::Interrupted
+                        motyga_app_server_protocol::TurnStatus::Failed
+                            | motyga_app_server_protocol::TurnStatus::Interrupted
                     )
                 {
                     error_seen = true;
@@ -1020,8 +1020,8 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
                     &task_id,
                 ) {
                     match event_processor.process_server_notification(notification) {
-                        CodexStatus::Running => {}
-                        CodexStatus::InitiateShutdown => {
+                        MotygaStatus::Running => {}
+                        MotygaStatus::InitiateShutdown => {
                             if let Err(err) = request_shutdown(
                                 &client,
                                 &mut request_ids,
@@ -1122,10 +1122,10 @@ fn permission_profile_id_from_active_profile(active: ActivePermissionProfile) ->
 fn sandbox_mode_from_permission_profile(
     permission_profile: &PermissionProfile,
     cwd: &Path,
-) -> Option<codex_app_server_protocol::SandboxMode> {
+) -> Option<motyga_app_server_protocol::SandboxMode> {
     match permission_profile {
         PermissionProfile::Disabled => {
-            Some(codex_app_server_protocol::SandboxMode::DangerFullAccess)
+            Some(motyga_app_server_protocol::SandboxMode::DangerFullAccess)
         }
         PermissionProfile::External { .. } => None,
         PermissionProfile::Managed { .. } => {
@@ -1134,11 +1134,11 @@ fn sandbox_mode_from_permission_profile(
                 permission_profile
                     .network_sandbox_policy()
                     .is_enabled()
-                    .then_some(codex_app_server_protocol::SandboxMode::DangerFullAccess)
+                    .then_some(motyga_app_server_protocol::SandboxMode::DangerFullAccess)
             } else if file_system_policy.can_write_path_with_cwd(cwd, cwd) {
-                Some(codex_app_server_protocol::SandboxMode::WorkspaceWrite)
+                Some(motyga_app_server_protocol::SandboxMode::WorkspaceWrite)
             } else {
-                Some(codex_app_server_protocol::SandboxMode::ReadOnly)
+                Some(motyga_app_server_protocol::SandboxMode::ReadOnly)
             }
         }
     }
@@ -1146,7 +1146,7 @@ fn sandbox_mode_from_permission_profile(
 
 fn approvals_reviewer_override_from_config(
     config: &Config,
-) -> Option<codex_app_server_protocol::ApprovalsReviewer> {
+) -> Option<motyga_app_server_protocol::ApprovalsReviewer> {
     Some(config.approvals_reviewer.into())
 }
 
@@ -1230,18 +1230,18 @@ fn session_configured_from_thread_response(
     session_id: &str,
     thread_id: &str,
     parent_thread_id: Option<&str>,
-    thread_source: Option<codex_protocol::protocol::ThreadSource>,
+    thread_source: Option<motyga_protocol::protocol::ThreadSource>,
     thread_name: Option<String>,
     rollout_path: Option<PathBuf>,
     model: String,
     model_provider_id: String,
     service_tier: Option<String>,
     approval_policy: AskForApproval,
-    approvals_reviewer: codex_protocol::config_types::ApprovalsReviewer,
+    approvals_reviewer: motyga_protocol::config_types::ApprovalsReviewer,
     permission_profile: PermissionProfile,
-    active_permission_profile: Option<codex_protocol::models::ActivePermissionProfile>,
+    active_permission_profile: Option<motyga_protocol::models::ActivePermissionProfile>,
     cwd: AbsolutePathBuf,
-    reasoning_effort: Option<codex_protocol::openai_models::ReasoningEffort>,
+    reasoning_effort: Option<motyga_protocol::openai_models::ReasoningEffort>,
 ) -> Result<SessionConfiguredEvent, String> {
     let session_id = SessionId::from_string(session_id)
         .map_err(|err| format!("session id `{session_id}` is invalid: {err}"))?;
@@ -1518,7 +1518,7 @@ async fn resolve_resume_thread_id(
             return Ok(Some(thread.id.to_string()));
         }
         if let Some((_, session_meta)) =
-            find_thread_meta_by_name_str(&config.codex_home, session_id, Some(state_db.as_ref()))
+            find_thread_meta_by_name_str(&config.motyga_home, session_id, Some(state_db.as_ref()))
                 .await?
             && (args.all || cwds_match(config.cwd.as_path(), &session_meta.meta.cwd))
         {

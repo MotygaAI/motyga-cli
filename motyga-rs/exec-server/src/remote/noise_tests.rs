@@ -2,8 +2,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use codex_api::AuthProvider;
-use codex_api::SharedAuthProvider;
+use motyga_api::AuthProvider;
+use motyga_api::SharedAuthProvider;
 use http::HeaderMap;
 use http::HeaderValue;
 use tokio::io::AsyncReadExt;
@@ -64,7 +64,7 @@ async fn reconnect_reuses_registration_until_url_is_rejected() -> Result<()> {
         config,
         ExecServerRuntimePaths::new(
             std::env::current_exe()?,
-            /*codex_linux_sandbox_exe*/ None,
+            /*motyga_linux_sandbox_exe*/ None,
         )?,
     ));
 

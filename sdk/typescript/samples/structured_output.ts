@@ -1,12 +1,12 @@
 #!/usr/bin/env -S NODE_NO_WARNINGS=1 pnpm ts-node-esm --files
 
-import { Codex } from "@openai/codex-sdk";
+import { Motyga } from "@motyga/sdk";
 
-import { codexPathOverride } from "./helpers.ts";
+import { motygaPathOverride } from "./helpers.ts";
 
-const codex = new Codex({ codexPathOverride: codexPathOverride() });
+const motyga = new Motyga({ motygaPathOverride: motygaPathOverride() });
 
-const thread = codex.startThread();
+const thread = motyga.startThread();
 
 const schema = {
   type: "object",

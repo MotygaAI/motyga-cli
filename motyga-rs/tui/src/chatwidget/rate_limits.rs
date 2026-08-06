@@ -1,7 +1,7 @@
 //! Rate-limit warning, prompt, and notice surfaces for `ChatWidget`.
 
 use super::*;
-use codex_app_server_protocol::CodexErrorInfo as AppServerCodexErrorInfo;
+use motyga_app_server_protocol::MotygaErrorInfo as AppServerMotygaErrorInfo;
 
 pub(super) const NUDGE_MODEL_SLUG: &str = "gpt-5.4-mini";
 pub(super) const RATE_LIMIT_SWITCH_PROMPT_THRESHOLD: f64 = 90.0;
@@ -135,20 +135,20 @@ pub(super) enum RateLimitErrorKind {
 }
 
 pub(super) fn app_server_rate_limit_error_kind(
-    info: &AppServerCodexErrorInfo,
+    info: &AppServerMotygaErrorInfo,
 ) -> Option<RateLimitErrorKind> {
     match info {
-        AppServerCodexErrorInfo::ServerOverloaded => Some(RateLimitErrorKind::ServerOverloaded),
-        AppServerCodexErrorInfo::UsageLimitExceeded => Some(RateLimitErrorKind::UsageLimit),
-        AppServerCodexErrorInfo::ResponseTooManyFailedAttempts {
+        AppServerMotygaErrorInfo::ServerOverloaded => Some(RateLimitErrorKind::ServerOverloaded),
+        AppServerMotygaErrorInfo::UsageLimitExceeded => Some(RateLimitErrorKind::UsageLimit),
+        AppServerMotygaErrorInfo::ResponseTooManyFailedAttempts {
             http_status_code: Some(429),
         } => Some(RateLimitErrorKind::Generic),
         _ => None,
     }
 }
 
-pub(super) fn is_app_server_cyber_policy_error(info: &AppServerCodexErrorInfo) -> bool {
-    matches!(info, AppServerCodexErrorInfo::CyberPolicy)
+pub(super) fn is_app_server_cyber_policy_error(info: &AppServerMotygaErrorInfo) -> bool {
+    matches!(info, AppServerMotygaErrorInfo::CyberPolicy)
 }
 
 #[derive(Clone, Copy)]
@@ -176,7 +176,7 @@ impl ChatWidget {
             let limit_id = snapshot
                 .limit_id
                 .clone()
-                .unwrap_or_else(|| "codex".to_string());
+                .unwrap_or_else(|| "motyga".to_string());
             let limit_label = snapshot
                 .limit_name
                 .clone()
@@ -204,11 +204,11 @@ impl ChatWidget {
                 };
             self.plan_type = snapshot.plan_type.or(self.plan_type);
 
-            let is_codex_limit = limit_id.eq_ignore_ascii_case("codex");
-            if is_codex_limit
+            let is_motyga_limit = limit_id.eq_ignore_ascii_case("motyga");
+            if is_motyga_limit
                 && let Some(rate_limit_reached_type) = snapshot.rate_limit_reached_type
             {
-                self.codex_rate_limit_reached_type = Some(rate_limit_reached_type);
+                self.motyga_rate_limit_reached_type = Some(rate_limit_reached_type);
             }
 
             let has_workspace_credits = snapshot.credits.as_ref().is_some_and(|credits| {
@@ -221,7 +221,7 @@ impl ChatWidget {
                                 .is_ok_and(|balance| balance > 0.0)
                         }))
             });
-            let should_warn_about_rate_limit_usage = is_codex_limit && !has_workspace_credits;
+            let should_warn_about_rate_limit_usage = is_motyga_limit && !has_workspace_credits;
             let warnings = if should_warn_about_rate_limit_usage {
                 self.rate_limit_warnings.take_warnings(
                     snapshot
@@ -245,7 +245,7 @@ impl ChatWidget {
                 vec![]
             };
 
-            let high_usage = is_codex_limit
+            let high_usage = is_motyga_limit
                 && (snapshot
                     .secondary
                     .as_ref()
@@ -285,7 +285,7 @@ impl ChatWidget {
             }
         } else {
             self.rate_limit_snapshots_by_limit_id.clear();
-            self.codex_rate_limit_reached_type = None;
+            self.motyga_rate_limit_reached_type = None;
         }
         self.refresh_status_line();
     }
@@ -342,7 +342,7 @@ impl ChatWidget {
         let default_effort: ReasoningEffortConfig = preset.default_reasoning_effort;
 
         let switch_actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
-            tx.send(AppEvent::CodexOp(AppCommand::override_turn_context(
+            tx.send(AppEvent::MotygaOp(AppCommand::override_turn_context(
                 /*cwd*/ None,
                 /*approval_policy*/ None,
                 /*approvals_reviewer*/ None,

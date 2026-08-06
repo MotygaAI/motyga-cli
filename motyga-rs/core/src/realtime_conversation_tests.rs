@@ -5,9 +5,9 @@ use super::realtime_request_headers;
 use super::realtime_text_from_handoff_request;
 use super::wrap_realtime_delegation_input;
 use async_channel::bounded;
-use codex_config::config_toml::RealtimeWsVersion;
-use codex_protocol::protocol::RealtimeHandoffRequested;
-use codex_protocol::protocol::RealtimeTranscriptEntry;
+use motyga_config::config_toml::RealtimeWsVersion;
+use motyga_protocol::protocol::RealtimeHandoffRequested;
+use motyga_protocol::protocol::RealtimeTranscriptEntry;
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -131,9 +131,9 @@ async fn clears_active_handoff_explicitly() {
     let state = RealtimeHandoffState::new(
         tx,
         /*client_managed_handoffs*/ false,
-        /*codex_responses_as_items*/ false,
-        /*codex_response_item_prefix*/ None,
-        /*codex_response_handoff_prefix*/ None,
+        /*motyga_responses_as_items*/ false,
+        /*motyga_response_item_prefix*/ None,
+        /*motyga_response_handoff_prefix*/ None,
         RealtimeSessionKind::V1,
     );
 
@@ -153,7 +153,7 @@ fn uses_quicksilver_alpha_header_for_realtime_v1() {
         Some("session_1"),
         Some("sk-test"),
         RealtimeWsVersion::V1,
-        "codex_work_desktop",
+        "motyga_work_desktop",
     )
     .expect("headers")
     .expect("headers");
@@ -172,7 +172,7 @@ fn omits_quicksilver_alpha_header_for_realtime_v2() {
         Some("session_1"),
         Some("sk-test"),
         RealtimeWsVersion::V2,
-        "codex_work_desktop",
+        "motyga_work_desktop",
     )
     .expect("headers")
     .expect("headers");
@@ -182,9 +182,9 @@ fn omits_quicksilver_alpha_header_for_realtime_v2() {
 
 #[test]
 fn realtime_headers_include_only_non_default_originator() {
-    let default_originator = codex_login::default_client::originator();
+    let default_originator = motyga_login::default_client::originator();
     for (originator, expected_header) in [
-        ("codex_work_desktop", Some("codex_work_desktop")),
+        ("motyga_work_desktop", Some("motyga_work_desktop")),
         (default_originator.value.as_str(), None),
     ] {
         let headers = realtime_request_headers(

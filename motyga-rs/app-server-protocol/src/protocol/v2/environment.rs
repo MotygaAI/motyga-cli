@@ -1,4 +1,4 @@
-use codex_utils_path_uri::PathUri;
+use motyga_utils_path_uri::PathUri;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;

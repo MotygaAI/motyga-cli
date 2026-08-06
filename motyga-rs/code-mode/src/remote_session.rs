@@ -7,17 +7,17 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 
-use codex_code_mode_protocol::CellId;
-use codex_code_mode_protocol::CodeModeSession;
-use codex_code_mode_protocol::CodeModeSessionDelegate;
-use codex_code_mode_protocol::CodeModeSessionProvider;
-use codex_code_mode_protocol::CodeModeSessionProviderFuture;
-use codex_code_mode_protocol::CodeModeSessionResultFuture;
-use codex_code_mode_protocol::ExecuteRequest;
-use codex_code_mode_protocol::StartedCell;
-use codex_code_mode_protocol::WaitOutcome;
-use codex_code_mode_protocol::WaitRequest;
-use codex_code_mode_protocol::host::SessionId;
+use motyga_code_mode_protocol::CellId;
+use motyga_code_mode_protocol::CodeModeSession;
+use motyga_code_mode_protocol::CodeModeSessionDelegate;
+use motyga_code_mode_protocol::CodeModeSessionProvider;
+use motyga_code_mode_protocol::CodeModeSessionProviderFuture;
+use motyga_code_mode_protocol::CodeModeSessionResultFuture;
+use motyga_code_mode_protocol::ExecuteRequest;
+use motyga_code_mode_protocol::StartedCell;
+use motyga_code_mode_protocol::WaitOutcome;
+use motyga_code_mode_protocol::WaitRequest;
+use motyga_code_mode_protocol::host::SessionId;
 use tokio::sync::Semaphore;
 use tokio::sync::watch;
 
@@ -28,7 +28,7 @@ use crate::NoopCodeModeSessionDelegate;
 
 mod connection;
 
-const CODE_MODE_HOST_PATH_ENV: &str = "CODEX_CODE_MODE_HOST_PATH";
+const CODE_MODE_HOST_PATH_ENV: &str = "MOTYGA_CODE_MODE_HOST_PATH";
 
 type ShutdownResultReceiver = watch::Receiver<Option<Result<(), String>>>;
 
@@ -488,9 +488,9 @@ fn resolve_host_program(
         return PathBuf::from(path);
     }
     let executable_name = if cfg!(windows) {
-        "codex-code-mode-host.exe"
+        "motyga-code-mode-host.exe"
     } else {
-        "codex-code-mode-host"
+        "motyga-code-mode-host"
     };
     if let Ok(current_exe) = current_exe
         && let Some(parent) = current_exe.parent()

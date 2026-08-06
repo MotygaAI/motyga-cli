@@ -9,23 +9,23 @@ use super::*;
 use crate::app_event::ConnectorsSnapshot;
 use crate::app_info::app_info_from_api;
 use crate::config_update::format_config_error;
-use codex_app_server_protocol::AppsListParams;
-use codex_app_server_protocol::AppsListResponse;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditParams;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
-use codex_app_server_protocol::MarketplaceAddParams;
-use codex_app_server_protocol::MarketplaceAddResponse;
-use codex_app_server_protocol::MarketplaceRemoveParams;
-use codex_app_server_protocol::MarketplaceRemoveResponse;
-use codex_app_server_protocol::MarketplaceUpgradeParams;
-use codex_app_server_protocol::MarketplaceUpgradeResponse;
+use motyga_app_server_protocol::AppsListParams;
+use motyga_app_server_protocol::AppsListResponse;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditParams;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
+use motyga_app_server_protocol::MarketplaceAddParams;
+use motyga_app_server_protocol::MarketplaceAddResponse;
+use motyga_app_server_protocol::MarketplaceRemoveParams;
+use motyga_app_server_protocol::MarketplaceRemoveResponse;
+use motyga_app_server_protocol::MarketplaceUpgradeParams;
+use motyga_app_server_protocol::MarketplaceUpgradeResponse;
 
-use codex_app_server_protocol::RequestId;
+use motyga_app_server_protocol::RequestId;
 
 use crate::hooks_rpc::fetch_hooks_list;
 use crate::hooks_rpc::write_hook_trust;
 use crate::hooks_rpc::write_hook_trusts;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 const TOKEN_ACTIVITY_FETCH_TIMEOUT: std::time::Duration =
     std::time::Duration::from_secs(/*secs*/ 15);
@@ -779,7 +779,7 @@ pub(super) async fn fetch_account_rate_limits(
 
 pub(super) async fn fetch_account_token_activity(
     request_handle: AppServerRequestHandle,
-) -> Result<codex_app_server_protocol::GetAccountTokenUsageResponse> {
+) -> Result<motyga_app_server_protocol::GetAccountTokenUsageResponse> {
     let request_id = RequestId::String(format!("account-token-usage-{}", Uuid::new_v4()));
     request_handle
         .request_typed(ClientRequest::GetAccountTokenUsage {
@@ -806,7 +806,7 @@ pub(super) async fn consume_rate_limit_reset_credit_request(
 
 pub(super) async fn fetch_workspace_messages(
     request_handle: AppServerRequestHandle,
-) -> Result<codex_app_server_protocol::GetWorkspaceMessagesResponse> {
+) -> Result<motyga_app_server_protocol::GetWorkspaceMessagesResponse> {
     let request_id = RequestId::String(format!("workspace-messages-{}", Uuid::new_v4()));
     request_handle
         .request_typed(ClientRequest::GetWorkspaceMessages {
@@ -820,9 +820,9 @@ pub(super) async fn fetch_workspace_messages(
 pub(super) async fn send_add_credits_nudge_email(
     request_handle: AppServerRequestHandle,
     credit_type: AddCreditsNudgeCreditType,
-) -> Result<codex_app_server_protocol::AddCreditsNudgeEmailStatus> {
+) -> Result<motyga_app_server_protocol::AddCreditsNudgeEmailStatus> {
     let request_id = RequestId::String(format!("add-credits-nudge-{}", Uuid::new_v4()));
-    let response: codex_app_server_protocol::SendAddCreditsNudgeEmailResponse = request_handle
+    let response: motyga_app_server_protocol::SendAddCreditsNudgeEmailResponse = request_handle
         .request_typed(ClientRequest::SendAddCreditsNudgeEmail {
             request_id,
             params: SendAddCreditsNudgeEmailParams { credit_type },
@@ -957,7 +957,7 @@ fn plugin_remote_section_error_next_step(label: &str, err: &str) -> &'static str
         || err.contains("not logged in")
     {
         "Sign in to ChatGPT, then try loading this section again."
-    } else if err.contains("codex plugins are disabled")
+    } else if err.contains("motyga plugins are disabled")
         || err.contains("plugin sharing is disabled")
         || err.contains("plugin sharing is not enabled")
         || err.contains("feature disabled")
@@ -967,7 +967,7 @@ fn plugin_remote_section_error_next_step(label: &str, err: &str) -> &'static str
         "Switch to the matching workspace or ask the sharer for access."
     } else if err.contains("not found") || err.contains("status 404") {
         "Check that you are signed in to the correct workspace and still have access."
-    } else if err.contains("old build") || err.contains("update codex") || err.contains("stale") {
+    } else if err.contains("old build") || err.contains("update motyga") || err.contains("stale") {
         "Update Motyga, then try opening the shared plugin again."
     } else if err.contains("service unavailable")
         || err.contains("temporarily unavailable")
@@ -1188,7 +1188,7 @@ pub(super) async fn write_hook_enabled(
         .request_typed(ClientRequest::ConfigBatchWrite {
             request_id,
             params: ConfigBatchWriteParams {
-                edits: vec![codex_app_server_protocol::ConfigEdit {
+                edits: vec![motyga_app_server_protocol::ConfigEdit {
                     key_path: "hooks.state".to_string(),
                     value: serde_json::json!({
                         key: {
@@ -1247,9 +1247,9 @@ pub(super) async fn fetch_feedback_upload(
 /// renders directly from `McpServerStatus` rather than these maps.
 #[cfg(test)]
 pub(super) type McpInventoryMaps = (
-    HashMap<String, codex_protocol::mcp::Tool>,
-    HashMap<String, Vec<codex_protocol::mcp::Resource>>,
-    HashMap<String, Vec<codex_protocol::mcp::ResourceTemplate>>,
+    HashMap<String, motyga_protocol::mcp::Tool>,
+    HashMap<String, Vec<motyga_protocol::mcp::Resource>>,
+    HashMap<String, Vec<motyga_protocol::mcp::ResourceTemplate>>,
     HashMap<String, McpAuthStatus>,
 );
 
@@ -1265,10 +1265,10 @@ pub(super) fn mcp_inventory_maps_from_statuses(statuses: Vec<McpServerStatus>) -
         auth_statuses.insert(
             server_name.clone(),
             match status.auth_status {
-                codex_app_server_protocol::McpAuthStatus::Unsupported => McpAuthStatus::Unsupported,
-                codex_app_server_protocol::McpAuthStatus::NotLoggedIn => McpAuthStatus::NotLoggedIn,
-                codex_app_server_protocol::McpAuthStatus::BearerToken => McpAuthStatus::BearerToken,
-                codex_app_server_protocol::McpAuthStatus::OAuth => McpAuthStatus::OAuth,
+                motyga_app_server_protocol::McpAuthStatus::Unsupported => McpAuthStatus::Unsupported,
+                motyga_app_server_protocol::McpAuthStatus::NotLoggedIn => McpAuthStatus::NotLoggedIn,
+                motyga_app_server_protocol::McpAuthStatus::BearerToken => McpAuthStatus::BearerToken,
+                motyga_app_server_protocol::McpAuthStatus::OAuth => McpAuthStatus::OAuth,
             },
         );
         resources.insert(server_name.clone(), status.resources);
@@ -1285,9 +1285,9 @@ pub(super) fn mcp_inventory_maps_from_statuses(statuses: Vec<McpServerStatus>) -
 mod tests {
     use super::*;
     use crate::app::test_support::make_test_app;
-    use codex_app_server_protocol::PluginMarketplaceEntry;
-    use codex_protocol::mcp::Tool;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_app_server_protocol::PluginMarketplaceEntry;
+    use motyga_protocol::mcp::Tool;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
 
     fn test_absolute_path(path: &str) -> AbsolutePathBuf {
@@ -1459,7 +1459,7 @@ mod tests {
                 )]),
                 resources: Vec::new(),
                 resource_templates: Vec::new(),
-                auth_status: codex_app_server_protocol::McpAuthStatus::Unsupported,
+                auth_status: motyga_app_server_protocol::McpAuthStatus::Unsupported,
             },
             McpServerStatus {
                 name: "disabled".to_string(),
@@ -1467,7 +1467,7 @@ mod tests {
                 tools: HashMap::new(),
                 resources: Vec::new(),
                 resource_templates: Vec::new(),
-                auth_status: codex_app_server_protocol::McpAuthStatus::Unsupported,
+                auth_status: motyga_app_server_protocol::McpAuthStatus::Unsupported,
             },
         ];
 

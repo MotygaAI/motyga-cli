@@ -3,13 +3,13 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use codex_models_manager::manager::ModelsEndpointClient;
-use codex_models_manager::manager::ModelsEndpointFuture;
-use codex_models_manager::manager::OpenAiModelsManager;
-use codex_models_manager::manager::SharedModelsManager;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CoreResult;
-use codex_protocol::openai_models::ModelInfo;
+use motyga_models_manager::manager::ModelsEndpointClient;
+use motyga_models_manager::manager::ModelsEndpointFuture;
+use motyga_models_manager::manager::OpenAiModelsManager;
+use motyga_models_manager::manager::SharedModelsManager;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as CoreResult;
+use motyga_protocol::openai_models::ModelInfo;
 use pretty_assertions::assert_eq;
 use tempfile::tempdir;
 use tokio::sync::Notify;
@@ -48,7 +48,7 @@ impl ModelsEndpointClient for TestModelsEndpoint {
         true
     }
 
-    fn uses_codex_backend(&self) -> ModelsEndpointFuture<'_, bool> {
+    fn uses_motyga_backend(&self) -> ModelsEndpointFuture<'_, bool> {
         Box::pin(async { false })
     }
 
@@ -60,7 +60,7 @@ impl ModelsEndpointClient for TestModelsEndpoint {
             let fetch_index = self.fetch_count.fetch_add(1, Ordering::SeqCst);
             self.fetched.notify_one();
             if fetch_index == 0 {
-                return Err(CodexErr::Io(std::io::Error::other("test failure")));
+                return Err(MotygaErr::Io(std::io::Error::other("test failure")));
             }
             if fetch_index == 1 {
                 self.release_second_fetch.notified().await;
@@ -72,10 +72,10 @@ impl ModelsEndpointClient for TestModelsEndpoint {
 
 #[tokio::test]
 async fn refreshes_immediately_periodically_and_stops_when_dropped() {
-    let codex_home = tempdir().expect("temp dir");
+    let motyga_home = tempdir().expect("temp dir");
     let endpoint = TestModelsEndpoint::new();
     let models_manager: SharedModelsManager = Arc::new(OpenAiModelsManager::new(
-        codex_home.path().to_path_buf(),
+        motyga_home.path().to_path_buf(),
         endpoint.clone(),
         /*auth_manager*/ None,
     ));

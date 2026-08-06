@@ -1,8 +1,8 @@
 use crate::memory_extensions_root;
-use codex_protocol::openai_models::ModelInfo;
-use codex_utils_output_truncation::TruncationPolicy;
-use codex_utils_output_truncation::truncate_text;
-use codex_utils_template::Template;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_utils_output_truncation::TruncationPolicy;
+use motyga_utils_output_truncation::truncate_text;
+use motyga_utils_template::Template;
 use std::path::Path;
 use std::sync::LazyLock;
 use tracing::warn;
@@ -81,7 +81,7 @@ pub fn build_consolidation_prompt(memory_root: &Path) -> String {
         .unwrap_or_else(|err| {
             warn!("failed to render memories consolidation prompt template: {err}");
             format!(
-                "## Memory Phase 2 (Consolidation)\nConsolidate Codex memories in: {memory_root}\n\nRead {phase2_workspace_diff_file} first."
+                "## Memory Phase 2 (Consolidation)\nConsolidate Motyga memories in: {memory_root}\n\nRead {phase2_workspace_diff_file} first."
             )
         })
 }

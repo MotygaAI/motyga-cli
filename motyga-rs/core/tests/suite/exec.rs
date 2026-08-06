@@ -1,23 +1,23 @@
 #![cfg(target_os = "macos")]
 
-use codex_core::exec::ExecCapturePolicy;
-use codex_core::exec::ExecParams;
-use codex_core::exec::process_exec_tool_call;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_core::spawn::CODEX_SANDBOX_ENV_VAR;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::error::Result;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::models::PermissionProfile;
-use codex_sandboxing::SandboxType;
-use codex_sandboxing::get_platform_sandbox;
+use motyga_core::exec::ExecCapturePolicy;
+use motyga_core::exec::ExecParams;
+use motyga_core::exec::process_exec_tool_call;
+use motyga_core::sandboxing::SandboxPermissions;
+use motyga_core::spawn::MOTYGA_SANDBOX_ENV_VAR;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::error::Result;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::models::PermissionProfile;
+use motyga_sandboxing::SandboxType;
+use motyga_sandboxing::get_platform_sandbox;
 use core_test_support::PathExt;
 use std::collections::HashMap;
 use tempfile::TempDir;
 
 fn skip_test() -> bool {
-    if std::env::var(CODEX_SANDBOX_ENV_VAR) == Ok("seatbelt".to_string()) {
-        eprintln!("{CODEX_SANDBOX_ENV_VAR} is set to 'seatbelt', skipping test.");
+    if std::env::var(MOTYGA_SANDBOX_ENV_VAR) == Ok("seatbelt".to_string()) {
+        eprintln!("{MOTYGA_SANDBOX_ENV_VAR} is set to 'seatbelt', skipping test.");
         return true;
     }
 

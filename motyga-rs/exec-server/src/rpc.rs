@@ -7,13 +7,13 @@ use std::sync::atomic::AtomicI64;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use codex_exec_server_protocol::JSONRPCError;
-use codex_exec_server_protocol::JSONRPCErrorError;
-use codex_exec_server_protocol::JSONRPCMessage;
-use codex_exec_server_protocol::JSONRPCNotification;
-use codex_exec_server_protocol::JSONRPCRequest;
-use codex_exec_server_protocol::JSONRPCResponse;
-use codex_exec_server_protocol::RequestId;
+use motyga_exec_server_protocol::JSONRPCError;
+use motyga_exec_server_protocol::JSONRPCErrorError;
+use motyga_exec_server_protocol::JSONRPCMessage;
+use motyga_exec_server_protocol::JSONRPCNotification;
+use motyga_exec_server_protocol::JSONRPCRequest;
+use motyga_exec_server_protocol::JSONRPCResponse;
+use motyga_exec_server_protocol::RequestId;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -400,7 +400,7 @@ impl RpcClient {
                 id: request_id.clone(),
                 method: method.to_string(),
                 params: Some(params),
-                trace: codex_otel::current_span_w3c_trace_context(),
+                trace: motyga_otel::current_span_w3c_trace_context(),
             }))
             .await
             .is_err()
@@ -602,8 +602,8 @@ async fn drain_pending(pending: &Mutex<HashMap<RequestId, PendingRequest>>) {
 mod tests {
     use std::time::Duration;
 
-    use codex_exec_server_protocol::JSONRPCMessage;
-    use codex_exec_server_protocol::JSONRPCResponse;
+    use motyga_exec_server_protocol::JSONRPCMessage;
+    use motyga_exec_server_protocol::JSONRPCResponse;
     use opentelemetry::trace::TracerProvider as _;
     use opentelemetry_sdk::trace::InMemorySpanExporter;
     use opentelemetry_sdk::trace::SdkTracerProvider;
@@ -765,12 +765,12 @@ mod tests {
         let subscriber = tracing_subscriber::registry().with(
             tracing_opentelemetry::layer()
                 .with_tracer(tracer)
-                .with_filter(filter_fn(codex_otel::OtelProvider::trace_export_filter)),
+                .with_filter(filter_fn(motyga_otel::OtelProvider::trace_export_filter)),
         );
         let _subscriber_guard = tracing::subscriber::set_default(subscriber);
         tracing::callsite::rebuild_interest_cache();
         let parent_span = tracing::info_span!("outbound-parent");
-        let expected_trace = codex_otel::span_w3c_trace_context(&parent_span)
+        let expected_trace = motyga_otel::span_w3c_trace_context(&parent_span)
             .expect("parent span should have trace context");
 
         let (client_stdin, server_reader) = tokio::io::duplex(4096);

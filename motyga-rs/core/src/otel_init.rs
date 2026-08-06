@@ -1,13 +1,13 @@
 use crate::config::Config;
-use codex_config::types::OtelExporterKind as Kind;
-use codex_config::types::OtelHttpProtocol as Protocol;
-use codex_features::Feature;
-use codex_login::default_client::originator;
-use codex_otel::OtelExporter;
-use codex_otel::OtelHttpProtocol;
-use codex_otel::OtelProvider;
-use codex_otel::OtelSettings;
-use codex_otel::OtelTlsConfig as OtelTlsSettings;
+use motyga_config::types::OtelExporterKind as Kind;
+use motyga_config::types::OtelHttpProtocol as Protocol;
+use motyga_features::Feature;
+use motyga_login::default_client::originator;
+use motyga_otel::OtelExporter;
+use motyga_otel::OtelHttpProtocol;
+use motyga_otel::OtelProvider;
+use motyga_otel::OtelSettings;
+use motyga_otel::OtelTlsConfig as OtelTlsSettings;
 use std::error::Error;
 
 /// Build an OpenTelemetry provider from the app Config.
@@ -83,7 +83,7 @@ pub fn build_provider(
     OtelProvider::from(&OtelSettings {
         service_name: service_name.to_string(),
         service_version: service_version.to_string(),
-        codex_home: config.codex_home.to_path_buf(),
+        motyga_home: config.motyga_home.to_path_buf(),
         environment: config.otel.environment.to_string(),
         exporter,
         trace_exporter,
@@ -94,23 +94,23 @@ pub fn build_provider(
     })
 }
 
-/// Filter predicate for exporting only Codex-owned events via OTEL.
-/// Keeps events that originated from codex_otel module
-pub fn codex_export_filter(meta: &tracing::Metadata<'_>) -> bool {
-    meta.target().starts_with("codex_otel")
+/// Filter predicate for exporting only Motyga-owned events via OTEL.
+/// Keeps events that originated from motyga_otel module
+pub fn motyga_export_filter(meta: &tracing::Metadata<'_>) -> bool {
+    meta.target().starts_with("motyga_otel")
 }
 
 pub fn record_process_start(otel: Option<&OtelProvider>, originator: &str) {
     let Some(metrics) = otel.and_then(OtelProvider::metrics) else {
         return;
     };
-    let _ = codex_otel::record_process_start_once(metrics, originator);
+    let _ = motyga_otel::record_process_start_once(metrics, originator);
 }
 
 pub fn install_sqlite_telemetry(otel: Option<&OtelProvider>, originator: &str) {
     let Some(metrics) = otel.and_then(OtelProvider::metrics) else {
         return;
     };
-    let telemetry = codex_rollout::sqlite_telemetry_recorder(metrics.clone(), originator);
-    let _ = codex_state::install_process_db_telemetry(telemetry);
+    let telemetry = motyga_rollout::sqlite_telemetry_recorder(metrics.clone(), originator);
+    let _ = motyga_state::install_process_db_telemetry(telemetry);
 }

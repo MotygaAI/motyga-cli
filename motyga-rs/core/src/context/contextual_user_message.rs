@@ -1,6 +1,6 @@
-use codex_protocol::items::HookPromptItem;
-use codex_protocol::items::parse_hook_prompt_fragment;
-use codex_protocol::models::ContentItem;
+use motyga_protocol::items::HookPromptItem;
+use motyga_protocol::items::parse_hook_prompt_fragment;
+use motyga_protocol::models::ContentItem;
 
 use super::AdditionalContextUserFragment;
 use super::FragmentRegistration;

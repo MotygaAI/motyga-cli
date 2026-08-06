@@ -3,16 +3,16 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_protocol::protocol::ThreadHistoryMode;
-use codex_rollout::ARCHIVED_SESSIONS_SUBDIR;
+use motyga_protocol::protocol::ThreadHistoryMode;
+use motyga_rollout::ARCHIVED_SESSIONS_SUBDIR;
 use uuid::Uuid;
 
 use super::LocalThreadStoreConfig;
 
-pub(super) fn test_config(codex_home: &Path) -> LocalThreadStoreConfig {
+pub(super) fn test_config(motyga_home: &Path) -> LocalThreadStoreConfig {
     LocalThreadStoreConfig {
-        codex_home: codex_home.to_path_buf(),
-        sqlite_home: codex_home.to_path_buf(),
+        motyga_home: motyga_home.to_path_buf(),
+        sqlite_home: motyga_home.to_path_buf(),
         default_model_provider_id: "test-provider".to_string(),
     }
 }

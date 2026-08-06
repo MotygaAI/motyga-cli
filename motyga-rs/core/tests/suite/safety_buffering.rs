@@ -1,8 +1,8 @@
 use anyhow::Ok;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::SafetyBufferingEvent;
-use codex_protocol::user_input::UserInput;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::SafetyBufferingEvent;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_response_once;
@@ -10,7 +10,7 @@ use core_test_support::responses::sse;
 use core_test_support::responses::sse_response;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
@@ -36,8 +36,8 @@ async fn emits_safety_buffering_with_the_requested_model() -> anyhow::Result<()>
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
-    test.codex
+    let test = test_motyga().build(&server).await?;
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Check this request".into(),
@@ -50,7 +50,7 @@ async fn emits_safety_buffering_with_the_requested_model() -> anyhow::Result<()>
         })
         .await?;
 
-    let event = wait_for_event_match(&test.codex, |event| match event {
+    let event = wait_for_event_match(&test.motyga, |event| match event {
         EventMsg::SafetyBuffering(event) => Some(event.clone()),
         _ => None,
     })
@@ -65,7 +65,7 @@ async fn emits_safety_buffering_with_the_requested_model() -> anyhow::Result<()>
             faster_model: Some(FASTER_MODEL.to_string()),
         }
     );
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

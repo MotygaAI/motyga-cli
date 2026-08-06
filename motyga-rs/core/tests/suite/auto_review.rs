@@ -1,25 +1,25 @@
 use anyhow::Result;
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ApplyPatchToolType;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::openai_models::default_input_modalities;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::request_permissions::PermissionGrantScope;
-use codex_protocol::request_permissions::RequestPermissionsResponse;
-use codex_protocol::user_input::UserInput;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ApplyPatchToolType;
+use motyga_protocol::openai_models::ConfigShellToolType;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelVisibility;
+use motyga_protocol::openai_models::ModelsResponse;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::openai_models::ReasoningEffortPreset;
+use motyga_protocol::openai_models::TruncationPolicyConfig;
+use motyga_protocol::openai_models::default_input_modalities;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::request_permissions::PermissionGrantScope;
+use motyga_protocol::request_permissions::RequestPermissionsResponse;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::TempDirExt;
 use core_test_support::responses::ev_apply_patch_custom_tool_call;
 use core_test_support::responses::ev_assistant_message;
@@ -31,10 +31,10 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_sandbox;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::json;
@@ -107,8 +107,8 @@ async fn remote_model_override_uses_catalog_model_for_strict_auto_review() -> Re
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.model = Some("gpt-5.4".to_string());
             config.approvals_reviewer = ApprovalsReviewer::User;
@@ -121,8 +121,8 @@ async fn remote_model_override_uses_catalog_model_for_strict_auto_review() -> Re
                 .enable(Feature::RequestPermissionsTool)
                 .expect("test config should allow feature update");
         });
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         cwd,
         config,
         thread_manager,
@@ -142,8 +142,8 @@ async fn remote_model_override_uses_catalog_model_for_strict_auto_review() -> Re
     );
 
     core_test_support::submit_thread_settings(
-        &codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             model: Some(model.to_string()),
             ..Default::default()
         },
@@ -153,7 +153,7 @@ async fn remote_model_override_uses_catalog_model_for_strict_auto_review() -> Re
     let cwd_path = cwd.abs();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::read_only(), cwd_path.as_path());
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run the Guardian model override check".into(),
@@ -162,7 +162,7 @@ async fn remote_model_override_uses_catalog_model_for_strict_auto_review() -> Re
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(cwd_path)),
                 approval_policy: Some(AskForApproval::OnRequest),
                 sandbox_policy: Some(sandbox_policy),
@@ -172,7 +172,7 @@ async fn remote_model_override_uses_catalog_model_for_strict_auto_review() -> Re
         })
         .await?;
 
-    let permissions_request = wait_for_event(&codex, |event| {
+    let permissions_request = wait_for_event(&motyga, |event| {
         matches!(
             event,
             EventMsg::RequestPermissions(_) | EventMsg::TurnComplete(_)
@@ -183,7 +183,7 @@ async fn remote_model_override_uses_catalog_model_for_strict_auto_review() -> Re
         panic!("expected request_permissions before completion");
     };
     assert_eq!(permissions_request.call_id, permissions_call_id);
-    codex
+    motyga
         .submit(Op::RequestPermissionsResponse {
             id: permissions_request.call_id,
             response: RequestPermissionsResponse {
@@ -194,7 +194,7 @@ async fn remote_model_override_uses_catalog_model_for_strict_auto_review() -> Re
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let guardian_request = responses
         .requests()

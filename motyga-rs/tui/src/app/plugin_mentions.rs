@@ -6,10 +6,10 @@
 
 use super::background_requests::request_plugin_list;
 use super::*;
-use codex_app_server_protocol::PluginAvailability;
-use codex_app_server_protocol::PluginListResponse;
-use codex_app_server_protocol::PluginSummary;
-use codex_plugin::PluginCapabilitySummary;
+use motyga_app_server_protocol::PluginAvailability;
+use motyga_app_server_protocol::PluginListResponse;
+use motyga_app_server_protocol::PluginSummary;
+use motyga_plugin::PluginCapabilitySummary;
 
 pub(super) async fn fetch_plugin_mentions(
     request_handle: AppServerRequestHandle,
@@ -85,14 +85,14 @@ fn plugin_mention_description(marketplace_name: &str, plugin: &PluginSummary) ->
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_app_server_protocol::PluginAuthPolicy;
-    use codex_app_server_protocol::PluginAvailability;
-    use codex_app_server_protocol::PluginInstallPolicy;
-    use codex_app_server_protocol::PluginListResponse;
-    use codex_app_server_protocol::PluginMarketplaceEntry;
-    use codex_app_server_protocol::PluginShareContext;
-    use codex_app_server_protocol::PluginShareDiscoverability;
-    use codex_app_server_protocol::PluginSource;
+    use motyga_app_server_protocol::PluginAuthPolicy;
+    use motyga_app_server_protocol::PluginAvailability;
+    use motyga_app_server_protocol::PluginInstallPolicy;
+    use motyga_app_server_protocol::PluginListResponse;
+    use motyga_app_server_protocol::PluginMarketplaceEntry;
+    use motyga_app_server_protocol::PluginShareContext;
+    use motyga_app_server_protocol::PluginShareDiscoverability;
+    use motyga_app_server_protocol::PluginSource;
     use pretty_assertions::assert_eq;
 
     #[test]

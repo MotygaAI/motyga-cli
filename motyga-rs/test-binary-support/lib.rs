@@ -1,14 +1,14 @@
 use std::path::Path;
 
-use codex_arg0::Arg0DispatchPaths;
-use codex_arg0::Arg0PathEntryGuard;
-use codex_arg0::arg0_dispatch;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_arg0::Arg0PathEntryGuard;
+use motyga_arg0::arg0_dispatch;
 use tempfile::TempDir;
 
 pub struct TestBinaryDispatchGuard {
-    _codex_home: TempDir,
+    _motyga_home: TempDir,
     arg0: Arg0PathEntryGuard,
-    _previous_codex_home: Option<std::ffi::OsString>,
+    _previous_motyga_home: Option<std::ffi::OsString>,
 }
 
 impl TestBinaryDispatchGuard {
@@ -24,7 +24,7 @@ pub enum TestBinaryDispatchMode {
 }
 
 pub fn configure_test_binary_dispatch<F>(
-    codex_home_prefix: &str,
+    motyga_home_prefix: &str,
     classify: F,
 ) -> Option<TestBinaryDispatchGuard>
 where
@@ -44,21 +44,21 @@ where
         }
         TestBinaryDispatchMode::Skip => None,
         TestBinaryDispatchMode::InstallAliases => {
-            let codex_home = match tempfile::Builder::new().prefix(codex_home_prefix).tempdir() {
-                Ok(codex_home) => codex_home,
+            let motyga_home = match tempfile::Builder::new().prefix(motyga_home_prefix).tempdir() {
+                Ok(motyga_home) => motyga_home,
                 Err(error) => panic!("failed to create test MOTYGA_HOME: {error}"),
             };
-            let previous_codex_home = std::env::var_os("MOTYGA_HOME");
+            let previous_motyga_home = std::env::var_os("MOTYGA_HOME");
             // Safety: this runs from a test ctor before test threads begin.
             unsafe {
-                std::env::set_var("MOTYGA_HOME", codex_home.path());
+                std::env::set_var("MOTYGA_HOME", motyga_home.path());
             }
 
             let arg0 = match arg0_dispatch() {
                 Some(arg0) => arg0,
                 None => panic!("failed to configure arg0 dispatch aliases for test binary"),
             };
-            match previous_codex_home.as_ref() {
+            match previous_motyga_home.as_ref() {
                 Some(value) => unsafe {
                     std::env::set_var("MOTYGA_HOME", value);
                 },
@@ -68,9 +68,9 @@ where
             }
 
             Some(TestBinaryDispatchGuard {
-                _codex_home: codex_home,
+                _motyga_home: motyga_home,
                 arg0,
-                _previous_codex_home: previous_codex_home,
+                _previous_motyga_home: previous_motyga_home,
             })
         }
     }

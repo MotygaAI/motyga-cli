@@ -4,14 +4,14 @@
 //! does not expose its configured screen buffer through terminal metadata, so it usually lands in
 //! the fallback bucket.
 //!
-//! These caps are deliberately conservative: Codex is rebuilding normal terminal scrollback, not an
+//! These caps are deliberately conservative: Motyga is rebuilding normal terminal scrollback, not an
 //! internal virtual transcript. Replaying more rows than the terminal retains wastes work and can
 //! make interactive resize feel worse without giving the user more usable history.
 
-use codex_config::types::DEFAULT_TERMINAL_RESIZE_REFLOW_FALLBACK_MAX_ROWS;
-use codex_terminal_detection::TerminalInfo;
-use codex_terminal_detection::TerminalName;
-use codex_terminal_detection::terminal_info;
+use motyga_config::types::DEFAULT_TERMINAL_RESIZE_REFLOW_FALLBACK_MAX_ROWS;
+use motyga_terminal_detection::TerminalInfo;
+use motyga_terminal_detection::TerminalName;
+use motyga_terminal_detection::terminal_info;
 
 use crate::legacy_core::config::TerminalResizeReflowConfig;
 use crate::legacy_core::config::TerminalResizeReflowMaxRows;
@@ -78,7 +78,7 @@ fn auto_resize_reflow_max_rows(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_terminal_detection::Multiplexer;
+    use motyga_terminal_detection::Multiplexer;
 
     fn test_terminal(name: TerminalName) -> TerminalInfo {
         TerminalInfo {

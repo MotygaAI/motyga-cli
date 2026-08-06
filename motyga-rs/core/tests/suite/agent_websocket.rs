@@ -1,10 +1,10 @@
 use anyhow::Result;
-use codex_features::Feature;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ThreadSettingsOverrides;
-use codex_protocol::user_input::UserInput;
+use motyga_features::Feature;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ThreadSettingsOverrides;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::WebSocketConnectionConfig;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -13,7 +13,7 @@ use core_test_support::responses::ev_shell_command_call;
 use core_test_support::responses::start_websocket_server;
 use core_test_support::responses::start_websocket_server_with_headers;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -32,7 +32,7 @@ async fn websocket_model_switch_to_responses_lite_omits_top_level_tools() -> Res
     ]])
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model_info_override("gpt-5.4", |model_info| {
             model_info.use_responses_lite = true;
         })
@@ -40,7 +40,7 @@ async fn websocket_model_switch_to_responses_lite_omits_top_level_tools() -> Res
     let test = builder.build_with_websocket_server(&server).await?;
 
     test.submit_turn("non-lite turn").await?;
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "lite turn".into(),
@@ -55,7 +55,7 @@ async fn websocket_model_switch_to_responses_lite_omits_top_level_tools() -> Res
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -98,7 +98,7 @@ async fn websocket_model_switch_to_responses_lite_omits_top_level_tools() -> Res
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn websocket_test_codex_shell_chain() -> Result<()> {
+async fn websocket_test_motyga_shell_chain() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let call_id = "shell-command-call";
@@ -116,7 +116,7 @@ async fn websocket_test_codex_shell_chain() -> Result<()> {
     ]])
     .await;
 
-    let mut builder = test_codex().with_windows_cmd_shell();
+    let mut builder = test_motyga().with_windows_cmd_shell();
 
     let test = builder.build_with_websocket_server(&server).await?;
     test.submit_turn_with_policy("run the echo command", test.config.legacy_sandbox_policy())
@@ -161,7 +161,7 @@ async fn websocket_first_turn_uses_startup_prewarm_and_create() -> Result<()> {
     ]])
     .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_websocket_server(&server).await?;
     test.submit_turn_with_policy("hello", test.config.legacy_sandbox_policy())
         .await?;
@@ -224,7 +224,7 @@ async fn websocket_first_turn_handles_handshake_delay_with_startup_prewarm() -> 
     }])
     .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_websocket_server(&server).await?;
     test.submit_turn_with_policy("hello", test.config.legacy_sandbox_policy())
         .await?;
@@ -252,7 +252,7 @@ async fn websocket_first_turn_handles_handshake_delay_with_startup_prewarm() -> 
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn websocket_v2_test_codex_shell_chain() -> Result<()> {
+async fn websocket_v2_test_motyga_shell_chain() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let call_id = "shell-command-call";
@@ -274,7 +274,7 @@ async fn websocket_v2_test_codex_shell_chain() -> Result<()> {
     ]])
     .await;
 
-    let mut builder = test_codex().with_windows_cmd_shell().with_config(|config| {
+    let mut builder = test_motyga().with_windows_cmd_shell().with_config(|config| {
         config
             .features
             .enable(Feature::ResponsesWebsocketsV2)
@@ -353,7 +353,7 @@ async fn websocket_v2_first_turn_uses_updated_fast_tier_after_startup_prewarm() 
     ]])
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config
             .features
             .enable(Feature::ResponsesWebsocketsV2)
@@ -408,7 +408,7 @@ async fn websocket_v2_first_turn_drops_fast_tier_after_startup_prewarm() -> Resu
     ]])
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config
             .features
             .enable(Feature::ResponsesWebsocketsV2)
@@ -469,7 +469,7 @@ async fn websocket_v2_next_turn_uses_updated_service_tier() -> Result<()> {
     ]])
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config
             .features
             .enable(Feature::ResponsesWebsocketsV2)

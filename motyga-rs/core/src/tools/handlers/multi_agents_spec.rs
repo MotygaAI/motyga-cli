@@ -1,9 +1,9 @@
-use codex_protocol::openai_models::ModelPreset;
-use codex_tools::JsonSchema;
-use codex_tools::ResponsesApiNamespace;
-use codex_tools::ResponsesApiNamespaceTool;
-use codex_tools::ResponsesApiTool;
-use codex_tools::ToolSpec;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_tools::JsonSchema;
+use motyga_tools::ResponsesApiNamespace;
+use motyga_tools::ResponsesApiNamespaceTool;
+use motyga_tools::ResponsesApiTool;
+use motyga_tools::ToolSpec;
 use serde_json::Value;
 use serde_json::json;
 use std::collections::BTreeMap;

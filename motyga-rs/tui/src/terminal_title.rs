@@ -39,7 +39,7 @@ pub(crate) enum SetTerminalTitleResult {
     ///
     /// This is distinct from clearing the title. Callers decide whether an
     /// empty post-sanitization value should result in no-op behavior, clearing
-    /// the title Codex manages, or some other fallback.
+    /// the title Motyga manages, or some other fallback.
     NoVisibleContent,
 }
 
@@ -70,7 +70,7 @@ pub(crate) fn set_terminal_title(title: &str) -> io::Result<SetTerminalTitleResu
 /// Clears the current terminal title by writing an empty OSC title payload.
 ///
 /// This clears the visible title; it does not restore whatever title the shell
-/// or a previous program may have set before Codex started managing the title.
+/// or a previous program may have set before Motyga started managing the title.
 pub(crate) fn clear_terminal_title() -> io::Result<()> {
     if !stdout().is_terminal() {
         return Ok(());

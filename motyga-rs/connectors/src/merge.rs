@@ -105,7 +105,7 @@ where
 pub fn plugin_connector_to_app_info(connector_id: String) -> AppInfo {
     // Leave the placeholder name as the connector id so merge_connectors() can
     // replace it with canonical app metadata from directory fetches or
-    // connector_name values from codex_apps tool discovery.
+    // connector_name values from motyga_apps tool discovery.
     let name = connector_id.clone();
     AppInfo {
         id: connector_id.clone(),

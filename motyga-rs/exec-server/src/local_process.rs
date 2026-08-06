@@ -7,17 +7,17 @@ use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use codex_exec_server_protocol::JSONRPCErrorError;
-use codex_protocol::config_types::EnvironmentVariablePattern;
-use codex_protocol::config_types::ShellEnvironmentPolicy;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::exec_output::StreamOutput;
-use codex_protocol::shell_environment;
-use codex_sandboxing::SandboxType;
-use codex_sandboxing::is_likely_sandbox_denied;
-use codex_utils_pty::ExecCommandSession;
-use codex_utils_pty::ProcessSignal as PtyProcessSignal;
-use codex_utils_pty::TerminalSize;
+use motyga_exec_server_protocol::JSONRPCErrorError;
+use motyga_protocol::config_types::EnvironmentVariablePattern;
+use motyga_protocol::config_types::ShellEnvironmentPolicy;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::exec_output::StreamOutput;
+use motyga_protocol::shell_environment;
+use motyga_sandboxing::SandboxType;
+use motyga_sandboxing::is_likely_sandbox_denied;
+use motyga_utils_pty::ExecCommandSession;
+use motyga_utils_pty::ProcessSignal as PtyProcessSignal;
+use motyga_utils_pty::TerminalSize;
 use tokio::sync::Mutex;
 use tokio::sync::Notify;
 use tokio::sync::mpsc;
@@ -256,7 +256,7 @@ impl LocalProcess {
         }
 
         let spawned_result = if params.tty {
-            codex_utils_pty::spawn_pty_process(
+            motyga_utils_pty::spawn_pty_process(
                 program,
                 args,
                 prepared.cwd.as_path(),
@@ -266,7 +266,7 @@ impl LocalProcess {
             )
             .await
         } else if params.pipe_stdin {
-            codex_utils_pty::spawn_pipe_process(
+            motyga_utils_pty::spawn_pipe_process(
                 program,
                 args,
                 prepared.cwd.as_path(),
@@ -275,7 +275,7 @@ impl LocalProcess {
             )
             .await
         } else {
-            codex_utils_pty::spawn_pipe_process_no_stdin(
+            motyga_utils_pty::spawn_pipe_process_no_stdin(
                 program,
                 args,
                 prepared.cwd.as_path(),
@@ -977,10 +977,10 @@ fn notification_sender(inner: &Inner) -> Option<RpcNotificationSender> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_otel::MetricsConfig;
-    use codex_protocol::config_types::ShellEnvironmentPolicyInherit;
-    use codex_utils_path_uri::PathUri;
-    use codex_utils_pty::ProcessDriver;
+    use motyga_otel::MetricsConfig;
+    use motyga_protocol::config_types::ShellEnvironmentPolicyInherit;
+    use motyga_utils_path_uri::PathUri;
+    use motyga_utils_pty::ProcessDriver;
     use opentelemetry_sdk::metrics::InMemoryMetricExporter;
     use opentelemetry_sdk::metrics::data::AggregatedMetrics;
     use opentelemetry_sdk::metrics::data::MetricData;
@@ -1007,13 +1007,13 @@ mod tests {
 
     fn telemetry_backend() -> (
         LocalProcess,
-        codex_otel::MetricsClient,
+        motyga_otel::MetricsClient,
         InMemoryMetricExporter,
     ) {
         let exporter = InMemoryMetricExporter::default();
-        let metrics = codex_otel::MetricsClient::new(MetricsConfig::in_memory(
+        let metrics = motyga_otel::MetricsClient::new(MetricsConfig::in_memory(
             "test",
-            "codex-exec-server",
+            "motyga-exec-server",
             env!("CARGO_PKG_VERSION"),
             exporter.clone(),
         ))
@@ -1033,7 +1033,7 @@ mod tests {
     }
 
     fn assert_finished_process_result(
-        metrics: codex_otel::MetricsClient,
+        metrics: motyga_otel::MetricsClient,
         exporter: &InMemoryMetricExporter,
         expected: &str,
     ) {
@@ -1350,7 +1350,7 @@ mod tests {
         let (_stderr_tx, stderr_rx) = tokio::sync::broadcast::channel(1);
         let (_exit_tx, exit_rx) = oneshot::channel();
 
-        codex_utils_pty::spawn_from_driver(ProcessDriver {
+        motyga_utils_pty::spawn_from_driver(ProcessDriver {
             writer_tx,
             stdout_rx,
             stderr_rx: Some(stderr_rx),

@@ -2,35 +2,35 @@ use std::io::ErrorKind;
 use std::path::Path;
 
 use crate::rollout::SESSIONS_SUBDIR;
-use codex_protocol::error::CodexErr;
-use codex_thread_store::ThreadStoreError;
+use motyga_protocol::error::MotygaErr;
+use motyga_thread_store::ThreadStoreError;
 
-pub(crate) fn map_session_init_error(err: &anyhow::Error, codex_home: &Path) -> CodexErr {
+pub(crate) fn map_session_init_error(err: &anyhow::Error, motyga_home: &Path) -> MotygaErr {
     if let Some(ThreadStoreError::Unsupported { operation }) = err
         .chain()
         .find_map(|cause| cause.downcast_ref::<ThreadStoreError>())
     {
-        return CodexErr::UnsupportedOperation(format!("{operation} is not supported yet"));
+        return MotygaErr::UnsupportedOperation(format!("{operation} is not supported yet"));
     }
 
     if let Some(mapped) = err
         .chain()
         .filter_map(|cause| cause.downcast_ref::<std::io::Error>())
-        .find_map(|io_err| map_rollout_io_error(io_err, codex_home))
+        .find_map(|io_err| map_rollout_io_error(io_err, motyga_home))
     {
         return mapped;
     }
 
-    CodexErr::Fatal(format!("Failed to initialize session: {err:#}"))
+    MotygaErr::Fatal(format!("Failed to initialize session: {err:#}"))
 }
 
-fn map_rollout_io_error(io_err: &std::io::Error, codex_home: &Path) -> Option<CodexErr> {
-    let sessions_dir = codex_home.join(SESSIONS_SUBDIR);
+fn map_rollout_io_error(io_err: &std::io::Error, motyga_home: &Path) -> Option<MotygaErr> {
+    let sessions_dir = motyga_home.join(SESSIONS_SUBDIR);
     let hint = match io_err.kind() {
         ErrorKind::PermissionDenied => format!(
             "Motyga cannot access session files at {} (permission denied). If sessions were created using sudo, fix ownership: sudo chown -R $(whoami) {}",
             sessions_dir.display(),
-            codex_home.display()
+            motyga_home.display()
         ),
         ErrorKind::NotFound => format!(
             "Session storage missing at {}. Create the directory or choose a different Motyga home.",
@@ -51,7 +51,7 @@ fn map_rollout_io_error(io_err: &std::io::Error, codex_home: &Path) -> Option<Co
         _ => return None,
     };
 
-    Some(CodexErr::Fatal(format!(
+    Some(MotygaErr::Fatal(format!(
         "{hint} (underlying error: {io_err})"
     )))
 }

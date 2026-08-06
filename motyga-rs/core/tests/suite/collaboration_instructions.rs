@@ -1,20 +1,20 @@
 use anyhow::Result;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Settings;
-use codex_protocol::protocol::COLLABORATION_MODE_CLOSE_TAG;
-use codex_protocol::protocol::COLLABORATION_MODE_OPEN_TAG;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::Settings;
+use motyga_protocol::protocol::COLLABORATION_MODE_CLOSE_TAG;
+use motyga_protocol::protocol::COLLABORATION_MODE_OPEN_TAG;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -69,9 +69,9 @@ async fn no_collaboration_instructions_by_default() -> Result<()> {
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -83,7 +83,7 @@ async fn no_collaboration_instructions_by_default() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -112,20 +112,20 @@ async fn user_input_includes_collaboration_instructions_after_override() -> Resu
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
 
     let collab_text = "collab instructions";
     let collaboration_mode = collab_mode_with_instructions(Some(collab_text));
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collaboration_mode),
             ..Default::default()
         },
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -137,7 +137,7 @@ async fn user_input_includes_collaboration_instructions_after_override() -> Resu
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -158,11 +158,11 @@ async fn collaboration_instructions_added_on_user_turn() -> Result<()> {
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
     let collab_text = "turn instructions";
     let collaboration_mode = collab_mode_with_instructions(Some(collab_text));
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -171,21 +171,21 @@ async fn collaboration_instructions_added_on_user_turn() -> Result<()> {
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(test.config.permissions.approval_policy.value()),
                 sandbox_policy: Some(test.config.legacy_sandbox_policy()),
                 summary: Some(
                     test.config
                         .model_reasoning_summary
-                        .unwrap_or(codex_protocol::config_types::ReasoningSummary::Auto),
+                        .unwrap_or(motyga_protocol::config_types::ReasoningSummary::Auto),
                 ),
                 collaboration_mode: Some(collaboration_mode),
                 ..Default::default()
             },
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -206,13 +206,13 @@ async fn collaboration_instructions_omitted_when_disabled() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config.include_collaboration_mode_instructions = false;
     });
     let test = builder.build(&server).await?;
     let collaboration_mode = collab_mode_with_instructions(Some("turn instructions"));
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -221,21 +221,21 @@ async fn collaboration_instructions_omitted_when_disabled() -> Result<()> {
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(test.config.permissions.approval_policy.value()),
                 sandbox_policy: Some(test.config.legacy_sandbox_policy()),
                 summary: Some(
                     test.config
                         .model_reasoning_summary
-                        .unwrap_or(codex_protocol::config_types::ReasoningSummary::Auto),
+                        .unwrap_or(motyga_protocol::config_types::ReasoningSummary::Auto),
                 ),
                 collaboration_mode: Some(collaboration_mode),
                 ..Default::default()
             },
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -258,20 +258,20 @@ async fn override_then_next_turn_uses_updated_collaboration_instructions() -> Re
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
     let collab_text = "override instructions";
     let collaboration_mode = collab_mode_with_instructions(Some(collab_text));
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collaboration_mode),
             ..Default::default()
         },
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -283,7 +283,7 @@ async fn override_then_next_turn_uses_updated_collaboration_instructions() -> Re
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -304,22 +304,22 @@ async fn user_turn_overrides_collaboration_instructions_after_override() -> Resu
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
     let base_text = "base instructions";
     let base_mode = collab_mode_with_instructions(Some(base_text));
     let turn_text = "turn override";
     let turn_mode = collab_mode_with_instructions(Some(turn_text));
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(base_mode),
             ..Default::default()
         },
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -328,21 +328,21 @@ async fn user_turn_overrides_collaboration_instructions_after_override() -> Resu
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(test.config.permissions.approval_policy.value()),
                 sandbox_policy: Some(test.config.legacy_sandbox_policy()),
                 summary: Some(
                     test.config
                         .model_reasoning_summary
-                        .unwrap_or(codex_protocol::config_types::ReasoningSummary::Auto),
+                        .unwrap_or(motyga_protocol::config_types::ReasoningSummary::Auto),
                 ),
                 collaboration_mode: Some(turn_mode),
                 ..Default::default()
             },
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -370,20 +370,20 @@ async fn collaboration_mode_update_emits_new_instruction_message() -> Result<()>
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
     let first_text = "first instructions";
     let second_text = "second instructions";
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collab_mode_with_instructions(Some(first_text))),
             ..Default::default()
         },
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -395,18 +395,18 @@ async fn collaboration_mode_update_emits_new_instruction_message() -> Result<()>
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collab_mode_with_instructions(Some(second_text))),
             ..Default::default()
         },
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -418,7 +418,7 @@ async fn collaboration_mode_update_emits_new_instruction_message() -> Result<()>
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req2.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -446,19 +446,19 @@ async fn collaboration_mode_update_noop_does_not_append() -> Result<()> {
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
     let collab_text = "same instructions";
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collab_mode_with_instructions(Some(collab_text))),
             ..Default::default()
         },
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -470,18 +470,18 @@ async fn collaboration_mode_update_noop_does_not_append() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collab_mode_with_instructions(Some(collab_text))),
             ..Default::default()
         },
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -493,7 +493,7 @@ async fn collaboration_mode_update_noop_does_not_append() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req2.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -519,13 +519,13 @@ async fn collaboration_mode_update_emits_new_instruction_message_when_mode_chang
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
     let default_text = "default mode instructions";
     let plan_text = "plan mode instructions";
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collab_mode_with_mode_and_instructions(
                 ModeKind::Default,
                 Some(default_text),
@@ -535,7 +535,7 @@ async fn collaboration_mode_update_emits_new_instruction_message_when_mode_chang
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -547,11 +547,11 @@ async fn collaboration_mode_update_emits_new_instruction_message_when_mode_chang
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collab_mode_with_mode_and_instructions(
                 ModeKind::Plan,
                 Some(plan_text),
@@ -561,7 +561,7 @@ async fn collaboration_mode_update_emits_new_instruction_message_when_mode_chang
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -573,7 +573,7 @@ async fn collaboration_mode_update_emits_new_instruction_message_when_mode_chang
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req2.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -601,12 +601,12 @@ async fn collaboration_mode_update_noop_does_not_append_when_mode_is_unchanged()
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
     let collab_text = "mode-stable instructions";
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collab_mode_with_mode_and_instructions(
                 ModeKind::Default,
                 Some(collab_text),
@@ -616,7 +616,7 @@ async fn collaboration_mode_update_noop_does_not_append_when_mode_is_unchanged()
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -628,11 +628,11 @@ async fn collaboration_mode_update_noop_does_not_append_when_mode_is_unchanged()
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collab_mode_with_mode_and_instructions(
                 ModeKind::Default,
                 Some(collab_text),
@@ -642,7 +642,7 @@ async fn collaboration_mode_update_noop_does_not_append_when_mode_is_unchanged()
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -654,7 +654,7 @@ async fn collaboration_mode_update_noop_does_not_append_when_mode_is_unchanged()
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req2.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -680,7 +680,7 @@ async fn resume_replays_collaboration_instructions() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let initial = builder.build(&server).await?;
     let rollout_path = initial
         .session_configured
@@ -691,8 +691,8 @@ async fn resume_replays_collaboration_instructions() -> Result<()> {
 
     let collab_text = "resume instructions";
     core_test_support::submit_thread_settings(
-        &initial.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &initial.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collab_mode_with_instructions(Some(collab_text))),
             ..Default::default()
         },
@@ -700,7 +700,7 @@ async fn resume_replays_collaboration_instructions() -> Result<()> {
     .await?;
 
     initial
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -712,11 +712,11 @@ async fn resume_replays_collaboration_instructions() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let resumed = builder.resume(&server, home, rollout_path).await?;
     resumed
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after resume".into(),
@@ -728,7 +728,7 @@ async fn resume_replays_collaboration_instructions() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&resumed.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req2.single_request().input();
     let dev_texts = developer_texts(&input);
@@ -749,12 +749,12 @@ async fn empty_collaboration_instructions_are_ignored() -> Result<()> {
     )
     .await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
     let current_model = test.session_configured.model.clone();
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(CollaborationMode {
                 mode: ModeKind::Default,
                 settings: Settings {
@@ -768,7 +768,7 @@ async fn empty_collaboration_instructions_are_ignored() -> Result<()> {
     )
     .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -780,7 +780,7 @@ async fn empty_collaboration_instructions_are_ignored() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let input = req.single_request().input();
     let dev_texts = developer_texts(&input);

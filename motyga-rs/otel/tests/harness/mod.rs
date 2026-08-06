@@ -1,6 +1,6 @@
-use codex_otel::MetricsClient;
-use codex_otel::MetricsConfig;
-use codex_otel::Result;
+use motyga_otel::MetricsClient;
+use motyga_otel::MetricsConfig;
+use motyga_otel::Result;
 use opentelemetry::KeyValue;
 use opentelemetry_sdk::metrics::InMemoryMetricExporter;
 use opentelemetry_sdk::metrics::data::AggregatedMetrics;
@@ -15,7 +15,7 @@ pub(crate) fn build_metrics_with_defaults(
     let exporter = InMemoryMetricExporter::default();
     let mut config = MetricsConfig::in_memory(
         "test",
-        "codex-cli",
+        "motyga-cli",
         env!("CARGO_PKG_VERSION"),
         exporter.clone(),
     );

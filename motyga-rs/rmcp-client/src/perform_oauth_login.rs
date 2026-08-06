@@ -9,8 +9,8 @@ use anyhow::anyhow;
 use anyhow::bail;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use codex_exec_server::HttpClient;
-use codex_exec_server::ReqwestHttpClient;
+use motyga_exec_server::HttpClient;
+use motyga_exec_server::ReqwestHttpClient;
 use reqwest::Url;
 use rmcp::transport::AuthorizationManager;
 use rmcp::transport::AuthorizationSession;
@@ -31,8 +31,8 @@ use crate::oauth::compute_expires_at_millis;
 use crate::oauth_http_client::OAuthHttpClientAdapter;
 use crate::save_oauth_tokens;
 use crate::utils::build_default_headers;
-use codex_config::types::AuthKeyringBackendKind;
-use codex_config::types::OAuthCredentialsStoreMode;
+use motyga_config::types::AuthKeyringBackendKind;
+use motyga_config::types::OAuthCredentialsStoreMode;
 
 struct OAuthHttpContext {
     http_headers: Option<HashMap<String, String>>,
@@ -670,7 +670,7 @@ async fn start_authorization(
         let mut oauth_state =
             OAuthState::new_with_oauth_http_client(server_url, http_client).await?;
         oauth_state
-            .start_authorization(scopes, redirect_uri, Some("Codex"))
+            .start_authorization(scopes, redirect_uri, Some("Motyga"))
             .await?;
         return Ok(oauth_state);
     };
@@ -714,7 +714,7 @@ mod tests {
     use axum::Json;
     use axum::Router;
     use axum::routing::get;
-    use codex_exec_server::ReqwestHttpClient;
+    use motyga_exec_server::ReqwestHttpClient;
     use pretty_assertions::assert_eq;
     use reqwest::Url;
     use reqwest::header::HeaderMap;
@@ -779,7 +779,7 @@ mod tests {
             )),
             &[],
             "http://127.0.0.1/callback",
-            Some("eci-prd-pub-codex-123"),
+            Some("eci-prd-pub-motyga-123"),
         )
         .await
         .expect("start oauth authorization");
@@ -794,7 +794,7 @@ mod tests {
             .find(|(key, _)| key == "client_id")
             .map(|(_, value)| value.into_owned());
 
-        assert_eq!(client_id.as_deref(), Some("eci-prd-pub-codex-123"));
+        assert_eq!(client_id.as_deref(), Some("eci-prd-pub-motyga-123"));
     }
 
     #[test]

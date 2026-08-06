@@ -1,9 +1,9 @@
-use codex_execpolicy::Decision;
-use codex_execpolicy::Policy;
-use codex_execpolicy::RuleRef;
-use codex_execpolicy::rule::PatternToken;
-use codex_execpolicy::rule::PrefixPattern;
-use codex_execpolicy::rule::PrefixRule;
+use motyga_execpolicy::Decision;
+use motyga_execpolicy::Policy;
+use motyga_execpolicy::RuleRef;
+use motyga_execpolicy::rule::PatternToken;
+use motyga_execpolicy::rule::PrefixPattern;
+use motyga_execpolicy::rule::PrefixRule;
 use multimap::MultiMap;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -121,7 +121,7 @@ pub enum RequirementsExecPolicyParseError {
 
 impl RequirementsExecPolicyToml {
     /// Convert requirements TOML rules into the internal `.rules`
-    /// representation used by `codex-execpolicy`.
+    /// representation used by `motyga-execpolicy`.
     pub fn to_policy(&self) -> Result<Policy, RequirementsExecPolicyParseError> {
         if self.prefix_rules.is_empty() {
             return Err(RequirementsExecPolicyParseError::EmptyPrefixRules);

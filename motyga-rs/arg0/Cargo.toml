@@ -1,11 +1,11 @@
 [package]
-name = "codex-arg0"
+name = "motyga-arg0"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_arg0"
+name = "motyga_arg0"
 path = "src/lib.rs"
 doctest = false
 
@@ -14,20 +14,20 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-codex-apply-patch = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-install-context = { workspace = true }
-codex-linux-sandbox = { workspace = true }
-codex-sandboxing = { workspace = true }
-codex-shell-escalation = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-home-dir = { workspace = true }
+motyga-apply-patch = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-install-context = { workspace = true }
+motyga-linux-sandbox = { workspace = true }
+motyga-sandboxing = { workspace = true }
+motyga-shell-escalation = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-home-dir = { workspace = true }
 dotenvy = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [target.'cfg(windows)'.dependencies]
-codex-windows-sandbox = { workspace = true }
+motyga-windows-sandbox = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

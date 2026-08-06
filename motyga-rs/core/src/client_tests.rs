@@ -4,52 +4,52 @@ use super::ModelClient;
 use super::PendingUnauthorizedRetry;
 use super::Prompt;
 use super::UnauthorizedRecoveryExecution;
-use super::X_CODEX_INSTALLATION_ID_HEADER;
-use super::X_CODEX_PARENT_THREAD_ID_HEADER;
-use super::X_CODEX_TURN_METADATA_HEADER;
-use super::X_CODEX_WINDOW_ID_HEADER;
+use super::X_MOTYGA_INSTALLATION_ID_HEADER;
+use super::X_MOTYGA_PARENT_THREAD_ID_HEADER;
+use super::X_MOTYGA_TURN_METADATA_HEADER;
+use super::X_MOTYGA_WINDOW_ID_HEADER;
 use super::X_OPENAI_SUBAGENT_HEADER;
 use crate::AttestationContext;
 use crate::AttestationProvider;
 use crate::GenerateAttestationFuture;
-use crate::responses_metadata::CodexResponsesMetadata;
-use crate::test_support::TestCodexResponsesRequestKind;
+use crate::responses_metadata::MotygaResponsesMetadata;
+use crate::test_support::TestMotygaResponsesRequestKind;
 use crate::test_support::responses_metadata as test_responses_metadata;
-use codex_api::AgentIdentityTelemetry;
-use codex_api::ApiError;
-use codex_api::ResponseEvent;
-use codex_api::TransportError;
-use codex_login::AuthCredentialsStoreMode;
-use codex_login::AuthKeyringBackendKind;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::auth::AgentIdentityAuthPolicy;
-use codex_model_provider::BearerAuthProvider;
-use codex_model_provider::SharedModelProvider;
-use codex_model_provider::create_model_provider;
-use codex_model_provider_info::CHATGPT_CODEX_BASE_URL;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::WireApi;
-use codex_model_provider_info::create_oss_provider_with_base_url;
-use codex_otel::SessionTelemetry;
-use codex_protocol::ThreadId;
-use codex_protocol::auth::AuthMode;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::InternalSessionSource;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_rollout_trace::CompactionTraceContext;
-use codex_rollout_trace::ExecutionStatus;
-use codex_rollout_trace::InferenceTraceAttempt;
-use codex_rollout_trace::InferenceTraceContext;
-use codex_rollout_trace::RawTraceEventPayload;
-use codex_rollout_trace::RolloutTrace;
-use codex_rollout_trace::TraceWriter;
-use codex_rollout_trace::replay_bundle;
+use motyga_api::AgentIdentityTelemetry;
+use motyga_api::ApiError;
+use motyga_api::ResponseEvent;
+use motyga_api::TransportError;
+use motyga_login::AuthCredentialsStoreMode;
+use motyga_login::AuthKeyringBackendKind;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::auth::AgentIdentityAuthPolicy;
+use motyga_model_provider::BearerAuthProvider;
+use motyga_model_provider::SharedModelProvider;
+use motyga_model_provider::create_model_provider;
+use motyga_model_provider_info::CHATGPT_MOTYGA_BASE_URL;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::WireApi;
+use motyga_model_provider_info::create_oss_provider_with_base_url;
+use motyga_otel::SessionTelemetry;
+use motyga_protocol::ThreadId;
+use motyga_protocol::auth::AuthMode;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::InternalSessionSource;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_rollout_trace::CompactionTraceContext;
+use motyga_rollout_trace::ExecutionStatus;
+use motyga_rollout_trace::InferenceTraceAttempt;
+use motyga_rollout_trace::InferenceTraceContext;
+use motyga_rollout_trace::RawTraceEventPayload;
+use motyga_rollout_trace::RolloutTrace;
+use motyga_rollout_trace::TraceWriter;
+use motyga_rollout_trace::replay_bundle;
 use futures::StreamExt;
 use pretty_assertions::assert_eq;
 use serde_json::json;
@@ -129,8 +129,8 @@ async fn compact_uses_bearer_after_agent_identity_session_fallback() -> anyhow::
         .mount(&server)
         .await;
 
-    let codex_home = TempDir::new()?;
-    let auth_manager = chatgpt_auth_manager(&codex_home, server.uri()).await;
+    let motyga_home = TempDir::new()?;
+    let auth_manager = chatgpt_auth_manager(&motyga_home, server.uri()).await;
     let mut provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None);
     provider.base_url = Some(format!("{}/v1", server.uri()));
     provider.supports_websockets = false;
@@ -169,7 +169,7 @@ async fn compact_uses_bearer_after_agent_identity_session_fallback() -> anyhow::
         /*turn_id*/ None,
         format!("{}:0", client.state.thread_id),
         /*parent_thread_id*/ None,
-        TestCodexResponsesRequestKind::Turn,
+        TestMotygaResponsesRequestKind::Turn,
     );
 
     let output = client
@@ -179,7 +179,7 @@ async fn compact_uses_bearer_after_agent_identity_session_fallback() -> anyhow::
             /*turn_state*/ None,
             CompactConversationRequestSettings {
                 effort: None,
-                summary: codex_protocol::config_types::ReasoningSummary::None,
+                summary: motyga_protocol::config_types::ReasoningSummary::None,
                 service_tier: None,
             },
             &test_session_telemetry(),
@@ -225,8 +225,8 @@ fn test_responses_metadata_for_client(
     turn_id: Option<&str>,
     window_id: String,
     parent_thread_id: Option<ThreadId>,
-    request_kind: TestCodexResponsesRequestKind,
-) -> CodexResponsesMetadata {
+    request_kind: TestMotygaResponsesRequestKind,
+) -> MotygaResponsesMetadata {
     let thread_id = client.state.thread_id.to_string();
     test_responses_metadata(
         TEST_INSTALLATION_ID,
@@ -296,7 +296,7 @@ fn ultra_reasoning_uses_max_for_requests() {
     );
 }
 
-fn write_chatgpt_auth_json(codex_home: &std::path::Path) {
+fn write_chatgpt_auth_json(motyga_home: &std::path::Path) {
     let auth_json = json!({
         "tokens": {
             "id_token": TEST_CHATGPT_ID_TOKEN,
@@ -307,20 +307,20 @@ fn write_chatgpt_auth_json(codex_home: &std::path::Path) {
         "last_refresh": "2099-01-01T00:00:00Z"
     });
     std::fs::write(
-        codex_home.join("auth.json"),
+        motyga_home.join("auth.json"),
         serde_json::to_string_pretty(&auth_json).expect("serialize auth.json"),
     )
     .expect("write auth.json");
 }
 
 async fn chatgpt_auth_manager(
-    codex_home: &TempDir,
+    motyga_home: &TempDir,
     agent_identity_authapi_base_url: String,
 ) -> Arc<AuthManager> {
-    write_chatgpt_auth_json(codex_home.path());
+    write_chatgpt_auth_json(motyga_home.path());
     let auth_manager = AuthManager::shared(
-        codex_home.path().to_path_buf(),
-        /*enable_codex_api_key_env*/ false,
+        motyga_home.path().to_path_buf(),
+        /*enable_motyga_api_key_env*/ false,
         AuthCredentialsStoreMode::File,
         /*forced_chatgpt_workspace_id*/ None,
         /*chatgpt_base_url*/ None,
@@ -383,8 +383,8 @@ fn started_inference_attempt(temp: &TempDir) -> anyhow::Result<InferenceTraceAtt
         agent_path: "/root".to_string(),
         metadata_payload: None,
     })?;
-    writer.append(RawTraceEventPayload::CodexTurnStarted {
-        codex_turn_id: "turn-1".to_string(),
+    writer.append(RawTraceEventPayload::MotygaTurnStarted {
+        motyga_turn_id: "turn-1".to_string(),
         thread_id: "thread-root".to_string(),
     })?;
 
@@ -504,20 +504,20 @@ fn build_ws_client_metadata_includes_window_lineage_and_turn_metadata() {
         Some("turn-123"),
         expected_window_id.clone(),
         Some(parent_thread_id),
-        TestCodexResponsesRequestKind::Turn,
+        TestMotygaResponsesRequestKind::Turn,
     );
     let client_metadata =
         client.build_ws_client_metadata(&responses_metadata, /*use_responses_lite*/ false);
     let parent_thread_id = parent_thread_id.to_string();
     let turn_metadata: serde_json::Value = serde_json::from_str(
         client_metadata
-            .get(X_CODEX_TURN_METADATA_HEADER)
+            .get(X_MOTYGA_TURN_METADATA_HEADER)
             .expect("turn metadata"),
     )
     .expect("valid turn metadata");
     for (client_key, metadata_key, expected) in [
         (
-            X_CODEX_INSTALLATION_ID_HEADER,
+            X_MOTYGA_INSTALLATION_ID_HEADER,
             "installation_id",
             "11111111-1111-4111-8111-111111111111",
         ),
@@ -525,12 +525,12 @@ fn build_ws_client_metadata_includes_window_lineage_and_turn_metadata() {
         ("thread_id", "thread_id", thread_id.as_str()),
         ("turn_id", "turn_id", "turn-123"),
         (
-            X_CODEX_WINDOW_ID_HEADER,
+            X_MOTYGA_WINDOW_ID_HEADER,
             "window_id",
             expected_window_id.as_str(),
         ),
         (
-            X_CODEX_PARENT_THREAD_ID_HEADER,
+            X_MOTYGA_PARENT_THREAD_ID_HEADER,
             "parent_thread_id",
             parent_thread_id.as_str(),
         ),
@@ -799,9 +799,9 @@ fn model_client_with_counting_attestation(
     let (auth_manager, provider) = if include_attestation {
         (
             Some(AuthManager::from_auth_for_testing(
-                CodexAuth::create_dummy_chatgpt_auth_for_testing(),
+                MotygaAuth::create_dummy_chatgpt_auth_for_testing(),
             )),
-            ModelProviderInfo::create_openai_provider(Some(CHATGPT_CODEX_BASE_URL.to_string())),
+            ModelProviderInfo::create_openai_provider(Some(CHATGPT_MOTYGA_BASE_URL.to_string())),
         )
     } else {
         (
@@ -829,7 +829,7 @@ fn model_client_with_counting_attestation(
 }
 
 #[tokio::test]
-async fn websocket_handshake_includes_attestation_for_chatgpt_codex_responses() {
+async fn websocket_handshake_includes_attestation_for_chatgpt_motyga_responses() {
     let (model_client, attestation_calls) =
         model_client_with_counting_attestation(/*include_attestation*/ true);
     let responses_metadata = test_responses_metadata_for_client(
@@ -837,7 +837,7 @@ async fn websocket_handshake_includes_attestation_for_chatgpt_codex_responses() 
         /*turn_id*/ None,
         format!("{}:0", model_client.state.thread_id),
         /*parent_thread_id*/ None,
-        TestCodexResponsesRequestKind::WebsocketConnection,
+        TestMotygaResponsesRequestKind::WebsocketConnection,
     );
 
     let headers = model_client
@@ -854,7 +854,7 @@ async fn websocket_handshake_includes_attestation_for_chatgpt_codex_responses() 
 }
 
 #[tokio::test]
-async fn non_chatgpt_codex_endpoints_omit_attestation_generation() {
+async fn non_chatgpt_motyga_endpoints_omit_attestation_generation() {
     let (model_client, attestation_calls) =
         model_client_with_counting_attestation(/*include_attestation*/ false);
     let mut response_headers = http::HeaderMap::new();

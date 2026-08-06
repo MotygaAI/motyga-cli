@@ -17,7 +17,7 @@ const DEFAULT_EXPIRES_IN_SECS: u64 = 600;
 #[derive(Debug, Clone)]
 pub struct MotygaDeviceLoginOptions {
     pub base_url: String,
-    pub codex_home: PathBuf,
+    pub motyga_home: PathBuf,
     pub cli_auth_credentials_store_mode: AuthCredentialsStoreMode,
     pub auth_keyring_backend_kind: AuthKeyringBackendKind,
     pub auth_route_config: Option<AuthRouteConfig>,
@@ -239,7 +239,7 @@ pub async fn run_motyga_device_login(opts: MotygaDeviceLoginOptions) -> io::Resu
 
     let api_key = poll_for_api_key(&client, &base_url, &start).await?;
     login_with_api_key(
-        &opts.codex_home,
+        &opts.motyga_home,
         &api_key,
         opts.cli_auth_credentials_store_mode,
         opts.auth_keyring_backend_kind,

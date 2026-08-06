@@ -2,11 +2,11 @@ use super::*;
 use crate::SkillsService;
 use crate::config::ConfigBuilder;
 use crate::skills_load_input_from_config;
-use codex_config::ConfigLayerStackOrdering;
-use codex_core_plugins::PluginsManager;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_utils_absolute_path::test_support::PathExt;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_core_plugins::PluginsManager;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_utils_absolute_path::test_support::PathExt;
 use pretty_assertions::assert_eq;
 use std::fs;
 use std::path::PathBuf;
@@ -19,7 +19,7 @@ async fn test_config_with_cli_overrides(
     let home = TempDir::new().expect("create temp dir");
     let home_path = home.path().to_path_buf();
     let config = ConfigBuilder::default()
-        .codex_home(home_path.clone())
+        .motyga_home(home_path.clone())
         .cli_overrides(cli_overrides)
         .fallback_cwd(Some(home_path))
         .build()
@@ -179,8 +179,8 @@ async fn apply_role_preserves_unspecified_keys() {
         TomlValue::String("base-model".to_string()),
     )])
     .await;
-    config.codex_linux_sandbox_exe = Some(PathBuf::from("/tmp/codex-linux-sandbox"));
-    config.main_execve_wrapper_exe = Some(PathBuf::from("/tmp/codex-execve-wrapper"));
+    config.motyga_linux_sandbox_exe = Some(PathBuf::from("/tmp/motyga-linux-sandbox"));
+    config.main_execve_wrapper_exe = Some(PathBuf::from("/tmp/motyga-execve-wrapper"));
     let role_path = write_role_config(
         &home,
         "effort-only.toml",
@@ -203,12 +203,12 @@ async fn apply_role_preserves_unspecified_keys() {
     assert_eq!(config.model.as_deref(), Some("base-model"));
     assert_eq!(config.model_reasoning_effort, Some(ReasoningEffort::High));
     assert_eq!(
-        config.codex_linux_sandbox_exe,
-        Some(PathBuf::from("/tmp/codex-linux-sandbox"))
+        config.motyga_linux_sandbox_exe,
+        Some(PathBuf::from("/tmp/motyga-linux-sandbox"))
     );
     assert_eq!(
         config.main_execve_wrapper_exe,
-        Some(PathBuf::from("/tmp/codex-execve-wrapper"))
+        Some(PathBuf::from("/tmp/motyga-execve-wrapper"))
     );
 }
 
@@ -275,7 +275,7 @@ async fn apply_role_preserves_existing_service_tier_without_override() {
 #[tokio::test]
 #[cfg(not(windows))]
 async fn apply_role_does_not_materialize_default_sandbox_workspace_write_fields() {
-    use codex_protocol::protocol::SandboxPolicy;
+    use motyga_protocol::protocol::SandboxPolicy;
     let (home, mut config) = test_config_with_cli_overrides(vec![
         (
             "sandbox_mode".to_string(),
@@ -427,7 +427,7 @@ enabled = false
     let snapshot = skills_service
         .snapshot_for_config(
             &skills_input,
-            Some(Arc::clone(&codex_exec_server::LOCAL_FS)),
+            Some(Arc::clone(&motyga_exec_server::LOCAL_FS)),
         )
         .await;
     let outcome = snapshot.outcome();

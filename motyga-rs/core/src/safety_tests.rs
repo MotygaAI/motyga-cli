@@ -1,13 +1,13 @@
 use super::*;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::FileSystemAccessMode;
-use codex_protocol::protocol::FileSystemPath;
-use codex_protocol::protocol::FileSystemSandboxEntry;
-use codex_protocol::protocol::FileSystemSpecialPath;
-use codex_protocol::protocol::GranularApprovalConfig;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::FileSystemAccessMode;
+use motyga_protocol::protocol::FileSystemPath;
+use motyga_protocol::protocol::FileSystemSandboxEntry;
+use motyga_protocol::protocol::FileSystemSpecialPath;
+use motyga_protocol::protocol::GranularApprovalConfig;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathExt;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
@@ -306,7 +306,7 @@ fn explicit_read_only_subpaths_prevent_auto_approval_for_external_sandbox() {
 }
 
 #[test]
-fn missing_project_dot_codex_config_requires_approval() {
+fn missing_project_dot_motyga_config_requires_approval() {
     let tmp = TempDir::new().unwrap();
     let cwd = tmp.path().abs();
     let cwd_uri = PathUri::from_abs_path(&cwd);

@@ -68,8 +68,8 @@ impl ChatWidget {
         id: String,
         turn_id: String,
         started_at_ms: i64,
-        review: codex_app_server_protocol::GuardianApprovalReview,
-        completion: Option<(i64, codex_app_server_protocol::AutoReviewDecisionSource)>,
+        review: motyga_app_server_protocol::GuardianApprovalReview,
+        completion: Option<(i64, motyga_app_server_protocol::AutoReviewDecisionSource)>,
         action: GuardianApprovalReviewAction,
     ) {
         // TODO(anp): Remove this native-path localization error path once core permission paths
@@ -97,55 +97,55 @@ impl ChatWidget {
             started_at_ms,
             completed_at_ms,
             status: match review.status {
-                codex_app_server_protocol::GuardianApprovalReviewStatus::InProgress => {
+                motyga_app_server_protocol::GuardianApprovalReviewStatus::InProgress => {
                     GuardianAssessmentStatus::InProgress
                 }
-                codex_app_server_protocol::GuardianApprovalReviewStatus::Approved => {
+                motyga_app_server_protocol::GuardianApprovalReviewStatus::Approved => {
                     GuardianAssessmentStatus::Approved
                 }
-                codex_app_server_protocol::GuardianApprovalReviewStatus::Denied => {
+                motyga_app_server_protocol::GuardianApprovalReviewStatus::Denied => {
                     GuardianAssessmentStatus::Denied
                 }
-                codex_app_server_protocol::GuardianApprovalReviewStatus::TimedOut => {
+                motyga_app_server_protocol::GuardianApprovalReviewStatus::TimedOut => {
                     GuardianAssessmentStatus::TimedOut
                 }
-                codex_app_server_protocol::GuardianApprovalReviewStatus::Aborted => {
+                motyga_app_server_protocol::GuardianApprovalReviewStatus::Aborted => {
                     GuardianAssessmentStatus::Aborted
                 }
             },
             risk_level: review.risk_level.map(|risk_level| match risk_level {
-                codex_app_server_protocol::GuardianRiskLevel::Low => {
-                    codex_protocol::approvals::GuardianRiskLevel::Low
+                motyga_app_server_protocol::GuardianRiskLevel::Low => {
+                    motyga_protocol::approvals::GuardianRiskLevel::Low
                 }
-                codex_app_server_protocol::GuardianRiskLevel::Medium => {
-                    codex_protocol::approvals::GuardianRiskLevel::Medium
+                motyga_app_server_protocol::GuardianRiskLevel::Medium => {
+                    motyga_protocol::approvals::GuardianRiskLevel::Medium
                 }
-                codex_app_server_protocol::GuardianRiskLevel::High => {
-                    codex_protocol::approvals::GuardianRiskLevel::High
+                motyga_app_server_protocol::GuardianRiskLevel::High => {
+                    motyga_protocol::approvals::GuardianRiskLevel::High
                 }
-                codex_app_server_protocol::GuardianRiskLevel::Critical => {
-                    codex_protocol::approvals::GuardianRiskLevel::Critical
+                motyga_app_server_protocol::GuardianRiskLevel::Critical => {
+                    motyga_protocol::approvals::GuardianRiskLevel::Critical
                 }
             }),
             user_authorization: review.user_authorization.map(|user_authorization| {
                 match user_authorization {
-                    codex_app_server_protocol::GuardianUserAuthorization::Unknown => {
-                        codex_protocol::approvals::GuardianUserAuthorization::Unknown
+                    motyga_app_server_protocol::GuardianUserAuthorization::Unknown => {
+                        motyga_protocol::approvals::GuardianUserAuthorization::Unknown
                     }
-                    codex_app_server_protocol::GuardianUserAuthorization::Low => {
-                        codex_protocol::approvals::GuardianUserAuthorization::Low
+                    motyga_app_server_protocol::GuardianUserAuthorization::Low => {
+                        motyga_protocol::approvals::GuardianUserAuthorization::Low
                     }
-                    codex_app_server_protocol::GuardianUserAuthorization::Medium => {
-                        codex_protocol::approvals::GuardianUserAuthorization::Medium
+                    motyga_app_server_protocol::GuardianUserAuthorization::Medium => {
+                        motyga_protocol::approvals::GuardianUserAuthorization::Medium
                     }
-                    codex_app_server_protocol::GuardianUserAuthorization::High => {
-                        codex_protocol::approvals::GuardianUserAuthorization::High
+                    motyga_app_server_protocol::GuardianUserAuthorization::High => {
+                        motyga_protocol::approvals::GuardianUserAuthorization::High
                     }
                 }
             }),
             rationale: review.rationale,
             decision_source: decision_source.map(|source| match source {
-                codex_app_server_protocol::AutoReviewDecisionSource::Agent => {
+                motyga_app_server_protocol::AutoReviewDecisionSource::Agent => {
                     GuardianAssessmentDecisionSource::Agent
                 }
             }),

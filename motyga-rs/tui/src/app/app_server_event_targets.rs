@@ -1,8 +1,8 @@
 //! Thread targeting helpers for app-server requests and notifications.
 
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_protocol::ThreadId;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_protocol::ThreadId;
 
 pub(super) fn server_request_thread_id(request: &ServerRequest) -> Option<ThreadId> {
     match request {
@@ -197,26 +197,26 @@ mod tests {
     use super::server_notification_thread_target;
     use crate::test_support::PathBufExt;
     use crate::test_support::test_path_buf;
-    use codex_app_server_protocol::GuardianWarningNotification;
-    use codex_app_server_protocol::McpServerStartupState;
-    use codex_app_server_protocol::McpServerStatusUpdatedNotification;
-    use codex_app_server_protocol::ServerNotification;
-    use codex_app_server_protocol::ThreadSettings;
-    use codex_app_server_protocol::ThreadSettingsUpdatedNotification;
-    use codex_app_server_protocol::WarningNotification;
-    use codex_protocol::ThreadId;
-    use codex_protocol::config_types::CollaborationMode;
-    use codex_protocol::config_types::ModeKind;
-    use codex_protocol::config_types::Settings;
-    use codex_protocol::openai_models::ReasoningEffort;
+    use motyga_app_server_protocol::GuardianWarningNotification;
+    use motyga_app_server_protocol::McpServerStartupState;
+    use motyga_app_server_protocol::McpServerStatusUpdatedNotification;
+    use motyga_app_server_protocol::ServerNotification;
+    use motyga_app_server_protocol::ThreadSettings;
+    use motyga_app_server_protocol::ThreadSettingsUpdatedNotification;
+    use motyga_app_server_protocol::WarningNotification;
+    use motyga_protocol::ThreadId;
+    use motyga_protocol::config_types::CollaborationMode;
+    use motyga_protocol::config_types::ModeKind;
+    use motyga_protocol::config_types::Settings;
+    use motyga_protocol::openai_models::ReasoningEffort;
     use pretty_assertions::assert_eq;
 
     fn test_thread_settings() -> ThreadSettings {
         ThreadSettings {
             cwd: test_path_buf("/tmp/thread-settings").abs(),
-            approval_policy: codex_app_server_protocol::AskForApproval::Never,
-            approvals_reviewer: codex_app_server_protocol::ApprovalsReviewer::User,
-            sandbox_policy: codex_app_server_protocol::SandboxPolicy::ReadOnly {
+            approval_policy: motyga_app_server_protocol::AskForApproval::Never,
+            approvals_reviewer: motyga_app_server_protocol::ApprovalsReviewer::User,
+            sandbox_policy: motyga_app_server_protocol::SandboxPolicy::ReadOnly {
                 network_access: false,
             },
             active_permission_profile: None,

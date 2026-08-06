@@ -1,6 +1,6 @@
 use super::*;
 use crate::unified_exec::clamp_yield_time;
-use codex_network_proxy::ManagedNetworkSandboxContext;
+use motyga_network_proxy::ManagedNetworkSandboxContext;
 use pretty_assertions::assert_eq;
 use tokio::time::Duration;
 use tokio::time::Instant;
@@ -18,7 +18,7 @@ fn unified_exec_env_injects_defaults() {
         ("PAGER".to_string(), "cat".to_string()),
         ("GIT_PAGER".to_string(), "cat".to_string()),
         ("GH_PAGER".to_string(), "cat".to_string()),
-        ("CODEX_CI".to_string(), "1".to_string()),
+        ("MOTYGA_CI".to_string(), "1".to_string()),
     ]);
 
     assert_eq!(env, expected);
@@ -43,7 +43,7 @@ fn env_overlay_for_exec_server_keeps_runtime_changes_only() {
         ("PATH".to_string(), "/client-path".to_string()),
         ("SHELL_SET".to_string(), "policy".to_string()),
         (
-            CODEX_PERMISSION_PROFILE_ENV_VAR.to_string(),
+            MOTYGA_PERMISSION_PROFILE_ENV_VAR.to_string(),
             "current-profile".to_string(),
         ),
     ]);
@@ -51,13 +51,13 @@ fn env_overlay_for_exec_server_keeps_runtime_changes_only() {
         ("HOME".to_string(), "/client-home".to_string()),
         ("PATH".to_string(), "/sandbox-path".to_string()),
         ("SHELL_SET".to_string(), "policy".to_string()),
-        ("CODEX_THREAD_ID".to_string(), "thread-1".to_string()),
+        ("MOTYGA_THREAD_ID".to_string(), "thread-1".to_string()),
         (
-            CODEX_PERMISSION_PROFILE_ENV_VAR.to_string(),
+            MOTYGA_PERMISSION_PROFILE_ENV_VAR.to_string(),
             "current-profile".to_string(),
         ),
         (
-            "CODEX_SANDBOX_NETWORK_DISABLED".to_string(),
+            "MOTYGA_SANDBOX_NETWORK_DISABLED".to_string(),
             "1".to_string(),
         ),
     ]);
@@ -66,13 +66,13 @@ fn env_overlay_for_exec_server_keeps_runtime_changes_only() {
         env_overlay_for_exec_server(&request_env, &local_policy_env),
         HashMap::from([
             ("PATH".to_string(), "/sandbox-path".to_string()),
-            ("CODEX_THREAD_ID".to_string(), "thread-1".to_string()),
+            ("MOTYGA_THREAD_ID".to_string(), "thread-1".to_string()),
             (
-                CODEX_PERMISSION_PROFILE_ENV_VAR.to_string(),
+                MOTYGA_PERMISSION_PROFILE_ENV_VAR.to_string(),
                 "current-profile".to_string(),
             ),
             (
-                "CODEX_SANDBOX_NETWORK_DISABLED".to_string(),
+                "MOTYGA_SANDBOX_NETWORK_DISABLED".to_string(),
                 "1".to_string()
             ),
         ])
@@ -84,7 +84,7 @@ fn exec_env_policy_excludes_runtime_permission_profile() {
     let policy = ShellEnvironmentPolicy {
         r#set: HashMap::from([
             (
-                "codex_permission_profile".to_string(),
+                "motyga_permission_profile".to_string(),
                 "stale-profile".to_string(),
             ),
             ("KEEP".to_string(), "value".to_string()),
@@ -94,10 +94,10 @@ fn exec_env_policy_excludes_runtime_permission_profile() {
 
     assert_eq!(
         exec_env_policy_from_shell_policy(&policy),
-        codex_exec_server::ExecEnvPolicy {
+        motyga_exec_server::ExecEnvPolicy {
             inherit: policy.inherit,
             ignore_default_excludes: policy.ignore_default_excludes,
-            exclude: vec![CODEX_PERMISSION_PROFILE_ENV_VAR.to_string()],
+            exclude: vec![MOTYGA_PERMISSION_PROFILE_ENV_VAR.to_string()],
             r#set: HashMap::from([("KEEP".to_string(), "value".to_string())]),
             include_only: Vec::new(),
         }
@@ -106,14 +106,14 @@ fn exec_env_policy_excludes_runtime_permission_profile() {
 
 #[test]
 fn exec_server_params_use_path_uri_and_env_policy_overlay_contract() {
-    let cwd: codex_utils_absolute_path::AbsolutePathBuf = std::env::current_dir()
+    let cwd: motyga_utils_absolute_path::AbsolutePathBuf = std::env::current_dir()
         .expect("current dir")
         .try_into()
         .expect("absolute path");
     let file_system_sandbox_policy =
-        codex_protocol::permissions::FileSystemSandboxPolicy::unrestricted();
-    let network_sandbox_policy = codex_protocol::permissions::NetworkSandboxPolicy::Restricted;
-    let permission_profile = codex_protocol::models::PermissionProfile::Disabled;
+        motyga_protocol::permissions::FileSystemSandboxPolicy::unrestricted();
+    let network_sandbox_policy = motyga_protocol::permissions::NetworkSandboxPolicy::Restricted;
+    let permission_profile = motyga_protocol::models::PermissionProfile::Disabled;
     let managed_network = ManagedNetworkSandboxContext {
         loopback_ports: vec![43123],
         allow_local_binding: false,
@@ -124,20 +124,20 @@ fn exec_server_params_use_path_uri_and_env_policy_overlay_contract() {
         env: HashMap::from([
             ("HOME".to_string(), "/client-home".to_string()),
             ("PATH".to_string(), "/sandbox-path".to_string()),
-            ("CODEX_THREAD_ID".to_string(), "thread-1".to_string()),
+            ("MOTYGA_THREAD_ID".to_string(), "thread-1".to_string()),
             (
                 "HTTP_PROXY".to_string(),
                 "http://127.0.0.1:43123".to_string(),
             ),
-            ("CODEX_NETWORK_PROXY_ACTIVE".to_string(), "1".to_string()),
+            ("MOTYGA_NETWORK_PROXY_ACTIVE".to_string(), "1".to_string()),
             (
                 "SSL_CERT_FILE".to_string(),
                 "/client/custom-ca.pem".to_string(),
             ),
         ]),
         exec_server_env_config: Some(ExecServerEnvConfig {
-            policy: codex_exec_server::ExecEnvPolicy {
-                inherit: codex_protocol::config_types::ShellEnvironmentPolicyInherit::Core,
+            policy: motyga_exec_server::ExecEnvPolicy {
+                inherit: motyga_protocol::config_types::ShellEnvironmentPolicyInherit::Core,
                 ignore_default_excludes: false,
                 exclude: Vec::new(),
                 r#set: HashMap::new(),
@@ -150,7 +150,7 @@ fn exec_server_params_use_path_uri_and_env_policy_overlay_contract() {
                     "HTTP_PROXY".to_string(),
                     "http://127.0.0.1:43123".to_string(),
                 ),
-                ("CODEX_NETWORK_PROXY_ACTIVE".to_string(), "1".to_string()),
+                ("MOTYGA_NETWORK_PROXY_ACTIVE".to_string(), "1".to_string()),
                 (
                     "SSL_CERT_FILE".to_string(),
                     "/client/custom-ca.pem".to_string(),
@@ -161,10 +161,10 @@ fn exec_server_params_use_path_uri_and_env_policy_overlay_contract() {
         network_environment_id: None,
         expiration: crate::exec::ExecExpiration::DefaultTimeout,
         capture_policy: crate::exec::ExecCapturePolicy::ShellTool,
-        sandbox: codex_sandboxing::SandboxType::None,
+        sandbox: motyga_sandboxing::SandboxType::None,
         windows_sandbox_policy_cwd: cwd.clone().into(),
         windows_sandbox_workspace_roots: vec![cwd],
-        windows_sandbox_level: codex_protocol::config_types::WindowsSandboxLevel::Disabled,
+        windows_sandbox_level: motyga_protocol::config_types::WindowsSandboxLevel::Disabled,
         windows_sandbox_private_desktop: false,
         permission_profile: permission_profile.clone(),
         file_system_sandbox_policy,
@@ -188,16 +188,16 @@ fn exec_server_params_use_path_uri_and_env_policy_overlay_contract() {
         params.env,
         HashMap::from([
             ("PATH".to_string(), "/sandbox-path".to_string()),
-            ("CODEX_THREAD_ID".to_string(), "thread-1".to_string()),
+            ("MOTYGA_THREAD_ID".to_string(), "thread-1".to_string()),
             (
                 "HTTP_PROXY".to_string(),
                 "http://127.0.0.1:43123".to_string(),
             ),
-            ("CODEX_NETWORK_PROXY_ACTIVE".to_string(), "1".to_string(),),
+            ("MOTYGA_NETWORK_PROXY_ACTIVE".to_string(), "1".to_string(),),
         ])
     );
     request.exec_server_sandbox = Some(
-        codex_exec_server::FileSystemSandboxContext::from_permission_profile(permission_profile),
+        motyga_exec_server::FileSystemSandboxContext::from_permission_profile(permission_profile),
     );
     let first =
         exec_server_params_for_request(/*process_id*/ 123, &request, /*tty*/ true);
@@ -284,7 +284,7 @@ async fn failed_initial_end_for_unstored_process_uses_fallback_output() {
             .primary()
             .cloned()
             .expect("primary environment"),
-        shell_mode: codex_tools::UnifiedExecShellMode::Direct,
+        shell_mode: motyga_tools::UnifiedExecShellMode::Direct,
         network: None,
         tty: true,
         sandbox_permissions: crate::sandboxing::SandboxPermissions::UseDefault,
@@ -317,13 +317,13 @@ async fn failed_initial_end_for_unstored_process_uses_fallback_output() {
         .await
         .expect("timed out waiting for failed exec end event")
         .expect("event channel closed");
-    let codex_protocol::protocol::EventMsg::ExecCommandEnd(end_event) = event.msg else {
+    let motyga_protocol::protocol::EventMsg::ExecCommandEnd(end_event) = event.msg else {
         panic!("expected ExecCommandEnd event");
     };
     assert_eq!(end_event.call_id, "call-unified-denied");
     assert_eq!(
         end_event.status,
-        codex_protocol::protocol::ExecCommandStatus::Failed
+        motyga_protocol::protocol::ExecCommandStatus::Failed
     );
     assert_eq!(end_event.exit_code, -1);
     assert_eq!(end_event.process_id.as_deref(), Some("123"));

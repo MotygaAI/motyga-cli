@@ -203,14 +203,14 @@ impl ChatWidget {
     }
 
     fn is_auto_model(model: &str) -> bool {
-        model.starts_with("codex-auto-")
+        model.starts_with("motyga-auto-")
     }
 
     fn auto_model_order(model: &str) -> usize {
         match model {
-            "codex-auto-fast" => 0,
-            "codex-auto-balanced" => 1,
-            "codex-auto-thorough" => 2,
+            "motyga-auto-fast" => 0,
+            "motyga-auto-balanced" => 1,
+            "motyga-auto-thorough" => 2,
             _ => 3,
         }
     }

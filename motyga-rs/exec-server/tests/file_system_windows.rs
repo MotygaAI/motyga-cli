@@ -12,10 +12,10 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow::Result;
-use codex_exec_server::FileSystemSandboxContext;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::FileSystemSandboxContext;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_utils_path_uri::PathUri;
 use test_case::test_case;
 
 use crate::support::FileSystemImplementation;

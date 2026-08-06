@@ -7,17 +7,17 @@ use std::time::SystemTime;
 
 use chrono::DateTime;
 use chrono::Utc;
-use codex_git_utils::GitSha;
-use codex_protocol::ThreadId;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::GitInfo;
-use codex_protocol::protocol::NetworkAccess;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::SessionSource;
-use codex_rollout::ARCHIVED_SESSIONS_SUBDIR;
-use codex_rollout::ThreadItem;
-use codex_state::ThreadMetadata;
+use motyga_git_utils::GitSha;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::GitInfo;
+use motyga_protocol::protocol::NetworkAccess;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::SessionSource;
+use motyga_rollout::ARCHIVED_SESSIONS_SUBDIR;
+use motyga_rollout::ThreadItem;
+use motyga_state::ThreadMetadata;
 
 use crate::StoredThread;
 use crate::ThreadStoreError;
@@ -54,8 +54,8 @@ pub(super) fn scoped_rollout_path(
     }
 }
 
-pub(super) fn rollout_path_is_archived(codex_home: &Path, path: &Path) -> bool {
-    path.starts_with(codex_home.join(ARCHIVED_SESSIONS_SUBDIR))
+pub(super) fn rollout_path_is_archived(motyga_home: &Path, path: &Path) -> bool {
+    path.starts_with(motyga_home.join(ARCHIVED_SESSIONS_SUBDIR))
         || path
             .components()
             .any(|component| component.as_os_str() == OsStr::new(ARCHIVED_SESSIONS_SUBDIR))
@@ -119,7 +119,7 @@ pub(super) fn stored_thread_from_rollout_item(
         .clone()
         .or_else(|| item.first_user_message.clone())
         .unwrap_or_default();
-    let rollout_path = codex_rollout::plain_rollout_path(item.path.as_path());
+    let rollout_path = motyga_rollout::plain_rollout_path(item.path.as_path());
 
     Some(StoredThread {
         thread_id,
@@ -244,7 +244,7 @@ fn thread_id_from_rollout_path(path: &Path) -> Option<ThreadId> {
 
 #[cfg(test)]
 mod tests {
-    use codex_rollout::ThreadItem;
+    use motyga_rollout::ThreadItem;
     use pretty_assertions::assert_eq;
     use uuid::Uuid;
 

@@ -3,18 +3,18 @@ use crate::ImportedExternalAgentSession;
 use crate::MessageRole;
 use crate::records::read_session_import;
 use crate::summarize_for_label;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::AgentMessageEvent;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::TokenCountEvent;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::protocol::TokenUsageInfo;
-use codex_protocol::protocol::TurnCompleteEvent;
-use codex_protocol::protocol::TurnStartedEvent;
-use codex_protocol::protocol::UserMessageEvent;
-use codex_utils_output_truncation::approx_tokens_from_byte_count_i64;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::AgentMessageEvent;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::TokenCountEvent;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::protocol::TokenUsageInfo;
+use motyga_protocol::protocol::TurnCompleteEvent;
+use motyga_protocol::protocol::TurnStartedEvent;
+use motyga_protocol::protocol::UserMessageEvent;
+use motyga_utils_output_truncation::approx_tokens_from_byte_count_i64;
 use std::io;
 use std::path::Path;
 
@@ -177,8 +177,8 @@ fn turn_complete_item(turn_id: String, completed_at: Option<i64>) -> RolloutItem
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_app_server_protocol::ThreadItem;
-    use codex_app_server_protocol::build_turns_from_rollout_items;
+    use motyga_app_server_protocol::ThreadItem;
+    use motyga_app_server_protocol::build_turns_from_rollout_items;
     use serde_json::Value as JsonValue;
     use std::path::Path;
     use tempfile::TempDir;

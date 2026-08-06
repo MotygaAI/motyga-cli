@@ -145,7 +145,10 @@ mod tests {
     }
 
     fn init_test_repo(repo_path: &Path) {
-        run_git_in(repo_path, &["init", "--initial-branch=main"]);
+        // `git init --initial-branch` needs git >= 2.28. Point HEAD at the branch
+        // afterwards instead, which every version understands.
+        run_git_in(repo_path, &["init"]);
+        run_git_in(repo_path, &["symbolic-ref", "HEAD", "refs/heads/main"]);
         run_git_in(repo_path, &["config", "core.autocrlf", "false"]);
     }
 
@@ -202,7 +205,8 @@ mod tests {
         std::fs::create_dir_all(&remote)?;
 
         run_git_in(&remote, &["init", "--bare"]);
-        run_git_in(&repo, &["init", "--initial-branch=main"]);
+        run_git_in(&repo, &["init"]);
+        run_git_in(&repo, &["symbolic-ref", "HEAD", "refs/heads/main"]);
         run_git_in(&repo, &["config", "core.autocrlf", "false"]);
 
         std::fs::write(repo.join("base.txt"), "base\n")?;

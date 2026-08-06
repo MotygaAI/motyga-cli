@@ -1,26 +1,26 @@
 use std::process::Command;
 use std::sync::Arc;
 
-use codex_core::ModelClient;
-use codex_core::Prompt;
-use codex_core::ResponseEvent;
-use codex_login::CodexAuth;
-use codex_login::auth::AgentIdentityAuthPolicy;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::WireApi;
-use codex_otel::SessionTelemetry;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use core_test_support::TestCodexResponsesRequestKind;
+use motyga_core::ModelClient;
+use motyga_core::Prompt;
+use motyga_core::ResponseEvent;
+use motyga_login::MotygaAuth;
+use motyga_login::auth::AgentIdentityAuthPolicy;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::WireApi;
+use motyga_otel::SessionTelemetry;
+use motyga_otel::TelemetryAuthMode;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use core_test_support::TestMotygaResponsesRequestKind;
 use core_test_support::load_default_config_for_test;
 use core_test_support::responses;
 use core_test_support::responses_metadata as test_responses_metadata;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use futures::StreamExt;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
@@ -39,7 +39,7 @@ fn test_turn_responses_metadata(
     _client: &ModelClient,
     thread_id: ThreadId,
     session_source: &SessionSource,
-) -> codex_core::CodexResponsesMetadata {
+) -> motyga_core::MotygaResponsesMetadata {
     let thread_id = thread_id.to_string();
     test_responses_metadata(
         TEST_INSTALLATION_ID,
@@ -49,7 +49,7 @@ fn test_turn_responses_metadata(
         format!("{thread_id}:0"),
         session_source,
         /*parent_thread_id*/ None,
-        TestCodexResponsesRequestKind::Turn,
+        TestMotygaResponsesRequestKind::Turn,
     )
 }
 
@@ -90,13 +90,13 @@ async fn responses_stream_includes_subagent_header_on_review() {
         supports_websockets: false,
     };
 
-    let codex_home = TempDir::new().expect("failed to create TempDir");
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let motyga_home = TempDir::new().expect("failed to create TempDir");
+    let mut config = load_default_config_for_test(&motyga_home).await;
     config.model_provider_id = provider.name.clone();
     config.model_provider = provider.clone();
     let effort = config.model_reasoning_effort.clone();
     let summary = config.model_reasoning_summary;
-    let model = codex_core::test_support::get_model_offline(config.model.as_deref());
+    let model = motyga_core::test_support::get_model_offline(config.model.as_deref());
     config.model = Some(model.clone());
     let config = Arc::new(config);
 
@@ -104,7 +104,7 @@ async fn responses_stream_includes_subagent_header_on_review() {
     let auth_mode = TelemetryAuthMode::Chatgpt;
     let session_source = SessionSource::SubAgent(SubAgentSource::Review);
     let model_info =
-        codex_core::test_support::construct_model_info_offline(model.as_str(), &config);
+        motyga_core::test_support::construct_model_info_offline(model.as_str(), &config);
     let expected_window_id = format!("{thread_id}:0");
     let session_telemetry = SessionTelemetry::new(
         thread_id,
@@ -156,7 +156,7 @@ async fn responses_stream_includes_subagent_header_on_review() {
             summary.unwrap_or(model_info.default_reasoning_summary),
             /*service_tier*/ None,
             &responses_metadata,
-            &codex_rollout_trace::InferenceTraceContext::disabled(),
+            &motyga_rollout_trace::InferenceTraceContext::disabled(),
             None,
         )
         .await
@@ -225,13 +225,13 @@ async fn responses_stream_includes_subagent_header_on_other() {
         supports_websockets: false,
     };
 
-    let codex_home = TempDir::new().expect("failed to create TempDir");
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let motyga_home = TempDir::new().expect("failed to create TempDir");
+    let mut config = load_default_config_for_test(&motyga_home).await;
     config.model_provider_id = provider.name.clone();
     config.model_provider = provider.clone();
     let effort = config.model_reasoning_effort.clone();
     let summary = config.model_reasoning_summary;
-    let model = codex_core::test_support::get_model_offline(config.model.as_deref());
+    let model = motyga_core::test_support::get_model_offline(config.model.as_deref());
     config.model = Some(model.clone());
     let config = Arc::new(config);
 
@@ -239,7 +239,7 @@ async fn responses_stream_includes_subagent_header_on_other() {
     let auth_mode = TelemetryAuthMode::Chatgpt;
     let session_source = SessionSource::SubAgent(SubAgentSource::Other("my-task".to_string()));
     let model_info =
-        codex_core::test_support::construct_model_info_offline(model.as_str(), &config);
+        motyga_core::test_support::construct_model_info_offline(model.as_str(), &config);
 
     let session_telemetry = SessionTelemetry::new(
         thread_id,
@@ -291,7 +291,7 @@ async fn responses_stream_includes_subagent_header_on_other() {
             summary.unwrap_or(model_info.default_reasoning_summary),
             /*service_tier*/ None,
             &responses_metadata,
-            &codex_rollout_trace::InferenceTraceContext::disabled(),
+            &motyga_rollout_trace::InferenceTraceContext::disabled(),
             None,
         )
         .await
@@ -341,8 +341,8 @@ async fn responses_respects_model_info_overrides_from_config() {
         supports_websockets: false,
     };
 
-    let codex_home = TempDir::new().expect("failed to create TempDir");
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let motyga_home = TempDir::new().expect("failed to create TempDir");
+    let mut config = load_default_config_for_test(&motyga_home).await;
     config.model = Some("gpt-3.5-turbo".to_string());
     config.model_provider_id = provider.name.clone();
     config.model_provider = provider.clone();
@@ -355,13 +355,13 @@ async fn responses_respects_model_info_overrides_from_config() {
 
     let thread_id = ThreadId::new();
     let auth_mode =
-        codex_core::test_support::auth_manager_from_auth(CodexAuth::from_api_key("Test API Key"))
+        motyga_core::test_support::auth_manager_from_auth(MotygaAuth::from_api_key("Test API Key"))
             .auth_mode()
             .map(TelemetryAuthMode::from);
     let session_source =
         SessionSource::SubAgent(SubAgentSource::Other("override-check".to_string()));
     let model_info =
-        codex_core::test_support::construct_model_info_offline(model.as_str(), &config);
+        motyga_core::test_support::construct_model_info_offline(model.as_str(), &config);
     let session_telemetry = SessionTelemetry::new(
         thread_id,
         model.as_str(),
@@ -412,7 +412,7 @@ async fn responses_respects_model_info_overrides_from_config() {
             summary.unwrap_or(model_info.default_reasoning_summary),
             /*service_tier*/ None,
             &responses_metadata,
-            &codex_rollout_trace::InferenceTraceContext::disabled(),
+            &motyga_rollout_trace::InferenceTraceContext::disabled(),
             None,
         )
         .await
@@ -454,7 +454,7 @@ async fn responses_stream_includes_turn_metadata_header_for_git_workspace_e2e() 
         responses::ev_completed("resp-1"),
     ]);
 
-    let test = test_codex().build(&server).await.expect("build test codex");
+    let test = test_motyga().build(&server).await.expect("build test motyga");
     let cwd = test.cwd_path();
 
     let first_request = responses::mount_sse_once(&server, response_body.clone()).await;

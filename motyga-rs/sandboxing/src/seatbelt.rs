@@ -1,14 +1,14 @@
-use codex_network_proxy::ManagedNetworkSandboxContext;
-use codex_network_proxy::NetworkProxy;
-use codex_network_proxy::PROXY_URL_ENV_KEYS;
-use codex_network_proxy::has_proxy_url_env_vars;
-use codex_network_proxy::proxy_url_env_value;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::permissions::PROTECTED_METADATA_PATH_NAMES;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::WritableRoot;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_network_proxy::ManagedNetworkSandboxContext;
+use motyga_network_proxy::NetworkProxy;
+use motyga_network_proxy::PROXY_URL_ENV_KEYS;
+use motyga_network_proxy::has_proxy_url_env_vars;
+use motyga_network_proxy::proxy_url_env_value;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::permissions::PROTECTED_METADATA_PATH_NAMES;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::WritableRoot;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
@@ -380,7 +380,7 @@ fn build_seatbelt_access_policy(
             params.push((excluded_param.clone(), excluded_subpath.into_path_buf()));
             // Exclude both the exact protected path and anything beneath it.
             // `subpath` alone leaves a gap for first-time creation of the
-            // protected directory itself, such as `mkdir .codex`.
+            // protected directory itself, such as `mkdir .motyga`.
             require_parts.push(format!(
                 "(require-not (literal (param \"{excluded_param}\")))"
             ));

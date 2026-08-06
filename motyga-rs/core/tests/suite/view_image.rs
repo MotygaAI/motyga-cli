@@ -3,32 +3,32 @@
 use anyhow::Context;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
-use codex_exec_server::CreateDirectoryOptions;
-use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-use codex_exec_server::REMOTE_ENVIRONMENT_ID;
-use codex_exec_server::RemoveOptions;
-use codex_login::CodexAuth;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_protocol::user_input::UserInput;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::CreateDirectoryOptions;
+use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+use motyga_exec_server::REMOTE_ENVIRONMENT_ID;
+use motyga_exec_server::RemoveOptions;
+use motyga_login::MotygaAuth;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ConfigShellToolType;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelVisibility;
+use motyga_protocol::openai_models::ModelsResponse;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::openai_models::ReasoningEffortPreset;
+use motyga_protocol::openai_models::TruncationPolicyConfig;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathExt;
 use core_test_support::is_remote_test_environment;
 use core_test_support::responses;
@@ -42,10 +42,10 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_no_remote_env;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::test_target_os;
 use core_test_support::wait_for_event_with_timeout;
 use image::DynamicImage;
@@ -70,7 +70,7 @@ use wiremock::matchers::body_string_contains;
 
 const VIEW_IMAGE_TURN_COMPLETE_TIMEOUT: Duration = Duration::from_secs(30);
 
-fn disabled_user_turn(test: &TestCodex, items: Vec<UserInput>, model: String) -> Op {
+fn disabled_user_turn(test: &TestMotyga, items: Vec<UserInput>, model: String) -> Op {
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.config.cwd.as_path());
     Op::UserInput {
@@ -78,13 +78,13 @@ fn disabled_user_turn(test: &TestCodex, items: Vec<UserInput>, model: String) ->
         final_output_json_schema: None,
         responsesapi_client_metadata: None,
         additional_context: Default::default(),
-        thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+        thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
             approval_policy: Some(AskForApproval::Never),
             sandbox_policy: Some(sandbox_policy),
             permission_profile,
-            collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                mode: codex_protocol::config_types::ModeKind::Default,
-                settings: codex_protocol::config_types::Settings {
+            collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                mode: motyga_protocol::config_types::ModeKind::Default,
+                settings: motyga_protocol::config_types::Settings {
                     model,
                     reasoning_effort: None,
                     developer_instructions: None,
@@ -129,7 +129,7 @@ fn png_bytes(width: u32, height: u32, rgba: [u8; 4]) -> anyhow::Result<Vec<u8>> 
     Ok(cursor.into_inner())
 }
 
-async fn create_workspace_directory(test: &TestCodex, rel_path: &str) -> anyhow::Result<PathBuf> {
+async fn create_workspace_directory(test: &TestMotyga, rel_path: &str) -> anyhow::Result<PathBuf> {
     let abs_path = test.config.cwd.join(rel_path);
     let abs_path_uri = PathUri::from_host_native_path(&abs_path)?;
     test.fs()
@@ -143,7 +143,7 @@ async fn create_workspace_directory(test: &TestCodex, rel_path: &str) -> anyhow:
 }
 
 async fn write_workspace_file(
-    test: &TestCodex,
+    test: &TestMotyga,
     rel_path: &str,
     contents: Vec<u8>,
 ) -> anyhow::Result<PathBuf> {
@@ -166,7 +166,7 @@ async fn write_workspace_file(
 }
 
 async fn write_workspace_png(
-    test: &TestCodex,
+    test: &TestMotyga,
     rel_path: &str,
     width: u32,
     height: u32,
@@ -181,10 +181,10 @@ async fn assert_user_turn_local_image_resizes_to(
 ) -> anyhow::Result<()> {
     let server = start_mock_server().await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -204,7 +204,7 @@ async fn assert_user_turn_local_image_resizes_to(
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::LocalImage {
@@ -216,7 +216,7 @@ async fn assert_user_turn_local_image_resizes_to(
         .await?;
 
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         // Empirically, image attachment can be slow under Bazel/RBE.
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
@@ -281,10 +281,10 @@ async fn view_image_tool_attaches_local_image() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         config,
         ..
@@ -323,7 +323,7 @@ async fn view_image_tool_attaches_local_image() -> anyhow::Result<()> {
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -338,16 +338,16 @@ async fn view_image_tool_attaches_local_image() -> anyhow::Result<()> {
     let mut item_completed = None;
     let mut legacy_event = None;
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| match event {
             EventMsg::ItemStarted(event) => {
-                if matches!(&event.item, codex_protocol::items::TurnItem::ImageView(_)) {
+                if matches!(&event.item, motyga_protocol::items::TurnItem::ImageView(_)) {
                     item_started = Some(event.item.clone());
                 }
                 false
             }
             EventMsg::ItemCompleted(event) => {
-                if matches!(&event.item, codex_protocol::items::TurnItem::ImageView(_)) {
+                if matches!(&event.item, motyga_protocol::items::TurnItem::ImageView(_)) {
                     item_completed = Some(event.item.clone());
                 }
                 false
@@ -366,14 +366,14 @@ async fn view_image_tool_attaches_local_image() -> anyhow::Result<()> {
     .await;
 
     match item_started.expect("view image item started event emitted") {
-        codex_protocol::items::TurnItem::ImageView(item) => {
+        motyga_protocol::items::TurnItem::ImageView(item) => {
             assert_eq!(item.id, call_id);
             assert_eq!(item.path, path_uri);
         }
         other => panic!("expected ImageView item, got {other:?}"),
     }
     match item_completed.expect("view image item completed event emitted") {
-        codex_protocol::items::TurnItem::ImageView(item) => {
+        motyga_protocol::items::TurnItem::ImageView(item) => {
             assert_eq!(item.id, call_id);
             assert_eq!(item.path, path_uri);
         }
@@ -430,7 +430,7 @@ async fn view_image_routes_to_selected_local_environment() -> anyhow::Result<()>
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build(&server).await?;
     write_workspace_file(
         &test,
@@ -496,7 +496,7 @@ async fn view_image_tool_applies_local_sandbox_read_denies() -> anyhow::Result<(
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build(&server).await?;
     let rel_path = "denied.png";
     let denied_path = test.config.cwd.join(rel_path);
@@ -575,7 +575,7 @@ async fn view_image_routes_to_selected_remote_environment() -> anyhow::Result<()
     skip_if_no_remote_env!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_remote_and_local_env(&server).await?;
     let local_cwd = TempDir::new()?;
     fs::write(local_cwd.path().join("remote.png"), b"not a remote image")?;
@@ -678,10 +678,10 @@ async fn view_image_tool_can_preserve_original_resolution_when_requested_on_gpt5
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.3-codex");
+    let mut builder = test_motyga().with_model("gpt-5.3-codex");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -716,7 +716,7 @@ async fn view_image_tool_can_preserve_original_resolution_when_requested_on_gpt5
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -728,7 +728,7 @@ async fn view_image_tool_can_preserve_original_resolution_when_requested_on_gpt5
         .await?;
 
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )
@@ -769,10 +769,10 @@ async fn view_image_tool_errors_clearly_for_unsupported_detail_values() -> anyho
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.3-codex");
+    let mut builder = test_motyga().with_model("gpt-5.3-codex");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -805,7 +805,7 @@ async fn view_image_tool_errors_clearly_for_unsupported_detail_values() -> anyho
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -817,7 +817,7 @@ async fn view_image_tool_errors_clearly_for_unsupported_detail_values() -> anyho
         .await?;
 
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )
@@ -847,10 +847,10 @@ async fn view_image_tool_treats_null_detail_as_omitted() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.3-codex");
+    let mut builder = test_motyga().with_model("gpt-5.3-codex");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -885,7 +885,7 @@ async fn view_image_tool_treats_null_detail_as_omitted() -> anyhow::Result<()> {
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -897,7 +897,7 @@ async fn view_image_tool_treats_null_detail_as_omitted() -> anyhow::Result<()> {
         .await?;
 
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )
@@ -937,10 +937,10 @@ async fn view_image_tool_resizes_when_model_lacks_original_detail_support() -> a
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.2");
+    let mut builder = test_motyga().with_model("gpt-5.2");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -975,7 +975,7 @@ async fn view_image_tool_resizes_when_model_lacks_original_detail_support() -> a
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -987,7 +987,7 @@ async fn view_image_tool_resizes_when_model_lacks_original_detail_support() -> a
         .await?;
 
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )
@@ -1031,10 +1031,10 @@ async fn view_image_tool_does_not_force_original_resolution_with_capability_only
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.3-codex");
+    let mut builder = test_motyga().with_model("gpt-5.3-codex");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -1069,7 +1069,7 @@ async fn view_image_tool_does_not_force_original_resolution_with_capability_only
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -1081,7 +1081,7 @@ async fn view_image_tool_does_not_force_original_resolution_with_capability_only
         .await?;
 
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )
@@ -1122,10 +1122,10 @@ async fn view_image_tool_errors_when_path_is_directory() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -1151,7 +1151,7 @@ async fn view_image_tool_errors_when_path_is_directory() -> anyhow::Result<()> {
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -1163,7 +1163,7 @@ async fn view_image_tool_errors_when_path_is_directory() -> anyhow::Result<()> {
         .await?;
 
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )
@@ -1192,10 +1192,10 @@ async fn view_image_tool_turns_invalid_image_into_placeholder() -> anyhow::Resul
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -1223,7 +1223,7 @@ async fn view_image_tool_turns_invalid_image_into_placeholder() -> anyhow::Resul
     )
     .await;
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -1234,7 +1234,7 @@ async fn view_image_tool_turns_invalid_image_into_placeholder() -> anyhow::Resul
         ))
         .await?;
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )
@@ -1263,10 +1263,10 @@ async fn view_image_tool_errors_when_file_missing() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -1297,7 +1297,7 @@ async fn view_image_tool_errors_when_file_missing() -> anyhow::Result<()> {
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -1309,7 +1309,7 @@ async fn view_image_tool_errors_when_file_missing() -> anyhow::Result<()> {
         .await?;
 
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )
@@ -1400,13 +1400,13 @@ async fn view_image_tool_returns_unsupported_message_for_text_only_model() -> an
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.model = Some(model_slug.to_string());
         });
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex { codex, .. } = &test;
+    let TestMotyga { motyga, .. } = &test;
 
     let rel_path = "assets/example.png";
     write_workspace_png(
@@ -1433,7 +1433,7 @@ async fn view_image_tool_returns_unsupported_message_for_text_only_model() -> an
     ]);
     let mock = responses::mount_sse_once(&server, second_response).await;
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::Text {
@@ -1445,7 +1445,7 @@ async fn view_image_tool_returns_unsupported_message_for_text_only_model() -> an
         .await?;
 
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )
@@ -1491,10 +1491,10 @@ async fn replaces_invalid_local_image_after_bad_request() -> anyhow::Result<()> 
 
     let completion_mock = responses::mount_sse_once(&server, success_response).await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         ..
     } = &test;
@@ -1504,7 +1504,7 @@ async fn replaces_invalid_local_image_after_bad_request() -> anyhow::Result<()> 
 
     let session_model = session_configured.model.clone();
 
-    codex
+    motyga
         .submit(disabled_user_turn(
             &test,
             vec![UserInput::LocalImage {
@@ -1516,7 +1516,7 @@ async fn replaces_invalid_local_image_after_bad_request() -> anyhow::Result<()> 
         .await?;
 
     wait_for_event_with_timeout(
-        &codex,
+        &motyga,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         VIEW_IMAGE_TURN_COMPLETE_TIMEOUT,
     )

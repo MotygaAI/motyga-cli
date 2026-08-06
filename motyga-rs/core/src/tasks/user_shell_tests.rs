@@ -36,7 +36,7 @@ fn user_shell_snapshot_preserves_package_path_prepend() {
         "-lc".to_string(),
         "printf '%s' \"$PATH\"".to_string(),
     ];
-    let package_path_dir = dir.path().join("codex-path");
+    let package_path_dir = dir.path().join("motyga-path");
     let mut env = HashMap::from([("PATH".to_string(), "/worktree/bin".to_string())]);
     let rewritten = prepare_user_shell_exec_command_with_path_prepend(
         &command,

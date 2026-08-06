@@ -35,8 +35,8 @@ use crate::mentions::collect_explicit_app_ids;
 use crate::mentions::collect_explicit_plugin_mentions;
 use crate::mentions::collect_tool_mentions_from_messages;
 use crate::plugins::build_plugin_injections;
-use crate::responses_metadata::CodexResponsesMetadata;
-use crate::responses_metadata::CodexResponsesRequestKind;
+use crate::responses_metadata::MotygaResponsesMetadata;
+use crate::responses_metadata::MotygaResponsesRequestKind;
 use crate::responses_retry::ResponsesStreamRequest;
 use crate::responses_retry::handle_retryable_response_stream_error;
 use crate::session::PreviousTurnSettings;
@@ -67,51 +67,51 @@ use crate::tools::spec_plan::tool_suggest_enabled;
 use crate::turn_diff_tracker::TurnDiffTracker;
 use crate::turn_timing::record_turn_ttft_metric;
 use crate::util::error_or_panic;
-use codex_analytics::AppInvocation;
-use codex_analytics::CompactionPhase;
-use codex_analytics::CompactionReason;
-use codex_analytics::InvocationType;
-use codex_analytics::TurnResolvedConfigFact;
-use codex_analytics::build_track_events_context;
-use codex_async_utils::OrCancelExt;
-use codex_core_plugins::RecommendedPluginCandidatesInput;
-use codex_core_skills::injection::InjectedHostSkillPrompts;
-use codex_extension_api::TurnInputContext;
-use codex_extension_api::TurnInputEnvironment;
-use codex_features::Feature;
-use codex_git_utils::get_git_repo_root_with_fs;
-use codex_protocol::config_types::AutoCompactTokenLimitScope;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::items::PlanItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::items::build_hook_prompt_message;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::AgentMessageContentDeltaEvent;
-use codex_protocol::protocol::AgentReasoningSectionBreakEvent;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::ErrorEvent;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::PlanDeltaEvent;
-use codex_protocol::protocol::ReasoningContentDeltaEvent;
-use codex_protocol::protocol::ReasoningRawContentDeltaEvent;
-use codex_protocol::protocol::SafetyBufferingEvent;
-use codex_protocol::protocol::TurnDiffEvent;
-use codex_protocol::protocol::WarningEvent;
-use codex_protocol::user_input::UserInput;
-use codex_tools::ToolName;
-use codex_tools::filter_request_plugin_install_discoverable_tools_for_client;
-use codex_utils_stream_parser::AssistantTextChunk;
-use codex_utils_stream_parser::AssistantTextStreamParser;
-use codex_utils_stream_parser::ProposedPlanSegment;
-use codex_utils_stream_parser::extract_proposed_plan_text;
-use codex_utils_stream_parser::strip_citations;
+use motyga_analytics::AppInvocation;
+use motyga_analytics::CompactionPhase;
+use motyga_analytics::CompactionReason;
+use motyga_analytics::InvocationType;
+use motyga_analytics::TurnResolvedConfigFact;
+use motyga_analytics::build_track_events_context;
+use motyga_async_utils::OrCancelExt;
+use motyga_core_plugins::RecommendedPluginCandidatesInput;
+use motyga_core_skills::injection::InjectedHostSkillPrompts;
+use motyga_extension_api::TurnInputContext;
+use motyga_extension_api::TurnInputEnvironment;
+use motyga_features::Feature;
+use motyga_git_utils::get_git_repo_root_with_fs;
+use motyga_protocol::config_types::AutoCompactTokenLimitScope;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::items::PlanItem;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::items::build_hook_prompt_message;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::MessagePhase;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::AgentMessageContentDeltaEvent;
+use motyga_protocol::protocol::AgentReasoningSectionBreakEvent;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::ErrorEvent;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::PlanDeltaEvent;
+use motyga_protocol::protocol::ReasoningContentDeltaEvent;
+use motyga_protocol::protocol::ReasoningRawContentDeltaEvent;
+use motyga_protocol::protocol::SafetyBufferingEvent;
+use motyga_protocol::protocol::TurnDiffEvent;
+use motyga_protocol::protocol::WarningEvent;
+use motyga_protocol::user_input::UserInput;
+use motyga_tools::ToolName;
+use motyga_tools::filter_request_plugin_install_discoverable_tools_for_client;
+use motyga_utils_stream_parser::AssistantTextChunk;
+use motyga_utils_stream_parser::AssistantTextStreamParser;
+use motyga_utils_stream_parser::ProposedPlanSegment;
+use motyga_utils_stream_parser::extract_proposed_plan_text;
+use motyga_utils_stream_parser::strip_citations;
 use futures::future::BoxFuture;
 use futures::prelude::*;
 use futures::stream::FuturesOrdered;
@@ -142,11 +142,11 @@ use tracing::warn;
 pub(crate) async fn run_turn(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-    turn_extension_data: Arc<codex_extension_api::ExtensionData>,
+    turn_extension_data: Arc<motyga_extension_api::ExtensionData>,
     input: Vec<TurnInput>,
     prewarmed_client_session: Option<ModelClientSession>,
     cancellation_token: CancellationToken,
-) -> CodexResult<Option<String>> {
+) -> MotygaResult<Option<String>> {
     let mut client_session =
         prewarmed_client_session.unwrap_or_else(|| sess.services.model_client.new_session());
     // TODO(ccunningham): Pre-turn compaction runs before context updates and the
@@ -154,10 +154,10 @@ pub(crate) async fn run_turn(
     // diffs/full reinjection + user input) and trigger compaction preemptively
     // when they would push the thread over the compaction threshold.
     if let Err(err) = run_pre_sampling_compact(&sess, &turn_context, &mut client_session).await {
-        if matches!(err, CodexErr::TurnAborted) {
+        if matches!(err, MotygaErr::TurnAborted) {
             return Err(err);
         }
-        let error = err.to_codex_protocol_error();
+        let error = err.to_motyga_protocol_error();
         sess.emit_turn_error_lifecycle(turn_context.as_ref(), error.clone())
             .await;
         error!("Failed to run pre-sampling compact");
@@ -208,7 +208,7 @@ pub(crate) async fn run_turn(
 
     let mut last_agent_message: Option<String> = None;
     let mut stop_hook_active = false;
-    // Although from the perspective of codex.rs, TurnDiffTracker has the lifecycle of a Task which contains
+    // Although from the perspective of motyga.rs, TurnDiffTracker has the lifecycle of a Task which contains
     // many turns, from the perspective of the user, it is a single turn.
     let turn_diff_tracker = Arc::new(tokio::sync::Mutex::new(
         TurnDiffTracker::with_environment_display_roots(display_roots),
@@ -249,7 +249,7 @@ pub(crate) async fn run_turn(
             Some(step_context) => step_context,
             None => sess.capture_step_context(Arc::clone(&turn_context)).await,
         };
-        let sampling_request_result: CodexResult<_> = async {
+        let sampling_request_result: MotygaResult<_> = async {
             super::time_reminder::maybe_record_current_time_reminder(
                 sess.as_ref(),
                 turn_context.as_ref(),
@@ -279,7 +279,7 @@ pub(crate) async fn run_turn(
             let responses_metadata = turn_context.turn_metadata_state.to_responses_metadata(
                 sess.installation_id.clone(),
                 window_id,
-                CodexResponsesRequestKind::Turn,
+                MotygaResponsesRequestKind::Turn,
             );
             run_sampling_request(
                 Arc::clone(&sess),
@@ -356,10 +356,10 @@ pub(crate) async fn run_turn(
                     )
                     .await
                     {
-                        if matches!(err, CodexErr::TurnAborted) {
+                        if matches!(err, MotygaErr::TurnAborted) {
                             return Err(err);
                         }
-                        let error = err.to_codex_protocol_error();
+                        let error = err.to_motyga_protocol_error();
                         sess.emit_turn_error_lifecycle(turn_context.as_ref(), error.clone())
                             .await;
                         return Ok(None);
@@ -415,10 +415,10 @@ pub(crate) async fn run_turn(
                 }
                 continue;
             }
-            Err(err @ CodexErr::TurnAborted) => {
+            Err(err @ MotygaErr::TurnAborted) => {
                 return Err(err);
             }
-            Err(codex_error @ CodexErr::InvalidImageRequest()) => {
+            Err(motyga_error @ MotygaErr::InvalidImageRequest()) => {
                 {
                     let mut state = sess.state.lock().await;
                     error_or_panic(
@@ -429,24 +429,24 @@ pub(crate) async fn run_turn(
                     }
                 }
 
-                sess.track_turn_codex_error(turn_context.as_ref(), &codex_error);
-                let error = CodexErrorInfo::BadRequest;
+                sess.track_turn_motyga_error(turn_context.as_ref(), &motyga_error);
+                let error = MotygaErrorInfo::BadRequest;
                 sess.emit_turn_error_lifecycle(turn_context.as_ref(), error.clone())
                     .await;
                 let event = EventMsg::Error(ErrorEvent {
                     message: "Invalid image in your last message. Please remove it and try again."
                         .to_string(),
-                    codex_error_info: Some(error),
+                    motyga_error_info: Some(error),
                 });
                 sess.send_event(&turn_context, event).await;
                 break;
             }
             Err(e) => {
                 info!("Turn error: {e:#}");
-                let error = e.to_codex_protocol_error();
+                let error = e.to_motyga_protocol_error();
                 sess.emit_turn_error_lifecycle(turn_context.as_ref(), error.clone())
                     .await;
-                sess.track_turn_codex_error(turn_context.as_ref(), &e);
+                sess.track_turn_motyga_error(turn_context.as_ref(), &e);
                 let event = EventMsg::Error(e.to_error_event(/*message_prefix*/ None));
                 sess.send_event(&turn_context, event).await;
                 // let the user continue the conversation
@@ -564,7 +564,7 @@ async fn build_skills_and_plugins(
         Vec::new()
     };
     let available_connectors = if turn_context.apps_enabled() {
-        let connectors = codex_connectors::merge::merge_plugin_connectors_with_accessible(
+        let connectors = motyga_connectors::merge::merge_plugin_connectors_with_accessible(
             connector_snapshot
                 .connector_ids()
                 .iter()
@@ -798,7 +798,7 @@ async fn run_pre_sampling_compact(
     sess: &Arc<Session>,
     turn_context: &Arc<TurnContext>,
     client_session: &mut ModelClientSession,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     maybe_run_previous_model_inline_compact(sess, turn_context, client_session).await?;
     let token_status =
         super::context_window::context_window_token_status(sess.as_ref(), turn_context.as_ref())
@@ -836,7 +836,7 @@ async fn maybe_run_previous_model_inline_compact(
     sess: &Arc<Session>,
     turn_context: &Arc<TurnContext>,
     client_session: &mut ModelClientSession,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let Some(previous_turn_settings) = sess.previous_turn_settings().await else {
         return Ok(());
     };
@@ -921,7 +921,7 @@ async fn run_auto_compact(
     initial_context_injection: InitialContextInjection,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let turn_context = &step_context.turn;
     if turn_context.config.features.enabled(Feature::TokenBudget) {
         // Compaction is the reset request, so force a new context window
@@ -1029,7 +1029,7 @@ pub(super) fn collect_explicit_app_ids_from_skill_items(
 
     let connector_slug_counts = build_connector_slug_counts(connectors);
     for connector in connectors {
-        let slug = codex_connectors::metadata::connector_mention_slug(connector);
+        let slug = motyga_connectors::metadata::connector_mention_slug(connector);
         let connector_count = connector_slug_counts.get(&slug).copied().unwrap_or(0);
         let skill_count = skill_name_counts_lower.get(&slug).copied().unwrap_or(0);
         if connector_count == 1 && skill_count == 0 && mention_names_lower.contains(&slug) {
@@ -1064,8 +1064,8 @@ pub(crate) fn build_prompt(
 /// treated the same so the CLI stops cleanly instead of looping) and `idempotency_mismatch`. Returns None for
 /// `idempotency_in_progress` (and any other 409), letting the normal retry/backoff path handle it — the
 /// in-progress attempt resolves within a few retries as the original settles or refunds.
-fn terminal_idempotency_error(err: &CodexErr) -> Option<CodexErr> {
-    let CodexErr::UnexpectedStatus(e) = err else {
+fn terminal_idempotency_error(err: &MotygaErr) -> Option<MotygaErr> {
+    let MotygaErr::UnexpectedStatus(e) = err else {
         return None;
     };
     if e.status.as_u16() != 409 {
@@ -1080,10 +1080,10 @@ fn terminal_idempotency_error(err: &CodexErr) -> Option<CodexErr> {
                 .map(str::to_string)
         });
     match code.as_deref() {
-        Some("idempotency_already_delivered") | Some("duplicate_request") => Some(CodexErr::Fatal(
+        Some("idempotency_already_delivered") | Some("duplicate_request") => Some(MotygaErr::Fatal(
             "this request was already completed on the server; no additional charge was made".to_string(),
         )),
-        Some("idempotency_mismatch") => Some(CodexErr::InvalidRequest(
+        Some("idempotency_mismatch") => Some(MotygaErr::InvalidRequest(
             "idempotency key was reused with a different request".to_string(),
         )),
         _ => None,
@@ -1103,13 +1103,13 @@ fn terminal_idempotency_error(err: &CodexErr) -> Option<CodexErr> {
 async fn run_sampling_request(
     sess: Arc<Session>,
     step_context: Arc<StepContext>,
-    turn_store: Arc<codex_extension_api::ExtensionData>,
+    turn_store: Arc<motyga_extension_api::ExtensionData>,
     turn_diff_tracker: SharedTurnDiffTracker,
     client_session: &mut ModelClientSession,
-    responses_metadata: &CodexResponsesMetadata,
+    responses_metadata: &MotygaResponsesMetadata,
     input: Vec<ResponseItem>,
     cancellation_token: CancellationToken,
-) -> CodexResult<(SamplingRequestResult, Vec<ResponseItem>)> {
+) -> MotygaResult<(SamplingRequestResult, Vec<ResponseItem>)> {
     let turn_context = Arc::clone(&step_context.turn);
     let router = built_tools(sess.as_ref(), step_context.as_ref(), &cancellation_token).await?;
 
@@ -1168,16 +1168,16 @@ async fn run_sampling_request(
             Ok(output) => {
                 return Ok((output, original_input.unwrap_or(prompt.input)));
             }
-            Err(CodexErr::ContextWindowExceeded) => {
+            Err(MotygaErr::ContextWindowExceeded) => {
                 sess.set_total_tokens_full(&turn_context).await;
-                return Err(CodexErr::ContextWindowExceeded);
+                return Err(MotygaErr::ContextWindowExceeded);
             }
-            Err(CodexErr::UsageLimitReached(e)) => {
+            Err(MotygaErr::UsageLimitReached(e)) => {
                 let rate_limits = e.rate_limits.clone();
                 if let Some(rate_limits) = rate_limits {
                     sess.update_rate_limits(&turn_context, *rate_limits).await;
                 }
-                return Err(CodexErr::UsageLimitReached(e));
+                return Err(MotygaErr::UsageLimitReached(e));
             }
             Err(err) => err,
         };
@@ -1222,7 +1222,7 @@ pub(crate) async fn built_tools(
     sess: &Session,
     step_context: &StepContext,
     cancellation_token: &CancellationToken,
-) -> CodexResult<Arc<ToolRouter>> {
+) -> MotygaResult<Arc<ToolRouter>> {
     let turn_context = step_context.turn.as_ref();
     let mcp_connection_manager = step_context.mcp.manager();
     let has_mcp_servers = mcp_connection_manager.has_servers();
@@ -1246,7 +1246,7 @@ pub(crate) async fn built_tools(
             connectors::with_app_enabled_state(connectors.clone(), &turn_context.config)
         });
     let connectors = if apps_enabled {
-        let connectors = codex_connectors::merge::merge_plugin_connectors_with_accessible(
+        let connectors = motyga_connectors::merge::merge_plugin_connectors_with_accessible(
             connector_snapshot
                 .connector_ids()
                 .iter()
@@ -1521,11 +1521,11 @@ async fn maybe_emit_pending_agent_message_start(
 }
 
 /// Agent messages are text-only today; concatenate all text entries.
-fn agent_message_text(item: &codex_protocol::items::AgentMessageItem) -> String {
+fn agent_message_text(item: &motyga_protocol::items::AgentMessageItem) -> String {
     item.content
         .iter()
         .map(|entry| match entry {
-            codex_protocol::items::AgentMessageContent::Text { text } => text.as_str(),
+            motyga_protocol::items::AgentMessageContent::Text { text } => text.as_str(),
         })
         .collect()
 }
@@ -1779,7 +1779,7 @@ async fn maybe_complete_plan_item_from_message(
 async fn emit_agent_message_in_plan_mode(
     sess: &Session,
     turn_context: &TurnContext,
-    agent_message: codex_protocol::items::AgentMessageItem,
+    agent_message: motyga_protocol::items::AgentMessageItem,
     state: &mut PlanModeStreamState,
 ) {
     let agent_message_id = agent_message.id.clone();
@@ -1800,7 +1800,7 @@ async fn emit_agent_message_in_plan_mode(
             .pending_agent_message_items
             .remove(&agent_message_id)
             .unwrap_or_else(|| {
-                TurnItem::AgentMessage(codex_protocol::items::AgentMessageItem {
+                TurnItem::AgentMessage(motyga_protocol::items::AgentMessageItem {
                     id: agent_message_id.clone(),
                     content: Vec::new(),
                     phase: None,
@@ -1843,7 +1843,7 @@ async fn emit_turn_item_in_plan_mode(
 async fn handle_assistant_item_done_in_plan_mode(
     sess: &Session,
     turn_context: &TurnContext,
-    turn_store: &codex_extension_api::ExtensionData,
+    turn_store: &motyga_extension_api::ExtensionData,
     item: &ResponseItem,
     state: &mut PlanModeStreamState,
     previously_active_item: Option<&TurnItem>,
@@ -1895,10 +1895,10 @@ async fn handle_assistant_item_done_in_plan_mode(
 
 #[instrument(level = "trace", skip_all)]
 async fn drain_in_flight(
-    in_flight: &mut FuturesOrdered<BoxFuture<'static, CodexResult<ResponseInputItem>>>,
+    in_flight: &mut FuturesOrdered<BoxFuture<'static, MotygaResult<ResponseInputItem>>>,
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     while let Some(res) = in_flight.next().await {
         match res {
             Ok(response_input) => {
@@ -1932,14 +1932,14 @@ async fn try_run_sampling_request(
     tool_runtime: ToolCallRuntime,
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-    turn_store: Arc<codex_extension_api::ExtensionData>,
+    turn_store: Arc<motyga_extension_api::ExtensionData>,
     client_session: &mut ModelClientSession,
-    responses_metadata: &CodexResponsesMetadata,
+    responses_metadata: &MotygaResponsesMetadata,
     turn_diff_tracker: SharedTurnDiffTracker,
     prompt: &Prompt,
     idempotency_key: Option<String>,
     cancellation_token: CancellationToken,
-) -> CodexResult<SamplingRequestResult> {
+) -> MotygaResult<SamplingRequestResult> {
     feedback_tags!(
         model = turn_context.model_info.slug.clone(),
         approval_policy = turn_context.approval_policy.value(),
@@ -1969,7 +1969,7 @@ async fn try_run_sampling_request(
         .instrument(trace_span!("stream_request"))
         .or_cancel(&cancellation_token)
         .await??;
-    let mut in_flight: FuturesOrdered<BoxFuture<'static, CodexResult<ResponseInputItem>>> =
+    let mut in_flight: FuturesOrdered<BoxFuture<'static, MotygaResult<ResponseInputItem>>> =
         FuturesOrdered::new();
     let mut needs_follow_up = false;
     let mut last_agent_message: Option<String> = None;
@@ -1988,19 +1988,19 @@ async fn try_run_sampling_request(
         !sess.services.extensions.turn_item_contributors().is_empty();
     let mut active_item_is_streaming_to_client = false;
     let receiving_span = trace_span!("receiving_stream");
-    let outcome: CodexResult<SamplingRequestResult> = loop {
+    let outcome: MotygaResult<SamplingRequestResult> = loop {
         let handle_responses = trace_span!(
             parent: &receiving_span,
             "handle_responses",
             otel.name = field::Empty,
             tool_name = field::Empty,
             from = field::Empty,
-            codex.request.reasoning_effort = %reasoning_effort,
+            motyga.request.reasoning_effort = %reasoning_effort,
             gen_ai.usage.input_tokens = field::Empty,
             gen_ai.usage.cache_read.input_tokens = field::Empty,
             gen_ai.usage.output_tokens = field::Empty,
-            codex.usage.reasoning_output_tokens = field::Empty,
-            codex.usage.total_tokens = field::Empty,
+            motyga.usage.reasoning_output_tokens = field::Empty,
+            motyga.usage.total_tokens = field::Empty,
         );
 
         let event = match stream
@@ -2010,14 +2010,14 @@ async fn try_run_sampling_request(
             .await
         {
             Ok(event) => event,
-            Err(codex_async_utils::CancelErr::Cancelled) => break Err(CodexErr::TurnAborted),
+            Err(motyga_async_utils::CancelErr::Cancelled) => break Err(MotygaErr::TurnAborted),
         };
 
         let event = match event {
             Some(Ok(event)) => event,
             Some(Err(err)) => break Err(err),
             None => {
-                break Err(CodexErr::Stream(
+                break Err(MotygaErr::Stream(
                     "stream closed before response.completed".into(),
                     None,
                 ));
@@ -2162,7 +2162,7 @@ async fn try_run_sampling_request(
                             assistant_message_stream_parsers.seed_item_text(&item_id, &raw_text);
                         if let TurnItem::AgentMessage(agent_message) = &mut turn_item {
                             agent_message.content =
-                                vec![codex_protocol::items::AgentMessageContent::Text {
+                                vec![motyga_protocol::items::AgentMessageContent::Text {
                                     text: if plan_mode {
                                         String::new()
                                     } else {
@@ -2419,7 +2419,7 @@ async fn try_run_sampling_request(
     }
 
     if cancellation_token.is_cancelled() {
-        return Err(CodexErr::TurnAborted);
+        return Err(MotygaErr::TurnAborted);
     }
 
     if should_emit_turn_diff {

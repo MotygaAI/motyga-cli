@@ -7,14 +7,14 @@
       "name": "Cargo launch",
       "cargo": {
         "cwd": "${workspaceFolder}/motyga-rs",
-        "args": ["build", "--bin=codex-tui"]
+        "args": ["build", "--bin=motyga-tui"]
       },
       "args": []
     },
     {
       "type": "lldb",
       "request": "attach",
-      "name": "Attach to running codex CLI",
+      "name": "Attach to running motyga CLI",
       "pid": "${command:pickProcess}",
       "sourceLanguages": ["rust"]
     }

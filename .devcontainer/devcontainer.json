@@ -1,5 +1,5 @@
 {
-  "name": "Codex",
+  "name": "Motyga",
   "build": {
     "dockerfile": "Dockerfile",
     "context": "..",

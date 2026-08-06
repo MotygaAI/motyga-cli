@@ -2,18 +2,18 @@ use super::*;
 
 use super::tests::build_world_state_from_turn_context;
 use super::tests::make_session_and_context;
-use codex_protocol::AgentPath;
-use codex_protocol::ThreadId;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::CompactedItem;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::InterAgentCommunication;
-use codex_protocol::protocol::ResumedHistory;
-use codex_protocol::protocol::SessionContextWindow;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::WorldStateItem;
+use motyga_protocol::AgentPath;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::CompactedItem;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::InterAgentCommunication;
+use motyga_protocol::protocol::ResumedHistory;
+use motyga_protocol::protocol::SessionContextWindow;
+use motyga_protocol::protocol::SessionMeta;
+use motyga_protocol::protocol::SessionMetaLine;
+use motyga_protocol::protocol::WorldStateItem;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 use std::path::PathBuf;
@@ -72,7 +72,7 @@ fn completed_user_turn_rollout(
         .expect("turn context should have turn_id");
     let mut rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -81,7 +81,7 @@ fn completed_user_turn_rollout(
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "seed".to_string(),
                 images: None,
@@ -94,7 +94,7 @@ fn completed_user_turn_rollout(
     ];
     rollout_items.extend(items);
     rollout_items.push(RolloutItem::EventMsg(EventMsg::TurnComplete(
-        codex_protocol::protocol::TurnCompleteEvent {
+        motyga_protocol::protocol::TurnCompleteEvent {
             turn_id,
             last_agent_message: None,
             completed_at: None,
@@ -184,7 +184,7 @@ async fn record_initial_history_resumed_bare_turn_context_does_not_hydrate_previ
         multi_agent_mode: None,
         realtime_active: Some(turn_context.realtime_active),
         effort: turn_context.reasoning_effort.clone(),
-        summary: codex_protocol::config_types::ReasoningSummary::Auto,
+        summary: motyga_protocol::config_types::ReasoningSummary::Auto,
     };
     let rollout_items = vec![RolloutItem::TurnContext(previous_context_item)];
 
@@ -230,7 +230,7 @@ async fn record_initial_history_resumed_hydrates_previous_turn_settings_from_lif
         multi_agent_mode: None,
         realtime_active: Some(turn_context.realtime_active),
         effort: turn_context.reasoning_effort.clone(),
-        summary: codex_protocol::config_types::ReasoningSummary::Auto,
+        summary: motyga_protocol::config_types::ReasoningSummary::Auto,
     };
     let turn_id = previous_context_item
         .turn_id
@@ -240,7 +240,7 @@ async fn record_initial_history_resumed_hydrates_previous_turn_settings_from_lif
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -249,7 +249,7 @@ async fn record_initial_history_resumed_hydrates_previous_turn_settings_from_lif
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "seed".to_string(),
                 images: None,
@@ -260,7 +260,7 @@ async fn record_initial_history_resumed_hydrates_previous_turn_settings_from_lif
         )),
         RolloutItem::TurnContext(previous_context_item),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -310,7 +310,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_com
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: first_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -319,7 +319,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_com
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "turn 1 user".to_string(),
                 images: None,
@@ -335,7 +335,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_com
         RolloutItem::ResponseItem(turn_one_user.clone()),
         RolloutItem::ResponseItem(turn_one_assistant.clone()),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: first_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -344,7 +344,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_com
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: rolled_back_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -353,7 +353,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_com
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "turn 2 user".to_string(),
                 images: None,
@@ -369,7 +369,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_com
         RolloutItem::ResponseItem(turn_two_user),
         RolloutItem::ResponseItem(turn_two_assistant),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: rolled_back_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -378,7 +378,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_com
             },
         )),
         RolloutItem::EventMsg(EventMsg::ThreadRolledBack(
-            codex_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
+            motyga_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
         )),
     ];
 
@@ -426,7 +426,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_inc
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: first_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -435,7 +435,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_inc
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "turn 1 user".to_string(),
                 images: None,
@@ -448,7 +448,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_inc
         RolloutItem::ResponseItem(turn_one_user.clone()),
         RolloutItem::ResponseItem(turn_one_assistant.clone()),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: first_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -457,7 +457,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_inc
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: incomplete_turn_id,
                 trace_id: None,
                 started_at: None,
@@ -466,7 +466,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_inc
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "turn 2 user".to_string(),
                 images: None,
@@ -477,7 +477,7 @@ async fn reconstruct_history_rollback_keeps_history_and_metadata_in_sync_for_inc
         )),
         RolloutItem::ResponseItem(turn_two_user),
         RolloutItem::EventMsg(EventMsg::ThreadRolledBack(
-            codex_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
+            motyga_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
         )),
     ];
 
@@ -523,7 +523,7 @@ async fn reconstruct_history_rollback_skips_non_user_turns_for_history_and_metad
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: first_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -532,7 +532,7 @@ async fn reconstruct_history_rollback_skips_non_user_turns_for_history_and_metad
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "turn 1 user".to_string(),
                 images: None,
@@ -545,7 +545,7 @@ async fn reconstruct_history_rollback_skips_non_user_turns_for_history_and_metad
         RolloutItem::ResponseItem(turn_one_user.clone()),
         RolloutItem::ResponseItem(turn_one_assistant.clone()),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: first_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -554,7 +554,7 @@ async fn reconstruct_history_rollback_skips_non_user_turns_for_history_and_metad
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: second_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -563,7 +563,7 @@ async fn reconstruct_history_rollback_skips_non_user_turns_for_history_and_metad
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "turn 2 user".to_string(),
                 images: None,
@@ -575,7 +575,7 @@ async fn reconstruct_history_rollback_skips_non_user_turns_for_history_and_metad
         RolloutItem::ResponseItem(turn_two_user),
         RolloutItem::ResponseItem(turn_two_assistant),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: second_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -584,7 +584,7 @@ async fn reconstruct_history_rollback_skips_non_user_turns_for_history_and_metad
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: standalone_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -594,7 +594,7 @@ async fn reconstruct_history_rollback_skips_non_user_turns_for_history_and_metad
         )),
         RolloutItem::ResponseItem(standalone_assistant),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: standalone_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -603,7 +603,7 @@ async fn reconstruct_history_rollback_skips_non_user_turns_for_history_and_metad
             },
         )),
         RolloutItem::EventMsg(EventMsg::ThreadRolledBack(
-            codex_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
+            motyga_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
         )),
     ];
 
@@ -649,7 +649,7 @@ async fn reconstruct_history_rollback_counts_inter_agent_assistant_turns() {
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: first_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -658,7 +658,7 @@ async fn reconstruct_history_rollback_counts_inter_agent_assistant_turns() {
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "turn 1 user".to_string(),
                 images: None,
@@ -671,7 +671,7 @@ async fn reconstruct_history_rollback_counts_inter_agent_assistant_turns() {
         RolloutItem::ResponseItem(user_message("turn 1 user")),
         RolloutItem::ResponseItem(assistant_message("turn 1 assistant")),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: first_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -680,7 +680,7 @@ async fn reconstruct_history_rollback_counts_inter_agent_assistant_turns() {
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: assistant_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -692,7 +692,7 @@ async fn reconstruct_history_rollback_counts_inter_agent_assistant_turns() {
         RolloutItem::ResponseItem(assistant_instruction),
         RolloutItem::ResponseItem(assistant_reply),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: assistant_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -701,7 +701,7 @@ async fn reconstruct_history_rollback_counts_inter_agent_assistant_turns() {
             },
         )),
         RolloutItem::EventMsg(EventMsg::ThreadRolledBack(
-            codex_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
+            motyga_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
         )),
     ];
 
@@ -742,7 +742,7 @@ async fn reconstruct_history_rollback_clears_history_and_metadata_when_exceeding
         .expect("turn context should have turn_id");
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: only_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -751,7 +751,7 @@ async fn reconstruct_history_rollback_clears_history_and_metadata_when_exceeding
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "only user".to_string(),
                 images: None,
@@ -764,7 +764,7 @@ async fn reconstruct_history_rollback_clears_history_and_metadata_when_exceeding
         RolloutItem::ResponseItem(user_message("only user")),
         RolloutItem::ResponseItem(assistant_message("only assistant")),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: only_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -773,7 +773,7 @@ async fn reconstruct_history_rollback_clears_history_and_metadata_when_exceeding
             },
         )),
         RolloutItem::EventMsg(EventMsg::ThreadRolledBack(
-            codex_protocol::protocol::ThreadRolledBackEvent { num_turns: 99 },
+            motyga_protocol::protocol::ThreadRolledBackEvent { num_turns: 99 },
         )),
     ];
 
@@ -797,7 +797,7 @@ async fn record_initial_history_resumed_rollback_skips_only_user_turns() {
     let standalone_turn_id = "standalone-task-turn".to_string();
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: user_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -806,7 +806,7 @@ async fn record_initial_history_resumed_rollback_skips_only_user_turns() {
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "seed".to_string(),
                 images: None,
@@ -817,7 +817,7 @@ async fn record_initial_history_resumed_rollback_skips_only_user_turns() {
         )),
         RolloutItem::TurnContext(previous_context_item),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: user_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -827,7 +827,7 @@ async fn record_initial_history_resumed_rollback_skips_only_user_turns() {
         )),
         // Standalone task turn (no UserMessage) should not consume rollback skips.
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: standalone_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -836,7 +836,7 @@ async fn record_initial_history_resumed_rollback_skips_only_user_turns() {
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: standalone_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -845,7 +845,7 @@ async fn record_initial_history_resumed_rollback_skips_only_user_turns() {
             },
         )),
         RolloutItem::EventMsg(EventMsg::ThreadRolledBack(
-            codex_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
+            motyga_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
         )),
     ];
 
@@ -873,7 +873,7 @@ async fn record_initial_history_resumed_rollback_drops_incomplete_user_turn_comp
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: previous_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -882,7 +882,7 @@ async fn record_initial_history_resumed_rollback_drops_incomplete_user_turn_comp
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "seed".to_string(),
                 images: None,
@@ -893,7 +893,7 @@ async fn record_initial_history_resumed_rollback_drops_incomplete_user_turn_comp
         )),
         RolloutItem::TurnContext(previous_context_item.clone()),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: previous_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -902,7 +902,7 @@ async fn record_initial_history_resumed_rollback_drops_incomplete_user_turn_comp
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: incomplete_turn_id,
                 trace_id: None,
                 started_at: None,
@@ -911,7 +911,7 @@ async fn record_initial_history_resumed_rollback_drops_incomplete_user_turn_comp
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "rolled back".to_string(),
                 images: None,
@@ -929,7 +929,7 @@ async fn record_initial_history_resumed_rollback_drops_incomplete_user_turn_comp
             window_id: None,
         }),
         RolloutItem::EventMsg(EventMsg::ThreadRolledBack(
-            codex_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
+            motyga_protocol::protocol::ThreadRolledBackEvent { num_turns: 1 },
         )),
     ];
 
@@ -1202,7 +1202,7 @@ async fn reconstruct_history_legacy_compaction_without_replacement_history_clear
             window_id: None,
         }),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: current_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -1211,7 +1211,7 @@ async fn reconstruct_history_legacy_compaction_without_replacement_history_clear
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "after legacy compact".to_string(),
                 images: None,
@@ -1222,7 +1222,7 @@ async fn reconstruct_history_legacy_compaction_without_replacement_history_clear
         )),
         RolloutItem::TurnContext(current_context_item),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: current_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -1264,7 +1264,7 @@ async fn record_initial_history_resumed_turn_context_after_compaction_reestablis
         multi_agent_mode: None,
         realtime_active: Some(turn_context.realtime_active),
         effort: turn_context.reasoning_effort.clone(),
-        summary: codex_protocol::config_types::ReasoningSummary::Auto,
+        summary: motyga_protocol::config_types::ReasoningSummary::Auto,
     };
     let previous_turn_id = previous_context_item
         .turn_id
@@ -1272,7 +1272,7 @@ async fn record_initial_history_resumed_turn_context_after_compaction_reestablis
         .expect("turn context should have turn_id");
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: previous_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -1281,7 +1281,7 @@ async fn record_initial_history_resumed_turn_context_after_compaction_reestablis
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "seed".to_string(),
                 images: None,
@@ -1301,7 +1301,7 @@ async fn record_initial_history_resumed_turn_context_after_compaction_reestablis
         }),
         RolloutItem::TurnContext(previous_context_item),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: previous_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -1350,7 +1350,7 @@ async fn record_initial_history_resumed_turn_context_after_compaction_reestablis
             multi_agent_mode: None,
             realtime_active: Some(turn_context.realtime_active),
             effort: turn_context.reasoning_effort.clone(),
-            summary: codex_protocol::config_types::ReasoningSummary::Auto,
+            summary: motyga_protocol::config_types::ReasoningSummary::Auto,
         }))
         .expect("serialize expected reference context item")
     );
@@ -1381,7 +1381,7 @@ async fn record_initial_history_resumed_aborted_turn_without_id_clears_active_tu
         multi_agent_mode: None,
         realtime_active: Some(turn_context.realtime_active),
         effort: turn_context.reasoning_effort.clone(),
-        summary: codex_protocol::config_types::ReasoningSummary::Auto,
+        summary: motyga_protocol::config_types::ReasoningSummary::Auto,
     };
     let previous_turn_id = previous_context_item
         .turn_id
@@ -1391,7 +1391,7 @@ async fn record_initial_history_resumed_aborted_turn_without_id_clears_active_tu
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: previous_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -1400,7 +1400,7 @@ async fn record_initial_history_resumed_aborted_turn_without_id_clears_active_tu
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "seed".to_string(),
                 images: None,
@@ -1411,7 +1411,7 @@ async fn record_initial_history_resumed_aborted_turn_without_id_clears_active_tu
         )),
         RolloutItem::TurnContext(previous_context_item),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: previous_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -1420,7 +1420,7 @@ async fn record_initial_history_resumed_aborted_turn_without_id_clears_active_tu
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: aborted_turn_id,
                 trace_id: None,
                 started_at: None,
@@ -1429,7 +1429,7 @@ async fn record_initial_history_resumed_aborted_turn_without_id_clears_active_tu
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "aborted".to_string(),
                 images: None,
@@ -1439,7 +1439,7 @@ async fn record_initial_history_resumed_aborted_turn_without_id_clears_active_tu
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnAborted(
-            codex_protocol::protocol::TurnAbortedEvent {
+            motyga_protocol::protocol::TurnAbortedEvent {
                 turn_id: None,
                 reason: TurnAbortReason::Interrupted,
                 completed_at: None,
@@ -1507,12 +1507,12 @@ async fn record_initial_history_resumed_unmatched_abort_preserves_active_turn_fo
         multi_agent_mode: None,
         realtime_active: Some(turn_context.realtime_active),
         effort: turn_context.reasoning_effort.clone(),
-        summary: codex_protocol::config_types::ReasoningSummary::Auto,
+        summary: motyga_protocol::config_types::ReasoningSummary::Auto,
     };
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: previous_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -1521,7 +1521,7 @@ async fn record_initial_history_resumed_unmatched_abort_preserves_active_turn_fo
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "seed".to_string(),
                 images: None,
@@ -1532,7 +1532,7 @@ async fn record_initial_history_resumed_unmatched_abort_preserves_active_turn_fo
         )),
         RolloutItem::TurnContext(previous_context_item),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: previous_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -1541,7 +1541,7 @@ async fn record_initial_history_resumed_unmatched_abort_preserves_active_turn_fo
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: current_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -1550,7 +1550,7 @@ async fn record_initial_history_resumed_unmatched_abort_preserves_active_turn_fo
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "current".to_string(),
                 images: None,
@@ -1560,7 +1560,7 @@ async fn record_initial_history_resumed_unmatched_abort_preserves_active_turn_fo
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnAborted(
-            codex_protocol::protocol::TurnAbortedEvent {
+            motyga_protocol::protocol::TurnAbortedEvent {
                 turn_id: Some(unmatched_abort_turn_id),
                 reason: TurnAbortReason::Interrupted,
                 completed_at: None,
@@ -1569,7 +1569,7 @@ async fn record_initial_history_resumed_unmatched_abort_preserves_active_turn_fo
         )),
         RolloutItem::TurnContext(current_context_item.clone()),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: current_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -1628,7 +1628,7 @@ async fn record_initial_history_resumed_trailing_incomplete_turn_compaction_clea
         multi_agent_mode: None,
         realtime_active: Some(turn_context.realtime_active),
         effort: turn_context.reasoning_effort.clone(),
-        summary: codex_protocol::config_types::ReasoningSummary::Auto,
+        summary: motyga_protocol::config_types::ReasoningSummary::Auto,
     };
     let previous_turn_id = previous_context_item
         .turn_id
@@ -1638,7 +1638,7 @@ async fn record_initial_history_resumed_trailing_incomplete_turn_compaction_clea
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: previous_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -1647,7 +1647,7 @@ async fn record_initial_history_resumed_trailing_incomplete_turn_compaction_clea
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "seed".to_string(),
                 images: None,
@@ -1658,7 +1658,7 @@ async fn record_initial_history_resumed_trailing_incomplete_turn_compaction_clea
         )),
         RolloutItem::TurnContext(previous_context_item),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: previous_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -1667,7 +1667,7 @@ async fn record_initial_history_resumed_trailing_incomplete_turn_compaction_clea
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: incomplete_turn_id,
                 trace_id: None,
                 started_at: None,
@@ -1676,7 +1676,7 @@ async fn record_initial_history_resumed_trailing_incomplete_turn_compaction_clea
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "incomplete".to_string(),
                 images: None,
@@ -1725,7 +1725,7 @@ async fn record_initial_history_resumed_trailing_incomplete_turn_preserves_turn_
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: current_turn_id,
                 trace_id: None,
                 started_at: None,
@@ -1734,7 +1734,7 @@ async fn record_initial_history_resumed_trailing_incomplete_turn_preserves_turn_
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "incomplete".to_string(),
                 images: None,
@@ -1795,7 +1795,7 @@ async fn record_initial_history_resumed_replaced_incomplete_compacted_turn_clear
         multi_agent_mode: None,
         realtime_active: Some(turn_context.realtime_active),
         effort: turn_context.reasoning_effort.clone(),
-        summary: codex_protocol::config_types::ReasoningSummary::Auto,
+        summary: motyga_protocol::config_types::ReasoningSummary::Auto,
     };
     let previous_turn_id = previous_context_item
         .turn_id
@@ -1806,7 +1806,7 @@ async fn record_initial_history_resumed_replaced_incomplete_compacted_turn_clear
 
     let rollout_items = vec![
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: previous_turn_id.clone(),
                 trace_id: None,
                 started_at: None,
@@ -1815,7 +1815,7 @@ async fn record_initial_history_resumed_replaced_incomplete_compacted_turn_clear
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "seed".to_string(),
                 images: None,
@@ -1826,7 +1826,7 @@ async fn record_initial_history_resumed_replaced_incomplete_compacted_turn_clear
         )),
         RolloutItem::TurnContext(previous_context_item),
         RolloutItem::EventMsg(EventMsg::TurnComplete(
-            codex_protocol::protocol::TurnCompleteEvent {
+            motyga_protocol::protocol::TurnCompleteEvent {
                 turn_id: previous_turn_id,
                 last_agent_message: None,
                 completed_at: None,
@@ -1835,7 +1835,7 @@ async fn record_initial_history_resumed_replaced_incomplete_compacted_turn_clear
             },
         )),
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: compacted_incomplete_turn_id,
                 trace_id: None,
                 started_at: None,
@@ -1844,7 +1844,7 @@ async fn record_initial_history_resumed_replaced_incomplete_compacted_turn_clear
             },
         )),
         RolloutItem::EventMsg(EventMsg::UserMessage(
-            codex_protocol::protocol::UserMessageEvent {
+            motyga_protocol::protocol::UserMessageEvent {
                 client_id: None,
                 message: "compacted".to_string(),
                 images: None,
@@ -1864,7 +1864,7 @@ async fn record_initial_history_resumed_replaced_incomplete_compacted_turn_clear
         // A newer TurnStarted replaces the incomplete compacted turn without a matching
         // completion/abort for the old one.
         RolloutItem::EventMsg(EventMsg::TurnStarted(
-            codex_protocol::protocol::TurnStartedEvent {
+            motyga_protocol::protocol::TurnStartedEvent {
                 turn_id: replacing_turn_id,
                 trace_id: None,
                 started_at: None,

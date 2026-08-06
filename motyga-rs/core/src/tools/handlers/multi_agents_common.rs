@@ -8,19 +8,19 @@ use crate::session::turn_context::TurnContext;
 use crate::tools::context::FunctionToolOutput;
 use crate::tools::context::ToolOutput;
 use crate::tools::context::ToolPayload;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_protocol::AgentPath;
-use codex_protocol::ThreadId;
-use codex_protocol::error::CodexErr;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::protocol::CollabAgentRef;
-use codex_protocol::protocol::CollabAgentStatusEntry;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::user_input::UserInput;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_protocol::AgentPath;
+use motyga_protocol::ThreadId;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::openai_models::ReasoningEffortPreset;
+use motyga_protocol::protocol::CollabAgentRef;
+use motyga_protocol::protocol::CollabAgentStatusEntry;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::user_input::UserInput;
 use serde::Serialize;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
@@ -108,25 +108,25 @@ pub(crate) fn build_wait_agent_statuses(
     entries
 }
 
-pub(crate) fn collab_spawn_error(err: CodexErr) -> FunctionCallError {
+pub(crate) fn collab_spawn_error(err: MotygaErr) -> FunctionCallError {
     match err {
-        CodexErr::UnsupportedOperation(message) if message == "thread manager dropped" => {
+        MotygaErr::UnsupportedOperation(message) if message == "thread manager dropped" => {
             FunctionCallError::RespondToModel("collab manager unavailable".to_string())
         }
-        CodexErr::UnsupportedOperation(message) => FunctionCallError::RespondToModel(message),
+        MotygaErr::UnsupportedOperation(message) => FunctionCallError::RespondToModel(message),
         err => FunctionCallError::RespondToModel(format!("collab spawn failed: {err}")),
     }
 }
 
-pub(crate) fn collab_agent_error(agent_id: ThreadId, err: CodexErr) -> FunctionCallError {
+pub(crate) fn collab_agent_error(agent_id: ThreadId, err: MotygaErr) -> FunctionCallError {
     match err {
-        CodexErr::ThreadNotFound(id) => {
+        MotygaErr::ThreadNotFound(id) => {
             FunctionCallError::RespondToModel(format!("agent with id {id} not found"))
         }
-        CodexErr::InternalAgentDied => {
+        MotygaErr::InternalAgentDied => {
             FunctionCallError::RespondToModel(format!("agent with id {agent_id} is closed"))
         }
-        CodexErr::UnsupportedOperation(_) => {
+        MotygaErr::UnsupportedOperation(_) => {
             FunctionCallError::RespondToModel("collab manager unavailable".to_string())
         }
         err => FunctionCallError::RespondToModel(format!("collab tool failed: {err}")),
@@ -379,7 +379,7 @@ pub(crate) async fn apply_spawn_agent_service_tier(
 }
 
 fn find_spawn_agent_model_name(
-    available_models: &[codex_protocol::openai_models::ModelPreset],
+    available_models: &[motyga_protocol::openai_models::ModelPreset],
     requested_model: &str,
 ) -> Result<String, FunctionCallError> {
     available_models

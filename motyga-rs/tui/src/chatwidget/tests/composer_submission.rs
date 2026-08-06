@@ -1,11 +1,11 @@
 use super::*;
 use crate::app_event::ConnectorsSnapshot;
-use codex_protocol::models::ManagedFileSystemPermissions;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::models::ManagedFileSystemPermissions;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
 use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 use std::collections::VecDeque;

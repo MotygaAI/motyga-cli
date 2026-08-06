@@ -1,0 +1,7 @@
+load("//:defs.bzl", "motyga_rust_crate")
+
+motyga_rust_crate(
+    name = "motyga-client",
+    compile_data = glob(["tests/fixtures/**"]),
+    crate_name = "motyga_client",
+)

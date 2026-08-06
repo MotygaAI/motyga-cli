@@ -1,5 +1,5 @@
-use codex_code_mode_protocol::host::FramedReader;
-use codex_code_mode_protocol::host::HostToClient;
+use motyga_code_mode_protocol::host::FramedReader;
+use motyga_code_mode_protocol::host::HostToClient;
 use tokio::process::ChildStdout;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;

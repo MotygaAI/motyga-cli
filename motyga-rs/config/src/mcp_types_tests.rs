@@ -1,5 +1,5 @@
 use super::*;
-use codex_utils_path_uri::LegacyAppPathString;
+use motyga_utils_path_uri::LegacyAppPathString;
 use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 use std::path::Path;
@@ -321,7 +321,7 @@ fn deserialize_streamable_http_server_config_with_oauth_client_id() {
             url = "https://example.com/mcp"
 
             [oauth]
-            client_id = "eci-prd-pub-codex-123"
+            client_id = "eci-prd-pub-motyga-123"
         "#,
     )
     .expect("should deserialize http config with oauth client id");
@@ -329,7 +329,7 @@ fn deserialize_streamable_http_server_config_with_oauth_client_id() {
     assert_eq!(
         cfg.oauth,
         Some(McpServerOAuthConfig {
-            client_id: Some("eci-prd-pub-codex-123".to_string()),
+            client_id: Some("eci-prd-pub-motyga-123".to_string()),
         })
     );
 }
@@ -495,7 +495,7 @@ fn deserialize_rejects_headers_for_stdio() {
     let err = toml::from_str::<McpServerConfig>(
         r#"
             command = "echo"
-            oauth = { client_id = "eci-prd-pub-codex-123" }
+            oauth = { client_id = "eci-prd-pub-motyga-123" }
         "#,
     )
     .expect_err("should reject oauth for stdio transport");

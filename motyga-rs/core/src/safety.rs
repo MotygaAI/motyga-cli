@@ -2,15 +2,15 @@ use std::path::Component;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_apply_patch::ApplyPatchAction;
-use codex_apply_patch::ApplyPatchFileChange;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_sandboxing::SandboxType;
-use codex_sandboxing::get_platform_sandbox;
-use codex_utils_path_uri::PathUri;
+use motyga_apply_patch::ApplyPatchAction;
+use motyga_apply_patch::ApplyPatchFileChange;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_sandboxing::SandboxType;
+use motyga_sandboxing::get_platform_sandbox;
+use motyga_utils_path_uri::PathUri;
 
 const PATCH_REJECTED_OUTSIDE_PROJECT_REASON: &str =
     "writing outside of the project; rejected by user approval settings";
@@ -69,7 +69,7 @@ pub fn assess_patch_safety(
             PermissionProfile::Disabled | PermissionProfile::External { .. }
         ) {
             // Disabled and External profiles intentionally do not apply an
-            // outer Codex filesystem sandbox.
+            // outer Motyga filesystem sandbox.
             SafetyCheck::AutoApprove {
                 sandbox_type: SandboxType::None,
                 user_explicitly_approved: false,

@@ -6,13 +6,13 @@ use pretty_assertions::assert_eq;
 #[test]
 fn rate_limit_reset_contract_uses_expected_paths_and_payloads() {
     assert_eq!(
-        test_client("https://example.test", PathStyle::CodexApi).rate_limit_status_url(),
-        "https://example.test/api/codex/usage"
+        test_client("https://example.test", PathStyle::MotygaApi).rate_limit_status_url(),
+        "https://example.test/api/motyga/usage"
     );
     assert_eq!(
-        test_client("https://example.test", PathStyle::CodexApi)
+        test_client("https://example.test", PathStyle::MotygaApi)
             .consume_rate_limit_reset_credit_url(),
-        "https://example.test/api/codex/rate-limit-reset-credits/consume"
+        "https://example.test/api/motyga/rate-limit-reset-credits/consume"
     );
     assert_eq!(
         test_client("https://api.motyga.com/backend-api", PathStyle::ChatGptApi)
@@ -62,7 +62,7 @@ fn test_client(base_url: &str, path_style: PathStyle) -> Client {
     Client {
         base_url: base_url.to_string(),
         http: reqwest::Client::new(),
-        auth_provider: codex_model_provider::unauthenticated_auth_provider(),
+        auth_provider: motyga_model_provider::unauthenticated_auth_provider(),
         user_agent: None,
         chatgpt_account_id: None,
         path_style,

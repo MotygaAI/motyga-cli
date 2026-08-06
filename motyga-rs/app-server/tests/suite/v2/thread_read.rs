@@ -5,65 +5,65 @@ use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::rollout_path;
 use app_test_support::test_absolute_path;
 use app_test_support::to_response;
-use codex_app_server::in_process;
-use codex_app_server::in_process::InProcessStartArgs;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SessionSource;
-use codex_app_server_protocol::SortDirection;
-use codex_app_server_protocol::ThreadForkParams;
-use codex_app_server_protocol::ThreadForkResponse;
-use codex_app_server_protocol::ThreadHistoryMode;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadItemsListParams;
-use codex_app_server_protocol::ThreadListParams;
-use codex_app_server_protocol::ThreadListResponse;
-use codex_app_server_protocol::ThreadNameUpdatedNotification;
-use codex_app_server_protocol::ThreadReadParams;
-use codex_app_server_protocol::ThreadReadResponse;
-use codex_app_server_protocol::ThreadResumeInitialTurnsPageParams;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadResumeResponse;
-use codex_app_server_protocol::ThreadSetNameParams;
-use codex_app_server_protocol::ThreadSetNameResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::ThreadStatus;
-use codex_app_server_protocol::ThreadTurnsListParams;
-use codex_app_server_protocol::ThreadTurnsListResponse;
-use codex_app_server_protocol::TurnItemsView;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::UserInput;
-use codex_arg0::Arg0DispatchPaths;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::LoaderOverrides;
-use codex_core::ARCHIVED_SESSIONS_SUBDIR;
-use codex_core::config::ConfigBuilder;
-use codex_exec_server::EnvironmentManager;
-use codex_feedback::CodexFeedback;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::protocol::AgentMessageEvent;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionSource as ProtocolSessionSource;
-use codex_protocol::protocol::ThreadMemoryMode;
-use codex_protocol::protocol::UserMessageEvent;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::TextElement;
-use codex_thread_store::AppendThreadItemsParams;
-use codex_thread_store::CreateThreadParams;
-use codex_thread_store::InMemoryThreadStore;
-use codex_thread_store::ThreadMetadataPatch;
-use codex_thread_store::ThreadPersistenceMetadata;
-use codex_thread_store::ThreadStore;
-use codex_thread_store::UpdateThreadMetadataParams;
+use motyga_app_server::in_process;
+use motyga_app_server::in_process::InProcessStartArgs;
+use motyga_app_server_protocol::ClientInfo;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::InitializeCapabilities;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::SessionSource;
+use motyga_app_server_protocol::SortDirection;
+use motyga_app_server_protocol::ThreadForkParams;
+use motyga_app_server_protocol::ThreadForkResponse;
+use motyga_app_server_protocol::ThreadHistoryMode;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadItemsListParams;
+use motyga_app_server_protocol::ThreadListParams;
+use motyga_app_server_protocol::ThreadListResponse;
+use motyga_app_server_protocol::ThreadNameUpdatedNotification;
+use motyga_app_server_protocol::ThreadReadParams;
+use motyga_app_server_protocol::ThreadReadResponse;
+use motyga_app_server_protocol::ThreadResumeInitialTurnsPageParams;
+use motyga_app_server_protocol::ThreadResumeParams;
+use motyga_app_server_protocol::ThreadResumeResponse;
+use motyga_app_server_protocol::ThreadSetNameParams;
+use motyga_app_server_protocol::ThreadSetNameResponse;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::ThreadStatus;
+use motyga_app_server_protocol::ThreadTurnsListParams;
+use motyga_app_server_protocol::ThreadTurnsListResponse;
+use motyga_app_server_protocol::TurnItemsView;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_app_server_protocol::UserInput;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::LoaderOverrides;
+use motyga_core::ARCHIVED_SESSIONS_SUBDIR;
+use motyga_core::config::ConfigBuilder;
+use motyga_exec_server::EnvironmentManager;
+use motyga_feedback::MotygaFeedback;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::protocol::AgentMessageEvent;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::SessionSource as ProtocolSessionSource;
+use motyga_protocol::protocol::ThreadMemoryMode;
+use motyga_protocol::protocol::UserMessageEvent;
+use motyga_protocol::user_input::ByteRange;
+use motyga_protocol::user_input::TextElement;
+use motyga_thread_store::AppendThreadItemsParams;
+use motyga_thread_store::CreateThreadParams;
+use motyga_thread_store::InMemoryThreadStore;
+use motyga_thread_store::ThreadMetadataPatch;
+use motyga_thread_store::ThreadPersistenceMetadata;
+use motyga_thread_store::ThreadStore;
+use motyga_thread_store::UpdateThreadMetadataParams;
 use core_test_support::responses;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -83,8 +83,8 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 #[tokio::test]
 async fn thread_read_returns_summary_without_turns() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let preview = "Saved user message";
     let text_elements = [TextElement::new(
@@ -92,7 +92,7 @@ async fn thread_read_returns_summary_without_turns() -> Result<()> {
         Some("<note>".into()),
     )];
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         preview,
@@ -104,7 +104,7 @@ async fn thread_read_returns_summary_without_turns() -> Result<()> {
         /*git_info*/ None,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let read_id = mcp
@@ -138,8 +138,8 @@ async fn thread_read_returns_summary_without_turns() -> Result<()> {
 #[tokio::test]
 async fn thread_read_can_include_turns() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let preview = "Saved user message";
     let text_elements = vec![TextElement::new(
@@ -147,7 +147,7 @@ async fn thread_read_can_include_turns() -> Result<()> {
         Some("<note>".into()),
     )];
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         preview,
@@ -159,7 +159,7 @@ async fn thread_read_can_include_turns() -> Result<()> {
         /*git_info*/ None,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let read_id = mcp
@@ -201,11 +201,11 @@ async fn thread_read_can_include_turns() -> Result<()> {
 async fn paginated_stored_thread_allows_metadata_discovery_and_rejects_legacy_history_paths()
 -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         "Saved user message",
@@ -214,11 +214,11 @@ async fn paginated_stored_thread_allows_metadata_discovery_and_rejects_legacy_hi
         /*git_info*/ None,
     )?;
     set_rollout_history_mode(
-        rollout_path(codex_home.path(), "2025-01-05T12-00-00", &conversation_id).as_path(),
+        rollout_path(motyga_home.path(), "2025-01-05T12-00-00", &conversation_id).as_path(),
         ThreadHistoryMode::Paginated,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let read_id = mcp
@@ -315,12 +315,12 @@ async fn paginated_stored_thread_allows_metadata_discovery_and_rejects_legacy_hi
 #[tokio::test]
 async fn thread_turns_list_can_page_backward_and_forward() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let filename_ts = "2025-01-05T12-00-00";
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         filename_ts,
         "2025-01-05T12:00:00Z",
         "first",
@@ -328,11 +328,11 @@ async fn thread_turns_list_can_page_backward_and_forward() -> Result<()> {
         Some("mock_provider"),
         /*git_info*/ None,
     )?;
-    let rollout_path = rollout_path(codex_home.path(), filename_ts, &conversation_id);
+    let rollout_path = rollout_path(motyga_home.path(), filename_ts, &conversation_id);
     append_user_message(rollout_path.as_path(), "2025-01-05T12:01:00Z", "second")?;
     append_user_message(rollout_path.as_path(), "2025-01-05T12:02:00Z", "third")?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let read_id = mcp
@@ -404,12 +404,12 @@ async fn thread_turns_list_can_page_backward_and_forward() -> Result<()> {
 #[tokio::test]
 async fn thread_turns_list_supports_requested_items_view() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let filename_ts = "2025-01-05T12-00-00";
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         filename_ts,
         "2025-01-05T12:00:00Z",
         "first",
@@ -417,11 +417,11 @@ async fn thread_turns_list_supports_requested_items_view() -> Result<()> {
         Some("mock_provider"),
         /*git_info*/ None,
     )?;
-    let rollout_path = rollout_path(codex_home.path(), filename_ts, &conversation_id);
+    let rollout_path = rollout_path(motyga_home.path(), filename_ts, &conversation_id);
     append_agent_message(rollout_path.as_path(), "2025-01-05T12:01:00Z", "draft")?;
     append_agent_message(rollout_path.as_path(), "2025-01-05T12:02:00Z", "final")?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let full = read_single_turn_items_view(
@@ -471,18 +471,18 @@ async fn thread_turns_list_supports_requested_items_view() -> Result<()> {
 
 #[tokio::test]
 async fn thread_turns_list_reads_store_history_without_rollout_path() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let thread_id = codex_protocol::ThreadId::from_string("00000000-0000-4000-8000-000000000123")?;
+    let motyga_home = TempDir::new()?;
+    let thread_id = motyga_protocol::ThreadId::from_string("00000000-0000-4000-8000-000000000123")?;
     let store_id = Uuid::new_v4().to_string();
-    create_config_toml_with_thread_store(codex_home.path(), &store_id)?;
+    create_config_toml_with_thread_store(motyga_home.path(), &store_id)?;
     let store = InMemoryThreadStore::for_id(store_id.clone());
     let _in_memory_store = InMemoryThreadStoreId { store_id };
     seed_pathless_store_thread(&store, thread_id).await?;
 
     let loader_overrides = LoaderOverrides::without_managed_config_for_tests();
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .loader_overrides(loader_overrides.clone())
         .build()
         .await?;
@@ -493,17 +493,17 @@ async fn thread_turns_list_reads_store_history_without_rollout_path() -> Result<
         loader_overrides,
         strict_config: false,
         cloud_config_bundle: CloudConfigBundleLoader::default(),
-        thread_config_loader: Arc::new(codex_config::NoopThreadConfigLoader),
-        feedback: CodexFeedback::new(),
+        thread_config_loader: Arc::new(motyga_config::NoopThreadConfigLoader),
+        feedback: MotygaFeedback::new(),
         log_db: None,
         state_db: None,
         environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
         config_warnings: Vec::new(),
         session_source: SessionSource::Cli.into(),
-        enable_codex_api_key_env: false,
+        enable_motyga_api_key_env: false,
         initialize: InitializeParams {
             client_info: ClientInfo {
-                name: "codex-app-server-tests".to_string(),
+                name: "motyga-app-server-tests".to_string(),
                 title: None,
                 version: "0.1.0".to_string(),
             },
@@ -539,16 +539,16 @@ async fn thread_turns_list_reads_store_history_without_rollout_path() -> Result<
 
 #[tokio::test]
 async fn thread_read_loaded_include_turns_reads_store_history_without_rollout_path() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let store_id = Uuid::new_v4().to_string();
-    create_config_toml_with_thread_store(codex_home.path(), &store_id)?;
+    create_config_toml_with_thread_store(motyga_home.path(), &store_id)?;
     let store = InMemoryThreadStore::for_id(store_id.clone());
     let _in_memory_store = InMemoryThreadStoreId { store_id };
 
     let loader_overrides = LoaderOverrides::without_managed_config_for_tests();
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .loader_overrides(loader_overrides.clone())
         .build()
         .await?;
@@ -559,17 +559,17 @@ async fn thread_read_loaded_include_turns_reads_store_history_without_rollout_pa
         loader_overrides,
         strict_config: false,
         cloud_config_bundle: CloudConfigBundleLoader::default(),
-        thread_config_loader: Arc::new(codex_config::NoopThreadConfigLoader),
-        feedback: CodexFeedback::new(),
+        thread_config_loader: Arc::new(motyga_config::NoopThreadConfigLoader),
+        feedback: MotygaFeedback::new(),
         log_db: None,
         state_db: None,
         environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
         config_warnings: Vec::new(),
         session_source: SessionSource::Cli.into(),
-        enable_codex_api_key_env: false,
+        enable_motyga_api_key_env: false,
         initialize: InitializeParams {
             client_info: ClientInfo {
-                name: "codex-app-server-tests".to_string(),
+                name: "motyga-app-server-tests".to_string(),
                 title: None,
                 version: "0.1.0".to_string(),
             },
@@ -595,7 +595,7 @@ async fn thread_read_loaded_include_turns_reads_store_history_without_rollout_pa
     let ThreadStartResponse { thread, .. } = serde_json::from_value(result)?;
     assert_eq!(thread.path, None);
 
-    let thread_id = codex_protocol::ThreadId::from_string(&thread.id)?;
+    let thread_id = motyga_protocol::ThreadId::from_string(&thread.id)?;
     store
         .append_items(AppendThreadItemsParams {
             thread_id,
@@ -623,18 +623,18 @@ async fn thread_read_loaded_include_turns_reads_store_history_without_rollout_pa
 
 #[tokio::test]
 async fn thread_list_includes_store_thread_without_rollout_path() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let thread_id = codex_protocol::ThreadId::from_string("00000000-0000-4000-8000-000000000124")?;
+    let motyga_home = TempDir::new()?;
+    let thread_id = motyga_protocol::ThreadId::from_string("00000000-0000-4000-8000-000000000124")?;
     let store_id = Uuid::new_v4().to_string();
-    create_config_toml_with_thread_store(codex_home.path(), &store_id)?;
+    create_config_toml_with_thread_store(motyga_home.path(), &store_id)?;
     let store = InMemoryThreadStore::for_id(store_id.clone());
     let _in_memory_store = InMemoryThreadStoreId { store_id };
     seed_pathless_store_thread(&store, thread_id).await?;
 
     let loader_overrides = LoaderOverrides::without_managed_config_for_tests();
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .loader_overrides(loader_overrides.clone())
         .build()
         .await?;
@@ -645,17 +645,17 @@ async fn thread_list_includes_store_thread_without_rollout_path() -> Result<()> 
         loader_overrides,
         strict_config: false,
         cloud_config_bundle: CloudConfigBundleLoader::default(),
-        thread_config_loader: Arc::new(codex_config::NoopThreadConfigLoader),
-        feedback: CodexFeedback::new(),
+        thread_config_loader: Arc::new(motyga_config::NoopThreadConfigLoader),
+        feedback: MotygaFeedback::new(),
         log_db: None,
         state_db: None,
         environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
         config_warnings: Vec::new(),
         session_source: SessionSource::Cli.into(),
-        enable_codex_api_key_env: false,
+        enable_motyga_api_key_env: false,
         initialize: InitializeParams {
             client_info: ClientInfo {
-                name: "codex-app-server-tests".to_string(),
+                name: "motyga-app-server-tests".to_string(),
                 title: None,
                 version: "0.1.0".to_string(),
             },
@@ -704,13 +704,13 @@ async fn thread_list_includes_store_thread_without_rollout_path() -> Result<()> 
 #[tokio::test]
 async fn thread_read_can_return_archived_threads_by_id() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let filename_ts = "2025-01-05T12-00-00";
     let preview = "Archived saved user message";
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         filename_ts,
         "2025-01-05T12:00:00Z",
         preview,
@@ -718,14 +718,14 @@ async fn thread_read_can_return_archived_threads_by_id() -> Result<()> {
         Some("mock_provider"),
         /*git_info*/ None,
     )?;
-    let active_rollout_path = rollout_path(codex_home.path(), filename_ts, &conversation_id);
-    let archived_dir = codex_home.path().join(ARCHIVED_SESSIONS_SUBDIR);
+    let active_rollout_path = rollout_path(motyga_home.path(), filename_ts, &conversation_id);
+    let archived_dir = motyga_home.path().join(ARCHIVED_SESSIONS_SUBDIR);
     std::fs::create_dir_all(&archived_dir)?;
     let archived_rollout_path =
         archived_dir.join(active_rollout_path.file_name().expect("rollout file name"));
     std::fs::rename(&active_rollout_path, &archived_rollout_path)?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let read_id = mcp
@@ -752,12 +752,12 @@ async fn thread_read_can_return_archived_threads_by_id() -> Result<()> {
 #[tokio::test]
 async fn thread_resume_initial_turns_page_matches_requested_turns_list_page() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let filename_ts = "2025-01-05T12-00-00";
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         filename_ts,
         "2025-01-05T12:00:00Z",
         "first",
@@ -765,11 +765,11 @@ async fn thread_resume_initial_turns_page_matches_requested_turns_list_page() ->
         Some("mock_provider"),
         /*git_info*/ None,
     )?;
-    let rollout_path = rollout_path(codex_home.path(), filename_ts, &conversation_id);
+    let rollout_path = rollout_path(motyga_home.path(), filename_ts, &conversation_id);
     append_user_message(rollout_path.as_path(), "2025-01-05T12:01:00Z", "second")?;
     append_user_message(rollout_path.as_path(), "2025-01-05T12:02:00Z", "third")?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let turns_list_id = mcp
@@ -814,7 +814,7 @@ async fn thread_resume_initial_turns_page_matches_requested_turns_list_page() ->
     assert!(thread.turns.is_empty());
     assert_eq!(
         initial_turns_page,
-        Some(codex_app_server_protocol::TurnsPage::from(expected_page))
+        Some(motyga_app_server_protocol::TurnsPage::from(expected_page))
     );
 
     Ok(())
@@ -823,12 +823,12 @@ async fn thread_resume_initial_turns_page_matches_requested_turns_list_page() ->
 #[tokio::test]
 async fn thread_turns_list_rejects_cursor_when_anchor_turn_is_rolled_back() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let filename_ts = "2025-01-05T12-00-00";
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         filename_ts,
         "2025-01-05T12:00:00Z",
         "first",
@@ -836,11 +836,11 @@ async fn thread_turns_list_rejects_cursor_when_anchor_turn_is_rolled_back() -> R
         Some("mock_provider"),
         /*git_info*/ None,
     )?;
-    let rollout_path = rollout_path(codex_home.path(), filename_ts, &conversation_id);
+    let rollout_path = rollout_path(motyga_home.path(), filename_ts, &conversation_id);
     append_user_message(rollout_path.as_path(), "2025-01-05T12:01:00Z", "second")?;
     append_user_message(rollout_path.as_path(), "2025-01-05T12:02:00Z", "third")?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let read_id = mcp
@@ -894,11 +894,11 @@ async fn thread_turns_list_rejects_cursor_when_anchor_turn_is_rolled_back() -> R
 #[tokio::test]
 async fn thread_read_returns_forked_from_id_for_forked_threads() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         "Saved user message",
@@ -907,7 +907,7 @@ async fn thread_read_returns_forked_from_id_for_forked_threads() -> Result<()> {
         /*git_info*/ None,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_id = mcp
@@ -944,10 +944,10 @@ async fn thread_read_returns_forked_from_id_for_forked_threads() -> Result<()> {
 #[tokio::test]
 async fn thread_read_loaded_thread_returns_precomputed_path_before_materialization() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -993,12 +993,12 @@ async fn thread_read_loaded_thread_returns_precomputed_path_before_materializati
 #[tokio::test]
 async fn thread_name_set_is_reflected_in_read_list_and_resume() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let preview = "Saved user message";
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         preview,
@@ -1007,7 +1007,7 @@ async fn thread_name_set_is_reflected_in_read_list_and_resume() -> Result<()> {
         /*git_info*/ None,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Set a user-facing thread title.
@@ -1152,10 +1152,10 @@ async fn thread_name_set_is_reflected_in_read_list_and_resume() -> Result<()> {
 #[tokio::test]
 async fn thread_read_include_turns_rejects_unmaterialized_loaded_thread() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -1203,10 +1203,10 @@ async fn thread_read_include_turns_rejects_unmaterialized_loaded_thread() -> Res
 #[tokio::test]
 async fn thread_turns_list_rejects_unmaterialized_loaded_thread() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -1257,10 +1257,10 @@ async fn thread_turns_list_rejects_unmaterialized_loaded_thread() -> Result<()> 
 #[tokio::test]
 async fn thread_items_list_returns_unsupported() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let read_id = mcp
@@ -1295,10 +1295,10 @@ async fn thread_read_reports_system_error_idle_flag_after_failed_turn() -> Resul
         responses::sse_failed("resp-1", "server_error", "simulated failure"),
     )
     .await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -1411,7 +1411,7 @@ async fn read_single_turn_items_view(
     mcp: &mut TestAppServer,
     thread_id: &str,
     items_view: Option<TurnItemsView>,
-) -> anyhow::Result<codex_app_server_protocol::Turn> {
+) -> anyhow::Result<motyga_app_server_protocol::Turn> {
     let read_id = mcp
         .send_thread_turns_list_request(ThreadTurnsListParams {
             thread_id: thread_id.to_string(),
@@ -1432,7 +1432,7 @@ async fn read_single_turn_items_view(
     Ok(data.remove(0))
 }
 
-fn turn_user_texts(turns: &[codex_app_server_protocol::Turn]) -> Vec<&str> {
+fn turn_user_texts(turns: &[motyga_app_server_protocol::Turn]) -> Vec<&str> {
     turns
         .iter()
         .filter_map(|turn| match turn.items.first()? {
@@ -1448,7 +1448,7 @@ fn turn_user_texts(turns: &[codex_app_server_protocol::Turn]) -> Vec<&str> {
         .collect()
 }
 
-fn turn_agent_texts(turns: &[codex_app_server_protocol::Turn]) -> Vec<&str> {
+fn turn_agent_texts(turns: &[motyga_app_server_protocol::Turn]) -> Vec<&str> {
     turns
         .iter()
         .flat_map(|turn| &turn.items)
@@ -1471,7 +1471,7 @@ impl Drop for InMemoryThreadStoreId {
 
 async fn seed_pathless_store_thread(
     store: &InMemoryThreadStore,
-    thread_id: codex_protocol::ThreadId,
+    thread_id: motyga_protocol::ThreadId,
 ) -> Result<()> {
     store
         .create_thread(CreateThreadParams {
@@ -1548,8 +1548,8 @@ fn assert_paginated_threads_unsupported(err: JSONRPCError) {
     assert_eq!(err.error.message, "paginated_threads is not supported yet");
 }
 
-fn create_config_toml_with_thread_store(codex_home: &Path, store_id: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml_with_thread_store(motyga_home: &Path, store_id: &str) -> std::io::Result<()> {
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
@@ -1573,8 +1573,8 @@ stream_max_retries = 0
 }
 
 // Helper to create a config.toml pointing at the mock model server.
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(motyga_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

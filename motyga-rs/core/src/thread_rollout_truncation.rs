@@ -5,16 +5,16 @@
 
 use crate::context_manager::is_user_turn_boundary;
 use crate::event_mapping;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::build_turns_from_rollout_items;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::InterAgentCommunication;
-use codex_protocol::protocol::RolloutItem;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_app_server_protocol::build_turns_from_rollout_items;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::InterAgentCommunication;
+use motyga_protocol::protocol::RolloutItem;
 
 pub(crate) fn initial_history_has_prior_user_turns(conversation_history: &InitialHistory) -> bool {
     conversation_history.scan_rollout_items(rollout_item_is_user_turn_boundary)
@@ -162,13 +162,13 @@ pub(crate) fn truncate_rollout_before_nth_user_message_from_start(
 pub fn truncate_rollout_after_turn_id(
     items: &[RolloutItem],
     last_turn_id: &str,
-) -> CodexResult<Vec<RolloutItem>> {
+) -> MotygaResult<Vec<RolloutItem>> {
     let turns = build_turns_from_rollout_items(items);
     let turn = turns
         .iter()
         .find(|turn| turn.id == last_turn_id)
         .ok_or_else(|| {
-            CodexErr::InvalidRequest(format!(
+            MotygaErr::InvalidRequest(format!(
                 "lastTurnId '{last_turn_id}' was not found in the source thread"
             ))
         })?;
@@ -183,13 +183,13 @@ pub fn truncate_rollout_after_turn_id(
             )
         })
         .ok_or_else(|| {
-            CodexErr::InvalidRequest(format!(
+            MotygaErr::InvalidRequest(format!(
                 "lastTurnId '{last_turn_id}' is not a persisted canonical turn in the source thread"
             ))
         })?;
 
     if matches!(turn.status, TurnStatus::InProgress) {
-        return Err(CodexErr::InvalidRequest(format!(
+        return Err(MotygaErr::InvalidRequest(format!(
             "lastTurnId '{last_turn_id}' identifies an in-progress turn"
         )));
     }

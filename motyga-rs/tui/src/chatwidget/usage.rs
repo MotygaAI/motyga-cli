@@ -1,6 +1,6 @@
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditOutcome;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
-use codex_app_server_protocol::RateLimitResetCreditsSummary;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditOutcome;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
+use motyga_app_server_protocol::RateLimitResetCreditsSummary;
 use uuid::Uuid;
 
 use super::rate_limits::get_limits_duration;
@@ -158,7 +158,7 @@ impl ChatWidget {
         let has_monthly_window = self
             .rate_limit_snapshots_by_limit_id
             .iter()
-            .find(|(limit_id, _)| limit_id.eq_ignore_ascii_case("codex"))
+            .find(|(limit_id, _)| limit_id.eq_ignore_ascii_case("motyga"))
             .into_iter()
             .flat_map(|(_, snapshot)| [snapshot.primary.as_ref(), snapshot.secondary.as_ref()])
             .flatten()
@@ -382,7 +382,7 @@ impl ChatWidget {
         for snapshot in snapshots {
             self.on_rate_limit_snapshot(Some(snapshot));
         }
-        if !self.has_codex_backend_auth {
+        if !self.has_motyga_backend_auth {
             return false;
         }
         if let Ok(response) = result {

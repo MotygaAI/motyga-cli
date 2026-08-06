@@ -1,11 +1,11 @@
 use super::Config;
 use super::ConfigTomlLoadResult;
 use super::ManagedFeatures;
-use codex_config::types::AuthKeyringBackendKind;
-use codex_features::Feature;
-use codex_features::FeatureConfigSource;
-use codex_features::FeatureOverrides;
-use codex_features::Features;
+use motyga_config::types::AuthKeyringBackendKind;
+use motyga_features::Feature;
+use motyga_features::FeatureConfigSource;
+use motyga_features::FeatureOverrides;
+use motyga_features::Features;
 
 impl Config {
     pub fn auth_keyring_backend_kind(&self) -> AuthKeyringBackendKind {

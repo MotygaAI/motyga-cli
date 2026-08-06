@@ -6,23 +6,23 @@ use app_test_support::create_mock_responses_server_sequence_unchecked;
 use app_test_support::to_response;
 use app_test_support::write_mock_responses_config_toml;
 use app_test_support::write_models_cache;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SandboxPolicy;
-use codex_app_server_protocol::ThreadReadParams;
-use codex_app_server_protocol::ThreadReadResponse;
-use codex_app_server_protocol::ThreadSettingsUpdateParams;
-use codex_app_server_protocol::ThreadSettingsUpdateResponse;
-use codex_app_server_protocol::ThreadSettingsUpdatedNotification;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_core::test_support::all_model_presets;
-use codex_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCNotification;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::SandboxPolicy;
+use motyga_app_server_protocol::ThreadReadParams;
+use motyga_app_server_protocol::ThreadReadResponse;
+use motyga_app_server_protocol::ThreadSettingsUpdateParams;
+use motyga_app_server_protocol::ThreadSettingsUpdateResponse;
+use motyga_app_server_protocol::ThreadSettingsUpdatedNotification;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_core::test_support::all_model_presets;
+use motyga_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
 use core_test_support::responses;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -39,12 +39,12 @@ async fn thread_settings_update_emits_notification_and_updates_future_turns() ->
         create_final_assistant_message_sse_response("done")?,
     ])
     .await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
-    write_models_cache(codex_home.path())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
+    write_models_cache(motyga_home.path())?;
     let (model_id, service_tier_id) = service_tier_model_and_tier_id()?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let thread = start_thread(&mut mcp).await?.thread;
 
@@ -103,11 +103,11 @@ async fn thread_settings_update_cwd_retargets_default_environment() -> Result<()
         responses::ev_completed("resp-1"),
     ]);
     let response_mock = responses::mount_sse_once(&server, body).await;
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let workspace = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let thread = start_thread(&mut mcp).await?.thread;
 
@@ -154,10 +154,10 @@ async fn thread_settings_update_while_turn_is_active_emits_notification() -> Res
         responses::sse_response(create_final_assistant_message_sse_response("first done")?)
             .set_delay(Duration::from_secs(2));
     let _requests = responses::mount_response_sequence(&server, vec![first_response]).await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let thread = start_thread(&mut mcp).await?.thread;
     start_text_turn(&mut mcp, thread.id.clone()).await?;
@@ -195,12 +195,12 @@ async fn thread_settings_update_null_service_tier_uses_default() -> Result<()> {
         create_final_assistant_message_sse_response("done")?,
     ])
     .await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
-    write_models_cache(codex_home.path())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
+    write_models_cache(motyga_home.path())?;
     let (model_id, service_tier_id) = service_tier_model_and_tier_id()?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let thread = start_thread(&mut mcp).await?.thread;
 
@@ -263,10 +263,10 @@ async fn thread_settings_update_null_service_tier_uses_default() -> Result<()> {
 #[tokio::test]
 async fn thread_settings_update_rejects_sandbox_policy_with_permissions() -> Result<()> {
     let server = create_mock_responses_server_sequence_unchecked(Vec::new()).await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let thread = start_thread(&mut mcp).await?.thread;
 
@@ -297,10 +297,10 @@ async fn turn_start_settings_override_emits_thread_settings_updated() -> Result<
         create_final_assistant_message_sse_response("done")?,
     ])
     .await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let thread = start_thread(&mut mcp).await?.thread;
     timeout(
@@ -445,9 +445,9 @@ fn service_tier_model_and_tier_id() -> Result<(String, String)> {
     Ok((model.id.clone(), model.service_tiers[0].id.clone()))
 }
 
-fn create_config_toml(codex_home: &std::path::Path, server_uri: &str) -> std::io::Result<()> {
+fn create_config_toml(motyga_home: &std::path::Path, server_uri: &str) -> std::io::Result<()> {
     write_mock_responses_config_toml(
-        codex_home,
+        motyga_home,
         server_uri,
         &BTreeMap::default(),
         /*auto_compact_limit*/ 200_000,

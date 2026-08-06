@@ -1,5 +1,5 @@
 [package]
-name = "codex-cli"
+name = "motyga-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,7 +10,7 @@ name = "motyga"
 path = "src/main.rs"
 
 [lib]
-name = "codex_cli"
+name = "motyga_cli"
 path = "src/lib.rs"
 doctest = false
 
@@ -21,45 +21,45 @@ workspace = true
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 clap_complete = { workspace = true }
-codex-app-server = { workspace = true }
-codex-app-server-daemon = { workspace = true }
-codex-app-server-protocol = { workspace = true }
-codex-app-server-test-client = { workspace = true }
-codex-arg0 = { workspace = true }
-codex-api = { workspace = true }
-codex-chatgpt = { workspace = true }
-codex-cloud-tasks = { path = "../cloud-tasks" }
-codex-utils-cli = { workspace = true }
-codex-config = { workspace = true }
-codex-core = { workspace = true }
-codex-core-plugins = { workspace = true }
-codex-home = { workspace = true }
-codex-exec = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-execpolicy = { workspace = true }
-codex-features = { workspace = true }
-codex-git-utils = { workspace = true }
-codex-install-context = { workspace = true }
-codex-login = { workspace = true }
-codex-memories-write = { workspace = true }
-codex-mcp = { workspace = true }
+motyga-app-server = { workspace = true }
+motyga-app-server-daemon = { workspace = true }
+motyga-app-server-protocol = { workspace = true }
+motyga-app-server-test-client = { workspace = true }
+motyga-arg0 = { workspace = true }
+motyga-api = { workspace = true }
+motyga-chatgpt = { workspace = true }
+motyga-cloud-tasks = { path = "../cloud-tasks" }
+motyga-utils-cli = { workspace = true }
+motyga-config = { workspace = true }
+motyga-core = { workspace = true }
+motyga-core-plugins = { workspace = true }
+motyga-home = { workspace = true }
+motyga-exec = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-execpolicy = { workspace = true }
+motyga-features = { workspace = true }
+motyga-git-utils = { workspace = true }
+motyga-install-context = { workspace = true }
+motyga-login = { workspace = true }
+motyga-memories-write = { workspace = true }
+motyga-mcp = { workspace = true }
 motyga-supply = { workspace = true }
-codex-mcp-server = { workspace = true }
-codex-model-provider = { workspace = true }
-codex-models-manager = { workspace = true }
-codex-plugin = { workspace = true }
-codex-protocol = { workspace = true }
-codex-responses-api-proxy = { workspace = true }
-codex-rmcp-client = { workspace = true }
-codex-rollout = { workspace = true }
-codex-rollout-trace = { workspace = true }
-codex-sandboxing = { workspace = true }
-codex-state = { workspace = true }
-codex-stdio-to-uds = { workspace = true }
-codex-terminal-detection = { workspace = true }
-codex-tui = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-path = { workspace = true }
+motyga-mcp-server = { workspace = true }
+motyga-model-provider = { workspace = true }
+motyga-models-manager = { workspace = true }
+motyga-plugin = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-responses-api-proxy = { workspace = true }
+motyga-rmcp-client = { workspace = true }
+motyga-rollout = { workspace = true }
+motyga-rollout-trace = { workspace = true }
+motyga-sandboxing = { workspace = true }
+motyga-state = { workspace = true }
+motyga-stdio-to-uds = { workspace = true }
+motyga-terminal-detection = { workspace = true }
+motyga-tui = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-path = { workspace = true }
 crossterm = { workspace = true }
 http = { workspace = true }
 libc = { workspace = true }
@@ -89,7 +89,7 @@ url = { workspace = true }
 which = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-codex_windows_sandbox = { package = "codex-windows-sandbox", path = "../windows-sandbox-rs" }
+motyga_windows_sandbox = { package = "motyga-windows-sandbox", path = "../windows-sandbox-rs" }
 windows-sys = { version = "0.52", features = [
     "Win32_Foundation",
     "Win32_System_Console",
@@ -99,7 +99,7 @@ windows-sys = { version = "0.52", features = [
 app_test_support = { workspace = true }
 assert_cmd = { workspace = true }
 assert_matches = { workspace = true }
-codex-utils-cargo-bin = { workspace = true }
+motyga-utils-cargo-bin = { workspace = true }
 insta = { workspace = true }
 predicates = { workspace = true }
 pretty_assertions = { workspace = true }

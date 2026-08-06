@@ -1,31 +1,31 @@
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_core::compact::SUMMARIZATION_PROMPT;
-use codex_core::compact::SUMMARY_PREFIX;
-use codex_core::config::Config;
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::built_in_model_providers;
-use codex_models_manager::bundled_models_response;
-use codex_protocol::config_types::AutoCompactTokenLimitScope;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::HookEventName;
-use codex_protocol::protocol::HookRunStatus;
-use codex_protocol::protocol::ItemCompletedEvent;
-use codex_protocol::protocol::ItemStartedEvent;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::WarningEvent;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_core::compact::SUMMARIZATION_PROMPT;
+use motyga_core::compact::SUMMARY_PREFIX;
+use motyga_core::config::Config;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::built_in_model_providers;
+use motyga_models_manager::bundled_models_response;
+use motyga_protocol::config_types::AutoCompactTokenLimitScope;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelsResponse;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::HookRunStatus;
+use motyga_protocol::protocol::ItemCompletedEvent;
+use motyga_protocol::protocol::ItemStartedEvent;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::protocol::WarningEvent;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathBufExt;
 use core_test_support::context_snapshot;
 use core_test_support::context_snapshot::ContextSnapshotOptions;
@@ -35,9 +35,9 @@ use core_test_support::responses;
 use core_test_support::responses::ev_reasoning_item;
 use core_test_support::responses::mount_models_once;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::test_path_buf;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
@@ -111,14 +111,14 @@ fn disabled_permission_user_turn(text: impl Into<String>, cwd: PathBuf, model: S
         final_output_json_schema: None,
         responsesapi_client_metadata: None,
         additional_context: Default::default(),
-        thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+        thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
             environments: Some(local_selections(cwd.abs())),
             approval_policy: Some(AskForApproval::Never),
             sandbox_policy: Some(sandbox_policy),
             permission_profile,
-            collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                mode: codex_protocol::config_types::ModeKind::Default,
-                settings: codex_protocol::config_types::Settings {
+            collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                mode: motyga_protocol::config_types::ModeKind::Default,
+                settings: motyga_protocol::config_types::Settings {
                     model,
                     reasoning_effort: None,
                     developer_instructions: None,
@@ -403,14 +403,14 @@ fn assert_pre_sampling_switch_compaction_requests(
     );
 }
 
-async fn assert_compaction_uses_turn_lifecycle_id(codex: &std::sync::Arc<codex_core::CodexThread>) {
+async fn assert_compaction_uses_turn_lifecycle_id(motyga: &std::sync::Arc<motyga_core::MotygaThread>) {
     let mut turn_started_id = None;
     let mut turn_completed_id = None;
     let mut compact_started_id = None;
     let mut compact_completed_id = None;
 
     while turn_completed_id.is_none() {
-        let event = codex.next_event().await.expect("next event");
+        let event = motyga.next_event().await.expect("next event");
         match event.msg {
             EventMsg::TurnStarted(_) => turn_started_id = Some(event.id.clone()),
             EventMsg::ItemStarted(ItemStartedEvent {
@@ -487,19 +487,19 @@ async fn summarize_context_three_requests_and_instructions() {
     // inspect them without relying on specific prompt markers.
     let request_log = mount_sse_sequence(&server, vec![sse1, sse2, sse3]).await;
 
-    // Build config pointing to the mock server and spawn Codex.
+    // Build config pointing to the mock server and spawn Motyga.
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
     let test = builder.build(&server).await.unwrap();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
     let rollout_path = test.session_configured.rollout_path.expect("rollout path");
 
     // 1) Normal user input – should hit server once.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello world".into(),
@@ -512,19 +512,19 @@ async fn summarize_context_three_requests_and_instructions() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // 2) Summarize – second hit should include the summarization prompt.
-    codex.submit(Op::Compact).await.unwrap();
-    let warning_event = wait_for_event(&codex, |ev| matches!(ev, EventMsg::Warning(_))).await;
+    motyga.submit(Op::Compact).await.unwrap();
+    let warning_event = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::Warning(_))).await;
     let EventMsg::Warning(WarningEvent { message }) = warning_event else {
         panic!("expected warning event after compact");
     };
     assert_eq!(message, COMPACT_WARNING_MESSAGE);
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // 3) Next user input – third hit; history should include only the summary.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: THIRD_USER_MSG.into(),
@@ -537,7 +537,7 @@ async fn summarize_context_three_requests_and_instructions() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Inspect the three captured requests.
     let requests = request_log.requests();
@@ -630,9 +630,9 @@ async fn summarize_context_three_requests_and_instructions() {
         "third request should not include the summarize trigger"
     );
 
-    // Shut down Codex to flush rollout entries before inspecting the file.
-    codex.submit(Op::Shutdown).await.unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    // Shut down Motyga to flush rollout entries before inspecting the file.
+    motyga.submit(Op::Shutdown).await.unwrap();
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
     // Verify rollout contains user-turn TurnContext entries and a Compacted entry.
     println!("rollout path: {}", rollout_path.display());
@@ -684,7 +684,7 @@ async fn manual_pre_compact_block_decision_does_not_block_compaction() {
     let request_log = mount_sse_sequence(&server, vec![first_turn, compact_turn]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(write_unsupported_blocking_pre_compact_hook)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -692,9 +692,9 @@ async fn manual_pre_compact_block_decision_does_not_block_compaction() {
             set_test_compact_prompt(config);
         });
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello before blocked compact".to_string(),
@@ -707,11 +707,11 @@ async fn manual_pre_compact_block_decision_does_not_block_compaction() {
         })
         .await
         .expect("submit first user turn");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.expect("trigger compact");
+    motyga.submit(Op::Compact).await.expect("trigger compact");
 
-    let completed = wait_for_event_match(&codex, |ev| match ev {
+    let completed = wait_for_event_match(&motyga, |ev| match ev {
         EventMsg::HookCompleted(completed)
             if completed.run.event_name == HookEventName::PreCompact =>
         {
@@ -721,8 +721,8 @@ async fn manual_pre_compact_block_decision_does_not_block_compaction() {
     })
     .await;
     assert_eq!(completed.run.status, HookRunStatus::Failed);
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::Warning(_))).await;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::Warning(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     assert_eq!(
@@ -731,7 +731,7 @@ async fn manual_pre_compact_block_decision_does_not_block_compaction() {
         "unsupported PreCompact block output should not prevent the compact request"
     );
 
-    let hook_inputs = read_hook_inputs(&test.codex_home_path().join("pre_compact_block_log.jsonl"));
+    let hook_inputs = read_hook_inputs(&test.motyga_home_path().join("pre_compact_block_log.jsonl"));
     assert_eq!(hook_inputs.len(), 1);
     let input = &hook_inputs[0];
     assert_eq!(input["hook_event_name"], "PreCompact");
@@ -757,7 +757,7 @@ async fn compact_hooks_respect_matchers_and_post_runs_after_compaction() {
     let request_log = mount_sse_sequence(&server, vec![first_turn, compact_turn]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(write_matching_compact_hooks)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -765,9 +765,9 @@ async fn compact_hooks_respect_matchers_and_post_runs_after_compaction() {
             set_test_compact_prompt(config);
         });
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello before matched compact".to_string(),
@@ -780,23 +780,23 @@ async fn compact_hooks_respect_matchers_and_post_runs_after_compaction() {
         })
         .await
         .expect("submit first user turn");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.expect("trigger compact");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::Warning(_))).await;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    motyga.submit(Op::Compact).await.expect("trigger compact");
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::Warning(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(request_log.requests().len(), 2);
     assert!(
         !test
-            .codex_home_path()
+            .motyga_home_path()
             .join("pre_compact_auto_log.jsonl")
             .exists(),
         "auto matcher should not run for manual compaction"
     );
 
     let hook_inputs =
-        read_hook_inputs(&test.codex_home_path().join("post_compact_manual_log.jsonl"));
+        read_hook_inputs(&test.motyga_home_path().join("post_compact_manual_log.jsonl"));
     assert_eq!(hook_inputs.len(), 1);
     let input = &hook_inputs[0];
     assert_eq!(input["hook_event_name"], "PostCompact");
@@ -827,17 +827,17 @@ async fn manual_compact_uses_custom_prompt() {
     let custom_prompt = "Use this compact prompt instead";
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         config.compact_prompt = Some(custom_prompt.to_string());
     });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -850,15 +850,15 @@ async fn manual_compact_uses_custom_prompt() {
         })
         .await
         .expect("submit first user turn");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.expect("trigger compact");
-    let warning_event = wait_for_event(&codex, |ev| matches!(ev, EventMsg::Warning(_))).await;
+    motyga.submit(Op::Compact).await.expect("trigger compact");
+    let warning_event = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::Warning(_))).await;
     let EventMsg::Warning(WarningEvent { message }) = warning_event else {
         panic!("expected warning event after compact");
     };
     assert_eq!(message, COMPACT_WARNING_MESSAGE);
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     assert_eq!(
@@ -919,17 +919,17 @@ async fn manual_compact_emits_api_and_local_token_usage_events() {
     mount_sse_once(&server, sse_compact).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let motyga = builder.build(&server).await.unwrap().motyga;
 
     // Trigger manual compact and collect TokenCount events for the compact turn.
-    codex.submit(Op::Compact).await.unwrap();
+    motyga.submit(Op::Compact).await.unwrap();
 
     // First TokenCount: from the compact API call (usage.total_tokens = 0).
-    let first = wait_for_event_match(&codex, |ev| match ev {
+    let first = wait_for_event_match(&motyga, |ev| match ev {
         EventMsg::TokenCount(tc) => tc
             .info
             .as_ref()
@@ -939,7 +939,7 @@ async fn manual_compact_emits_api_and_local_token_usage_events() {
     .await;
 
     // Second TokenCount: from the local post-compaction estimate.
-    let last = wait_for_event_match(&codex, |ev| match ev {
+    let last = wait_for_event_match(&motyga, |ev| match ev {
         EventMsg::TokenCount(tc) => tc
             .info
             .as_ref()
@@ -949,7 +949,7 @@ async fn manual_compact_emits_api_and_local_token_usage_events() {
     .await;
 
     // Ensure the compact task itself completes.
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(
         first, 0,
@@ -978,13 +978,13 @@ async fn manual_compact_emits_context_compaction_items() {
     mount_sse_sequence(&server, vec![sse1, sse2]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let motyga = builder.build(&server).await.unwrap().motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "manual compact".into(),
@@ -997,9 +997,9 @@ async fn manual_compact_emits_context_compaction_items() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.unwrap();
+    motyga.submit(Op::Compact).await.unwrap();
 
     let mut started_item = None;
     let mut completed_item = None;
@@ -1008,7 +1008,7 @@ async fn manual_compact_emits_context_compaction_items() {
 
     while !saw_turn_complete || started_item.is_none() || completed_item.is_none() || !legacy_event
     {
-        let event = codex.next_event().await.unwrap();
+        let event = motyga.next_event().await.unwrap();
         match event.msg {
             EventMsg::ItemStarted(ItemStartedEvent {
                 item: TurnItem::ContextCompaction(item),
@@ -1045,14 +1045,14 @@ async fn multiple_auto_compact_per_task_runs_after_token_limit_hit() {
     let server = start_mock_server().await;
 
     let non_openai_provider_name = non_openai_model_provider(&server).name;
-    let codex = test_codex()
+    let motyga = test_motyga()
         .with_config(move |config| {
             config.model_provider.name = non_openai_provider_name;
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build motyga")
+        .motyga;
 
     // user message
     let user_message = "create an app";
@@ -1150,7 +1150,7 @@ async fn multiple_auto_compact_per_task_runs_after_token_limit_hit() {
     let request_log = mount_sse_sequence(&server, bodies).await;
 
     // Start the conversation with the user message
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: user_message.into(),
@@ -1163,7 +1163,7 @@ async fn multiple_auto_compact_per_task_runs_after_token_limit_hit() {
         })
         .await
         .expect("submit user input");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // collect the requests payloads from the model
     let requests_payloads = request_log.requests();
@@ -1615,14 +1615,14 @@ async fn auto_compact_runs_after_token_limit_hit() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let motyga = builder.build(&server).await.unwrap().motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: FIRST_AUTO_MSG.into(),
@@ -1636,9 +1636,9 @@ async fn auto_compact_runs_after_token_limit_hit() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: SECOND_AUTO_MSG.into(),
@@ -1652,9 +1652,9 @@ async fn auto_compact_runs_after_token_limit_hit() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: POST_AUTO_USER_MSG.into(),
@@ -1668,7 +1668,7 @@ async fn auto_compact_runs_after_token_limit_hit() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     let request_bodies: Vec<String> = requests
@@ -1813,19 +1813,19 @@ async fn auto_compact_emits_context_compaction_items() {
     mount_sse_sequence(&server, vec![sse1, sse2, sse3, sse4]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let motyga = builder.build(&server).await.unwrap().motyga;
 
     let mut started_item = None;
     let mut completed_item = None;
     let mut legacy_event = false;
 
     for user in [FIRST_AUTO_MSG, SECOND_AUTO_MSG, POST_AUTO_USER_MSG] {
-        codex
+        motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.into(),
@@ -1840,7 +1840,7 @@ async fn auto_compact_emits_context_compaction_items() {
             .unwrap();
 
         loop {
-            let event = codex.next_event().await.unwrap();
+            let event = motyga.next_event().await.unwrap();
             match event.msg {
                 EventMsg::ItemStarted(ItemStartedEvent {
                     item: TurnItem::ContextCompaction(item),
@@ -1899,14 +1899,14 @@ async fn auto_compact_starts_after_turn_started() {
     mount_sse_sequence(&server, vec![sse1, sse2, sse3, sse4]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let motyga = builder.build(&server).await.unwrap().motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: FIRST_AUTO_MSG.into(),
@@ -1919,9 +1919,9 @@ async fn auto_compact_starts_after_turn_started() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: SECOND_AUTO_MSG.into(),
@@ -1934,9 +1934,9 @@ async fn auto_compact_starts_after_turn_started() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: POST_AUTO_USER_MSG.into(),
@@ -1950,7 +1950,7 @@ async fn auto_compact_starts_after_turn_started() {
         .await
         .unwrap();
 
-    let first = wait_for_event_match(&codex, |ev| match ev {
+    let first = wait_for_event_match(&motyga, |ev| match ev {
         EventMsg::TurnStarted(_) => Some("turn"),
         EventMsg::ItemStarted(ItemStartedEvent {
             item: TurnItem::ContextCompaction(_),
@@ -1961,7 +1961,7 @@ async fn auto_compact_starts_after_turn_started() {
     .await;
     assert_eq!(first, "turn", "compaction started before turn started");
 
-    wait_for_event(&codex, |ev| {
+    wait_for_event(&motyga, |ev| {
         matches!(
             ev,
             EventMsg::ItemStarted(ItemStartedEvent {
@@ -1972,7 +1972,7 @@ async fn auto_compact_starts_after_turn_started() {
     })
     .await;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1986,16 +1986,16 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
     let remote_summary = "REMOTE_COMPACT_SUMMARY";
 
     let compacted_history = vec![
-        codex_protocol::models::ResponseItem::Message {
+        motyga_protocol::models::ResponseItem::Message {
             id: None,
             role: "assistant".to_string(),
-            content: vec![codex_protocol::models::ContentItem::OutputText {
+            content: vec![motyga_protocol::models::ContentItem::OutputText {
                 text: remote_summary.to_string(),
             }],
             phase: None,
             internal_chat_message_metadata_passthrough: None,
         },
-        codex_protocol::models::ResponseItem::Compaction {
+        motyga_protocol::models::ResponseItem::Compaction {
             id: None,
             encrypted_content: "ENCRYPTED_COMPACTION_SUMMARY".to_string(),
             internal_chat_message_metadata_passthrough: None,
@@ -2004,7 +2004,7 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
     let compact_mock =
         mount_compact_json_once(&server, serde_json::json!({ "output": compacted_history })).await;
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(limit);
         let _ = config.features.disable(Feature::RemoteCompactionV2);
@@ -2033,7 +2033,7 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
         "remote compaction should not run before the next user message"
     );
 
-    let mut resume_builder = test_codex().with_config(move |config| {
+    let mut resume_builder = test_motyga().with_config(move |config| {
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(limit);
         let _ = config.features.disable(Feature::RemoteCompactionV2);
@@ -2056,7 +2056,7 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
     mount_sse_once_match(&server, follow_up_matcher, sse_follow_up).await;
 
     resumed
-        .codex
+        .motyga
         .submit(disabled_permission_user_turn(
             follow_up_user,
             resumed.cwd.path().to_path_buf(),
@@ -2065,11 +2065,11 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
         .await
         .unwrap();
 
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.motyga, |event| {
         matches!(event, EventMsg::ContextCompacted(_))
     })
     .await;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2126,16 +2126,16 @@ async fn pre_sampling_compact_runs_on_switch_to_smaller_context_model() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
         });
-    let test = builder.build(&server).await.expect("build test codex");
+    let test = builder.build(&server).await.expect("build test motyga");
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "before switch",
             test.cwd.path().to_path_buf(),
@@ -2143,12 +2143,12 @@ async fn pre_sampling_compact_runs_on_switch_to_smaller_context_model() {
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "after switch",
             test.cwd.path().to_path_buf(),
@@ -2156,7 +2156,7 @@ async fn pre_sampling_compact_runs_on_switch_to_smaller_context_model() {
         ))
         .await
         .expect("submit second user turn");
-    assert_compaction_uses_turn_lifecycle_id(&test.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&test.motyga).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2228,16 +2228,16 @@ async fn pre_sampling_compact_runs_when_comp_hash_changes() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
         });
-    let test = builder.build(&server).await.expect("build test codex");
+    let test = builder.build(&server).await.expect("build test motyga");
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "before switch",
             test.cwd.path().to_path_buf(),
@@ -2245,12 +2245,12 @@ async fn pre_sampling_compact_runs_when_comp_hash_changes() {
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "after switch",
             test.cwd.path().to_path_buf(),
@@ -2258,7 +2258,7 @@ async fn pre_sampling_compact_runs_when_comp_hash_changes() {
         ))
         .await
         .expect("submit second user turn");
-    assert_compaction_uses_turn_lifecycle_id(&test.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&test.motyga).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2320,16 +2320,16 @@ async fn pre_sampling_compact_skips_when_either_comp_hash_is_missing() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(model_without_hash)
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
         });
-    let test = builder.build(&server).await.expect("build test codex");
+    let test = builder.build(&server).await.expect("build test motyga");
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "before hash",
             test.cwd.path().to_path_buf(),
@@ -2337,12 +2337,12 @@ async fn pre_sampling_compact_skips_when_either_comp_hash_is_missing() {
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "hash introduced",
             test.cwd.path().to_path_buf(),
@@ -2350,12 +2350,12 @@ async fn pre_sampling_compact_skips_when_either_comp_hash_is_missing() {
         ))
         .await
         .expect("submit second user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "hash removed",
             test.cwd.path().to_path_buf(),
@@ -2363,7 +2363,7 @@ async fn pre_sampling_compact_skips_when_either_comp_hash_is_missing() {
         ))
         .await
         .expect("submit third user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2425,8 +2425,8 @@ async fn body_after_prefix_model_switch_budget_compacts_with_next_model() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2436,9 +2436,9 @@ async fn body_after_prefix_model_switch_budget_compacts_with_next_model() {
             config.model_auto_compact_token_limit_scope =
                 AutoCompactTokenLimitScope::BodyAfterPrefix;
         });
-    let test = builder.build(&server).await.expect("build test codex");
+    let test = builder.build(&server).await.expect("build test motyga");
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "before switch",
             test.cwd.path().to_path_buf(),
@@ -2446,12 +2446,12 @@ async fn body_after_prefix_model_switch_budget_compacts_with_next_model() {
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "after switch",
             test.cwd.path().to_path_buf(),
@@ -2459,7 +2459,7 @@ async fn body_after_prefix_model_switch_budget_compacts_with_next_model() {
         ))
         .await
         .expect("submit second user turn");
-    assert_compaction_uses_turn_lifecycle_id(&test.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&test.motyga).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2519,8 +2519,8 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut initial_builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut initial_builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2529,7 +2529,7 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
     let initial = initial_builder
         .build(&server)
         .await
-        .expect("build initial test codex");
+        .expect("build initial test motyga");
     let home = initial.home.clone();
     let rollout_path = initial
         .session_configured
@@ -2538,7 +2538,7 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
         .expect("rollout path");
 
     initial
-        .codex
+        .motyga
         .submit(disabled_permission_user_turn(
             "before resume",
             initial.cwd.path().to_path_buf(),
@@ -2546,24 +2546,24 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
         ))
         .await
         .expect("submit pre-resume turn");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     initial
-        .codex
+        .motyga
         .submit(Op::Shutdown)
         .await
         .expect("shutdown initial session");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.motyga, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut resumed_builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut resumed_builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2572,10 +2572,10 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
     let resumed = resumed_builder
         .resume(&server, home, rollout_path)
         .await
-        .expect("resume codex");
+        .expect("resume motyga");
 
     resumed
-        .codex
+        .motyga
         .submit(disabled_permission_user_turn(
             "after resume",
             resumed.cwd.path().to_path_buf(),
@@ -2583,7 +2583,7 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
         ))
         .await
         .expect("submit resumed user turn");
-    assert_compaction_uses_turn_lifecycle_id(&resumed.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&resumed.motyga).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2640,8 +2640,8 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut initial_builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut initial_builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2650,7 +2650,7 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
     let initial = initial_builder
         .build(&server)
         .await
-        .expect("build initial test codex");
+        .expect("build initial test motyga");
     let home = initial.home.clone();
     let rollout_path = initial
         .session_configured
@@ -2659,7 +2659,7 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
         .expect("rollout path");
 
     initial
-        .codex
+        .motyga
         .submit(disabled_permission_user_turn(
             "before resume",
             initial.cwd.path().to_path_buf(),
@@ -2667,17 +2667,17 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
         ))
         .await
         .expect("submit pre-resume turn");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     initial
-        .codex
+        .motyga
         .submit(Op::Shutdown)
         .await
         .expect("shutdown initial session");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.motyga, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -2693,8 +2693,8 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
     assert_eq!(persisted_comp_hash.as_deref(), Some("hash-a"));
 
     let model_provider = non_openai_model_provider(&server);
-    let mut resumed_builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut resumed_builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2703,10 +2703,10 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
     let resumed = resumed_builder
         .resume(&server, home, rollout_path)
         .await
-        .expect("resume codex");
+        .expect("resume motyga");
 
     resumed
-        .codex
+        .motyga
         .submit(disabled_permission_user_turn(
             "after resume",
             resumed.cwd.path().to_path_buf(),
@@ -2714,7 +2714,7 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
         ))
         .await
         .expect("submit resumed user turn");
-    assert_compaction_uses_turn_lifecycle_id(&resumed.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&resumed.motyga).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2767,8 +2767,8 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut initial_builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut initial_builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2777,7 +2777,7 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
     let initial = initial_builder
         .build(&server)
         .await
-        .expect("build initial test codex");
+        .expect("build initial test motyga");
     let home = initial.home.clone();
     let rollout_path = initial
         .session_configured
@@ -2786,7 +2786,7 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
         .expect("rollout path");
 
     initial
-        .codex
+        .motyga
         .submit(disabled_permission_user_turn(
             "before resume",
             initial.cwd.path().to_path_buf(),
@@ -2794,17 +2794,17 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
         ))
         .await
         .expect("submit pre-resume turn");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     initial
-        .codex
+        .motyga
         .submit(Op::Shutdown)
         .await
         .expect("shutdown initial session");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.motyga, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -2818,8 +2818,8 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
     assert!(persisted_turn_context["payload"].get("comp_hash").is_none());
 
     let model_provider = non_openai_model_provider(&server);
-    let mut resumed_builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut resumed_builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2828,10 +2828,10 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
     let resumed = resumed_builder
         .resume(&server, home, rollout_path)
         .await
-        .expect("resume codex");
+        .expect("resume motyga");
 
     resumed
-        .codex
+        .motyga
         .submit(disabled_permission_user_turn(
             "after resume",
             resumed.cwd.path().to_path_buf(),
@@ -2839,7 +2839,7 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
         ))
         .await
         .expect("submit resumed user turn");
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2917,16 +2917,16 @@ async fn auto_compact_persists_rollout_entries() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
     let test = builder.build(&server).await.unwrap();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
     let session_configured = test.session_configured;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: FIRST_AUTO_MSG.into(),
@@ -2939,9 +2939,9 @@ async fn auto_compact_persists_rollout_entries() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: SECOND_AUTO_MSG.into(),
@@ -2954,9 +2954,9 @@ async fn auto_compact_persists_rollout_entries() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: POST_AUTO_USER_MSG.into(),
@@ -2969,10 +2969,10 @@ async fn auto_compact_persists_rollout_entries() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Shutdown).await.unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    motyga.submit(Op::Shutdown).await.unwrap();
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
     let rollout_path = session_configured.rollout_path.expect("rollout path");
     let text = std::fs::read_to_string(&rollout_path).expect("failed to read rollout file");
@@ -3033,14 +3033,14 @@ async fn manual_compact_retries_after_context_window_error() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let motyga = builder.build(&server).await.unwrap().motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn".into(),
@@ -3053,15 +3053,15 @@ async fn manual_compact_retries_after_context_window_error() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.unwrap();
-    let warning_event = wait_for_event(&codex, |ev| matches!(ev, EventMsg::Warning(_))).await;
+    motyga.submit(Op::Compact).await.unwrap();
+    let warning_event = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::Warning(_))).await;
     let EventMsg::Warning(WarningEvent { message }) = warning_event else {
         panic!("expected warning event after compact retry");
     };
     assert_eq!(message, COMPACT_WARNING_MESSAGE);
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     assert_eq!(
@@ -3133,7 +3133,7 @@ async fn manual_compact_non_context_failure_retries_then_emits_task_error() {
     let mut model_provider = non_openai_model_provider(&server);
     model_provider.stream_max_retries = Some(1);
 
-    let codex = test_codex()
+    let motyga = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
@@ -3141,10 +3141,10 @@ async fn manual_compact_non_context_failure_retries_then_emits_task_error() {
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build motyga")
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn".into(),
@@ -3157,11 +3157,11 @@ async fn manual_compact_non_context_failure_retries_then_emits_task_error() {
         })
         .await
         .expect("submit user input");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.expect("trigger compact");
+    motyga.submit(Op::Compact).await.expect("trigger compact");
 
-    let reconnect_message = wait_for_event_match(&codex, |event| match event {
+    let reconnect_message = wait_for_event_match(&motyga, |event| match event {
         EventMsg::StreamError(stream_error) => Some(stream_error.message.clone()),
         _ => None,
     })
@@ -3171,7 +3171,7 @@ async fn manual_compact_non_context_failure_retries_then_emits_task_error() {
         "expected reconnect stream error message, got {reconnect_message}"
     );
 
-    let task_error_message = wait_for_event_match(&codex, |event| match event {
+    let task_error_message = wait_for_event_match(&motyga, |event| match event {
         EventMsg::Error(err) => Some(err.message.clone()),
         _ => None,
     })
@@ -3180,7 +3180,7 @@ async fn manual_compact_non_context_failure_retries_then_emits_task_error() {
         task_error_message.contains("Error running local compact task"),
         "expected local compact task error prefix, got {task_error_message}"
     );
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -3233,13 +3233,13 @@ async fn manual_compact_twice_preserves_latest_user_messages() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let motyga = builder.build(&server).await.unwrap().motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -3252,12 +3252,12 @@ async fn manual_compact_twice_preserves_latest_user_messages() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    motyga.submit(Op::Compact).await.unwrap();
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -3270,12 +3270,12 @@ async fn manual_compact_twice_preserves_latest_user_messages() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    motyga.submit(Op::Compact).await.unwrap();
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: final_user_message.into(),
@@ -3288,7 +3288,7 @@ async fn manual_compact_twice_preserves_latest_user_messages() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = responses_mock.requests();
     assert_eq!(
@@ -3473,16 +3473,16 @@ async fn auto_compact_allows_multiple_attempts_when_interleaved_with_other_turn_
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let motyga = builder.build(&server).await.unwrap().motyga;
 
     let mut auto_compact_lifecycle_events = Vec::new();
     for user in [MULTI_AUTO_MSG, follow_up_user, final_user] {
-        codex
+        motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.into(),
@@ -3497,7 +3497,7 @@ async fn auto_compact_allows_multiple_attempts_when_interleaved_with_other_turn_
             .unwrap();
 
         loop {
-            let event = codex.next_event().await.unwrap();
+            let event = motyga.next_event().await.unwrap();
             if event.id.starts_with("auto-compact-")
                 && matches!(
                     event.msg,
@@ -3579,15 +3579,15 @@ async fn snapshot_request_shape_mid_turn_continuation_compaction() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_context_window = Some(context_window);
         config.model_auto_compact_token_limit = Some(limit);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let motyga = builder.build(&server).await.unwrap().motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: FUNCTION_CALL_LIMIT_MSG.into(),
@@ -3601,7 +3601,7 @@ async fn snapshot_request_shape_mid_turn_continuation_compaction() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
 
     // Assert first request captured expected user message that triggers function call.
     let first_request = first_turn_mock.single_request().input();
@@ -3683,16 +3683,16 @@ async fn auto_compact_clamps_config_limit_to_context_window() {
     mount_sse_once(&server, post_auto_compact_turn).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_context_window = Some(context_window);
         config.model_auto_compact_token_limit = Some(config_limit);
     });
-    let codex = builder.build(&server).await.unwrap();
+    let motyga = builder.build(&server).await.unwrap();
 
-    codex.submit_turn("OVER_LIMIT_TURN").await.unwrap();
-    codex.submit_turn("FOLLOW_UP_AFTER_CLAMP").await.unwrap();
+    motyga.submit_turn("OVER_LIMIT_TURN").await.unwrap();
+    motyga.submit_turn("FOLLOW_UP_AFTER_CLAMP").await.unwrap();
 
     assert!(
         first_turn_mock.single_request().input().iter().any(|item| {
@@ -3744,7 +3744,7 @@ async fn auto_compact_body_after_prefix_ignores_starting_window_prefix() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
@@ -3755,7 +3755,7 @@ async fn auto_compact_body_after_prefix_ignores_starting_window_prefix() {
         })
         .build(&server)
         .await
-        .expect("build codex");
+        .expect("build motyga");
 
     for user in ["PREFIX_FREE_ONE", "PREFIX_FREE_TWO"] {
         test.submit_turn(user).await.expect("submit turn");
@@ -3832,7 +3832,7 @@ async fn auto_compact_body_after_prefix_counts_growth_after_compaction() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
@@ -3843,7 +3843,7 @@ async fn auto_compact_body_after_prefix_counts_growth_after_compaction() {
         })
         .build(&server)
         .await
-        .expect("build codex");
+        .expect("build motyga");
 
     test.submit_turn("WINDOW_PREFIX")
         .await
@@ -3916,7 +3916,7 @@ async fn auto_compact_body_after_prefix_still_caps_at_context_window() {
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
@@ -3927,7 +3927,7 @@ async fn auto_compact_body_after_prefix_still_caps_at_context_window() {
         })
         .build(&server)
         .await
-        .expect("build codex");
+        .expect("build motyga");
 
     for user in ["CONTEXT_CAP_ONE", "CONTEXT_CAP_TWO", "CONTEXT_CAP_THREE"] {
         test.submit_turn(user).await.expect("submit turn");
@@ -3986,16 +3986,16 @@ async fn auto_compact_counts_encrypted_reasoning_before_last_user() {
     .await;
 
     let compacted_history = vec![
-        codex_protocol::models::ResponseItem::Message {
+        motyga_protocol::models::ResponseItem::Message {
             id: None,
             role: "assistant".to_string(),
-            content: vec![codex_protocol::models::ContentItem::OutputText {
+            content: vec![motyga_protocol::models::ContentItem::OutputText {
                 text: "REMOTE_COMPACT_SUMMARY".to_string(),
             }],
             phase: None,
             internal_chat_message_metadata_passthrough: None,
         },
-        codex_protocol::models::ResponseItem::Compaction {
+        motyga_protocol::models::ResponseItem::Compaction {
             id: None,
             encrypted_content: "ENCRYPTED_COMPACTION_SUMMARY".to_string(),
             internal_chat_message_metadata_passthrough: None,
@@ -4005,8 +4005,8 @@ async fn auto_compact_counts_encrypted_reasoning_before_last_user() {
         mount_compact_json_once(&server, serde_json::json!({ "output": compacted_history })).await;
     let chatgpt_base_url = format!("{}/backend-api", server.uri());
 
-    let codex = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let motyga = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config.chatgpt_base_url = chatgpt_base_url;
             set_test_compact_prompt(config);
@@ -4015,14 +4015,14 @@ async fn auto_compact_counts_encrypted_reasoning_before_last_user() {
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build motyga")
+        .motyga;
 
     for (idx, user) in [first_user, second_user, third_user]
         .into_iter()
         .enumerate()
     {
-        codex
+        motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.into(),
@@ -4035,7 +4035,7 @@ async fn auto_compact_counts_encrypted_reasoning_before_last_user() {
             })
             .await
             .unwrap();
-        wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+        wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
         if idx < 2 {
             assert!(
@@ -4114,16 +4114,16 @@ async fn auto_compact_runs_when_reasoning_header_clears_between_turns() {
     mount_response_sequence(&server, responses).await;
 
     let compacted_history = vec![
-        codex_protocol::models::ResponseItem::Message {
+        motyga_protocol::models::ResponseItem::Message {
             id: None,
             role: "assistant".to_string(),
-            content: vec![codex_protocol::models::ContentItem::OutputText {
+            content: vec![motyga_protocol::models::ContentItem::OutputText {
                 text: "REMOTE_COMPACT_SUMMARY".to_string(),
             }],
             phase: None,
             internal_chat_message_metadata_passthrough: None,
         },
-        codex_protocol::models::ResponseItem::Compaction {
+        motyga_protocol::models::ResponseItem::Compaction {
             id: None,
             encrypted_content: "ENCRYPTED_COMPACTION_SUMMARY".to_string(),
             internal_chat_message_metadata_passthrough: None,
@@ -4132,8 +4132,8 @@ async fn auto_compact_runs_when_reasoning_header_clears_between_turns() {
     let compact_mock =
         mount_compact_json_once(&server, serde_json::json!({ "output": compacted_history })).await;
 
-    let codex = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let motyga = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             set_test_compact_prompt(config);
             config.model_auto_compact_token_limit = Some(300);
@@ -4141,11 +4141,11 @@ async fn auto_compact_runs_when_reasoning_header_clears_between_turns() {
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build motyga")
+        .motyga;
 
     for user in [first_user, second_user, third_user] {
-        codex
+        motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.into(),
@@ -4158,7 +4158,7 @@ async fn auto_compact_runs_when_reasoning_header_clears_between_turns() {
             })
             .await
             .unwrap();
-        wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+        wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     }
 
     let compact_requests = compact_mock.requests();
@@ -4195,7 +4195,7 @@ async fn snapshot_request_shape_pre_turn_compaction_including_incoming_user_mess
     let request_log = mount_sse_sequence(&server, vec![sse1, sse2, sse3, sse4]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let codex = test_codex()
+    let motyga = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
@@ -4203,11 +4203,11 @@ async fn snapshot_request_shape_pre_turn_compaction_including_incoming_user_mess
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build motyga")
+        .motyga;
 
     for user in ["USER_ONE", "USER_TWO"] {
-        codex
+        motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.to_string(),
@@ -4220,11 +4220,11 @@ async fn snapshot_request_shape_pre_turn_compaction_including_incoming_user_mess
             })
             .await
             .expect("submit user input");
-        wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+        wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     }
     core_test_support::submit_thread_settings(
-        &codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             environments: Some(local_selections(
                 test_path_buf(PRETURN_CONTEXT_DIFF_CWD).abs(),
             )),
@@ -4235,7 +4235,7 @@ async fn snapshot_request_shape_pre_turn_compaction_including_incoming_user_mess
     .expect("override thread settings");
     let image_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="
         .to_string();
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![
                 UserInput::Image {
@@ -4254,7 +4254,7 @@ async fn snapshot_request_shape_pre_turn_compaction_including_incoming_user_mess
         })
         .await
         .expect("submit user input");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     assert_eq!(requests.len(), 4, "expected user, user, compact, follow-up");
@@ -4320,8 +4320,8 @@ async fn snapshot_request_shape_pre_turn_compaction_strips_incoming_model_switch
     .await;
 
     let model_provider = non_openai_model_provider(&server);
-    let test = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let test = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -4331,9 +4331,9 @@ async fn snapshot_request_shape_pre_turn_compaction_strips_incoming_model_switch
         })
         .build(&server)
         .await
-        .expect("build codex");
+        .expect("build motyga");
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "BEFORE_SWITCH_USER",
             test.cwd.path().to_path_buf(),
@@ -4341,12 +4341,12 @@ async fn snapshot_request_shape_pre_turn_compaction_strips_incoming_model_switch
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.motyga
         .submit(disabled_permission_user_turn(
             "AFTER_SWITCH_USER",
             test.cwd.path().to_path_buf(),
@@ -4354,7 +4354,7 @@ async fn snapshot_request_shape_pre_turn_compaction_strips_incoming_model_switch
         ))
         .await
         .expect("submit second user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -4419,7 +4419,7 @@ async fn snapshot_request_shape_pre_turn_compaction_context_window_exceeded() {
 
     let mut model_provider = non_openai_model_provider(&server);
     model_provider.stream_max_retries = Some(0);
-    let codex = test_codex()
+    let motyga = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
@@ -4427,10 +4427,10 @@ async fn snapshot_request_shape_pre_turn_compaction_context_window_exceeded() {
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build motyga")
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -4443,9 +4443,9 @@ async fn snapshot_request_shape_pre_turn_compaction_context_window_exceeded() {
         })
         .await
         .expect("submit first user");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -4458,12 +4458,12 @@ async fn snapshot_request_shape_pre_turn_compaction_context_window_exceeded() {
         })
         .await
         .expect("submit second user");
-    let error_message = wait_for_event_match(&codex, |event| match event {
+    let error_message = wait_for_event_match(&motyga, |event| match event {
         EventMsg::Error(err) => Some(err.message.clone()),
         _ => None,
     })
     .await;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     assert!(
@@ -4505,20 +4505,20 @@ async fn snapshot_request_shape_manual_compact_without_previous_user_messages() 
     let request_log = mount_sse_sequence(&server, vec![compact_turn, follow_up_turn]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let codex = test_codex()
+    let motyga = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             set_test_compact_prompt(config);
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build motyga")
+        .motyga;
 
-    codex.submit(Op::Compact).await.expect("run /compact");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    motyga.submit(Op::Compact).await.expect("run /compact");
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "AFTER_MANUAL_EMPTY_COMPACT".to_string(),
@@ -4531,7 +4531,7 @@ async fn snapshot_request_shape_manual_compact_without_previous_user_messages() 
         })
         .await
         .expect("submit follow-up user input");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     assert_eq!(
@@ -4584,7 +4584,7 @@ async fn manual_compaction_keeps_the_creation_time_global_instructions() -> Resu
     let provider = local_compaction_provider(&server);
 
     // Create the thread with the old global source loaded into its instruction snapshot.
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(Arc::clone(&home))
         .with_config(move |config| {
             config.model_provider = provider;
@@ -4593,7 +4593,7 @@ async fn manual_compaction_keeps_the_creation_time_global_instructions() -> Resu
 
     // Assert the pre-compaction source list points at the creation-time file.
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "thread reports the creation-time global source before compaction"
     );
@@ -4607,8 +4607,8 @@ async fn manual_compaction_keeps_the_creation_time_global_instructions() -> Resu
     )?;
     assert_eq!(source, rewritten_source);
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -4623,7 +4623,7 @@ async fn manual_compaction_keeps_the_creation_time_global_instructions() -> Resu
     assert_single_instruction_fragment(&requests[1], &expected_fragment);
     assert_single_instruction_fragment(&requests[2], &expected_fragment);
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "thread retains the creation-time global source after compaction"
     );
@@ -4662,7 +4662,7 @@ async fn mid_turn_compaction_keeps_the_creation_time_global_instructions() -> Re
     let provider = local_compaction_provider(&server);
 
     // Create the thread with the old global source loaded into its instruction snapshot.
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(Arc::clone(&home))
         .with_config(move |config| {
             config.model_provider = provider;
@@ -4673,7 +4673,7 @@ async fn mid_turn_compaction_keeps_the_creation_time_global_instructions() -> Re
 
     // Assert the pre-compaction source list points at the creation-time file.
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "thread reports the creation-time global source before mid-turn compaction"
     );
@@ -4695,7 +4695,7 @@ async fn mid_turn_compaction_keeps_the_creation_time_global_instructions() -> Re
     assert_single_instruction_fragment(&requests[1], &expected_fragment);
     assert_single_instruction_fragment(&requests[2], &expected_fragment);
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "thread retains the creation-time global source after mid-turn compaction"
     );
@@ -4735,9 +4735,9 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
         GLOBAL_AGENTS_FILENAME,
         OLD_GLOBAL_INSTRUCTIONS,
     )?;
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(Arc::clone(&home))
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             let _ = config.features.enable(Feature::RemoteCompactionV2);
         });
@@ -4751,13 +4751,13 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
         NEW_GLOBAL_INSTRUCTIONS,
     )?;
     assert_eq!(source, rewritten_source);
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
     test.submit_turn("after remote v2 compaction").await?;
-    test.codex.flush_rollout().await?;
+    test.motyga.flush_rollout().await?;
 
     // Assert the compact request, installed replacement history, and follow-up all keep the
     // creation-time item despite the file-backed source now containing new text.
@@ -4772,7 +4772,7 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
         Some(&json!({"type": "compaction_trigger"})),
         "remote-v2 compact request should append exactly one compaction trigger"
     );
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.motyga.rollout_path().expect("rollout path");
     let replacement_history = replacement_history_from_rollout(&rollout_path)?;
     assert_eq!(
         instruction_fragments_in_items(&replacement_history),
@@ -4780,7 +4780,7 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
         "remote-v2 replacement history currently omits the global-instruction fragment"
     );
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "running thread retains the selected same-path source"
     );
@@ -4791,15 +4791,15 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
     );
 
     // Cold-resume the persisted replacement history with freshly loaded same-path configuration.
-    test.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Shutdown).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
     let resumed_cwd = test.config.cwd.clone();
-    let mut resume_builder = test_codex()
+    let mut resume_builder = test_motyga()
         .with_home(Arc::clone(&home))
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config.cwd = resumed_cwd;
             let _ = config.features.enable(Feature::RemoteCompactionV2);
@@ -4835,7 +4835,7 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
         "remote-v2 cold resume should replay the complete post-compaction structured prefix"
     );
     assert_eq!(
-        resumed.codex.instruction_sources().await,
+        resumed.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "cold-resumed thread reports the same rewritten source path"
     );

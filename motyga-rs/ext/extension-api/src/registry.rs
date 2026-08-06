@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use codex_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::ReviewDecision;
 
 use crate::ApprovalReviewContributor;
 use crate::ConfigContributor;

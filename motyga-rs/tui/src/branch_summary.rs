@@ -606,7 +606,7 @@ mod tests {
             response(
                 &["gh", "repo", "view", "--json", "nameWithOwner,parent"],
                 /*exit_code*/ 0,
-                r#"{"nameWithOwner":"fcoury/codex","parent":{"nameWithOwner":"openai/codex"}}"#,
+                r#"{"nameWithOwner":"fcoury/motyga","parent":{"nameWithOwner":"openai/codex"}}"#,
             ),
             response(
                 &[
@@ -665,9 +665,9 @@ mod tests {
     fn status_line_pr_fallback_searches_parent_repo_first() {
         assert_eq!(
             repo_search_order_from_output(
-                r#"{"nameWithOwner":"fcoury/codex","parent":{"nameWithOwner":"openai/codex"}}"#
+                r#"{"nameWithOwner":"fcoury/motyga","parent":{"nameWithOwner":"openai/codex"}}"#
             ),
-            Some(vec!["openai/codex".to_string(), "fcoury/codex".to_string()])
+            Some(vec!["openai/codex".to_string(), "fcoury/motyga".to_string()])
         );
     }
 

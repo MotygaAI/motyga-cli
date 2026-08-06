@@ -5,10 +5,10 @@ use std::process::Stdio;
 use std::time::Duration;
 
 use anyhow::anyhow;
-use codex_exec_server_protocol::JSONRPCMessage;
-use codex_exec_server_protocol::JSONRPCNotification;
-use codex_exec_server_protocol::JSONRPCRequest;
-use codex_exec_server_protocol::RequestId;
+use motyga_exec_server_protocol::JSONRPCMessage;
+use motyga_exec_server_protocol::JSONRPCNotification;
+use motyga_exec_server_protocol::JSONRPCRequest;
+use motyga_exec_server_protocol::RequestId;
 use futures::SinkExt;
 use futures::StreamExt;
 use tempfile::TempDir;
@@ -32,8 +32,8 @@ const CONNECT_RETRY_INTERVAL: Duration = Duration::from_millis(25);
 const EVENT_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub(crate) struct ExecServerHarness {
-    _codex_home: TempDir,
-    _helper_paths: TestCodexHelperPaths,
+    _motyga_home: TempDir,
+    _helper_paths: TestMotygaHelperPaths,
     child: Child,
     websocket_url: String,
     websocket: tokio_tungstenite::WebSocketStream<
@@ -48,9 +48,9 @@ impl Drop for ExecServerHarness {
     }
 }
 
-pub(crate) struct TestCodexHelperPaths {
-    pub(crate) codex_exe: PathBuf,
-    pub(crate) codex_linux_sandbox_exe: Option<PathBuf>,
+pub(crate) struct TestMotygaHelperPaths {
+    pub(crate) motyga_exe: PathBuf,
+    pub(crate) motyga_linux_sandbox_exe: Option<PathBuf>,
 }
 
 pub(crate) struct DisconnectableWebSocketProxy {
@@ -67,11 +67,11 @@ impl Drop for DisconnectableWebSocketProxy {
     }
 }
 
-pub(crate) fn test_codex_helper_paths() -> anyhow::Result<TestCodexHelperPaths> {
-    let (helper_binary, codex_linux_sandbox_exe) = super::current_test_binary_helper_paths()?;
-    Ok(TestCodexHelperPaths {
-        codex_exe: helper_binary,
-        codex_linux_sandbox_exe,
+pub(crate) fn test_motyga_helper_paths() -> anyhow::Result<TestMotygaHelperPaths> {
+    let (helper_binary, motyga_linux_sandbox_exe) = super::current_test_binary_helper_paths()?;
+    Ok(TestMotygaHelperPaths {
+        motyga_exe: helper_binary,
+        motyga_linux_sandbox_exe,
     })
 }
 
@@ -85,22 +85,22 @@ where
     K: AsRef<std::ffi::OsStr>,
     V: AsRef<std::ffi::OsStr>,
 {
-    let helper_paths = test_codex_helper_paths()?;
-    let codex_home = TempDir::new()?;
-    let mut child = Command::new(&helper_paths.codex_exe);
+    let helper_paths = test_motyga_helper_paths()?;
+    let motyga_home = TempDir::new()?;
+    let mut child = Command::new(&helper_paths.motyga_exe);
     child.args(["exec-server", "--listen", "ws://127.0.0.1:0"]);
     child.stdin(Stdio::null());
     child.stdout(Stdio::piped());
     child.stderr(Stdio::inherit());
     child.kill_on_drop(true);
-    child.env("MOTYGA_HOME", codex_home.path());
+    child.env("MOTYGA_HOME", motyga_home.path());
     child.envs(env);
     let mut child = child.spawn()?;
 
     let websocket_url = read_listen_url_from_stdout(&mut child).await?;
     let (websocket, _) = connect_websocket_when_ready(&websocket_url).await?;
     Ok(ExecServerHarness {
-        _codex_home: codex_home,
+        _motyga_home: motyga_home,
         _helper_paths: helper_paths,
         child,
         websocket_url,

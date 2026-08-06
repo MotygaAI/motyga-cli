@@ -29,17 +29,17 @@ use crate::tools::sandboxing::ToolRuntime;
 use crate::tools::sandboxing::default_exec_approval_requirement;
 use crate::tools::sandboxing::sandbox_override_for_first_attempt;
 use crate::tools::sandboxing::unsandboxed_execution_allowed;
-use codex_hooks::PermissionRequestDecision;
-use codex_otel::ToolDecisionSource;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::SandboxErr;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::NetworkPolicyRuleAction;
-use codex_protocol::protocol::ReviewDecision;
-use codex_sandboxing::SandboxManager;
-use codex_sandboxing::SandboxType;
-use codex_utils_path_uri::PathUri;
+use motyga_hooks::PermissionRequestDecision;
+use motyga_otel::ToolDecisionSource;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::SandboxErr;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::NetworkPolicyRuleAction;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_sandboxing::SandboxManager;
+use motyga_sandboxing::SandboxType;
+use motyga_utils_path_uri::PathUri;
 use std::time::Instant;
 
 pub(crate) struct ToolOrchestrator {
@@ -91,7 +91,7 @@ impl ToolOrchestrator {
             manager: attempt.manager,
             sandbox_cwd: attempt.sandbox_cwd,
             workspace_roots: attempt.workspace_roots,
-            codex_linux_sandbox_exe: attempt.codex_linux_sandbox_exe,
+            motyga_linux_sandbox_exe: attempt.motyga_linux_sandbox_exe,
             use_legacy_landlock: attempt.use_legacy_landlock,
             windows_sandbox_level: attempt.windows_sandbox_level,
             windows_sandbox_private_desktop: attempt.windows_sandbox_private_desktop,
@@ -266,7 +266,7 @@ impl ToolOrchestrator {
             manager: &self.sandbox,
             sandbox_cwd: &sandbox_policy_cwd,
             workspace_roots: workspace_roots.as_slice(),
-            codex_linux_sandbox_exe: turn_ctx.config.codex_linux_sandbox_exe.as_ref(),
+            motyga_linux_sandbox_exe: turn_ctx.config.motyga_linux_sandbox_exe.as_ref(),
             use_legacy_landlock,
             windows_sandbox_level: turn_ctx.windows_sandbox_level,
             windows_sandbox_private_desktop: turn_ctx
@@ -294,7 +294,7 @@ impl ToolOrchestrator {
                     deferred_network_approval: first_deferred_network_approval,
                 })
             }
-            Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+            Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied {
                 output,
                 network_policy_decision,
             }))) => {
@@ -313,7 +313,7 @@ impl ToolOrchestrator {
                         initial_duration,
                         /*escalated_duration*/ None,
                     );
-                    return Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+                    return Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied {
                         output,
                         network_policy_decision,
                     })));
@@ -326,7 +326,7 @@ impl ToolOrchestrator {
                         initial_duration,
                         /*escalated_duration*/ None,
                     );
-                    return Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+                    return Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied {
                         output,
                         network_policy_decision,
                     })));
@@ -355,7 +355,7 @@ impl ToolOrchestrator {
                             initial_duration,
                             /*escalated_duration*/ None,
                         );
-                        return Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+                        return Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied {
                             output,
                             network_policy_decision,
                         })));
@@ -369,7 +369,7 @@ impl ToolOrchestrator {
                         initial_duration,
                         /*escalated_duration*/ None,
                     );
-                    return Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+                    return Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied {
                         output,
                         network_policy_decision,
                     })));
@@ -434,10 +434,10 @@ impl ToolOrchestrator {
                 } else {
                     SandboxType::None
                 };
-                let retry_codex_linux_sandbox_exe = if unsandboxed_allowed {
+                let retry_motyga_linux_sandbox_exe = if unsandboxed_allowed {
                     None
                 } else {
-                    turn_ctx.config.codex_linux_sandbox_exe.as_ref()
+                    turn_ctx.config.motyga_linux_sandbox_exe.as_ref()
                 };
                 let retry_attempt = SandboxAttempt {
                     sandbox: retry_sandbox,
@@ -448,7 +448,7 @@ impl ToolOrchestrator {
                     manager: &self.sandbox,
                     sandbox_cwd: &sandbox_policy_cwd,
                     workspace_roots: workspace_roots.as_slice(),
-                    codex_linux_sandbox_exe: retry_codex_linux_sandbox_exe,
+                    motyga_linux_sandbox_exe: retry_motyga_linux_sandbox_exe,
                     use_legacy_landlock,
                     windows_sandbox_level: turn_ctx.windows_sandbox_level,
                     windows_sandbox_private_desktop: turn_ctx
@@ -517,7 +517,7 @@ impl ToolOrchestrator {
         approval_ctx: ApprovalCtx<'_>,
         tool_ctx: &ToolCtx,
         evaluate_permission_request_hooks: bool,
-        otel: &codex_otel::SessionTelemetry,
+        otel: &motyga_otel::SessionTelemetry,
     ) -> Result<ReviewDecision, ToolError>
     where
         T: ToolRuntime<Rq, Out>,
@@ -606,10 +606,10 @@ impl ToolOrchestrator {
 
 fn sandbox_outcome_from_tool_error(err: &ToolError) -> Option<&'static str> {
     match err {
-        ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied { .. })) => Some("denied"),
-        ToolError::Codex(CodexErr::Sandbox(SandboxErr::Timeout { .. })) => Some("timed_out"),
-        ToolError::Codex(CodexErr::Sandbox(SandboxErr::Signal(_))) => Some("signal"),
-        ToolError::Rejected(_) | ToolError::Codex(_) => None,
+        ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied { .. })) => Some("denied"),
+        ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Timeout { .. })) => Some("timed_out"),
+        ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Signal(_))) => Some("signal"),
+        ToolError::Rejected(_) | ToolError::Motyga(_) => None,
     }
 }
 

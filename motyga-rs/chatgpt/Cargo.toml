@@ -1,5 +1,5 @@
 [package]
-name = "codex-chatgpt"
+name = "motyga-chatgpt"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,18 +10,18 @@ workspace = true
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
-codex-connectors = { workspace = true }
-codex-core = { workspace = true }
-codex-git-utils = { workspace = true }
-codex-login = { workspace = true }
-codex-model-provider = { workspace = true }
-codex-plugin = { workspace = true }
-codex-utils-cli = { workspace = true }
+motyga-connectors = { workspace = true }
+motyga-core = { workspace = true }
+motyga-git-utils = { workspace = true }
+motyga-login = { workspace = true }
+motyga-model-provider = { workspace = true }
+motyga-plugin = { workspace = true }
+motyga-utils-cli = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["full"] }
 
 [dev-dependencies]
-codex-utils-cargo-bin = { workspace = true }
+motyga-utils-cargo-bin = { workspace = true }
 pretty_assertions = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }

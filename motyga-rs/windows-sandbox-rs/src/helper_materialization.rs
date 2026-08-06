@@ -17,7 +17,7 @@ use crate::sandbox_bin_dir;
 
 const DEV_BUILD_VERSION_SENTINEL: &str = "0.0.0";
 pub(crate) const BIN_DIRNAME: &str = "bin";
-pub(crate) const RESOURCES_DIRNAME: &str = "codex-resources";
+pub(crate) const RESOURCES_DIRNAME: &str = "motyga-resources";
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub(crate) enum HelperExecutable {
@@ -27,7 +27,7 @@ pub(crate) enum HelperExecutable {
 impl HelperExecutable {
     fn file_name(self) -> &'static str {
         match self {
-            Self::CommandRunner => "codex-command-runner.exe",
+            Self::CommandRunner => "motyga-command-runner.exe",
         }
     }
 
@@ -46,8 +46,8 @@ enum CopyOutcome {
 
 static HELPER_PATH_CACHE: OnceLock<Mutex<HashMap<String, PathBuf>>> = OnceLock::new();
 
-pub(crate) fn helper_bin_dir(codex_home: &Path) -> PathBuf {
-    sandbox_bin_dir(codex_home)
+pub(crate) fn helper_bin_dir(motyga_home: &Path) -> PathBuf {
+    sandbox_bin_dir(motyga_home)
 }
 
 pub(crate) fn legacy_lookup(kind: HelperExecutable) -> PathBuf {
@@ -61,10 +61,10 @@ pub(crate) fn legacy_lookup(kind: HelperExecutable) -> PathBuf {
 
 pub(crate) fn resolve_helper_for_launch(
     kind: HelperExecutable,
-    codex_home: &Path,
+    motyga_home: &Path,
     log_dir: Option<&Path>,
 ) -> PathBuf {
-    match copy_helper_if_needed(kind, codex_home, log_dir) {
+    match copy_helper_if_needed(kind, motyga_home, log_dir) {
         Ok(path) => {
             log_note(
                 &format!(
@@ -91,23 +91,23 @@ pub(crate) fn resolve_helper_for_launch(
     }
 }
 
-pub fn resolve_current_exe_for_launch(codex_home: &Path, fallback_executable: &str) -> PathBuf {
+pub fn resolve_current_exe_for_launch(motyga_home: &Path, fallback_executable: &str) -> PathBuf {
     let source = match std::env::current_exe() {
         Ok(path) => path,
         Err(_) => return PathBuf::from(fallback_executable),
     };
-    resolve_exe_for_launch(&source, codex_home)
+    resolve_exe_for_launch(&source, motyga_home)
 }
 
-pub fn resolve_exe_for_launch(source: &Path, codex_home: &Path) -> PathBuf {
+pub fn resolve_exe_for_launch(source: &Path, motyga_home: &Path) -> PathBuf {
     let Some(file_name) = source.file_name() else {
         return source.to_path_buf();
     };
-    let destination = helper_bin_dir(codex_home).join(file_name);
+    let destination = helper_bin_dir(motyga_home).join(file_name);
     match copy_from_source_if_needed(source, &destination) {
         Ok(_) => destination,
         Err(err) => {
-            let sandbox_log_dir = crate::sandbox_dir(codex_home);
+            let sandbox_log_dir = crate::sandbox_dir(motyga_home);
             log_note(
                 &format!(
                     "helper copy failed for executable: {err:#}; falling back to legacy path {}",
@@ -122,10 +122,10 @@ pub fn resolve_exe_for_launch(source: &Path, codex_home: &Path) -> PathBuf {
 
 pub(crate) fn copy_helper_if_needed(
     kind: HelperExecutable,
-    codex_home: &Path,
+    motyga_home: &Path,
     log_dir: Option<&Path>,
 ) -> Result<PathBuf> {
-    let cache_key = format!("{}|{}", kind.file_name(), codex_home.display());
+    let cache_key = format!("{}|{}", kind.file_name(), motyga_home.display());
     if let Some(path) = cached_helper_path(&cache_key) {
         log_note(
             &format!(
@@ -139,7 +139,7 @@ pub(crate) fn copy_helper_if_needed(
     }
 
     let source = sibling_source_path(kind)?;
-    let destination = helper_destination_for_source(kind, codex_home, &source)?;
+    let destination = helper_destination_for_source(kind, motyga_home, &source)?;
     log_note(
         &format!(
             "helper copy: validating {} source={} destination={}",
@@ -213,12 +213,12 @@ pub(crate) fn bundled_executable_path_for_exe(exe: &Path, file_name: &str) -> Op
 
 fn helper_destination_for_source(
     kind: HelperExecutable,
-    codex_home: &Path,
+    motyga_home: &Path,
     source: &Path,
 ) -> Result<PathBuf> {
     let suffix = helper_version_suffix(source)?;
     let file_name = materialized_file_name(kind, &suffix);
-    Ok(helper_bin_dir(codex_home).join(file_name))
+    Ok(helper_bin_dir(motyga_home).join(file_name))
 }
 
 fn materialized_file_name(kind: HelperExecutable, suffix: &str) -> String {
@@ -430,24 +430,24 @@ mod tests {
 
     #[test]
     fn helper_bin_dir_is_under_sandbox_bin() {
-        let codex_home = Path::new(r"C:\Users\example\.codex");
+        let motyga_home = Path::new(r"C:\Users\example\.motyga");
 
         assert_eq!(
-            PathBuf::from(r"C:\Users\example\.codex\.sandbox-bin"),
-            helper_bin_dir(codex_home)
+            PathBuf::from(r"C:\Users\example\.motyga\.sandbox-bin"),
+            helper_bin_dir(motyga_home)
         );
     }
 
     #[test]
     fn copy_runner_into_shared_bin_dir() {
         let tmp = TempDir::new().expect("tempdir");
-        let codex_home = tmp.path().join("codex-home");
+        let motyga_home = tmp.path().join("motyga-home");
         let source_dir = tmp.path().join("sibling-source");
         fs::create_dir_all(&source_dir).expect("create source dir");
-        let runner_source = source_dir.join("codex-command-runner.exe");
+        let runner_source = source_dir.join("motyga-command-runner.exe");
         fs::write(&runner_source, b"runner").expect("runner");
         let runner_suffix = helper_version_suffix(&runner_source).expect("runner suffix");
-        let runner_destination = helper_bin_dir(&codex_home).join(materialized_file_name(
+        let runner_destination = helper_bin_dir(&motyga_home).join(materialized_file_name(
             HelperExecutable::CommandRunner,
             &runner_suffix,
         ));
@@ -468,13 +468,13 @@ mod tests {
         let release_dir = tmp.path().join("release");
         let resources_dir = release_dir.join(RESOURCES_DIRNAME);
         fs::create_dir_all(&resources_dir).expect("create resources dir");
-        let exe = release_dir.join("codex.exe");
-        let helper = resources_dir.join("codex-command-runner.exe");
-        fs::write(&exe, b"codex").expect("write exe");
+        let exe = release_dir.join("motyga.exe");
+        let helper = resources_dir.join("motyga-command-runner.exe");
+        fs::write(&exe, b"motyga").expect("write exe");
         fs::write(&helper, b"runner").expect("write helper");
 
         let resolved =
-            bundled_executable_path_for_exe(&exe, /*file_name*/ "codex-command-runner.exe")
+            bundled_executable_path_for_exe(&exe, /*file_name*/ "motyga-command-runner.exe")
                 .expect("helper path");
 
         assert_eq!(resolved, helper);
@@ -488,13 +488,13 @@ mod tests {
         let resources_dir = package_dir.join(RESOURCES_DIRNAME);
         fs::create_dir_all(&bin_dir).expect("create bin dir");
         fs::create_dir_all(&resources_dir).expect("create resources dir");
-        let exe = bin_dir.join("codex.exe");
-        let helper = resources_dir.join("codex-command-runner.exe");
-        fs::write(&exe, b"codex").expect("write exe");
+        let exe = bin_dir.join("motyga.exe");
+        let helper = resources_dir.join("motyga-command-runner.exe");
+        fs::write(&exe, b"motyga").expect("write exe");
         fs::write(&helper, b"runner").expect("write helper");
 
         let resolved =
-            bundled_executable_path_for_exe(&exe, /*file_name*/ "codex-command-runner.exe")
+            bundled_executable_path_for_exe(&exe, /*file_name*/ "motyga-command-runner.exe")
                 .expect("helper path");
 
         assert_eq!(resolved, helper);
@@ -509,15 +509,15 @@ mod tests {
         let bin_resources_dir = bin_dir.join(RESOURCES_DIRNAME);
         fs::create_dir_all(&package_resources_dir).expect("create package resources dir");
         fs::create_dir_all(&bin_resources_dir).expect("create bin resources dir");
-        let exe = bin_dir.join("codex.exe");
-        let package_helper = package_resources_dir.join("codex-command-runner.exe");
-        let bin_helper = bin_resources_dir.join("codex-command-runner.exe");
-        fs::write(&exe, b"codex").expect("write exe");
+        let exe = bin_dir.join("motyga.exe");
+        let package_helper = package_resources_dir.join("motyga-command-runner.exe");
+        let bin_helper = bin_resources_dir.join("motyga-command-runner.exe");
+        fs::write(&exe, b"motyga").expect("write exe");
         fs::write(&package_helper, b"package runner").expect("write package helper");
         fs::write(&bin_helper, b"bin runner").expect("write bin helper");
 
         let resolved =
-            bundled_executable_path_for_exe(&exe, /*file_name*/ "codex-command-runner.exe")
+            bundled_executable_path_for_exe(&exe, /*file_name*/ "motyga-command-runner.exe")
                 .expect("helper path");
 
         assert_eq!(resolved, package_helper);
@@ -529,15 +529,15 @@ mod tests {
         let release_dir = tmp.path().join("release");
         let resources_dir = release_dir.join(RESOURCES_DIRNAME);
         fs::create_dir_all(&resources_dir).expect("create resources dir");
-        let exe = release_dir.join("codex.exe");
-        let sibling_helper = release_dir.join("codex-command-runner.exe");
-        let resource_helper = resources_dir.join("codex-command-runner.exe");
-        fs::write(&exe, b"codex").expect("write exe");
+        let exe = release_dir.join("motyga.exe");
+        let sibling_helper = release_dir.join("motyga-command-runner.exe");
+        let resource_helper = resources_dir.join("motyga-command-runner.exe");
+        fs::write(&exe, b"motyga").expect("write exe");
         fs::write(&sibling_helper, b"sibling runner").expect("write sibling helper");
         fs::write(&resource_helper, b"resource runner").expect("write resource helper");
 
         let resolved =
-            bundled_executable_path_for_exe(&exe, /*file_name*/ "codex-command-runner.exe")
+            bundled_executable_path_for_exe(&exe, /*file_name*/ "motyga-command-runner.exe")
                 .expect("helper path");
 
         assert_eq!(resolved, sibling_helper);
@@ -561,6 +561,6 @@ mod tests {
     fn materialized_file_name_adds_suffix_before_extension() {
         let file_name = materialized_file_name(HelperExecutable::CommandRunner, "test-suffix");
 
-        assert_eq!(file_name, "codex-command-runner-test-suffix.exe");
+        assert_eq!(file_name, "motyga-command-runner-test-suffix.exe");
     }
 }

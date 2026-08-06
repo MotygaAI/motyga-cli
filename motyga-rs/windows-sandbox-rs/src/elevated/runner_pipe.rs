@@ -40,15 +40,15 @@ pub const PIPE_ACCESS_OUTBOUND: u32 = 0x0000_0002;
 
 /// Resolves the elevated command runner path, preferring the copied helper under
 /// `.sandbox-bin` and falling back to the legacy sibling lookup when needed.
-pub fn find_runner_exe(codex_home: &Path, log_dir: Option<&Path>) -> PathBuf {
-    resolve_helper_for_launch(HelperExecutable::CommandRunner, codex_home, log_dir)
+pub fn find_runner_exe(motyga_home: &Path, log_dir: Option<&Path>) -> PathBuf {
+    resolve_helper_for_launch(HelperExecutable::CommandRunner, motyga_home, log_dir)
 }
 
 /// Generates a unique named-pipe path used to communicate with the runner process.
 pub fn pipe_pair() -> (String, String) {
     let mut rng = SmallRng::from_entropy();
     let nonce: u128 = rng.r#gen();
-    let base = format!(r"\\.\pipe\codex-runner-{nonce:x}");
+    let base = format!(r"\\.\pipe\motyga-runner-{nonce:x}");
     (format!("{base}-in"), format!("{base}-out"))
 }
 

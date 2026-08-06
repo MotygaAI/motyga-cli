@@ -7,14 +7,14 @@ use super::*;
 
 impl ChatWidget {
     pub(super) fn open_theme_picker(&mut self) {
-        let codex_home = codex_utils_home_dir::find_codex_home().ok();
+        let motyga_home = motyga_utils_home_dir::find_motyga_home().ok();
         let terminal_width = self
             .last_rendered_width
             .get()
             .and_then(|width| u16::try_from(width).ok());
         let params = crate::theme_picker::build_theme_picker_params(
             self.config.tui_theme.as_deref(),
-            codex_home.as_deref(),
+            motyga_home.as_deref(),
             terminal_width,
         );
         self.bottom_pane.show_selection_view(params);
@@ -49,7 +49,7 @@ impl ChatWidget {
                 let name = Self::personality_label(personality).to_string();
                 let description = Some(Self::personality_description(personality).to_string());
                 let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
-                    tx.send(AppEvent::CodexOp(AppCommand::override_turn_context(
+                    tx.send(AppEvent::MotygaOp(AppCommand::override_turn_context(
                         /*cwd*/ None,
                         /*approval_policy*/ None,
                         /*approvals_reviewer*/ None,

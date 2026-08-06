@@ -2,12 +2,12 @@ use anyhow::Context;
 use anyhow::Result;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
-use codex_features::Feature;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_features::Feature;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_function_call;
@@ -15,8 +15,8 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use futures::SinkExt;
 use futures::StreamExt;
 use pretty_assertions::assert_eq;
@@ -393,7 +393,7 @@ async fn exec_command_consumes_pushed_remote_process_events(
     .await;
     let exec_server_url = format!("ws://{}", listener.local_addr()?);
     let exec_server = tokio::spawn(serve_exec_with_pushed_events(listener, scenario));
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_exec_server_url(exec_server_url)
         .with_config(|config| {
             config.project_doc_max_bytes = 0;
@@ -409,7 +409,7 @@ async fn exec_command_consumes_pushed_remote_process_events(
 
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.config.cwd.as_path());
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run a one-shot remote command".into(),
@@ -418,13 +418,13 @@ async fn exec_command_consumes_pushed_remote_process_events(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -436,7 +436,7 @@ async fn exec_command_consumes_pushed_remote_process_events(
         .await?;
     let mut saw_exec_command_begin = false;
     loop {
-        let event = timeout(Duration::from_secs(5), test.codex.next_event())
+        let event = timeout(Duration::from_secs(5), test.motyga.next_event())
             .await
             .context("turn should complete")??
             .msg;

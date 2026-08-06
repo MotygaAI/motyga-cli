@@ -1,10 +1,10 @@
 use super::*;
 use crate::marketplace_upgrade::upgrade_configured_git_marketplaces;
-use codex_config::ConfigLayerEntry;
-use codex_config::ConfigLayerSource;
-use codex_config::RequirementSource;
-use codex_config::RequirementsLayerEntry;
-use codex_config::compose_requirements;
+use motyga_config::ConfigLayerEntry;
+use motyga_config::ConfigLayerSource;
+use motyga_config::RequirementSource;
+use motyga_config::RequirementsLayerEntry;
+use motyga_config::compose_requirements;
 use pretty_assertions::assert_eq;
 use std::fs;
 use tempfile::TempDir;
@@ -25,7 +25,7 @@ fn config_layer_stack_with_user_config(
     .expect("requirements should be present");
     let requirements_toml = with_sources.clone().into_toml();
     let requirements =
-        codex_config::ConfigRequirements::try_from(with_sources).expect("normalize requirements");
+        motyga_config::ConfigRequirements::try_from(with_sources).expect("normalize requirements");
     let layers = user_config
         .map(|(contents, file)| {
             vec![ConfigLayerEntry::new(
@@ -206,7 +206,7 @@ restrict_to_allowed_sources = {restricted}
 
 #[test]
 fn strict_install_validates_configured_name_source_and_root() {
-    let codex_home = TempDir::new().expect("create Motyga home");
+    let motyga_home = TempDir::new().expect("create Motyga home");
     let configured_root = TempDir::new().expect("create configured marketplace");
     let other_root = TempDir::new().expect("create other marketplace");
     let configured_root = configured_root
@@ -217,7 +217,7 @@ fn strict_install_validates_configured_name_source_and_root() {
         .path()
         .canonicalize()
         .expect("canonical other root");
-    let config_file = AbsolutePathBuf::try_from(codex_home.path().join("config.toml"))
+    let config_file = AbsolutePathBuf::try_from(motyga_home.path().join("config.toml"))
         .expect("absolute config path");
     let stack = config_layer_stack_with_user_config(
         &format!(
@@ -249,18 +249,18 @@ source = {configured_root:?}
         .expect("other marketplace path");
 
     assert_eq!(
-        policy.validate_install(&stack, codex_home.path(), &configured_path, "company"),
+        policy.validate_install(&stack, motyga_home.path(), &configured_path, "company"),
         Ok(())
     );
     assert!(
         policy
-            .validate_install(&stack, codex_home.path(), &configured_path, "other")
+            .validate_install(&stack, motyga_home.path(), &configured_path, "other")
             .expect_err("unconfigured name should fail")
             .contains("must be added to config")
     );
     assert!(
         policy
-            .validate_install(&stack, codex_home.path(), &other_path, "company")
+            .validate_install(&stack, motyga_home.path(), &other_path, "company")
             .expect_err("mismatched root should fail")
             .contains("does not match configured marketplace")
     );
@@ -268,8 +268,8 @@ source = {configured_root:?}
 
 #[test]
 fn blocked_configured_source_is_not_installable() {
-    let codex_home = TempDir::new().expect("create Motyga home");
-    let config_file = AbsolutePathBuf::try_from(codex_home.path().join("config.toml"))
+    let motyga_home = TempDir::new().expect("create Motyga home");
+    let config_file = AbsolutePathBuf::try_from(motyga_home.path().join("config.toml"))
         .expect("absolute config path");
     let stack = config_layer_stack_with_user_config(
         r#"
@@ -290,12 +290,12 @@ source = "https://github.com/example/blocked.git"
         )),
     );
     let marketplace_path = AbsolutePathBuf::try_from(
-        marketplace_install_root(codex_home.path()).join("debug/.agents/plugins/marketplace.json"),
+        marketplace_install_root(motyga_home.path()).join("debug/.agents/plugins/marketplace.json"),
     )
     .expect("absolute marketplace path");
 
     let err = MarketplacePolicy::from_requirements(stack.requirements())
-        .validate_install(&stack, codex_home.path(), &marketplace_path, "debug")
+        .validate_install(&stack, motyga_home.path(), &marketplace_path, "debug")
         .expect_err("blocked marketplace install should fail");
     assert!(err.contains("is not allowed by requirements"));
 }
@@ -320,7 +320,7 @@ source = "marketplaces/company"
 
 #[test]
 fn curated_marketplace_requires_its_expected_name() {
-    let codex_home = TempDir::new().expect("create Motyga home");
+    let motyga_home = TempDir::new().expect("create Motyga home");
     let stack = config_layer_stack(
         r#"
 [marketplaces]
@@ -328,7 +328,7 @@ restrict_to_allowed_sources = true
 "#,
     );
     let marketplace_path = AbsolutePathBuf::try_from(
-        curated_plugins_repo_path(codex_home.path()).join(".agents/plugins/marketplace.json"),
+        curated_plugins_repo_path(motyga_home.path()).join(".agents/plugins/marketplace.json"),
     )
     .expect("absolute marketplace path");
     let policy = MarketplacePolicy::from_requirements(stack.requirements());
@@ -336,7 +336,7 @@ restrict_to_allowed_sources = true
     assert_eq!(
         policy.validate_install(
             &stack,
-            codex_home.path(),
+            motyga_home.path(),
             &marketplace_path,
             crate::OPENAI_CURATED_MARKETPLACE_NAME,
         ),
@@ -346,7 +346,7 @@ restrict_to_allowed_sources = true
         policy
             .validate_install(
                 &stack,
-                codex_home.path(),
+                motyga_home.path(),
                 &marketplace_path,
                 crate::OPENAI_API_CURATED_MARKETPLACE_NAME,
             )
@@ -356,8 +356,8 @@ restrict_to_allowed_sources = true
 
 #[test]
 fn managed_bundled_source_is_bound_to_its_expected_name() {
-    let codex_home = TempDir::new().expect("create Motyga home");
-    let bundled_root = codex_home
+    let motyga_home = TempDir::new().expect("create Motyga home");
+    let bundled_root = motyga_home
         .path()
         .join(".tmp/bundled-marketplaces")
         .join(crate::OPENAI_BUNDLED_MARKETPLACE_NAME);
@@ -374,7 +374,7 @@ restrict_to_allowed_sources = true
     );
 
     let expected_name =
-        validate_marketplace_source_for_add(codex_home.path(), stack.requirements(), &source)
+        validate_marketplace_source_for_add(motyga_home.path(), stack.requirements(), &source)
             .expect("managed marketplace source should bypass restrictions");
     assert_eq!(
         validate_marketplace_name_for_add(expected_name, crate::OPENAI_BUNDLED_MARKETPLACE_NAME,),
@@ -385,8 +385,8 @@ restrict_to_allowed_sources = true
 
 #[test]
 fn projected_user_config_removes_blocked_marketplaces_and_plugins() {
-    let codex_home = TempDir::new().expect("create Motyga home");
-    let config_file = AbsolutePathBuf::try_from(codex_home.path().join("config.toml"))
+    let motyga_home = TempDir::new().expect("create Motyga home");
+    let config_file = AbsolutePathBuf::try_from(motyga_home.path().join("config.toml"))
         .expect("absolute config path");
     let stack = config_layer_stack_with_user_config(
         r#"
@@ -418,7 +418,7 @@ enabled = true
     );
 
     let projected =
-        project_effective_user_config(&stack, codex_home.path()).expect("project user config");
+        project_effective_user_config(&stack, motyga_home.path()).expect("project user config");
     assert_eq!(
         projected["marketplaces"]
             .as_table()
@@ -429,7 +429,7 @@ enabled = true
         vec!["allowed".to_string()]
     );
     assert_eq!(
-        configured_plugins_from_stack(&stack, codex_home.path())
+        configured_plugins_from_stack(&stack, motyga_home.path())
             .into_keys()
             .collect::<Vec<_>>(),
         vec!["sample@allowed".to_string()]
@@ -442,12 +442,12 @@ enabled = true
 
 #[test]
 fn managed_bundled_config_is_retained_only_at_its_owned_path() {
-    let codex_home = TempDir::new().expect("create Motyga home");
-    let bundled_root = codex_home
+    let motyga_home = TempDir::new().expect("create Motyga home");
+    let bundled_root = motyga_home
         .path()
         .join(".tmp/bundled-marketplaces")
         .join(crate::OPENAI_BUNDLED_MARKETPLACE_NAME);
-    let config_file = AbsolutePathBuf::try_from(codex_home.path().join("config.toml"))
+    let config_file = AbsolutePathBuf::try_from(motyga_home.path().join("config.toml"))
         .expect("absolute config path");
     let stack = config_layer_stack_with_user_config(
         r#"
@@ -484,7 +484,7 @@ enabled = true
     );
 
     let projected =
-        project_effective_user_config(&stack, codex_home.path()).expect("project user config");
+        project_effective_user_config(&stack, motyga_home.path()).expect("project user config");
 
     assert_eq!(
         projected["marketplaces"]
@@ -508,13 +508,13 @@ enabled = true
 
 #[test]
 fn allowlisted_config_names_are_not_globally_reserved() {
-    let codex_home = TempDir::new().expect("create Motyga home");
+    let motyga_home = TempDir::new().expect("create Motyga home");
     let source_root = TempDir::new().expect("create marketplace root");
     let source_root = source_root
         .path()
         .canonicalize()
         .expect("canonical marketplace root");
-    let config_file = AbsolutePathBuf::try_from(codex_home.path().join("config.toml"))
+    let config_file = AbsolutePathBuf::try_from(motyga_home.path().join("config.toml"))
         .expect("absolute config path");
     let stack = config_layer_stack_with_user_config(
         &format!(
@@ -550,7 +550,7 @@ enabled = true
     );
 
     let projected =
-        project_effective_user_config(&stack, codex_home.path()).expect("project user config");
+        project_effective_user_config(&stack, motyga_home.path()).expect("project user config");
     assert_eq!(
         projected["marketplaces"]
             .as_table()
@@ -576,8 +576,8 @@ enabled = true
 
 #[test]
 fn blocked_upgrade_is_rejected_before_marketplace_installation() {
-    let codex_home = TempDir::new().expect("create Motyga home");
-    let config_file = AbsolutePathBuf::try_from(codex_home.path().join("config.toml"))
+    let motyga_home = TempDir::new().expect("create Motyga home");
+    let config_file = AbsolutePathBuf::try_from(motyga_home.path().join("config.toml"))
         .expect("absolute config path");
     let stack = config_layer_stack_with_user_config(
         r#"
@@ -594,7 +594,7 @@ source = "https://github.com/example/blocked.git"
         )),
     );
 
-    let outcome = upgrade_configured_git_marketplaces(codex_home.path(), &stack, Some("debug"));
+    let outcome = upgrade_configured_git_marketplaces(motyga_home.path(), &stack, Some("debug"));
 
     assert_eq!(outcome.selected_marketplaces, vec!["debug".to_string()]);
     assert_eq!(outcome.upgraded_roots, Vec::new());
@@ -604,7 +604,7 @@ source = "https://github.com/example/blocked.git"
             .message
             .contains("is not allowed by requirements")
     );
-    assert!(!marketplace_install_root(codex_home.path()).exists());
+    assert!(!marketplace_install_root(motyga_home.path()).exists());
 }
 
 #[test]

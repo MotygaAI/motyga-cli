@@ -45,7 +45,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use unicode_width::UnicodeWidthChar;
 
 /// Display width of a tab character in columns.
@@ -94,9 +94,9 @@ use crate::terminal_palette::default_bg;
 use crate::terminal_palette::indexed_color;
 use crate::terminal_palette::rgb_color;
 use crate::terminal_palette::stdout_color_level;
-use codex_git_utils::get_git_repo_root;
-use codex_terminal_detection::TerminalName;
-use codex_terminal_detection::terminal_info;
+use motyga_git_utils::get_git_repo_root;
+use motyga_terminal_detection::TerminalName;
+use motyga_terminal_detection::terminal_info;
 
 /// Classifies a diff line for gutter sign rendering and style selection.
 ///
@@ -1471,9 +1471,9 @@ mod tests {
     #[test]
     fn display_path_prefers_cwd_without_git_repo() {
         let cwd = if cfg!(windows) {
-            PathBuf::from(r"C:\workspace\codex")
+            PathBuf::from(r"C:\workspace\motyga")
         } else {
-            PathBuf::from("/workspace/codex")
+            PathBuf::from("/workspace/motyga")
         };
         let path = cwd.join("tui").join("example.png");
 

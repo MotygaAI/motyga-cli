@@ -1,57 +1,57 @@
-use codex_config::ConfigLayerStack;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_core::ModelClient;
-use codex_core::NewThread;
-use codex_core::Prompt;
-use codex_core::ResponseEvent;
-use codex_core::ThreadManager;
-use codex_core::resolve_installation_id;
-use codex_core::thread_store_from_config;
-use codex_extension_api::empty_extension_registry;
-use codex_features::Feature;
-use codex_login::AuthKeyringBackendKind;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::auth::AgentIdentityAuthPolicy;
-use codex_login::default_client::originator;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::WireApi;
-use codex_model_provider_info::built_in_model_providers;
-use codex_models_manager::bundled_models_response;
-use codex_otel::SessionTelemetry;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::ModelProviderAuthInfo;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::Settings;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::error::CodexErr;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::DEFAULT_IMAGE_DETAIL;
-use codex_protocol::models::FunctionCallOutputContentItem;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ImageDetail;
-use codex_protocol::models::LocalShellAction;
-use codex_protocol::models::LocalShellExecAction;
-use codex_protocol::models::LocalShellStatus;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::models::ReasoningItemContent;
-use codex_protocol::models::ReasoningItemReasoningSummary;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::user_input::UserInput;
+use motyga_config::ConfigLayerStack;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_core::ModelClient;
+use motyga_core::NewThread;
+use motyga_core::Prompt;
+use motyga_core::ResponseEvent;
+use motyga_core::ThreadManager;
+use motyga_core::resolve_installation_id;
+use motyga_core::thread_store_from_config;
+use motyga_extension_api::empty_extension_registry;
+use motyga_features::Feature;
+use motyga_login::AuthKeyringBackendKind;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::auth::AgentIdentityAuthPolicy;
+use motyga_login::default_client::originator;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::WireApi;
+use motyga_model_provider_info::built_in_model_providers;
+use motyga_models_manager::bundled_models_response;
+use motyga_otel::SessionTelemetry;
+use motyga_otel::TelemetryAuthMode;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::ModelProviderAuthInfo;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::config_types::Settings;
+use motyga_protocol::config_types::Verbosity;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::DEFAULT_IMAGE_DETAIL;
+use motyga_protocol::models::FunctionCallOutputContentItem;
+use motyga_protocol::models::FunctionCallOutputPayload;
+use motyga_protocol::models::ImageDetail;
+use motyga_protocol::models::LocalShellAction;
+use motyga_protocol::models::LocalShellExecAction;
+use motyga_protocol::models::LocalShellStatus;
+use motyga_protocol::models::MessagePhase;
+use motyga_protocol::models::ReasoningItemContent;
+use motyga_protocol::models::ReasoningItemReasoningSummary;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::models::WebSearchAction;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::protocol::SessionMeta;
+use motyga_protocol::protocol::SessionMetaLine;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::PathBufExt;
-use core_test_support::TestCodexResponsesRequestKind;
+use core_test_support::TestMotygaResponsesRequestKind;
 use core_test_support::apps_test_server::AppsTestServer;
 use core_test_support::load_default_config_for_test;
 use core_test_support::responses::ResponsesRequest;
@@ -70,9 +70,9 @@ use core_test_support::responses::sse_failed;
 use core_test_support::responses::strip_metadata_from_json;
 use core_test_support::responses_metadata as test_responses_metadata;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use dunce::canonicalize as normalize_path;
 use futures::StreamExt;
@@ -101,7 +101,7 @@ const TEST_INSTALLATION_ID: &str = "11111111-1111-4111-8111-111111111111";
 fn test_turn_responses_metadata(
     _client: &ModelClient,
     thread_id: ThreadId,
-) -> codex_core::CodexResponsesMetadata {
+) -> motyga_core::MotygaResponsesMetadata {
     let thread_id = thread_id.to_string();
     test_responses_metadata(
         TEST_INSTALLATION_ID,
@@ -111,7 +111,7 @@ fn test_turn_responses_metadata(
         TEST_WINDOW_ID.to_string(),
         &SessionSource::Exec,
         /*parent_thread_id*/ None,
-        TestCodexResponsesRequestKind::Turn,
+        TestMotygaResponsesRequestKind::Turn,
     )
 }
 
@@ -153,7 +153,7 @@ fn response_message_item_id(request: &ResponsesRequest, role: &str, text: &str) 
         .unwrap_or_else(|| panic!("missing item ID for {role} message {text:?}"))
 }
 
-fn assert_codex_client_metadata(
+fn assert_motyga_client_metadata(
     request_body: &serde_json::Value,
     installation_id: &str,
     session_id: &str,
@@ -202,7 +202,7 @@ async fn openai_stateless_responses_requests_preserve_item_turn_metadata_across_
         ],
     )
     .await;
-    let test = test_codex().build(&server).await.unwrap();
+    let test = test_motyga().build(&server).await.unwrap();
 
     test.submit_turn("turn one").await.unwrap();
     test.submit_turn("turn two").await.unwrap();
@@ -259,7 +259,7 @@ async fn non_openai_responses_requests_omit_item_passthrough_metadata() {
     provider.name = "Test Responses".to_string();
     provider.base_url = Some(format!("{}/v1", server.uri()));
     provider.supports_websockets = false;
-    let codex = test_codex()
+    let motyga = test_motyga()
         .with_config(move |config| {
             config.model_provider_id = provider.name.clone();
             config.model_provider = provider;
@@ -267,9 +267,9 @@ async fn non_openai_responses_requests_omit_item_passthrough_metadata() {
         .build(&server)
         .await
         .unwrap()
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -282,7 +282,7 @@ async fn non_openai_responses_requests_omit_item_passthrough_metadata() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let body = response_mock.single_request().body_json();
     let input = body["input"]
@@ -317,7 +317,7 @@ async fn response_item_ids_persist_across_resume_and_preserve_server_ids() -> an
         ],
     )
     .await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         let _ = config.features.enable(Feature::ItemIds);
     });
     let initial = builder.build(&server).await?;
@@ -329,8 +329,8 @@ async fn response_item_ids_persist_across_resume_and_preserve_server_ids() -> an
         .expect("rollout path");
 
     initial.submit_turn("before resume").await?;
-    initial.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&initial.codex, |event| {
+    initial.motyga.submit(Op::Shutdown).await?;
+    wait_for_event(&initial.motyga, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -413,17 +413,17 @@ async fn synthetic_call_output_id_is_stable_across_resumes() -> anyhow::Result<(
         ],
     )
     .await;
-    let codex_home = Arc::new(TempDir::new()?);
-    let mut builder = test_codex().with_config(|config| {
+    let motyga_home = Arc::new(TempDir::new()?);
+    let mut builder = test_motyga().with_config(|config| {
         let _ = config.features.enable(Feature::ItemIds);
     });
     let first = builder
-        .resume(&server, Arc::clone(&codex_home), session_path.clone())
+        .resume(&server, Arc::clone(&motyga_home), session_path.clone())
         .await?;
 
     first.submit_turn("first resume").await?;
-    first.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&first.codex, |event| {
+    first.motyga.submit(Op::Shutdown).await?;
+    wait_for_event(&first.motyga, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -435,7 +435,7 @@ async fn synthetic_call_output_id_is_stable_across_resumes() -> anyhow::Result<(
     builder = builder.with_config(|config| {
         let _ = config.features.enable(Feature::ItemIds);
     });
-    let second = builder.resume(&server, codex_home, session_path).await?;
+    let second = builder.resume(&server, motyga_home, session_path).await?;
     second.submit_turn("second resume").await?;
 
     let requests = response_mock.requests();
@@ -485,8 +485,8 @@ async fn response_item_ids_are_sent_for_all_remote_v2_compaction_requests() -> a
         ],
     )
     .await;
-    let test = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let test = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             let _ = config.features.enable(Feature::ItemIds);
             let _ = config.features.enable(Feature::RemoteCompactionV2);
@@ -495,8 +495,8 @@ async fn response_item_ids_are_sent_for_all_remote_v2_compaction_requests() -> a
         .await?;
 
     test.submit_turn("before compaction").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -521,11 +521,11 @@ async fn response_item_ids_are_sent_for_all_remote_v2_compaction_requests() -> a
     Ok(())
 }
 
-/// Writes an `auth.json` into the provided `codex_home` with the specified parameters.
+/// Writes an `auth.json` into the provided `motyga_home` with the specified parameters.
 /// Returns the fake JWT string written to `tokens.id_token`.
 #[expect(clippy::unwrap_used)]
 fn write_auth_json(
-    codex_home: &TempDir,
+    motyga_home: &TempDir,
     openai_api_key: Option<&str>,
     chatgpt_plan_type: &str,
     access_token: &str,
@@ -565,7 +565,7 @@ fn write_auth_json(
     });
 
     std::fs::write(
-        codex_home.path().join("auth.json"),
+        motyga_home.path().join("auth.json"),
         serde_json::to_string_pretty(&auth_json).unwrap(),
     )
     .unwrap();
@@ -653,7 +653,7 @@ move /y tokens.next tokens.txt >nul
             // Match the model-provider default to avoid brittle shell-startup timing in CI.
             timeout_ms: non_zero_u64(/*value*/ 5_000),
             refresh_interval_ms: 60_000,
-            cwd: codex_utils_absolute_path::AbsolutePathBuf::try_from(self.tempdir.path())
+            cwd: motyga_utils_absolute_path::AbsolutePathBuf::try_from(self.tempdir.path())
                 .expect("tempdir should be absolute"),
         }
     }
@@ -693,10 +693,10 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     .unwrap();
 
     // Prior item: user message (should be delivered)
-    let prior_user = codex_protocol::models::ResponseItem::Message {
+    let prior_user = motyga_protocol::models::ResponseItem::Message {
         id: None,
         role: "user".to_string(),
-        content: vec![codex_protocol::models::ContentItem::InputText {
+        content: vec![motyga_protocol::models::ContentItem::InputText {
             text: "resumed user message".to_string(),
         }],
         phase: None,
@@ -715,10 +715,10 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     .unwrap();
 
     // Prior item: system message (excluded from API history)
-    let prior_system = codex_protocol::models::ResponseItem::Message {
+    let prior_system = motyga_protocol::models::ResponseItem::Message {
         id: None,
         role: "system".to_string(),
-        content: vec![codex_protocol::models::ContentItem::OutputText {
+        content: vec![motyga_protocol::models::ContentItem::OutputText {
             text: "resumed system instruction".to_string(),
         }],
         phase: None,
@@ -737,10 +737,10 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     .unwrap();
 
     // Prior item: assistant message
-    let prior_item = codex_protocol::models::ResponseItem::Message {
+    let prior_item = motyga_protocol::models::ResponseItem::Message {
         id: None,
         role: "assistant".to_string(),
-        content: vec![codex_protocol::models::ContentItem::OutputText {
+        content: vec![motyga_protocol::models::ContentItem::OutputText {
             text: "resumed assistant message".to_string(),
         }],
         phase: Some(MessagePhase::Commentary),
@@ -767,18 +767,18 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     )
     .await;
 
-    // Configure Codex to resume from our file
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let mut builder = test_codex()
-        .with_home(codex_home.clone())
+    // Configure Motyga to resume from our file
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let mut builder = test_motyga()
+        .with_home(motyga_home.clone())
         .with_pre_build_hook(|home| {
             std::fs::write(home.join("AGENTS.md"), "be nice").expect("write global instructions");
         });
     let test = builder
-        .resume(&server, codex_home, session_path.clone())
+        .resume(&server, motyga_home, session_path.clone())
         .await
         .expect("resume conversation");
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
     let session_configured = test.session_configured;
 
     // 1) Assert initial_messages only includes existing EventMsg entries; response items are not converted
@@ -791,7 +791,7 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     assert_eq!(initial_json, expected_initial_json);
 
     // 2) Submit new input; the request body must include the prior items, then initial context, then new user input.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -804,7 +804,7 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -955,10 +955,10 @@ async fn resume_replays_legacy_js_repl_image_rollout_shapes() {
     )
     .await;
 
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let mut builder = test_codex().with_model("gpt-5.4");
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let mut builder = test_motyga().with_model("gpt-5.4");
     let test = builder
-        .resume(&server, codex_home, session_path.clone())
+        .resume(&server, motyga_home, session_path.clone())
         .await
         .expect("resume conversation");
     test.submit_turn("after resume").await.unwrap();
@@ -1116,10 +1116,10 @@ async fn resume_replays_image_tool_outputs_with_detail() {
     )
     .await;
 
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let mut builder = test_codex().with_model("gpt-5.4");
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let mut builder = test_motyga().with_model("gpt-5.4");
     let test = builder
-        .resume(&server, codex_home, session_path.clone())
+        .resume(&server, motyga_home, session_path.clone())
         .await
         .expect("resume conversation");
     test.submit_turn("after resume").await.unwrap();
@@ -1166,16 +1166,16 @@ async fn includes_session_id_thread_id_and_model_headers_in_request() {
     )
     .await;
 
-    let mut builder = test_codex().with_auth(CodexAuth::from_api_key("Test API Key"));
+    let mut builder = test_motyga().with_auth(MotygaAuth::from_api_key("Test API Key"));
     let test = builder
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
     let expected_session_id = test.session_configured.session_id;
     let expected_thread_id = test.session_configured.thread_id;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1189,7 +1189,7 @@ async fn includes_session_id_thread_id_and_model_headers_in_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     assert_eq!(request.path(), "/v1/responses");
@@ -1201,7 +1201,7 @@ async fn includes_session_id_thread_id_and_model_headers_in_request() {
     let request_originator = request.header("originator").expect("originator header");
     let request_body = request.body_json();
     let installation_id =
-        std::fs::read_to_string(test.codex_home_path().join(INSTALLATION_ID_FILENAME))
+        std::fs::read_to_string(test.motyga_home_path().join(INSTALLATION_ID_FILENAME))
             .expect("read installation id");
     let session_id_string = expected_session_id.to_string();
     let thread_id_string = expected_thread_id.to_string();
@@ -1214,7 +1214,7 @@ async fn includes_session_id_thread_id_and_model_headers_in_request() {
         request_body["prompt_cache_key"].as_str(),
         Some(thread_id_string.as_str())
     );
-    assert_codex_client_metadata(
+    assert_motyga_client_metadata(
         &request_body,
         installation_id.as_str(),
         session_id_string.as_str(),
@@ -1296,17 +1296,17 @@ async fn send_provider_auth_request(server: &MockServer, auth: ModelProviderAuth
         supports_websockets: false,
     };
 
-    let codex_home = TempDir::new().unwrap();
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let motyga_home = TempDir::new().unwrap();
+    let mut config = load_default_config_for_test(&motyga_home).await;
     config.model_provider_id = provider.name.clone();
     config.model_provider = provider.clone();
     let effort = config.model_reasoning_effort.clone();
     let summary = config.model_reasoning_summary;
-    let model = codex_core::test_support::get_model_offline(config.model.as_deref());
+    let model = motyga_core::test_support::get_model_offline(config.model.as_deref());
     config.model = Some(model.clone());
     let config = Arc::new(config);
     let model_info =
-        codex_core::test_support::construct_model_info_offline(model.as_str(), &config);
+        motyga_core::test_support::construct_model_info_offline(model.as_str(), &config);
     let thread_id = ThreadId::new();
     let session_telemetry = SessionTelemetry::new(
         thread_id,
@@ -1321,7 +1321,7 @@ async fn send_provider_auth_request(server: &MockServer, auth: ModelProviderAuth
         SessionSource::Exec,
     );
     let client = ModelClient::new(
-        Some(AuthManager::from_auth_for_testing(CodexAuth::from_api_key(
+        Some(AuthManager::from_auth_for_testing(MotygaAuth::from_api_key(
             "unused-api-key",
         ))),
         AgentIdentityAuthPolicy::JwtOnly,
@@ -1358,7 +1358,7 @@ async fn send_provider_auth_request(server: &MockServer, auth: ModelProviderAuth
             summary.unwrap_or(ReasoningSummary::Auto),
             /*service_tier*/ None,
             &responses_metadata,
-            &codex_rollout_trace::InferenceTraceContext::disabled(),
+            &motyga_rollout_trace::InferenceTraceContext::disabled(),
             None,
         )
         .await
@@ -1382,18 +1382,18 @@ async fn includes_base_instructions_override_in_request() {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::from_api_key("Test API Key"))
         .with_config(|config| {
             config.base_instructions = Some("test instructions".to_string());
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1407,7 +1407,7 @@ async fn includes_base_instructions_override_in_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -1435,10 +1435,10 @@ async fn chatgpt_auth_sends_correct_request() {
 
     let mut model_provider =
         built_in_model_providers(/* openai_base_url */ /*openai_base_url*/ None)["openai"].clone();
-    model_provider.base_url = Some(format!("{}/api/codex", server.uri()));
+    model_provider.base_url = Some(format!("{}/api/motyga", server.uri()));
     model_provider.supports_websockets = false;
-    let mut builder = test_codex()
-        .with_auth(create_dummy_codex_auth())
+    let mut builder = test_motyga()
+        .with_auth(create_dummy_motyga_auth())
         .with_config(move |config| {
             config.model_provider = model_provider;
         });
@@ -1446,11 +1446,11 @@ async fn chatgpt_auth_sends_correct_request() {
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
     let expected_session_id = test.session_configured.session_id;
     let expected_thread_id = test.session_configured.thread_id;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1464,10 +1464,10 @@ async fn chatgpt_auth_sends_correct_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
-    assert_eq!(request.path(), "/api/codex/responses");
+    assert_eq!(request.path(), "/api/motyga/responses");
     let request_authorization = request
         .header("authorization")
         .expect("authorization header");
@@ -1480,7 +1480,7 @@ async fn chatgpt_auth_sends_correct_request() {
     let request_session_id = request.header("session-id").expect("session-id header");
     let request_thread_id = request.header("thread-id").expect("thread-id header");
     let installation_id =
-        std::fs::read_to_string(test.codex_home_path().join(INSTALLATION_ID_FILENAME))
+        std::fs::read_to_string(test.motyga_home_path().join(INSTALLATION_ID_FILENAME))
             .expect("read installation id");
     let session_id_string = expected_session_id.to_string();
     let thread_id_string = expected_thread_id.to_string();
@@ -1490,7 +1490,7 @@ async fn chatgpt_auth_sends_correct_request() {
     assert_eq!(request_originator, originator().value);
     assert_eq!(request_authorization, "Bearer Access Token");
     assert_eq!(request_chatgpt_account_id, "account_id");
-    assert_codex_client_metadata(
+    assert_motyga_client_metadata(
         &request_body,
         installation_id.as_str(),
         session_id_string.as_str(),
@@ -1533,41 +1533,41 @@ async fn prefers_apikey_when_config_prefers_apikey_even_with_chatgpt_tokens() {
     };
 
     // Init session
-    let codex_home = TempDir::new().unwrap();
+    let motyga_home = TempDir::new().unwrap();
     // Write auth.json that contains both API key and ChatGPT tokens for a plan that should prefer ChatGPT,
     // but config will force API key preference.
     let _jwt = write_auth_json(
-        &codex_home,
+        &motyga_home,
         Some("sk-test-key"),
         "pro",
         "Access-123",
         Some("acc-123"),
     );
 
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let mut config = load_default_config_for_test(&motyga_home).await;
     config.model_provider = model_provider;
 
-    let auth = CodexAuth::from_auth_storage(
-        codex_home.path(),
+    let auth = MotygaAuth::from_auth_storage(
+        motyga_home.path(),
         AuthCredentialsStoreMode::File,
         /*chatgpt_base_url*/ None,
         AuthKeyringBackendKind::default(),
         /*auth_route_config*/ None,
     )
     .await
-    .expect("Failed to load CodexAuth")
-    .expect("No CodexAuth found in codex_home");
-    let auth_manager = codex_core::test_support::auth_manager_from_auth(auth);
-    let installation_id = resolve_installation_id(&config.codex_home)
+    .expect("Failed to load MotygaAuth")
+    .expect("No MotygaAuth found in motyga_home");
+    let auth_manager = motyga_core::test_support::auth_manager_from_auth(auth);
+    let installation_id = resolve_installation_id(&config.motyga_home)
         .await
         .expect("resolve installation id");
     let thread_manager = ThreadManager::new(
         &config,
         auth_manager,
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
-        Arc::new(codex_core::test_support::EmptyUserInstructionsProvider),
+        Arc::new(motyga_core::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
         thread_store_from_config(&config, /*state_db*/ None),
         /*agent_graph_store*/ None,
@@ -1575,12 +1575,12 @@ async fn prefers_apikey_when_config_prefers_apikey_even_with_chatgpt_tokens() {
         /*attestation_provider*/ None,
         /*external_time_provider*/ None,
     );
-    let NewThread { thread: codex, .. } = thread_manager
+    let NewThread { thread: motyga, .. } = thread_manager
         .start_thread(config.clone())
         .await
         .expect("create new conversation");
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1594,7 +1594,7 @@ async fn prefers_apikey_when_config_prefers_apikey_even_with_chatgpt_tokens() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1608,18 +1608,18 @@ async fn includes_user_instructions_message_in_request() {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::from_api_key("Test API Key"))
         .with_pre_build_hook(|home| {
             std::fs::write(home.join("AGENTS.md"), "be nice").expect("write global instructions");
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1633,7 +1633,7 @@ async fn includes_user_instructions_message_in_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -1692,8 +1692,8 @@ async fn includes_apps_guidance_as_developer_message_for_chatgpt_auth() {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(create_dummy_codex_auth())
+    let mut builder = test_motyga()
+        .with_auth(create_dummy_motyga_auth())
         .with_config(move |config| {
             config
                 .features
@@ -1701,13 +1701,13 @@ async fn includes_apps_guidance_as_developer_message_for_chatgpt_auth() {
                 .expect("test config should allow feature update");
             config.chatgpt_base_url = apps_base_url;
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1721,7 +1721,7 @@ async fn includes_apps_guidance_as_developer_message_for_chatgpt_auth() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let apps_snippet =
@@ -1755,8 +1755,8 @@ async fn omits_apps_guidance_for_api_key_auth_even_when_feature_enabled() {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::from_api_key("Test API Key"))
         .with_config(move |config| {
             config
                 .features
@@ -1764,13 +1764,13 @@ async fn omits_apps_guidance_for_api_key_auth_even_when_feature_enabled() {
                 .expect("test config should allow feature update");
             config.chatgpt_base_url = apps_base_url;
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1784,7 +1784,7 @@ async fn omits_apps_guidance_for_api_key_auth_even_when_feature_enabled() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let apps_snippet =
@@ -1813,8 +1813,8 @@ async fn omits_apps_guidance_when_configured_off() {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(create_dummy_codex_auth())
+    let mut builder = test_motyga()
+        .with_auth(create_dummy_motyga_auth())
         .with_config(move |config| {
             config
                 .features
@@ -1823,13 +1823,13 @@ async fn omits_apps_guidance_when_configured_off() {
             config.chatgpt_base_url = apps_base_url;
             config.include_apps_instructions = false;
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1843,7 +1843,7 @@ async fn omits_apps_guidance_when_configured_off() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     assert!(
@@ -1878,7 +1878,7 @@ async fn omits_apps_guidance_when_orchestrator_mcp_is_disabled() {
                     read_call_id,
                     "read_mcp_resource",
                     &json!({
-                        "server": "codex_apps",
+                        "server": "motyga_apps",
                         "uri": "skill://demo/SKILL.md",
                     })
                     .to_string(),
@@ -1890,8 +1890,8 @@ async fn omits_apps_guidance_when_orchestrator_mcp_is_disabled() {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(create_dummy_codex_auth())
+    let mut builder = test_motyga()
+        .with_auth(create_dummy_motyga_auth())
         .with_config(move |config| {
             config
                 .features
@@ -1900,13 +1900,13 @@ async fn omits_apps_guidance_when_orchestrator_mcp_is_disabled() {
             config.chatgpt_base_url = apps_base_url;
             config.orchestrator_mcp_enabled = false;
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1920,7 +1920,7 @@ async fn omits_apps_guidance_when_orchestrator_mcp_is_disabled() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 3);
@@ -1931,8 +1931,8 @@ async fn omits_apps_guidance_when_orchestrator_mcp_is_disabled() {
         request.body_json()["input"]
     );
     assert!(
-        !request.body_contains_text("mcp__codex_apps"),
-        "did not expect codex_apps MCP tools when orchestrator MCP is disabled, got {:?}",
+        !request.body_contains_text("mcp__motyga_apps"),
+        "did not expect motyga_apps MCP tools when orchestrator MCP is disabled, got {:?}",
         request.body_json()["tools"]
     );
     let list_output = requests[1]
@@ -1966,7 +1966,7 @@ async fn omits_apps_guidance_when_orchestrator_mcp_is_disabled() {
         .collect::<Vec<_>>();
     assert!(
         resource_methods.is_empty(),
-        "did not expect codex_apps resource calls: {resource_methods:?}"
+        "did not expect motyga_apps resource calls: {resource_methods:?}"
     );
 }
 
@@ -1979,16 +1979,16 @@ async fn omits_environment_context_when_configured_off() {
     )
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config.include_environment_context = false;
     });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2002,7 +2002,7 @@ async fn omits_environment_context_when_configured_off() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     assert!(
@@ -2023,8 +2023,8 @@ async fn skills_append_to_developer_message() {
     )
     .await;
 
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let skill_dir = codex_home.path().join("skills/demo");
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let skill_dir = motyga_home.path().join("skills/demo");
     std::fs::create_dir_all(&skill_dir).expect("create skill dir");
     std::fs::write(
         skill_dir.join("SKILL.md"),
@@ -2032,20 +2032,20 @@ async fn skills_append_to_developer_message() {
     )
     .expect("write skill");
 
-    let codex_home_path = codex_home.path().to_path_buf();
-    let mut builder = test_codex()
-        .with_home(codex_home.clone())
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let motyga_home_path = motyga_home.path().to_path_buf();
+    let mut builder = test_motyga()
+        .with_home(motyga_home.clone())
+        .with_auth(MotygaAuth::from_api_key("Test API Key"))
         .with_config(move |config| {
-            config.cwd = codex_home_path.abs();
+            config.cwd = motyga_home_path.abs();
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2059,7 +2059,7 @@ async fn skills_append_to_developer_message() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let developer_messages = request.message_input_texts("developer");
@@ -2078,7 +2078,7 @@ async fn skills_append_to_developer_message() {
         developer_text.contains(&expected_path_str),
         "expected path {expected_path_str} in developer message: {developer_messages:?}"
     );
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -2092,13 +2092,13 @@ async fn skills_use_aliases_in_developer_message_under_budget_pressure() {
     )
     .await;
 
-    let codex_home_parent = TempDir::new().unwrap();
-    let long_home_parent = codex_home_parent
+    let motyga_home_parent = TempDir::new().unwrap();
+    let long_home_parent = motyga_home_parent
         .path()
-        .join("codex-home-with-long-shared-prefix-for-skill-alias-budget-test");
+        .join("motyga-home-with-long-shared-prefix-for-skill-alias-budget-test");
     std::fs::create_dir_all(&long_home_parent).expect("create long home parent");
-    let codex_home = Arc::new(TempDir::new_in(long_home_parent).unwrap());
-    let skill_root = codex_home.path().join("skills");
+    let motyga_home = Arc::new(TempDir::new_in(long_home_parent).unwrap());
+    let skill_root = motyga_home.path().join("skills");
     for index in 0..12 {
         let skill_dir = skill_root.join(format!("s{index:02}"));
         std::fs::create_dir_all(&skill_dir).expect("create skill dir");
@@ -2109,26 +2109,26 @@ async fn skills_use_aliases_in_developer_message_under_budget_pressure() {
         .expect("write skill");
     }
 
-    let codex_home_path = codex_home.path().to_path_buf();
-    let mut builder = test_codex()
-        .with_home(codex_home.clone())
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let motyga_home_path = motyga_home.path().to_path_buf();
+    let mut builder = test_motyga()
+        .with_home(motyga_home.clone())
+        .with_auth(MotygaAuth::from_api_key("Test API Key"))
         .with_config(move |config| {
-            config.cwd = codex_home_path.abs();
-            let user_config_path = codex_home_path.join("config.toml").abs();
+            config.cwd = motyga_home_path.abs();
+            let user_config_path = motyga_home_path.join("config.toml").abs();
             config.config_layer_stack = ConfigLayerStack::default().with_user_config(
                 &user_config_path,
                 toml! { skills = { bundled = { enabled = false } } }.into(),
             );
             config.model_context_window = Some(12_000);
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2142,7 +2142,7 @@ async fn skills_use_aliases_in_developer_message_under_budget_pressure() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let developer_messages = request.message_input_texts("developer");
@@ -2167,8 +2167,8 @@ async fn skills_use_aliases_in_developer_message_under_budget_pressure() {
         ),
         "expected alias-specific skill instructions: {developer_messages:?}"
     );
-    let _codex_home_guard = codex_home;
-    let _codex_home_parent_guard = codex_home_parent;
+    let _motyga_home_guard = motyga_home;
+    let _motyga_home_parent_guard = motyga_home_parent;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -2181,7 +2181,7 @@ async fn includes_configured_max_effort_in_request() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_model("gpt-5.4")
         .with_config(|config| {
             config.model_reasoning_effort = Some(ReasoningEffort::Max);
@@ -2189,7 +2189,7 @@ async fn includes_configured_max_effort_in_request() -> anyhow::Result<()> {
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2203,7 +2203,7 @@ async fn includes_configured_max_effort_in_request() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -2229,9 +2229,9 @@ async fn includes_no_effort_in_request() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
+    let TestMotyga { motyga, .. } = test_motyga().with_model("gpt-5.4").build(&server).await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2245,7 +2245,7 @@ async fn includes_no_effort_in_request() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -2272,9 +2272,9 @@ async fn includes_default_reasoning_effort_in_request_when_defined_by_model_info
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
+    let TestMotyga { motyga, .. } = test_motyga().with_model("gpt-5.4").build(&server).await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2288,7 +2288,7 @@ async fn includes_default_reasoning_effort_in_request_when_defined_by_model_info
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -2314,7 +2314,7 @@ async fn user_turn_collaboration_mode_overrides_model_and_effort() -> anyhow::Re
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, config, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
+    let TestMotyga { motyga, config, .. } = test_motyga().with_model("gpt-5.4").build(&server).await?;
 
     let collaboration_mode = CollaborationMode {
         mode: ModeKind::Default,
@@ -2325,7 +2325,7 @@ async fn user_turn_collaboration_mode_overrides_model_and_effort() -> anyhow::Re
         },
     };
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2334,7 +2334,7 @@ async fn user_turn_collaboration_mode_overrides_model_and_effort() -> anyhow::Re
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(config.cwd.clone())),
                 approval_policy: Some(config.permissions.approval_policy.value()),
                 sandbox_policy: Some(config.legacy_sandbox_policy()),
@@ -2349,7 +2349,7 @@ async fn user_turn_collaboration_mode_overrides_model_and_effort() -> anyhow::Re
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request_body = resp_mock.single_request().body_json();
     assert_eq!(request_body["model"].as_str(), Some("gpt-5.4"));
@@ -2374,14 +2374,14 @@ async fn configured_reasoning_summary_is_sent() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_config(|config| {
             config.model_reasoning_summary = Some(ReasoningSummary::Concise);
         })
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2395,7 +2395,7 @@ async fn configured_reasoning_summary_is_sent() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -2429,7 +2429,7 @@ async fn responses_lite_sets_all_turns_context_and_disables_parallel_tool_calls(
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_model_info_override("gpt-5.4", |model_info| {
             model_info.use_responses_lite = true;
             model_info.supports_parallel_tool_calls = true;
@@ -2437,7 +2437,7 @@ async fn responses_lite_sets_all_turns_context_and_disables_parallel_tool_calls(
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2450,7 +2450,7 @@ async fn responses_lite_sets_all_turns_context_and_disables_parallel_tool_calls(
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request_body = resp_mock.single_request().body_json();
     pretty_assertions::assert_eq!(
@@ -2486,12 +2486,12 @@ async fn user_turn_explicit_reasoning_summary_overrides_model_catalog_default() 
     model.supports_reasoning_summaries = true;
     model.default_reasoning_summary = ReasoningSummary::Detailed;
 
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         config,
         session_configured,
         ..
-    } = test_codex()
+    } = test_motyga()
         .with_model("gpt-5.4")
         .with_config(move |config| {
             config.model_catalog = Some(model_catalog);
@@ -2499,7 +2499,7 @@ async fn user_turn_explicit_reasoning_summary_overrides_model_catalog_default() 
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2508,14 +2508,14 @@ async fn user_turn_explicit_reasoning_summary_overrides_model_catalog_default() 
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(config.cwd.clone())),
                 approval_policy: Some(config.permissions.approval_policy.value()),
                 sandbox_policy: Some(config.legacy_sandbox_policy()),
                 summary: Some(ReasoningSummary::Concise),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: session_configured.model,
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -2527,7 +2527,7 @@ async fn user_turn_explicit_reasoning_summary_overrides_model_catalog_default() 
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request_body = resp_mock.single_request().body_json();
 
@@ -2552,14 +2552,14 @@ async fn reasoning_summary_is_omitted_when_disabled() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_config(|config| {
             config.model_reasoning_summary = Some(ReasoningSummary::None);
         })
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2573,7 +2573,7 @@ async fn reasoning_summary_is_omitted_when_disabled() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -2608,7 +2608,7 @@ async fn reasoning_summary_none_overrides_model_catalog_default() -> anyhow::Res
     model.supports_reasoning_summaries = true;
     model.default_reasoning_summary = ReasoningSummary::Detailed;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_model("gpt-5.4")
         .with_config(move |config| {
             config.model_reasoning_summary = Some(ReasoningSummary::None);
@@ -2617,7 +2617,7 @@ async fn reasoning_summary_none_overrides_model_catalog_default() -> anyhow::Res
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2631,7 +2631,7 @@ async fn reasoning_summary_none_overrides_model_catalog_default() -> anyhow::Res
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request_body = resp_mock.single_request().body_json();
     pretty_assertions::assert_eq!(
@@ -2654,9 +2654,9 @@ async fn includes_default_verbosity_in_request() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
+    let TestMotyga { motyga, .. } = test_motyga().with_model("gpt-5.4").build(&server).await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2670,7 +2670,7 @@ async fn includes_default_verbosity_in_request() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -2696,7 +2696,7 @@ async fn configured_verbosity_not_sent_for_models_without_support() -> anyhow::R
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_model("test-no-verbosity")
         .with_config(|config| {
             config.model_verbosity = Some(Verbosity::High);
@@ -2704,7 +2704,7 @@ async fn configured_verbosity_not_sent_for_models_without_support() -> anyhow::R
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2718,7 +2718,7 @@ async fn configured_verbosity_not_sent_for_models_without_support() -> anyhow::R
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -2743,7 +2743,7 @@ async fn configured_verbosity_is_sent() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_model("gpt-5.4")
         .with_config(|config| {
             config.model_verbosity = Some(Verbosity::High);
@@ -2751,7 +2751,7 @@ async fn configured_verbosity_is_sent() -> anyhow::Result<()> {
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2765,7 +2765,7 @@ async fn configured_verbosity_is_sent() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -2791,21 +2791,21 @@ async fn includes_developer_instructions_message_in_request() {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::from_api_key("Test API Key"))
         .with_pre_build_hook(|home| {
             std::fs::write(home.join("AGENTS.md"), "be nice").expect("write global instructions");
         })
         .with_config(|config| {
             config.developer_instructions = Some("be useful".to_string());
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -2819,7 +2819,7 @@ async fn includes_developer_instructions_message_in_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -2910,20 +2910,20 @@ async fn azure_responses_request_includes_store_and_reasoning_ids() {
         supports_websockets: false,
     };
 
-    let codex_home = TempDir::new().unwrap();
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let motyga_home = TempDir::new().unwrap();
+    let mut config = load_default_config_for_test(&motyga_home).await;
     config.model_provider_id = provider.name.clone();
     config.model_provider = provider.clone();
     let effort = config.model_reasoning_effort.clone();
     let summary = config.model_reasoning_summary;
-    let model = codex_core::test_support::get_model_offline(config.model.as_deref());
+    let model = motyga_core::test_support::get_model_offline(config.model.as_deref());
     config.model = Some(model.clone());
     let config = Arc::new(config);
     let model_info =
-        codex_core::test_support::construct_model_info_offline(model.as_str(), &config);
+        motyga_core::test_support::construct_model_info_offline(model.as_str(), &config);
     let thread_id = ThreadId::new();
     let auth_manager =
-        codex_core::test_support::auth_manager_from_auth(CodexAuth::from_api_key("Test API Key"));
+        motyga_core::test_support::auth_manager_from_auth(MotygaAuth::from_api_key("Test API Key"));
     let session_telemetry = SessionTelemetry::new(
         thread_id,
         model.as_str(),
@@ -3037,7 +3037,7 @@ async fn azure_responses_request_includes_store_and_reasoning_ids() {
             summary.unwrap_or(ReasoningSummary::Auto),
             /*service_tier*/ None,
             &responses_metadata,
-            &codex_rollout_trace::InferenceTraceContext::disabled(),
+            &motyga_rollout_trace::InferenceTraceContext::disabled(),
             None,
         )
         .await
@@ -3104,18 +3104,18 @@ async fn token_count_includes_rate_limits_snapshot() {
     provider.base_url = Some(format!("{}/v1", server.uri()));
     provider.supports_websockets = false;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::from_api_key("test"))
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::from_api_key("test"))
         .with_config(move |config| {
             config.model_provider = provider;
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -3130,7 +3130,7 @@ async fn token_count_includes_rate_limits_snapshot() {
         .unwrap();
 
     let token_event = wait_for_event(
-        &codex,
+        &motyga,
         |msg| matches!(msg, EventMsg::TokenCount(ev) if ev.info.is_some()),
     )
     .await;
@@ -3162,7 +3162,7 @@ async fn token_count_includes_rate_limits_snapshot() {
                 "model_context_window": 258400
             },
             "rate_limits": {
-                "limit_id": "codex",
+                "limit_id": "motyga",
                 "limit_name": null,
                 "primary": {
                     "used_percent": 12.5,
@@ -3203,7 +3203,7 @@ async fn token_count_includes_rate_limits_snapshot() {
         Some(1704069000)
     );
 
-    wait_for_event(&codex, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -3233,12 +3233,12 @@ async fn usage_limit_error_emits_rate_limit_event() -> anyhow::Result<()> {
         .mount(&server)
         .await;
 
-    let mut builder = test_codex();
-    let codex_fixture = builder.build(&server).await?;
-    let codex = codex_fixture.codex.clone();
+    let mut builder = test_motyga();
+    let motyga_fixture = builder.build(&server).await?;
+    let motyga = motyga_fixture.motyga.clone();
 
     let expected_limits = json!({
-        "limit_id": "codex",
+        "limit_id": "motyga",
         "limit_name": null,
         "primary": {
             "used_percent": 100.0,
@@ -3256,7 +3256,7 @@ async fn usage_limit_error_emits_rate_limit_event() -> anyhow::Result<()> {
         "rate_limit_reached_type": null
     });
 
-    let submission_id = codex
+    let submission_id = motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -3270,7 +3270,7 @@ async fn usage_limit_error_emits_rate_limit_event() -> anyhow::Result<()> {
         .await
         .expect("submission should succeed while emitting usage limit error events");
 
-    let token_event = wait_for_event(&codex, |msg| matches!(msg, EventMsg::TokenCount(_))).await;
+    let token_event = wait_for_event(&motyga, |msg| matches!(msg, EventMsg::TokenCount(_))).await;
     let EventMsg::TokenCount(event) = token_event else {
         unreachable!();
     };
@@ -3284,7 +3284,7 @@ async fn usage_limit_error_emits_rate_limit_event() -> anyhow::Result<()> {
         })
     );
 
-    let error_event = wait_for_event(&codex, |msg| matches!(msg, EventMsg::Error(_))).await;
+    let error_event = wait_for_event(&motyga, |msg| matches!(msg, EventMsg::Error(_))).await;
     let EventMsg::Error(error_event) = error_event else {
         unreachable!();
     };
@@ -3325,7 +3325,7 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_config(|config| {
             config.model = Some("gpt-5.4".to_string());
             config.model_context_window = Some(272_000);
@@ -3333,7 +3333,7 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "seed turn".into(),
@@ -3346,9 +3346,9 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "trigger context window".into(),
@@ -3361,7 +3361,7 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         })
         .await?;
 
-    let token_event = wait_for_event(&codex, |event| {
+    let token_event = wait_for_event(&motyga, |event| {
         matches!(
             event,
             EventMsg::TokenCount(payload)
@@ -3387,8 +3387,8 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         EFFECTIVE_CONTEXT_WINDOW
     );
 
-    let error_event = wait_for_event(&codex, |ev| matches!(ev, EventMsg::Error(_))).await;
-    let expected_context_window_message = CodexErr::ContextWindowExceeded.to_string();
+    let error_event = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::Error(_))).await;
+    let expected_context_window_message = MotygaErr::ContextWindowExceeded.to_string();
     assert!(
         matches!(
             error_event,
@@ -3397,7 +3397,7 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         "expected context window error; got {error_event:?}"
     );
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     Ok(())
 }
@@ -3427,13 +3427,13 @@ async fn incomplete_response_emits_content_filter_error_message() -> anyhow::Res
 
     let responses_mock = mount_sse_once(&server, incomplete_response).await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_config(|config| {
             config.model_provider.stream_max_retries = Some(0);
         })
         .build(&server)
         .await?;
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "trigger incomplete".into(),
@@ -3446,7 +3446,7 @@ async fn incomplete_response_emits_content_filter_error_message() -> anyhow::Res
         })
         .await?;
 
-    let error_event = wait_for_event(&codex, |ev| matches!(ev, EventMsg::Error(_))).await;
+    let error_event = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::Error(_))).await;
     assert!(
         matches!(
             error_event,
@@ -3459,7 +3459,7 @@ async fn incomplete_response_emits_content_filter_error_message() -> anyhow::Res
 
     assert_eq!(responses_mock.requests().len(), 1);
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     Ok(())
 }
 
@@ -3533,18 +3533,18 @@ async fn azure_overrides_assign_properties_used_for_responses_url() {
     };
 
     // Init session
-    let mut builder = test_codex()
-        .with_auth(create_dummy_codex_auth())
+    let mut builder = test_motyga()
+        .with_auth(create_dummy_motyga_auth())
         .with_config(move |config| {
             config.model_provider = provider;
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -3558,7 +3558,7 @@ async fn azure_overrides_assign_properties_used_for_responses_url() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -3622,18 +3622,18 @@ async fn env_var_overrides_loaded_auth() {
     };
 
     // Init session
-    let mut builder = test_codex()
-        .with_auth(create_dummy_codex_auth())
+    let mut builder = test_motyga()
+        .with_auth(create_dummy_motyga_auth())
         .with_config(move |config| {
             config.model_provider = provider;
         });
-    let codex = builder
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -3647,11 +3647,11 @@ async fn env_var_overrides_loaded_auth() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
-fn create_dummy_codex_auth() -> CodexAuth {
-    CodexAuth::create_dummy_chatgpt_auth_for_testing()
+fn create_dummy_motyga_auth() -> MotygaAuth {
+    MotygaAuth::create_dummy_chatgpt_auth_for_testing()
 }
 
 /// Scenario:
@@ -3662,7 +3662,7 @@ fn create_dummy_codex_auth() -> CodexAuth {
 /// We assert that the `input` sent on each turn contains the expected conversation history
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn history_dedupes_streamed_and_final_messages_across_turns() {
-    // Skip under Codex sandbox network restrictions (mirrors other tests).
+    // Skip under Motyga sandbox network restrictions (mirrors other tests).
     skip_if_no_network!();
 
     // Mock server that will receive three sequential requests and return the same SSE stream
@@ -3682,15 +3682,15 @@ async fn history_dedupes_streamed_and_final_messages_across_turns() {
 
     let request_log = mount_sse_sequence(&server, vec![sse1.clone(), sse1.clone(), sse1]).await;
 
-    let mut builder = test_codex().with_auth(CodexAuth::from_api_key("Test API Key"));
-    let codex = builder
+    let mut builder = test_motyga().with_auth(MotygaAuth::from_api_key("Test API Key"));
+    let motyga = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .motyga;
 
     // Turn 1: user sends U1; wait for completion.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "U1".into(),
@@ -3703,10 +3703,10 @@ async fn history_dedupes_streamed_and_final_messages_across_turns() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Turn 2: user sends U2; wait for completion.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "U2".into(),
@@ -3719,10 +3719,10 @@ async fn history_dedupes_streamed_and_final_messages_across_turns() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Turn 3: user sends U3; wait for completion.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "U3".into(),
@@ -3735,7 +3735,7 @@ async fn history_dedupes_streamed_and_final_messages_across_turns() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Inspect the three captured requests.
     let requests = request_log.requests();

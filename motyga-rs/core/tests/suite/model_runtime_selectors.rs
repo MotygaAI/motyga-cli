@@ -1,21 +1,21 @@
 use anyhow::Result;
-use codex_core::config::Config;
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_models_manager::manager::SharedModelsManager;
-use codex_models_manager::model_info::model_info_from_slug;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ToolMode;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ThreadSettingsOverrides;
-use codex_protocol::user_input::UserInput;
+use motyga_core::config::Config;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_models_manager::manager::SharedModelsManager;
+use motyga_models_manager::model_info::model_info_from_slug;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::openai_models::ModelVisibility;
+use motyga_protocol::openai_models::ModelsResponse;
+use motyga_protocol::openai_models::ToolMode;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ThreadSettingsOverrides;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -26,7 +26,7 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
 use core_test_support::submit_thread_settings;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -112,8 +112,8 @@ async fn response_for_remote_model(
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(configure);
     let test = builder.build(&server).await?;
     let models_manager = test.thread_manager.get_models_manager();
@@ -122,14 +122,14 @@ async fn response_for_remote_model(
     assert_eq!(models_mock.requests().len(), 1);
 
     submit_thread_settings(
-        &test.codex,
+        &test.motyga,
         ThreadSettingsOverrides {
             model: Some(model_slug),
             ..Default::default()
         },
     )
     .await?;
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "list tools".into(),
@@ -143,7 +143,7 @@ async fn response_for_remote_model(
         .await?;
     let mut warnings = Vec::new();
     loop {
-        match wait_for_event(&test.codex, |_| true).await {
+        match wait_for_event(&test.motyga, |_| true).await {
             EventMsg::Warning(warning) => warnings.push(warning.message),
             EventMsg::TurnComplete(_) => break,
             _ => {}
@@ -182,8 +182,8 @@ async fn remote_tool_mode_selector_overrides_feature_flags() -> Result<()> {
     assert!(
         direct_tools
             .iter()
-            .all(|name| name != codex_code_mode::PUBLIC_TOOL_NAME
-                && name != codex_code_mode::WAIT_TOOL_NAME),
+            .all(|name| name != motyga_code_mode::PUBLIC_TOOL_NAME
+                && name != motyga_code_mode::WAIT_TOOL_NAME),
         "direct mode should override enabled code mode flags: {direct_tools:?}"
     );
 
@@ -195,8 +195,8 @@ async fn remote_tool_mode_selector_overrides_feature_flags() -> Result<()> {
         tool_names(&code_mode_only_body),
         vec![
             // Code-mode entrypoints.
-            codex_code_mode::PUBLIC_TOOL_NAME.to_string(),
-            codex_code_mode::WAIT_TOOL_NAME.to_string(),
+            motyga_code_mode::PUBLIC_TOOL_NAME.to_string(),
+            motyga_code_mode::WAIT_TOOL_NAME.to_string(),
             "request_user_input".to_string(),
             // Hosted Responses tools.
             "web_search".to_string(),
@@ -215,7 +215,7 @@ async fn remote_tool_mode_selector_overrides_feature_flags() -> Result<()> {
     assert!(
         tool_names(&unsupported_response.body)
             .iter()
-            .any(|name| name == codex_code_mode::PUBLIC_TOOL_NAME)
+            .any(|name| name == motyga_code_mode::PUBLIC_TOOL_NAME)
     );
     assert_eq!(
         unsupported_response
@@ -258,8 +258,8 @@ async fn unsupported_code_mode_warning_is_emitted_each_turn() -> Result<()> {
         ],
     )
     .await;
-    let test = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let test = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config
                 .features
@@ -274,7 +274,7 @@ async fn unsupported_code_mode_warning_is_emitted_each_turn() -> Result<()> {
     assert_eq!(models_mock.requests().len(), 1);
 
     submit_thread_settings(
-        &test.codex,
+        &test.motyga,
         ThreadSettingsOverrides {
             model: Some(model_slug.to_string()),
             ..Default::default()
@@ -284,7 +284,7 @@ async fn unsupported_code_mode_warning_is_emitted_each_turn() -> Result<()> {
 
     let mut warning_counts = Vec::new();
     for prompt in ["first turn", "second turn"] {
-        test.codex
+        test.motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: prompt.to_string(),
@@ -299,7 +299,7 @@ async fn unsupported_code_mode_warning_is_emitted_each_turn() -> Result<()> {
 
         let mut warning_count = 0;
         loop {
-            match wait_for_event(&test.codex, |_| true).await {
+            match wait_for_event(&test.motyga, |_| true).await {
                 EventMsg::Warning(warning)
                     if warning.message.contains(UNSUPPORTED_CODE_MODE_WARNING) =>
                 {
@@ -387,8 +387,8 @@ async fn remote_multi_agent_selector_uses_model_selected_before_first_turn() -> 
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.model = Some(ROOT_MODEL.to_string());
         });
@@ -396,22 +396,22 @@ async fn remote_multi_agent_selector_uses_model_selected_before_first_turn() -> 
     assert_eq!(
         (
             models_mock.requests().len(),
-            test.codex.multi_agent_version(),
+            test.motyga.multi_agent_version(),
         ),
         (1, None)
     );
 
     submit_thread_settings(
-        &test.codex,
+        &test.motyga,
         ThreadSettingsOverrides {
             model: Some(CHILD_MODEL.to_string()),
             ..Default::default()
         },
     )
     .await?;
-    assert_eq!(test.codex.multi_agent_version(), None);
+    assert_eq!(test.motyga.multi_agent_version(), None);
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: ROOT_PROMPT.into(),
@@ -423,7 +423,7 @@ async fn remote_multi_agent_selector_uses_model_selected_before_first_turn() -> 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -431,7 +431,7 @@ async fn remote_multi_agent_selector_uses_model_selected_before_first_turn() -> 
     assert_eq!(
         (
             models_mock.requests().len(),
-            test.codex.multi_agent_version(),
+            test.motyga.multi_agent_version(),
             tool_names(
                 &response_mock
                     .last_request()

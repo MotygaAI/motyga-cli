@@ -1,22 +1,22 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-tools"
+name = "motyga-tools"
 version.workspace = true
 
 [lints]
 workspace = true
 
 [dependencies]
-codex-code-mode = { workspace = true }
-codex-connectors = { workspace = true }
-codex-features = { workspace = true }
-codex-file-system = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-output-truncation = { workspace = true }
-codex-utils-pty = { workspace = true }
-codex-utils-string = { workspace = true }
+motyga-code-mode = { workspace = true }
+motyga-connectors = { workspace = true }
+motyga-features = { workspace = true }
+motyga-file-system = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-output-truncation = { workspace = true }
+motyga-utils-pty = { workspace = true }
+motyga-utils-string = { workspace = true }
 jsonptr = { workspace = true }
 rmcp = { workspace = true, default-features = false, features = [
     "base64",
@@ -31,7 +31,7 @@ tracing = { workspace = true }
 urlencoding = { workspace = true }
 
 [dev-dependencies]
-codex-utils-cargo-bin = { workspace = true }
+motyga-utils-cargo-bin = { workspace = true }
 pretty_assertions = { workspace = true }
 
 [lib]

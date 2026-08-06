@@ -1,8 +1,8 @@
-use codex_extension_api::ToolOutput;
-use codex_extension_api::ToolPayload;
-use codex_protocol::models::FunctionCallOutputContentItem;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ResponseInputItem;
+use motyga_extension_api::ToolOutput;
+use motyga_extension_api::ToolPayload;
+use motyga_protocol::models::FunctionCallOutputContentItem;
+use motyga_protocol::models::FunctionCallOutputPayload;
+use motyga_protocol::models::ResponseInputItem;
 
 pub(crate) struct SearchOutput {
     output: String,
@@ -41,10 +41,10 @@ impl ToolOutput for SearchOutput {
 
 #[cfg(test)]
 mod tests {
-    use codex_extension_api::ToolPayload;
-    use codex_protocol::models::FunctionCallOutputContentItem;
-    use codex_protocol::models::FunctionCallOutputPayload;
-    use codex_protocol::models::ResponseInputItem;
+    use motyga_extension_api::ToolPayload;
+    use motyga_protocol::models::FunctionCallOutputContentItem;
+    use motyga_protocol::models::FunctionCallOutputPayload;
+    use motyga_protocol::models::ResponseInputItem;
     use pretty_assertions::assert_eq;
 
     use super::SearchOutput;

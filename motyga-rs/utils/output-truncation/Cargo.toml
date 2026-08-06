@@ -1,15 +1,15 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-utils-output-truncation"
+name = "motyga-utils-output-truncation"
 version.workspace = true
 
 [lints]
 workspace = true
 
 [dependencies]
-codex-protocol = { workspace = true }
-codex-utils-string = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-string = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

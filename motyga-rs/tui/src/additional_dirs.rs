@@ -1,4 +1,4 @@
-use codex_protocol::models::PermissionProfile;
+use motyga_protocol::models::PermissionProfile;
 use std::path::PathBuf;
 
 /// Returns a warning describing why `--add-dir` entries will be ignored for the
@@ -46,13 +46,13 @@ fn format_warning(additional_dirs: &[PathBuf]) -> String {
 #[cfg(test)]
 mod tests {
     use super::add_dir_warning_message;
-    use codex_protocol::models::ManagedFileSystemPermissions;
-    use codex_protocol::models::PermissionProfile;
-    use codex_protocol::permissions::FileSystemAccessMode;
-    use codex_protocol::permissions::FileSystemPath;
-    use codex_protocol::permissions::FileSystemSandboxEntry;
-    use codex_protocol::permissions::FileSystemSpecialPath;
-    use codex_protocol::permissions::NetworkSandboxPolicy;
+    use motyga_protocol::models::ManagedFileSystemPermissions;
+    use motyga_protocol::models::PermissionProfile;
+    use motyga_protocol::permissions::FileSystemAccessMode;
+    use motyga_protocol::permissions::FileSystemPath;
+    use motyga_protocol::permissions::FileSystemSandboxEntry;
+    use motyga_protocol::permissions::FileSystemSpecialPath;
+    use motyga_protocol::permissions::NetworkSandboxPolicy;
     use pretty_assertions::assert_eq;
     use std::path::Path;
     use std::path::PathBuf;

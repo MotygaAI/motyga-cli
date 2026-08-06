@@ -5,11 +5,11 @@ use std::time::Duration;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_config::types::AppToolApproval;
-use codex_config::types::McpServerConfig;
-use codex_config::types::McpServerTransportConfig;
-use codex_core::config::Config;
-use codex_features::Feature;
+use motyga_config::types::AppToolApproval;
+use motyga_config::types::McpServerConfig;
+use motyga_config::types::McpServerTransportConfig;
+use motyga_core::config::Config;
+use motyga_features::Feature;
 use core_test_support::hooks::trust_discovered_hooks;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -21,7 +21,7 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::stdio_server_bin;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_mcp_server;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -192,7 +192,7 @@ fn insert_rmcp_test_server(config: &mut Config, command: String, approval_mode: 
                 env_vars: Vec::new(),
                 cwd: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -271,7 +271,7 @@ async fn pre_tool_use_blocks_mcp_tool_before_execution(
 
     let block_reason = "blocked mcp pre hook";
     let rmcp_test_server_bin = stdio_server_bin()?;
-    let test = test_codex()
+    let test = test_motyga()
         .with_pre_build_hook(move |home| {
             write_pre_tool_use_hook(home, block_reason)
                 .expect("failed to write MCP pre tool use hook fixture");
@@ -286,7 +286,7 @@ async fn pre_tool_use_blocks_mcp_tool_before_execution(
         })
         .build(&server)
         .await?;
-    wait_for_mcp_server(&test.codex, RMCP_SERVER).await?;
+    wait_for_mcp_server(&test.motyga, RMCP_SERVER).await?;
 
     test.submit_turn("call the rmcp echo tool with the MCP pre hook")
         .await?;
@@ -305,7 +305,7 @@ async fn pre_tool_use_blocks_mcp_tool_before_execution(
         "blocked MCP tool output should surface the hook reason and tool name",
     );
 
-    let hook_inputs = read_hook_inputs(test.codex_home_path(), "pre_tool_use_hook_log.jsonl")?;
+    let hook_inputs = read_hook_inputs(test.motyga_home_path(), "pre_tool_use_hook_log.jsonl")?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(
         json!({
@@ -360,7 +360,7 @@ async fn pre_tool_use_rewrites_mcp_tool_before_execution() -> Result<()> {
     .await;
 
     let rmcp_test_server_bin = stdio_server_bin()?;
-    let test = test_codex()
+    let test = test_motyga()
         .with_pre_build_hook(move |home| {
             write_updating_pre_tool_use_hook(home, rewritten_message)
                 .expect("failed to write MCP updating pre tool use hook fixture");
@@ -375,7 +375,7 @@ async fn pre_tool_use_rewrites_mcp_tool_before_execution() -> Result<()> {
         })
         .build(&server)
         .await?;
-    wait_for_mcp_server(&test.codex, RMCP_SERVER).await?;
+    wait_for_mcp_server(&test.motyga, RMCP_SERVER).await?;
 
     test.submit_turn("call the rmcp echo tool with the MCP pre hook rewrite")
         .await?;
@@ -395,7 +395,7 @@ async fn pre_tool_use_rewrites_mcp_tool_before_execution() -> Result<()> {
         "MCP tool should not execute the original input",
     );
 
-    let hook_inputs = read_hook_inputs(test.codex_home_path(), "pre_tool_use_hook_log.jsonl")?;
+    let hook_inputs = read_hook_inputs(test.motyga_home_path(), "pre_tool_use_hook_log.jsonl")?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(
         hook_inputs[0]["tool_input"],
@@ -457,7 +457,7 @@ async fn post_tool_use_records_mcp_tool_payload_and_context(
 
     let post_context = "Remember the MCP post-tool note.";
     let rmcp_test_server_bin = stdio_server_bin()?;
-    let test = test_codex()
+    let test = test_motyga()
         .with_pre_build_hook(move |home| {
             write_post_tool_use_hook(home, post_context)
                 .expect("failed to write MCP post tool use hook fixture");
@@ -472,7 +472,7 @@ async fn post_tool_use_records_mcp_tool_payload_and_context(
         })
         .build(&server)
         .await?;
-    wait_for_mcp_server(&test.codex, RMCP_SERVER).await?;
+    wait_for_mcp_server(&test.motyga, RMCP_SERVER).await?;
 
     test.submit_turn("call the rmcp echo tool with the MCP post hook")
         .await?;
@@ -494,7 +494,7 @@ async fn post_tool_use_records_mcp_tool_payload_and_context(
         "MCP tool output should still reach the model",
     );
 
-    let hook_inputs = read_hook_inputs(test.codex_home_path(), "post_tool_use_hook_log.jsonl")?;
+    let hook_inputs = read_hook_inputs(test.motyga_home_path(), "post_tool_use_hook_log.jsonl")?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(
         json!({

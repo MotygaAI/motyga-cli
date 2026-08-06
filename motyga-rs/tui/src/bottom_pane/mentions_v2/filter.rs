@@ -1,6 +1,6 @@
-use codex_file_search::FileMatch;
-use codex_file_search::MatchType;
-use codex_utils_fuzzy_match::fuzzy_match;
+use motyga_file_search::FileMatch;
+use motyga_file_search::MatchType;
+use motyga_utils_fuzzy_match::fuzzy_match;
 
 use super::candidate::Candidate;
 use super::candidate::MentionType;

@@ -23,8 +23,8 @@ platform(
     exec_properties = {{
         # Ubuntu-based image that includes git, python3, dotslash, and other
         # tools that various integration tests need.
-        # Verify at https://hub.docker.com/layers/mbolin491/codex-bazel/latest/images/sha256:{image_sha}
-        "container-image": "docker://docker.io/mbolin491/codex-bazel@sha256:{image_sha}",
+        # Verify at https://hub.docker.com/layers/mbolin491/motyga-bazel/latest/images/sha256:{image_sha}
+        "container-image": "docker://docker.io/mbolin491/motyga-bazel@sha256:{image_sha}",
         "Arch": "{arch}",
         "OSFamily": "Linux",
     }},

@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
-  "name": "Codex (Secure)",
+  "name": "Motyga (Secure)",
   "build": {
     "dockerfile": "Dockerfile.secure",
     "context": "..",
@@ -8,7 +8,7 @@
       "TZ": "${localEnv:TZ:UTC}",
       "NODE_MAJOR": "22",
       "RUST_TOOLCHAIN": "1.95.0",
-      "CODEX_NPM_VERSION": "0.121.0"
+      "MOTYGA_NPM_VERSION": "0.121.0"
     }
   },
   "runArgs": [
@@ -31,19 +31,19 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
   "mounts": [
-    "source=codex-commandhistory-${devcontainerId},target=/commandhistory,type=volume",
-    "source=codex-home-${devcontainerId},target=/home/vscode/.motyga,type=volume",
-    "source=codex-gh-${devcontainerId},target=/home/vscode/.config/gh,type=volume",
-    "source=codex-cargo-registry-${devcontainerId},target=/home/vscode/.cargo/registry,type=volume",
-    "source=codex-cargo-git-${devcontainerId},target=/home/vscode/.cargo/git,type=volume",
-    "source=codex-rustup-${devcontainerId},target=/home/vscode/.rustup,type=volume",
+    "source=motyga-commandhistory-${devcontainerId},target=/commandhistory,type=volume",
+    "source=motyga-home-${devcontainerId},target=/home/vscode/.motyga,type=volume",
+    "source=motyga-gh-${devcontainerId},target=/home/vscode/.config/gh,type=volume",
+    "source=motyga-cargo-registry-${devcontainerId},target=/home/vscode/.cargo/registry,type=volume",
+    "source=motyga-cargo-git-${devcontainerId},target=/home/vscode/.cargo/git,type=volume",
+    "source=motyga-rustup-${devcontainerId},target=/home/vscode/.rustup,type=volume",
     "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly"
   ],
   "containerEnv": {
     "RUST_BACKTRACE": "1",
-    "CODEX_UNSAFE_ALLOW_NO_SANDBOX": "1",
-    "CODEX_ENABLE_FIREWALL": "1",
-    "CODEX_INCLUDE_GITHUB_META_RANGES": "1",
+    "MOTYGA_UNSAFE_ALLOW_NO_SANDBOX": "1",
+    "MOTYGA_ENABLE_FIREWALL": "1",
+    "MOTYGA_INCLUDE_GITHUB_META_RANGES": "1",
     "OPENAI_ALLOWED_DOMAINS": "api.openai.com auth.openai.com github.com api.github.com codeload.github.com raw.githubusercontent.com objects.githubusercontent.com crates.io index.crates.io static.crates.io static.rust-lang.org registry.npmjs.org pypi.org files.pythonhosted.org",
     "CARGO_TARGET_DIR": "/workspace/.cache/cargo-target",
     "GIT_CONFIG_GLOBAL": "/home/vscode/.gitconfig.local",

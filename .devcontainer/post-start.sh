@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "${CODEX_ENABLE_FIREWALL:-1}" != "1" ]; then
-  echo "[devcontainer] Firewall mode: permissive (CODEX_ENABLE_FIREWALL=${CODEX_ENABLE_FIREWALL:-unset})."
+if [ "${MOTYGA_ENABLE_FIREWALL:-1}" != "1" ]; then
+  echo "[devcontainer] Firewall mode: permissive (MOTYGA_ENABLE_FIREWALL=${MOTYGA_ENABLE_FIREWALL:-unset})."
   exit 0
 fi
 
@@ -26,11 +26,11 @@ for domain in "${domains[@]}"; do
   printf '%s\n' "$domain" >> "$tmp_file"
 done
 
-sudo install -d -m 0755 /etc/codex
-sudo cp "$tmp_file" /etc/codex/allowed_domains.txt
-sudo chown root:root /etc/codex/allowed_domains.txt
-sudo chmod 0444 /etc/codex/allowed_domains.txt
+sudo install -d -m 0755 /etc/motyga
+sudo cp "$tmp_file" /etc/motyga/allowed_domains.txt
+sudo chown root:root /etc/motyga/allowed_domains.txt
+sudo chmod 0444 /etc/motyga/allowed_domains.txt
 rm -f "$tmp_file"
 
 echo "[devcontainer] Applying firewall policy for domains: ${domains[*]}"
-sudo --preserve-env=CODEX_INCLUDE_GITHUB_META_RANGES /usr/local/bin/init-firewall.sh
+sudo --preserve-env=MOTYGA_INCLUDE_GITHUB_META_RANGES /usr/local/bin/init-firewall.sh

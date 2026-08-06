@@ -79,20 +79,20 @@ impl Pet {
     /// has already been materialized into MOTYGA_HOME; if callers skip the
     /// asset-fetch step, they will get a missing-spritesheet error here on
     /// first use.
-    pub(super) fn load_with_codex_home(value: &str, codex_home: Option<&Path>) -> Result<Self> {
+    pub(super) fn load_with_motyga_home(value: &str, motyga_home: Option<&Path>) -> Result<Self> {
         if path_like(value) {
             return load_pet_path(value);
         }
 
         if let Some(custom_id) = value.strip_prefix(CUSTOM_PET_PREFIX) {
-            return load_custom_pet(custom_id, codex_home);
+            return load_custom_pet(custom_id, motyga_home);
         }
 
         if let Some(builtin) = catalog::builtin_pet(value) {
-            return load_builtin_pet(builtin, codex_home);
+            return load_builtin_pet(builtin, motyga_home);
         }
 
-        load_custom_pet(value, codex_home)
+        load_custom_pet(value, motyga_home)
     }
 
     pub fn frame_count(&self) -> usize {
@@ -161,9 +161,9 @@ struct AnimationSpec {
     fallback: String,
 }
 
-fn load_builtin_pet(pet: catalog::BuiltinPet, codex_home: Option<&Path>) -> Result<Pet> {
-    let codex_home = codex_home.context("MOTYGA_HOME is not available")?;
-    let spritesheet_path = super::builtin_spritesheet_path(codex_home, pet.spritesheet_file);
+fn load_builtin_pet(pet: catalog::BuiltinPet, motyga_home: Option<&Path>) -> Result<Pet> {
+    let motyga_home = motyga_home.context("MOTYGA_HOME is not available")?;
+    let spritesheet_path = super::builtin_spritesheet_path(motyga_home, pet.spritesheet_file);
     if !spritesheet_path.exists() {
         bail!("missing spritesheet {}", spritesheet_path.display());
     }
@@ -182,14 +182,14 @@ fn load_builtin_pet(pet: catalog::BuiltinPet, codex_home: Option<&Path>) -> Resu
     })
 }
 
-fn load_custom_pet(value: &str, codex_home: Option<&Path>) -> Result<Pet> {
-    let codex_home = codex_home.context("MOTYGA_HOME is not available")?;
-    let pet_dir = codex_home.join("pets").join(value);
+fn load_custom_pet(value: &str, motyga_home: Option<&Path>) -> Result<Pet> {
+    let motyga_home = motyga_home.context("MOTYGA_HOME is not available")?;
+    let pet_dir = motyga_home.join("pets").join(value);
     if pet_dir.join("pet.json").is_file() {
         return load_pet_manifest(&pet_dir, "pet.json", value, &custom_pet_cache_id(value));
     }
 
-    let avatar_dir = codex_home.join("avatars").join(value);
+    let avatar_dir = motyga_home.join("avatars").join(value);
     if avatar_dir.join("avatar.json").is_file() {
         return load_pet_manifest(
             &avatar_dir,
@@ -649,27 +649,27 @@ mod tests {
     }
 
     fn load_pet_from_dir(dir: &tempfile::TempDir) -> Pet {
-        Pet::load_with_codex_home(dir.path().to_str().unwrap(), /*codex_home*/ None).unwrap()
+        Pet::load_with_motyga_home(dir.path().to_str().unwrap(), /*motyga_home*/ None).unwrap()
     }
 
     fn load_pet_error_from_dir(dir: &tempfile::TempDir) -> anyhow::Error {
-        Pet::load_with_codex_home(dir.path().to_str().unwrap(), /*codex_home*/ None).unwrap_err()
+        Pet::load_with_motyga_home(dir.path().to_str().unwrap(), /*motyga_home*/ None).unwrap_err()
     }
 
     #[test]
     fn load_builtin_pet_uses_app_catalog_storage() {
-        let codex_home = tempfile::tempdir().unwrap();
-        super::super::asset_pack::write_test_pack(codex_home.path());
+        let motyga_home = tempfile::tempdir().unwrap();
+        super::super::asset_pack::write_test_pack(motyga_home.path());
 
         let pet =
-            Pet::load_with_codex_home("dewey", /*codex_home*/ Some(codex_home.path())).unwrap();
+            Pet::load_with_motyga_home("dewey", /*motyga_home*/ Some(motyga_home.path())).unwrap();
 
         assert_eq!(pet.id, "dewey");
         assert_eq!(pet.display_name, "Dewey");
         assert_eq!(pet.description, "A tidy duck for calm workspace days");
         assert_eq!(
             pet.spritesheet_path,
-            super::super::builtin_spritesheet_path(codex_home.path(), "dewey-spritesheet-v4.webp")
+            super::super::builtin_spritesheet_path(motyga_home.path(), "dewey-spritesheet-v4.webp")
         );
         assert_eq!(pet.frame_width, 192);
         assert_eq!(pet.frame_height, 208);
@@ -805,9 +805,9 @@ mod tests {
     fn load_pet_json_path_uses_containing_directory() {
         let dir = write_minimal_pet();
 
-        let pet = Pet::load_with_codex_home(
+        let pet = Pet::load_with_motyga_home(
             dir.path().join("pet.json").to_str().unwrap(),
-            /*codex_home*/ None,
+            /*motyga_home*/ None,
         )
         .unwrap();
         let expected = dir.path().join("spritesheet.webp").canonicalize().unwrap();
@@ -816,10 +816,10 @@ mod tests {
     }
 
     #[test]
-    fn custom_pet_selector_loads_codex_home_pet_manifest() {
+    fn custom_pet_selector_loads_motyga_home_pet_manifest() {
         let dir = write_minimal_pet();
-        let codex_home = tempfile::tempdir().unwrap();
-        let pet_dir = codex_home.path().join("pets").join("chefito");
+        let motyga_home = tempfile::tempdir().unwrap();
+        let pet_dir = motyga_home.path().join("pets").join("chefito");
         fs::create_dir_all(&pet_dir).unwrap();
         fs::copy(dir.path().join("pet.json"), pet_dir.join("pet.json")).unwrap();
         fs::copy(
@@ -828,9 +828,9 @@ mod tests {
         )
         .unwrap();
 
-        let pet = Pet::load_with_codex_home(
+        let pet = Pet::load_with_motyga_home(
             &custom_pet_selector("chefito"),
-            /*codex_home*/ Some(codex_home.path()),
+            /*motyga_home*/ Some(motyga_home.path()),
         )
         .unwrap();
 
@@ -841,8 +841,8 @@ mod tests {
     #[test]
     fn custom_pet_selector_falls_back_to_legacy_avatar_manifest() {
         let dir = write_minimal_pet();
-        let codex_home = tempfile::tempdir().unwrap();
-        let avatar_dir = codex_home.path().join("avatars").join("legacy");
+        let motyga_home = tempfile::tempdir().unwrap();
+        let avatar_dir = motyga_home.path().join("avatars").join("legacy");
         fs::create_dir_all(&avatar_dir).unwrap();
         fs::copy(dir.path().join("pet.json"), avatar_dir.join("avatar.json")).unwrap();
         fs::copy(
@@ -851,9 +851,9 @@ mod tests {
         )
         .unwrap();
 
-        let pet = Pet::load_with_codex_home(
+        let pet = Pet::load_with_motyga_home(
             &custom_pet_selector("legacy"),
-            /*codex_home*/ Some(codex_home.path()),
+            /*motyga_home*/ Some(motyga_home.path()),
         )
         .unwrap();
 
@@ -863,8 +863,8 @@ mod tests {
 
     #[test]
     fn custom_pet_rejects_spritesheet_path_escape() {
-        let codex_home = tempfile::tempdir().unwrap();
-        let pet_dir = codex_home.path().join("pets").join("escape");
+        let motyga_home = tempfile::tempdir().unwrap();
+        let pet_dir = motyga_home.path().join("pets").join("escape");
         fs::create_dir_all(&pet_dir).unwrap();
         fs::write(
             pet_dir.join("pet.json"),
@@ -875,9 +875,9 @@ mod tests {
         )
         .unwrap();
 
-        let err = Pet::load_with_codex_home(
+        let err = Pet::load_with_motyga_home(
             &custom_pet_selector("escape"),
-            /*codex_home*/ Some(codex_home.path()),
+            /*motyga_home*/ Some(motyga_home.path()),
         )
         .unwrap_err();
 

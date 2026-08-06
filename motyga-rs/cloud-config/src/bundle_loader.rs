@@ -1,13 +1,13 @@
 use crate::backend::BackendBundleClient;
 use crate::service::CLOUD_CONFIG_BUNDLE_TIMEOUT;
 use crate::service::CloudConfigBundleService;
-use codex_config::CloudConfigBundleLoadError;
-use codex_config::CloudConfigBundleLoadErrorCode;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_login::AuthKeyringBackendKind;
-use codex_login::AuthManager;
-use codex_login::AuthRouteConfig;
+use motyga_config::CloudConfigBundleLoadError;
+use motyga_config::CloudConfigBundleLoadErrorCode;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_login::AuthKeyringBackendKind;
+use motyga_login::AuthManager;
+use motyga_login::AuthRouteConfig;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -22,12 +22,12 @@ fn refresher_task_slot() -> &'static Mutex<Option<JoinHandle<()>>> {
 pub fn cloud_config_bundle_loader(
     auth_manager: Arc<AuthManager>,
     chatgpt_base_url: String,
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
 ) -> CloudConfigBundleLoader {
     let service = CloudConfigBundleService::new(
         auth_manager,
         Arc::new(BackendBundleClient::new(chatgpt_base_url)),
-        codex_home,
+        motyga_home,
         CLOUD_CONFIG_BUNDLE_TIMEOUT,
     );
     let refresh_service = service.clone();
@@ -54,16 +54,16 @@ pub fn cloud_config_bundle_loader(
 }
 
 pub async fn cloud_config_bundle_loader_for_storage(
-    codex_home: PathBuf,
-    enable_codex_api_key_env: bool,
+    motyga_home: PathBuf,
+    enable_motyga_api_key_env: bool,
     credentials_store_mode: AuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
     chatgpt_base_url: String,
     auth_route_config: Option<AuthRouteConfig>,
 ) -> CloudConfigBundleLoader {
     let auth_manager = AuthManager::shared(
-        codex_home.clone(),
-        enable_codex_api_key_env,
+        motyga_home.clone(),
+        enable_motyga_api_key_env,
         credentials_store_mode,
         /*forced_chatgpt_workspace_id*/ None,
         Some(chatgpt_base_url.clone()),
@@ -71,5 +71,5 @@ pub async fn cloud_config_bundle_loader_for_storage(
         auth_route_config,
     )
     .await;
-    cloud_config_bundle_loader(auth_manager, chatgpt_base_url, codex_home)
+    cloud_config_bundle_loader(auth_manager, chatgpt_base_url, motyga_home)
 }

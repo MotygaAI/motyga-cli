@@ -8,65 +8,65 @@ use std::sync::Arc;
 use anyhow::Context;
 use anyhow::bail;
 use clap::Parser;
-use codex_core_api::AbsolutePathBuf;
-use codex_core_api::AltScreenMode;
-use codex_core_api::ApprovalsReviewer;
-use codex_core_api::Arg0DispatchPaths;
-use codex_core_api::AskForApproval;
-use codex_core_api::AuthCredentialsStoreMode;
-use codex_core_api::AuthManager;
-use codex_core_api::AutoCompactTokenLimitScope;
-use codex_core_api::CodexHomeUserInstructionsProvider;
-use codex_core_api::CodexThread;
-use codex_core_api::Config;
-use codex_core_api::ConfigLayerStack;
-use codex_core_api::Constrained;
-use codex_core_api::EnvironmentManager;
-use codex_core_api::EventMsg;
-use codex_core_api::ExecServerRuntimePaths;
-use codex_core_api::Features;
-use codex_core_api::GhostSnapshotConfig;
-use codex_core_api::History;
-use codex_core_api::MemoriesConfig;
-use codex_core_api::ModelAvailabilityNuxConfig;
-use codex_core_api::MultiAgentV2Config;
-use codex_core_api::NewThread;
-use codex_core_api::Notice;
-use codex_core_api::OAuthCredentialsStoreMode;
-use codex_core_api::OPENAI_PROVIDER_ID;
-use codex_core_api::Op;
-use codex_core_api::OtelConfig;
-use codex_core_api::PermissionProfile;
-use codex_core_api::Permissions;
-use codex_core_api::ProjectConfig;
-use codex_core_api::RealtimeAudioConfig;
-use codex_core_api::RealtimeConfig;
-use codex_core_api::SessionPickerViewMode;
-use codex_core_api::SessionSource;
-use codex_core_api::TerminalResizeReflowConfig;
-use codex_core_api::ThreadManager;
-use codex_core_api::ThreadStoreConfig;
-use codex_core_api::ToolSuggestConfig;
-use codex_core_api::TuiKeymap;
-use codex_core_api::TuiNotificationSettings;
-use codex_core_api::TuiPetAnchor;
-use codex_core_api::UriBasedFileOpener;
-use codex_core_api::UserInput;
-use codex_core_api::WebSearchMode;
-use codex_core_api::arg0_dispatch_or_else;
-use codex_core_api::built_in_model_providers;
-use codex_core_api::empty_extension_registry;
-use codex_core_api::find_codex_home;
-use codex_core_api::init_state_db;
-use codex_core_api::item_event_to_server_notification;
-use codex_core_api::local_agent_graph_store_from_state_db;
-use codex_core_api::resolve_installation_id;
-use codex_core_api::set_default_originator;
-use codex_core_api::thread_store_from_config;
+use motyga_core_api::AbsolutePathBuf;
+use motyga_core_api::AltScreenMode;
+use motyga_core_api::ApprovalsReviewer;
+use motyga_core_api::Arg0DispatchPaths;
+use motyga_core_api::AskForApproval;
+use motyga_core_api::AuthCredentialsStoreMode;
+use motyga_core_api::AuthManager;
+use motyga_core_api::AutoCompactTokenLimitScope;
+use motyga_core_api::MotygaHomeUserInstructionsProvider;
+use motyga_core_api::MotygaThread;
+use motyga_core_api::Config;
+use motyga_core_api::ConfigLayerStack;
+use motyga_core_api::Constrained;
+use motyga_core_api::EnvironmentManager;
+use motyga_core_api::EventMsg;
+use motyga_core_api::ExecServerRuntimePaths;
+use motyga_core_api::Features;
+use motyga_core_api::GhostSnapshotConfig;
+use motyga_core_api::History;
+use motyga_core_api::MemoriesConfig;
+use motyga_core_api::ModelAvailabilityNuxConfig;
+use motyga_core_api::MultiAgentV2Config;
+use motyga_core_api::NewThread;
+use motyga_core_api::Notice;
+use motyga_core_api::OAuthCredentialsStoreMode;
+use motyga_core_api::OPENAI_PROVIDER_ID;
+use motyga_core_api::Op;
+use motyga_core_api::OtelConfig;
+use motyga_core_api::PermissionProfile;
+use motyga_core_api::Permissions;
+use motyga_core_api::ProjectConfig;
+use motyga_core_api::RealtimeAudioConfig;
+use motyga_core_api::RealtimeConfig;
+use motyga_core_api::SessionPickerViewMode;
+use motyga_core_api::SessionSource;
+use motyga_core_api::TerminalResizeReflowConfig;
+use motyga_core_api::ThreadManager;
+use motyga_core_api::ThreadStoreConfig;
+use motyga_core_api::ToolSuggestConfig;
+use motyga_core_api::TuiKeymap;
+use motyga_core_api::TuiNotificationSettings;
+use motyga_core_api::TuiPetAnchor;
+use motyga_core_api::UriBasedFileOpener;
+use motyga_core_api::UserInput;
+use motyga_core_api::WebSearchMode;
+use motyga_core_api::arg0_dispatch_or_else;
+use motyga_core_api::built_in_model_providers;
+use motyga_core_api::empty_extension_registry;
+use motyga_core_api::find_motyga_home;
+use motyga_core_api::init_state_db;
+use motyga_core_api::item_event_to_server_notification;
+use motyga_core_api::local_agent_graph_store_from_state_db;
+use motyga_core_api::resolve_installation_id;
+use motyga_core_api::set_default_originator;
+use motyga_core_api::thread_store_from_config;
 
 #[derive(Debug, Parser)]
 #[command(
-    name = "codex-thread-manager-sample",
+    name = "motyga-thread-manager-sample",
     about = "Run one Motyga turn through ThreadManager and print mapped notifications as newline-delimited JSON."
 )]
 struct Args {
@@ -84,7 +84,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 async fn run_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
-    if let Err(err) = set_default_originator("codex_thread_manager_sample".to_string()) {
+    if let Err(err) = set_default_originator("motyga_thread_manager_sample".to_string()) {
         tracing::warn!("failed to set originator: {err:?}");
     }
 
@@ -111,19 +111,19 @@ async fn run_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
     let state_db = init_state_db(&config).await;
 
     let auth_manager =
-        AuthManager::shared_from_config(&config, /*enable_codex_api_key_env*/ false).await;
+        AuthManager::shared_from_config(&config, /*enable_motyga_api_key_env*/ false).await;
     let local_runtime_paths = ExecServerRuntimePaths::from_optional_paths(
-        config.codex_self_exe.clone(),
-        config.codex_linux_sandbox_exe.clone(),
+        config.motyga_self_exe.clone(),
+        config.motyga_linux_sandbox_exe.clone(),
     )?;
     let thread_store = thread_store_from_config(&config, state_db.clone());
     let environment_manager = Arc::new(
-        EnvironmentManager::from_codex_home(config.codex_home.clone(), Some(local_runtime_paths))
+        EnvironmentManager::from_motyga_home(config.motyga_home.clone(), Some(local_runtime_paths))
             .await?,
     );
-    let installation_id = resolve_installation_id(&config.codex_home).await?;
-    let user_instructions_provider = Arc::new(CodexHomeUserInstructionsProvider::new(
-        config.codex_home.clone(),
+    let installation_id = resolve_installation_id(&config.motyga_home).await?;
+    let user_instructions_provider = Arc::new(MotygaHomeUserInstructionsProvider::new(
+        config.motyga_home.clone(),
     ));
     let thread_manager = ThreadManager::new(
         &config,
@@ -159,7 +159,7 @@ async fn run_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
 }
 
 fn new_config(model: Option<String>, arg0_paths: Arg0DispatchPaths) -> anyhow::Result<Config> {
-    let codex_home = find_codex_home().context("find Motyga home")?;
+    let motyga_home = find_motyga_home().context("find Motyga home")?;
     let cwd = AbsolutePathBuf::current_dir().context("resolve current directory")?;
     let model_provider_id = OPENAI_PROVIDER_ID.to_string();
     let model_providers = built_in_model_providers(/*openai_base_url*/ None);
@@ -237,19 +237,19 @@ fn new_config(model: Option<String>, arg0_paths: Arg0DispatchPaths) -> anyhow::R
         agent_max_depth: 1,
         agent_roles: BTreeMap::new(),
         memories: MemoriesConfig::default(),
-        sqlite_home: codex_home.to_path_buf(),
-        log_dir: codex_home.join("log").to_path_buf(),
+        sqlite_home: motyga_home.to_path_buf(),
+        log_dir: motyga_home.join("log").to_path_buf(),
         config_lock_export_dir: None,
-        config_lock_allow_codex_version_mismatch: false,
+        config_lock_allow_motyga_version_mismatch: false,
         config_lock_save_fields_resolved_from_model_catalog: true,
         config_lock_toml: None,
-        codex_home,
+        motyga_home,
         history: History::default(),
         ephemeral: true,
         extra_config: None,
         file_opener: UriBasedFileOpener::VsCode,
-        codex_self_exe: arg0_paths.codex_self_exe,
-        codex_linux_sandbox_exe: arg0_paths.codex_linux_sandbox_exe,
+        motyga_self_exe: arg0_paths.motyga_self_exe,
+        motyga_linux_sandbox_exe: arg0_paths.motyga_linux_sandbox_exe,
         main_execve_wrapper_exe: arg0_paths.main_execve_wrapper_exe,
         zsh_path: None,
         model_reasoning_effort: None,
@@ -302,7 +302,7 @@ fn new_config(model: Option<String>, arg0_paths: Arg0DispatchPaths) -> anyhow::R
     Ok(config)
 }
 
-async fn run_turn(thread: &CodexThread, thread_id: &str, prompt: String) -> anyhow::Result<()> {
+async fn run_turn(thread: &MotygaThread, thread_id: &str, prompt: String) -> anyhow::Result<()> {
     thread
         .submit(Op::UserInput {
             items: vec![UserInput::Text {

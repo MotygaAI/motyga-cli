@@ -7,15 +7,15 @@ use std::time::Instant;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_features::Feature;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
+use motyga_core::sandboxing::SandboxPermissions;
+use motyga_features::Feature;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
 use core_test_support::assert_regex_match;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -29,8 +29,8 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_sandbox;
-use core_test_support::test_codex::local;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::local;
+use core_test_support::test_motyga::test_motyga;
 use regex_lite::Regex;
 use serde_json::Value;
 use serde_json::json;
@@ -67,7 +67,7 @@ async fn empty_turn_environments_omits_environment_backed_tools() -> Result<()> 
     )
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config
             .features
             .enable(Feature::UnifiedExec)
@@ -108,7 +108,7 @@ async fn turn_environment_selection_keeps_environment_backed_tools() -> Result<(
     )
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config
             .features
             .enable(Feature::UnifiedExec)
@@ -136,7 +136,7 @@ async fn custom_tool_unknown_returns_custom_output_error() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build(&server).await?;
 
     let call_id = "custom-unsupported";
@@ -184,7 +184,7 @@ async fn namespaced_custom_tool_call_preserves_namespace_through_dispatch_and_re
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build(&server).await?;
 
     let call_id = "custom-namespaced";
@@ -257,7 +257,7 @@ async fn shell_command_escalated_permissions_rejected_then_ok() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("test-gpt-5-codex");
+    let mut builder = test_motyga().with_model("test-gpt-5-codex");
     let test = builder.build(&server).await?;
 
     let command = "echo shell ok";
@@ -351,7 +351,7 @@ async fn sandbox_denied_shell_command_returns_original_output() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.4");
+    let mut builder = test_motyga().with_model("gpt-5.4");
     let fixture = builder.build(&server).await?;
 
     let call_id = "sandbox-denied-shell-command";
@@ -442,7 +442,7 @@ async fn shell_command_enforces_glob_deny_read_policy() -> Result<()> {
     skip_if_sandbox!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model("gpt-5.4")
         .with_config(move |config| {
             let mut file_system_sandbox_policy = FileSystemSandboxPolicy::default();
@@ -551,7 +551,7 @@ async fn collect_tools(use_unified_exec: bool) -> Result<Vec<String>> {
     ])];
     let mock = mount_sse_sequence(&server, responses).await;
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         if use_unified_exec {
             config
                 .features
@@ -609,7 +609,7 @@ async fn shell_command_timeout_includes_timeout_prefix_and_metadata() -> Result<
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("test-gpt-5-codex");
+    let mut builder = test_motyga().with_model("test-gpt-5-codex");
     let test = builder.build(&server).await?;
 
     let call_id = "shell-command-timeout";
@@ -695,7 +695,7 @@ async fn shell_command_timeout_handles_background_grandchild_stdout() -> Result<
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.4").with_config(|config| {
+    let mut builder = test_motyga().with_model("gpt-5.4").with_config(|config| {
         config
             .permissions
             .set_permission_profile(PermissionProfile::Disabled)

@@ -1,9 +1,9 @@
 use anyhow::Result;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::TextElement;
-use codex_protocol::user_input::UserInput;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::ByteRange;
+use motyga_protocol::user_input::TextElement;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_reasoning_item;
@@ -13,9 +13,9 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::TestCodexBuilder;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::TestMotygaBuilder;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use std::path::PathBuf;
@@ -25,12 +25,12 @@ use tempfile::TempDir;
 use wiremock::MockServer;
 
 async fn resume_until_initial_messages(
-    builder: &mut TestCodexBuilder,
+    builder: &mut TestMotygaBuilder,
     server: &MockServer,
     home: Arc<TempDir>,
     rollout_path: PathBuf,
     predicate: impl Fn(&[EventMsg]) -> bool,
-) -> Result<TestCodex> {
+) -> Result<TestMotyga> {
     let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
     let poll_interval = Duration::from_millis(10);
     let mut last_initial_messages = "<missing initial messages>".to_string();
@@ -62,9 +62,9 @@ async fn resume_includes_initial_messages_from_rollout_events() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let initial = builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let motyga = Arc::clone(&initial.motyga);
     let home = initial.home.clone();
     let rollout_path = initial
         .session_configured
@@ -84,7 +84,7 @@ async fn resume_includes_initial_messages_from_rollout_events() -> Result<()> {
         Some("<note>".into()),
     )];
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Record some messages".into(),
@@ -97,7 +97,7 @@ async fn resume_includes_initial_messages_from_rollout_events() -> Result<()> {
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let resumed = resume_until_initial_messages(
         &mut builder,
@@ -150,11 +150,11 @@ async fn resume_includes_initial_messages_from_reasoning_events() -> Result<()> 
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config.show_raw_agent_reasoning = true;
     });
     let initial = builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let motyga = Arc::clone(&initial.motyga);
     let home = initial.home.clone();
     let rollout_path = initial
         .session_configured
@@ -170,7 +170,7 @@ async fn resume_includes_initial_messages_from_reasoning_events() -> Result<()> 
     ]);
     mount_sse_once(&server, initial_sse).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Record reasoning messages".into(),
@@ -183,7 +183,7 @@ async fn resume_includes_initial_messages_from_reasoning_events() -> Result<()> 
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let resumed = resume_until_initial_messages(
         &mut builder,
@@ -241,11 +241,11 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config.model = Some("gpt-5.2".to_string());
     });
     let initial = builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let motyga = Arc::clone(&initial.motyga);
     let home = initial.home.clone();
     let rollout_path = initial
         .session_configured
@@ -260,7 +260,7 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
     ]);
     let initial_mock = mount_sse_once(&server, initial_sse).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Record initial instructions".into(),
@@ -272,7 +272,7 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let initial_body = initial_mock.single_request().body_json();
     let initial_instructions = initial_body
@@ -298,12 +298,12 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
     )
     .await;
 
-    let mut resume_builder = test_codex().with_config(|config| {
+    let mut resume_builder = test_motyga().with_config(|config| {
         config.model = Some("gpt-5.3-codex".to_string());
     });
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
     resumed
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Resume with different model".into(),
@@ -315,13 +315,13 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     resumed
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Second turn after resume".into(),
@@ -333,7 +333,7 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -373,11 +373,11 @@ async fn resume_model_switch_is_not_duplicated_after_pre_turn_override() -> Resu
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config.model = Some("gpt-5.2".to_string());
     });
     let initial = builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let motyga = Arc::clone(&initial.motyga);
     let home = initial.home.clone();
     let rollout_path = initial
         .session_configured
@@ -394,7 +394,7 @@ async fn resume_model_switch_is_not_duplicated_after_pre_turn_override() -> Resu
         ]),
     )
     .await;
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Record initial instructions".into(),
@@ -406,7 +406,7 @@ async fn resume_model_switch_is_not_duplicated_after_pre_turn_override() -> Resu
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
     let _ = initial_mock.single_request();
 
     let resumed_mock = mount_sse_once(
@@ -419,20 +419,20 @@ async fn resume_model_switch_is_not_duplicated_after_pre_turn_override() -> Resu
     )
     .await;
 
-    let mut resume_builder = test_codex().with_config(|config| {
+    let mut resume_builder = test_motyga().with_config(|config| {
         config.model = Some("gpt-5.3-codex".to_string());
     });
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
     core_test_support::submit_thread_settings(
-        &resumed.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &resumed.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             model: Some("gpt-5.4".to_string()),
             ..Default::default()
         },
     )
     .await?;
     resumed
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn after override".into(),
@@ -444,7 +444,7 @@ async fn resume_model_switch_is_not_duplicated_after_pre_turn_override() -> Resu
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

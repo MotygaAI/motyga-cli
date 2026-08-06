@@ -1,12 +1,12 @@
 [package]
-name = "codex-otel"
+name = "motyga-otel"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [lib]
 doctest = false
-name = "codex_otel"
+name = "motyga_otel"
 path = "src/lib.rs"
 
 [lints]
@@ -14,10 +14,10 @@ workspace = true
 
 [dependencies]
 chrono = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-string = { workspace = true }
-codex-api = { workspace = true }
-codex-protocol = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-string = { workspace = true }
+motyga-api = { workspace = true }
+motyga-protocol = { workspace = true }
 eventsource-stream = { workspace = true }
 gethostname = { workspace = true }
 opentelemetry = { workspace = true, features = ["logs", "metrics", "trace"] }

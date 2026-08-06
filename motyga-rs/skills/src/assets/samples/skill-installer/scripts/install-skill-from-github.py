@@ -42,7 +42,7 @@ class InstallError(Exception):
     pass
 
 
-def _codex_home() -> str:
+def _motyga_home() -> str:
     return (
         os.environ.get("MOTYGA_HOME")
         or os.environ.get("MOTYGA_HOME")
@@ -51,13 +51,13 @@ def _codex_home() -> str:
 
 
 def _tmp_root() -> str:
-    base = os.path.join(tempfile.gettempdir(), "codex")
+    base = os.path.join(tempfile.gettempdir(), "motyga")
     os.makedirs(base, exist_ok=True)
     return base
 
 
 def _request(url: str) -> bytes:
-    return github_request(url, "codex-skill-install")
+    return github_request(url, "motyga-skill-install")
 
 
 def _parse_github_url(url: str, default_ref: str) -> tuple[str, str, str, str | None]:
@@ -245,7 +245,7 @@ def _resolve_source(args: Args) -> Source:
 
 
 def _default_dest() -> str:
-    return os.path.join(_codex_home(), "skills")
+    return os.path.join(_motyga_home(), "skills")
 
 
 def _parse_args(argv: list[str]) -> Args:

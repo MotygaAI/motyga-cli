@@ -3,21 +3,21 @@ use app_test_support::TestAppServer;
 use app_test_support::create_final_assistant_message_sse_response;
 use app_test_support::create_mock_responses_server_sequence_unchecked;
 use app_test_support::to_response;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::DeprecationNoticeNotification;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadResumeResponse;
-use codex_app_server_protocol::ThreadRollbackParams;
-use codex_app_server_protocol::ThreadRollbackResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::ThreadStatus;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::UserInput as V2UserInput;
+use motyga_app_server_protocol::ClientInfo;
+use motyga_app_server_protocol::DeprecationNoticeNotification;
+use motyga_app_server_protocol::JSONRPCMessage;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadResumeParams;
+use motyga_app_server_protocol::ThreadResumeResponse;
+use motyga_app_server_protocol::ThreadRollbackParams;
+use motyga_app_server_protocol::ThreadRollbackResponse;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::ThreadStatus;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::UserInput as V2UserInput;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use tempfile::TempDir;
@@ -26,13 +26,13 @@ use tokio::time::timeout;
 const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
 #[tokio::test]
-async fn thread_rollback_does_not_emit_deprecation_notice_to_codex_tui() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+async fn thread_rollback_does_not_emit_deprecation_notice_to_motyga_tui() -> Result<()> {
+    let motyga_home = TempDir::new()?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     let initialized = timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.initialize_with_client_info(ClientInfo {
-            name: "codex-tui".to_string(),
+            name: "motyga-tui".to_string(),
             title: None,
             version: "0.1.0".to_string(),
         }),
@@ -69,7 +69,7 @@ async fn thread_rollback_does_not_emit_deprecation_notice_to_codex_tui() -> Resu
 
 #[tokio::test]
 async fn thread_rollback_drops_last_turns_and_persists_to_rollout() -> Result<()> {
-    // Three Codex turns hit the mock model (session start + two turn/start calls).
+    // Three Motyga turns hit the mock model (session start + two turn/start calls).
     let responses = vec![
         create_final_assistant_message_sse_response("Done")?,
         create_final_assistant_message_sse_response("Done")?,
@@ -77,10 +77,10 @@ async fn thread_rollback_drops_last_turns_and_persists_to_rollout() -> Result<()
     ];
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Start a thread.
@@ -244,8 +244,8 @@ async fn thread_rollback_drops_last_turns_and_persists_to_rollout() -> Result<()
     Ok(())
 }
 
-fn create_config_toml(codex_home: &std::path::Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(motyga_home: &std::path::Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

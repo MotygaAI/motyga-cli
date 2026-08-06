@@ -1,6 +1,6 @@
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
-use codex_utils_path_uri::PathUri;
+use motyga_utils_path_uri::PathUri;
 use tokio::io;
 use tracing::trace;
 
@@ -386,15 +386,15 @@ mod path_uri_tests;
 
 #[cfg(test)]
 mod tests {
-    use codex_protocol::models::PermissionProfile;
-    use codex_protocol::permissions::FileSystemAccessMode;
-    use codex_protocol::permissions::FileSystemPath;
-    use codex_protocol::permissions::FileSystemSandboxEntry;
-    use codex_protocol::permissions::FileSystemSandboxPolicy;
-    use codex_protocol::permissions::FileSystemSpecialPath;
-    use codex_protocol::permissions::NetworkSandboxPolicy;
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use codex_utils_path_uri::PathUri;
+    use motyga_protocol::models::PermissionProfile;
+    use motyga_protocol::permissions::FileSystemAccessMode;
+    use motyga_protocol::permissions::FileSystemPath;
+    use motyga_protocol::permissions::FileSystemSandboxEntry;
+    use motyga_protocol::permissions::FileSystemSandboxPolicy;
+    use motyga_protocol::permissions::FileSystemSpecialPath;
+    use motyga_protocol::permissions::NetworkSandboxPolicy;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_path_uri::PathUri;
     use pretty_assertions::assert_eq;
 
     use super::*;

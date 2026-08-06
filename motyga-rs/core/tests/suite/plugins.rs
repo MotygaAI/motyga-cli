@@ -6,11 +6,11 @@ use std::time::Duration;
 use std::time::Instant;
 
 use anyhow::Result;
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_mcp::MOTYGA_APPS_MCP_SERVER_NAME;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
 use core_test_support::apps_test_server::AppsTestServer;
 use core_test_support::apps_test_server::SEARCH_CALENDAR_CREATE_TOOL;
 use core_test_support::responses::ResponseMock;
@@ -25,8 +25,8 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::stdio_server_bin;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_mcp_server;
 use tempfile::TempDir;
@@ -35,7 +35,7 @@ use wiremock::MockServer;
 const SAMPLE_PLUGIN_CONFIG_NAME: &str = "sample@test";
 const SAMPLE_PLUGIN_DISPLAY_NAME: &str = "sample";
 const SAMPLE_PLUGIN_DESCRIPTION: &str = "inspect sample data";
-const SAMPLE_PLUGIN_APP_NAMESPACE: &str = "mcp__codex_apps__google_calendar";
+const SAMPLE_PLUGIN_APP_NAMESPACE: &str = "mcp__motyga_apps__google_calendar";
 const SAMPLE_PLUGIN_MCP_NAMESPACE: &str = "mcp__sample";
 const PLUGIN_APP_SEARCH_CALL_ID: &str = "plugin-app-search";
 const PLUGIN_MCP_SEARCH_CALL_ID: &str = "plugin-mcp-search";
@@ -116,14 +116,14 @@ fn write_plugin_app_plugin_with_name(home: &TempDir, app_name: &str) {
     .expect("write plugin app config");
 }
 
-async fn build_analytics_plugin_test_codex(
+async fn build_analytics_plugin_test_motyga(
     server: &MockServer,
-    codex_home: Arc<TempDir>,
-) -> Result<TestCodex> {
+    motyga_home: Arc<TempDir>,
+) -> Result<TestMotyga> {
     let chatgpt_base_url = server.uri();
-    let mut builder = test_codex()
-        .with_home(codex_home)
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_home(motyga_home)
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model("gpt-5.2")
         .with_config(move |config| {
             config.chatgpt_base_url = chatgpt_base_url;
@@ -134,14 +134,14 @@ async fn build_analytics_plugin_test_codex(
         .expect("create new conversation"))
 }
 
-async fn build_apps_enabled_plugin_test_codex(
+async fn build_apps_enabled_plugin_test_motyga(
     server: &MockServer,
-    codex_home: Arc<TempDir>,
+    motyga_home: Arc<TempDir>,
     chatgpt_base_url: String,
-) -> Result<TestCodex> {
-    let mut builder = test_codex()
-        .with_home(codex_home)
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+) -> Result<TestMotyga> {
+    let mut builder = test_motyga()
+        .with_home(motyga_home)
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config
                 .features
@@ -216,20 +216,20 @@ async fn capability_sections_render_in_developer_message_in_order() -> Result<()
     )
     .await;
 
-    let codex_home = Arc::new(TempDir::new()?);
-    write_plugin_skill_plugin(codex_home.as_ref());
-    write_plugin_app_plugin(codex_home.as_ref());
-    let test_codex = build_apps_enabled_plugin_test_codex(
+    let motyga_home = Arc::new(TempDir::new()?);
+    write_plugin_skill_plugin(motyga_home.as_ref());
+    write_plugin_app_plugin(motyga_home.as_ref());
+    let test_motyga = build_apps_enabled_plugin_test_motyga(
         &server,
-        Arc::clone(&codex_home),
+        Arc::clone(&motyga_home),
         apps_server.chatgpt_base_url,
     )
     .await?;
-    let codex = Arc::clone(&test_codex.codex);
+    let motyga = Arc::clone(&test_motyga.motyga);
 
-    codex
+    motyga
         .submit(Op::UserInput {
-            items: vec![codex_protocol::user_input::UserInput::Text {
+            items: vec![motyga_protocol::user_input::UserInput::Text {
                 text: "hello".into(),
                 text_elements: Vec::new(),
             }],
@@ -240,7 +240,7 @@ async fn capability_sections_render_in_developer_message_in_order() -> Result<()
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let developer_messages = request.message_input_texts("developer");
@@ -281,7 +281,7 @@ async fn explicit_plugin_mentions_use_apps_for_chatgpt_dual_surface_plugins() ->
     let apps_server = AppsTestServer::mount_with_connector_name(&server, "Google Calendar").await?;
     let mock = mount_plugin_tool_search_turn(&server).await;
 
-    let codex_home = Arc::new(TempDir::new()?);
+    let motyga_home = Arc::new(TempDir::new()?);
     let rmcp_test_server_bin = match stdio_server_bin() {
         Ok(bin) => bin,
         Err(err) => {
@@ -289,19 +289,19 @@ async fn explicit_plugin_mentions_use_apps_for_chatgpt_dual_surface_plugins() ->
             return Ok(());
         }
     };
-    write_plugin_skill_plugin(codex_home.as_ref());
-    write_plugin_mcp_plugin(codex_home.as_ref(), &rmcp_test_server_bin);
-    write_plugin_app_plugin(codex_home.as_ref());
+    write_plugin_skill_plugin(motyga_home.as_ref());
+    write_plugin_mcp_plugin(motyga_home.as_ref(), &rmcp_test_server_bin);
+    write_plugin_app_plugin(motyga_home.as_ref());
 
-    let test_codex =
-        build_apps_enabled_plugin_test_codex(&server, codex_home, apps_server.chatgpt_base_url)
+    let test_motyga =
+        build_apps_enabled_plugin_test_motyga(&server, motyga_home, apps_server.chatgpt_base_url)
             .await?;
-    let codex = Arc::clone(&test_codex.codex);
-    wait_for_mcp_server(&codex, CODEX_APPS_MCP_SERVER_NAME).await?;
+    let motyga = Arc::clone(&test_motyga.motyga);
+    wait_for_mcp_server(&motyga, MOTYGA_APPS_MCP_SERVER_NAME).await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
-            items: vec![codex_protocol::user_input::UserInput::Mention {
+            items: vec![motyga_protocol::user_input::UserInput::Mention {
                 name: "sample".into(),
                 path: format!("plugin://{SAMPLE_PLUGIN_CONFIG_NAME}"),
             }],
@@ -311,7 +311,7 @@ async fn explicit_plugin_mentions_use_apps_for_chatgpt_dual_surface_plugins() ->
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = mock.requests();
     let request = &requests[0];
@@ -358,7 +358,7 @@ async fn explicit_plugin_mentions_keep_non_conflicting_mcp_for_chatgpt_auth() ->
     let apps_server = AppsTestServer::mount_with_connector_name(&server, "Google Calendar").await?;
     let mock = mount_plugin_tool_search_turn(&server).await;
 
-    let codex_home = Arc::new(TempDir::new()?);
+    let motyga_home = Arc::new(TempDir::new()?);
     let rmcp_test_server_bin = match stdio_server_bin() {
         Ok(bin) => bin,
         Err(err) => {
@@ -366,19 +366,19 @@ async fn explicit_plugin_mentions_keep_non_conflicting_mcp_for_chatgpt_auth() ->
             return Ok(());
         }
     };
-    write_plugin_skill_plugin(codex_home.as_ref());
-    write_plugin_mcp_plugin(codex_home.as_ref(), &rmcp_test_server_bin);
-    write_plugin_app_plugin_with_name(codex_home.as_ref(), "sample_app");
+    write_plugin_skill_plugin(motyga_home.as_ref());
+    write_plugin_mcp_plugin(motyga_home.as_ref(), &rmcp_test_server_bin);
+    write_plugin_app_plugin_with_name(motyga_home.as_ref(), "sample_app");
 
-    let test_codex =
-        build_apps_enabled_plugin_test_codex(&server, codex_home, apps_server.chatgpt_base_url)
+    let test_motyga =
+        build_apps_enabled_plugin_test_motyga(&server, motyga_home, apps_server.chatgpt_base_url)
             .await?;
-    let codex = Arc::clone(&test_codex.codex);
-    wait_for_mcp_server(&codex, "sample").await?;
+    let motyga = Arc::clone(&test_motyga.motyga);
+    wait_for_mcp_server(&motyga, "sample").await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
-            items: vec![codex_protocol::user_input::UserInput::Mention {
+            items: vec![motyga_protocol::user_input::UserInput::Mention {
                 name: "sample".into(),
                 path: format!("plugin://{SAMPLE_PLUGIN_CONFIG_NAME}"),
             }],
@@ -388,7 +388,7 @@ async fn explicit_plugin_mentions_keep_non_conflicting_mcp_for_chatgpt_auth() ->
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = mock.requests();
     let request = &requests[0];
@@ -422,7 +422,7 @@ async fn explicit_plugin_mentions_use_mcp_for_api_key_dual_surface_plugins() -> 
     let server = start_mock_server().await;
     let mock = mount_plugin_tool_search_turn(&server).await;
 
-    let codex_home = Arc::new(TempDir::new()?);
+    let motyga_home = Arc::new(TempDir::new()?);
     let rmcp_test_server_bin = match stdio_server_bin() {
         Ok(bin) => bin,
         Err(err) => {
@@ -430,29 +430,29 @@ async fn explicit_plugin_mentions_use_mcp_for_api_key_dual_surface_plugins() -> 
             return Ok(());
         }
     };
-    write_plugin_skill_plugin(codex_home.as_ref());
-    write_plugin_mcp_plugin(codex_home.as_ref(), &rmcp_test_server_bin);
-    write_plugin_app_plugin(codex_home.as_ref());
+    write_plugin_skill_plugin(motyga_home.as_ref());
+    write_plugin_mcp_plugin(motyga_home.as_ref(), &rmcp_test_server_bin);
+    write_plugin_app_plugin(motyga_home.as_ref());
 
-    let mut builder = test_codex()
-        .with_home(codex_home)
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let mut builder = test_motyga()
+        .with_home(motyga_home)
+        .with_auth(MotygaAuth::from_api_key("Test API Key"))
         .with_config(move |config| {
             config
                 .features
                 .enable(Feature::Apps)
                 .expect("test config should allow feature update");
         });
-    let test_codex = builder
+    let test_motyga = builder
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = Arc::clone(&test_codex.codex);
-    wait_for_mcp_server(&codex, "sample").await?;
+    let motyga = Arc::clone(&test_motyga.motyga);
+    wait_for_mcp_server(&motyga, "sample").await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
-            items: vec![codex_protocol::user_input::UserInput::Mention {
+            items: vec![motyga_protocol::user_input::UserInput::Mention {
                 name: "sample".into(),
                 path: format!("plugin://{SAMPLE_PLUGIN_CONFIG_NAME}"),
             }],
@@ -462,7 +462,7 @@ async fn explicit_plugin_mentions_use_mcp_for_api_key_dual_surface_plugins() -> 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = mock.requests();
     let request = &requests[0];
@@ -512,14 +512,14 @@ async fn explicit_plugin_mentions_track_plugin_used_analytics() -> Result<()> {
     )
     .await;
 
-    let codex_home = Arc::new(TempDir::new()?);
-    write_plugin_skill_plugin(codex_home.as_ref());
-    let test_codex = build_analytics_plugin_test_codex(&server, codex_home).await?;
-    let codex = Arc::clone(&test_codex.codex);
+    let motyga_home = Arc::new(TempDir::new()?);
+    write_plugin_skill_plugin(motyga_home.as_ref());
+    let test_motyga = build_analytics_plugin_test_motyga(&server, motyga_home).await?;
+    let motyga = Arc::clone(&test_motyga.motyga);
 
-    codex
+    motyga
         .submit(Op::UserInput {
-            items: vec![codex_protocol::user_input::UserInput::Mention {
+            items: vec![motyga_protocol::user_input::UserInput::Mention {
                 name: "sample".into(),
                 path: format!("plugin://{SAMPLE_PLUGIN_CONFIG_NAME}"),
             }],
@@ -529,20 +529,20 @@ async fn explicit_plugin_mentions_track_plugin_used_analytics() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let deadline = Instant::now() + Duration::from_secs(10);
     let plugin_event = loop {
         let requests = server.received_requests().await.unwrap_or_default();
         if let Some(event) = requests
             .into_iter()
-            .filter(|request| request.url.path() == "/codex/analytics-events/events")
+            .filter(|request| request.url.path() == "/motyga/analytics-events/events")
             .find_map(|request| {
                 let payload: serde_json::Value = serde_json::from_slice(&request.body).ok()?;
                 payload["events"].as_array().and_then(|events| {
                     events
                         .iter()
-                        .find(|event| event["event_type"] == "codex_plugin_used")
+                        .find(|event| event["event_type"] == "motyga_plugin_used")
                         .cloned()
                 })
             })
@@ -571,7 +571,7 @@ async fn explicit_plugin_mentions_track_plugin_used_analytics() -> Result<()> {
     );
     assert_eq!(
         event["event_params"]["product_client_id"],
-        serde_json::json!(codex_login::default_client::originator().value)
+        serde_json::json!(motyga_login::default_client::originator().value)
     );
     assert_eq!(event["event_params"]["model_slug"], "gpt-5.2");
     assert!(event["event_params"]["thread_id"].as_str().is_some());

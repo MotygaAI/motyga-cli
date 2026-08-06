@@ -1,11 +1,11 @@
 #![allow(clippy::unwrap_used)]
 
 use anyhow::Context;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_login::AuthKeyringBackendKind;
-use codex_login::MotygaDeviceLoginOptions;
-use codex_login::load_auth_dot_json;
-use codex_login::run_motyga_device_login;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_login::AuthKeyringBackendKind;
+use motyga_login::MotygaDeviceLoginOptions;
+use motyga_login::load_auth_dot_json;
+use motyga_login::run_motyga_device_login;
 use serde_json::json;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
@@ -35,10 +35,10 @@ async fn mock_device_start(server: &MockServer) {
         .await;
 }
 
-fn login_opts(codex_home: &tempfile::TempDir, base_url: String) -> MotygaDeviceLoginOptions {
+fn login_opts(motyga_home: &tempfile::TempDir, base_url: String) -> MotygaDeviceLoginOptions {
     MotygaDeviceLoginOptions {
         base_url,
-        codex_home: codex_home.path().to_path_buf(),
+        motyga_home: motyga_home.path().to_path_buf(),
         cli_auth_credentials_store_mode: AuthCredentialsStoreMode::File,
         auth_keyring_backend_kind: AuthKeyringBackendKind::default(),
         auth_route_config: None,
@@ -50,7 +50,7 @@ fn login_opts(codex_home: &tempfile::TempDir, base_url: String) -> MotygaDeviceL
 async fn motyga_device_login_persists_approved_api_key() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let codex_home = tempdir().unwrap();
+    let motyga_home = tempdir().unwrap();
     let mock_server = MockServer::start().await;
     mock_device_start(&mock_server).await;
 
@@ -75,12 +75,12 @@ async fn motyga_device_login_persists_approved_api_key() -> anyhow::Result<()> {
         .mount(&mock_server)
         .await;
 
-    run_motyga_device_login(login_opts(&codex_home, mock_server.uri()))
+    run_motyga_device_login(login_opts(&motyga_home, mock_server.uri()))
         .await
         .expect("motyga device login should persist approved key");
 
     let auth = load_auth_dot_json(
-        codex_home.path(),
+        motyga_home.path(),
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
     )
@@ -96,7 +96,7 @@ async fn motyga_device_login_persists_approved_api_key() -> anyhow::Result<()> {
 async fn motyga_device_login_does_not_persist_expired_code() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let codex_home = tempdir().unwrap();
+    let motyga_home = tempdir().unwrap();
     let mock_server = MockServer::start().await;
     mock_device_start(&mock_server).await;
 
@@ -109,13 +109,13 @@ async fn motyga_device_login_does_not_persist_expired_code() -> anyhow::Result<(
         .mount(&mock_server)
         .await;
 
-    let err = run_motyga_device_login(login_opts(&codex_home, mock_server.uri()))
+    let err = run_motyga_device_login(login_opts(&motyga_home, mock_server.uri()))
         .await
         .expect_err("expired device code should fail");
     assert_eq!(err.kind(), std::io::ErrorKind::TimedOut);
 
     let auth = load_auth_dot_json(
-        codex_home.path(),
+        motyga_home.path(),
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
     )
@@ -128,7 +128,7 @@ async fn motyga_device_login_does_not_persist_expired_code() -> anyhow::Result<(
 async fn motyga_device_login_retries_transient_5xx() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let codex_home = tempdir().unwrap();
+    let motyga_home = tempdir().unwrap();
     let mock_server = MockServer::start().await;
     mock_device_start(&mock_server).await;
 
@@ -152,12 +152,12 @@ async fn motyga_device_login_retries_transient_5xx() -> anyhow::Result<()> {
         .mount(&mock_server)
         .await;
 
-    run_motyga_device_login(login_opts(&codex_home, mock_server.uri()))
+    run_motyga_device_login(login_opts(&motyga_home, mock_server.uri()))
         .await
         .expect("a transient 5xx should be retried, then the approved key persists");
 
     let auth = load_auth_dot_json(
-        codex_home.path(),
+        motyga_home.path(),
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
     )

@@ -1,19 +1,19 @@
 use std::sync::Arc;
 
-use codex_extension_api::FunctionCallError;
-use codex_extension_api::JsonToolOutput;
-use codex_extension_api::ResponsesApiTool;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolExecutor;
-use codex_extension_api::ToolName;
-use codex_extension_api::ToolOutput;
-use codex_extension_api::ToolSpec;
-use codex_extension_api::parse_tool_input_schema;
-use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
-use codex_mcp::McpResourceClient;
-use codex_tools::ResponsesApiNamespace;
-use codex_tools::ResponsesApiNamespaceTool;
-use codex_tools::default_namespace_description;
+use motyga_extension_api::FunctionCallError;
+use motyga_extension_api::JsonToolOutput;
+use motyga_extension_api::ResponsesApiTool;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolExecutor;
+use motyga_extension_api::ToolName;
+use motyga_extension_api::ToolOutput;
+use motyga_extension_api::ToolSpec;
+use motyga_extension_api::parse_tool_input_schema;
+use motyga_mcp::MOTYGA_APPS_MCP_SERVER_NAME;
+use motyga_mcp::McpResourceClient;
+use motyga_tools::ResponsesApiNamespace;
+use motyga_tools::ResponsesApiNamespaceTool;
+use motyga_tools::default_namespace_description;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -90,7 +90,7 @@ enum SkillToolAuthority {
 impl SkillToolAuthority {
     fn from_authority(authority: &SkillAuthority) -> Option<Self> {
         if authority
-            != &SkillAuthority::new(SkillSourceKind::Orchestrator, CODEX_APPS_MCP_SERVER_NAME)
+            != &SkillAuthority::new(SkillSourceKind::Orchestrator, MOTYGA_APPS_MCP_SERVER_NAME)
         {
             return None;
         }
@@ -100,7 +100,7 @@ impl SkillToolAuthority {
     fn into_authority(self) -> SkillAuthority {
         match self {
             Self::Orchestrator => {
-                SkillAuthority::new(SkillSourceKind::Orchestrator, CODEX_APPS_MCP_SERVER_NAME)
+                SkillAuthority::new(SkillSourceKind::Orchestrator, MOTYGA_APPS_MCP_SERVER_NAME)
             }
         }
     }

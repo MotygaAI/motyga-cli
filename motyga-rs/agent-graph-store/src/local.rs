@@ -1,5 +1,5 @@
-use codex_protocol::ThreadId;
-use codex_state::StateRuntime;
+use motyga_protocol::ThreadId;
+use motyga_state::StateRuntime;
 use std::sync::Arc;
 
 use crate::AgentGraphStore;
@@ -16,7 +16,7 @@ pub struct LocalAgentGraphStore {
 impl std::fmt::Debug for LocalAgentGraphStore {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LocalAgentGraphStore")
-            .field("codex_home", &self.state_db.codex_home())
+            .field("motyga_home", &self.state_db.motyga_home())
             .finish_non_exhaustive()
     }
 }
@@ -109,10 +109,10 @@ impl AgentGraphStore for LocalAgentGraphStore {
     }
 }
 
-fn to_state_status(status: ThreadSpawnEdgeStatus) -> codex_state::DirectionalThreadSpawnEdgeStatus {
+fn to_state_status(status: ThreadSpawnEdgeStatus) -> motyga_state::DirectionalThreadSpawnEdgeStatus {
     match status {
-        ThreadSpawnEdgeStatus::Open => codex_state::DirectionalThreadSpawnEdgeStatus::Open,
-        ThreadSpawnEdgeStatus::Closed => codex_state::DirectionalThreadSpawnEdgeStatus::Closed,
+        ThreadSpawnEdgeStatus::Open => motyga_state::DirectionalThreadSpawnEdgeStatus::Open,
+        ThreadSpawnEdgeStatus::Closed => motyga_state::DirectionalThreadSpawnEdgeStatus::Closed,
     }
 }
 
@@ -125,13 +125,13 @@ fn internal_error(err: impl std::fmt::Display) -> AgentGraphStoreError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_state::DirectionalThreadSpawnEdgeStatus;
+    use motyga_state::DirectionalThreadSpawnEdgeStatus;
     use pretty_assertions::assert_eq;
     use tempfile::TempDir;
 
     struct TestRuntime {
         state_db: Arc<StateRuntime>,
-        _codex_home: TempDir,
+        _motyga_home: TempDir,
     }
 
     fn thread_id(suffix: u128) -> ThreadId {
@@ -140,14 +140,14 @@ mod tests {
     }
 
     async fn state_runtime() -> TestRuntime {
-        let codex_home = TempDir::new().expect("tempdir should be created");
+        let motyga_home = TempDir::new().expect("tempdir should be created");
         let state_db =
-            StateRuntime::init(codex_home.path().to_path_buf(), "test-provider".to_string())
+            StateRuntime::init(motyga_home.path().to_path_buf(), "test-provider".to_string())
                 .await
                 .expect("state db should initialize");
         TestRuntime {
             state_db,
-            _codex_home: codex_home,
+            _motyga_home: motyga_home,
         }
     }
 

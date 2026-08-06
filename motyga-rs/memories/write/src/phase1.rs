@@ -5,19 +5,19 @@ use crate::metrics::MEMORY_PHASE_ONE_OUTPUT;
 use crate::metrics::MEMORY_PHASE_ONE_TOKEN_USAGE;
 use crate::runtime::MemoryStartupContext;
 use crate::runtime::StageOneRequestContext;
-use codex_config::types::MemoriesConfig;
-use codex_core::Prompt;
-use codex_core::RolloutRecorder;
-use codex_core::config::Config;
-use codex_protocol::error::CodexErr;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::TokenUsage;
-use codex_rollout::INTERACTIVE_SESSION_SOURCES;
-use codex_rollout::should_persist_response_item_for_memories;
-use codex_secrets::redact_secrets;
+use motyga_config::types::MemoriesConfig;
+use motyga_core::Prompt;
+use motyga_core::RolloutRecorder;
+use motyga_core::config::Config;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_rollout::INTERACTIVE_SESSION_SOURCES;
+use motyga_rollout::should_persist_response_item_for_memories;
+use motyga_secrets::redact_secrets;
 use futures::StreamExt;
 use serde::Deserialize;
 use serde_json::Value;
@@ -149,7 +149,7 @@ pub fn output_schema() -> Value {
 async fn claim_startup_jobs(
     context: &MemoryStartupContext,
     memories_config: &MemoriesConfig,
-) -> Option<Vec<codex_state::Stage1JobClaim>> {
+) -> Option<Vec<motyga_state::Stage1JobClaim>> {
     let Some(state_db) = context.state_db() else {
         // This should not happen.
         warn!("state db unavailable while claiming phase-1 startup jobs; skipping");
@@ -165,7 +165,7 @@ async fn claim_startup_jobs(
         .memories()
         .claim_stage1_jobs_for_startup(
             context.thread_id(),
-            codex_state::Stage1StartupClaimParams {
+            motyga_state::Stage1StartupClaimParams {
                 scan_limit: crate::stage_one::THREAD_SCAN_LIMIT,
                 max_claimed: memories_config.max_rollouts_per_startup,
                 max_age_days: memories_config.max_rollout_age_days,
@@ -204,7 +204,7 @@ async fn build_request_context(
 async fn run_jobs(
     context: Arc<MemoryStartupContext>,
     config: Arc<Config>,
-    claimed_candidates: Vec<codex_state::Stage1JobClaim>,
+    claimed_candidates: Vec<motyga_state::Stage1JobClaim>,
     stage_one_context: StageOneRequestContext,
 ) -> Vec<JobResult> {
     futures::stream::iter(claimed_candidates)
@@ -227,7 +227,7 @@ mod job {
     pub(crate) async fn run(
         context: &MemoryStartupContext,
         config: &Config,
-        claim: codex_state::Stage1JobClaim,
+        claim: motyga_state::Stage1JobClaim,
         stage_one_context: &StageOneRequestContext,
     ) -> JobResult {
         let claimed_thread = claim.thread;
@@ -328,7 +328,7 @@ mod job {
 
         pub(crate) async fn failed(
             context: &MemoryStartupContext,
-            thread_id: codex_protocol::ThreadId,
+            thread_id: motyga_protocol::ThreadId,
             ownership_token: &str,
             reason: &str,
         ) {
@@ -348,7 +348,7 @@ mod job {
 
         pub(crate) async fn no_output(
             context: &MemoryStartupContext,
-            thread_id: codex_protocol::ThreadId,
+            thread_id: motyga_protocol::ThreadId,
             ownership_token: &str,
         ) -> JobOutcome {
             let Some(state_db) = context.state_db() else {
@@ -369,7 +369,7 @@ mod job {
 
         pub(crate) async fn success(
             context: &MemoryStartupContext,
-            thread_id: codex_protocol::ThreadId,
+            thread_id: motyga_protocol::ThreadId,
             ownership_token: &str,
             source_updated_at: i64,
             raw_memory: &str,
@@ -403,7 +403,7 @@ mod job {
     /// Serializes filtered stage-1 memory items for prompt inclusion.
     pub(super) fn serialize_filtered_rollout_response_items(
         items: &[RolloutItem],
-    ) -> codex_protocol::error::Result<String> {
+    ) -> motyga_protocol::error::Result<String> {
         let filtered = items
             .iter()
             .filter_map(|item| match item {
@@ -420,7 +420,7 @@ mod job {
             })
             .collect::<Vec<_>>();
         let serialized = serde_json::to_string(&filtered).map_err(|err| {
-            CodexErr::InvalidRequest(format!("failed to serialize rollout memory: {err}"))
+            MotygaErr::InvalidRequest(format!("failed to serialize rollout memory: {err}"))
         })?;
         Ok(redact_secrets(serialized))
     }
@@ -664,8 +664,8 @@ fn emit_metrics(context: &StageOneRequestContext, counts: &Stats) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::AgentPath;
-    use codex_protocol::protocol::InterAgentCommunication;
+    use motyga_protocol::AgentPath;
+    use motyga_protocol::protocol::InterAgentCommunication;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -746,8 +746,8 @@ mod tests {
                 ResponseItem::FunctionCallOutput {
                     id: None,
                     call_id: "call_123".to_string(),
-                    output: codex_protocol::models::FunctionCallOutputPayload {
-                        body: codex_protocol::models::FunctionCallOutputBody::Text(
+                    output: motyga_protocol::models::FunctionCallOutputPayload {
+                        body: motyga_protocol::models::FunctionCallOutputBody::Text(
                             r#"{"token":"sk-abcdefghijklmnopqrstuvwxyz123456"}"#.to_string(),
                         ),
                         success: Some(true),

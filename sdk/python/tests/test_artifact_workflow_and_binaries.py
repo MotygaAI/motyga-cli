@@ -51,20 +51,20 @@ def _load_runtime_setup_module():
     return module
 
 
-def _write_fake_codex_package(package_dir: Path, script) -> Path:
+def _write_fake_motyga_package(package_dir: Path, script) -> Path:
     (package_dir / "bin").mkdir(parents=True)
-    (package_dir / "codex-resources").mkdir()
-    (package_dir / "codex-path").mkdir()
-    (package_dir / "codex-package.json").write_text('{"variant":"codex"}\n')
-    (package_dir / "bin" / script.runtime_binary_name()).write_text("fake codex\n")
-    (package_dir / "codex-resources" / "bwrap").write_text("fake bwrap\n")
-    (package_dir / "codex-path" / "rg").write_text("fake rg\n")
+    (package_dir / "motyga-resources").mkdir()
+    (package_dir / "motyga-path").mkdir()
+    (package_dir / "motyga-package.json").write_text('{"variant":"motyga"}\n')
+    (package_dir / "bin" / script.runtime_binary_name()).write_text("fake motyga\n")
+    (package_dir / "motyga-resources" / "bwrap").write_text("fake bwrap\n")
+    (package_dir / "motyga-path" / "rg").write_text("fake rg\n")
     return package_dir
 
 
-def _write_fake_codex_package_archive(tmp_path: Path, script) -> Path:
-    package_dir = _write_fake_codex_package(tmp_path / "codex-package", script)
-    archive_path = tmp_path / "codex-package.tar.gz"
+def _write_fake_motyga_package_archive(tmp_path: Path, script) -> Path:
+    package_dir = _write_fake_motyga_package(tmp_path / "motyga-package", script)
+    archive_path = tmp_path / "motyga-package.tar.gz"
     _write_package_archive(package_dir, archive_path)
     return archive_path
 
@@ -447,7 +447,7 @@ def test_generate_v2_all_uses_titles_for_generated_names() -> None:
 
 
 def test_generated_chatgpt_account_email_is_required_nullable() -> None:
-    from openai_codex.generated.v2_all import ChatgptAccount
+    from motyga_sdk.generated.v2_all import ChatgptAccount
 
     account = ChatgptAccount.model_validate({"email": None, "planType": "pro", "type": "chatgpt"})
     assert account.email is None
@@ -458,7 +458,7 @@ def test_generated_chatgpt_account_email_is_required_nullable() -> None:
 
 
 def test_runtime_package_template_has_no_checked_in_binaries() -> None:
-    runtime_root = ROOT.parent / "python-runtime" / "src" / "codex_cli_bin"
+    runtime_root = ROOT.parent / "python-runtime" / "src" / "motyga_cli_bin"
     assert sorted(
         path.name
         for path in runtime_root.rglob("*")
@@ -475,16 +475,16 @@ def test_examples_readme_points_to_runtime_version_source_of_truth() -> None:
 def test_runtime_distribution_name_is_consistent() -> None:
     script = _load_update_script_module()
     runtime_setup = _load_runtime_setup_module()
-    from openai_codex import _version, client as client_module
+    from motyga_sdk import _version, client as client_module
 
-    assert script.SDK_DISTRIBUTION_NAME == "openai-codex"
-    assert runtime_setup.SDK_PACKAGE_NAME == "openai-codex"
-    assert _version.DISTRIBUTION_NAME == "openai-codex"
-    assert script.RUNTIME_DISTRIBUTION_NAME == "openai-codex-cli-bin"
-    assert runtime_setup.PACKAGE_NAME == "openai-codex-cli-bin"
-    assert client_module.RUNTIME_PKG_NAME == "openai-codex-cli-bin"
+    assert script.SDK_DISTRIBUTION_NAME == "motyga-sdk"
+    assert runtime_setup.SDK_PACKAGE_NAME == "motyga-sdk"
+    assert _version.DISTRIBUTION_NAME == "motyga-sdk"
+    assert script.RUNTIME_DISTRIBUTION_NAME == "motyga-cli-bin"
+    assert runtime_setup.PACKAGE_NAME == "motyga-cli-bin"
+    assert client_module.RUNTIME_PKG_NAME == "motyga-cli-bin"
     assert (
-        "importlib.metadata.version('codex-cli-bin')"
+        "importlib.metadata.version('motyga-cli-bin')"
         not in (ROOT / "_runtime_setup.py").read_text()
     )
 
@@ -503,7 +503,7 @@ def test_source_sdk_template_pins_published_runtime() -> None:
         "runtime_pin": "0.137.0a4",
         "dependencies": [
             "pydantic>=2.12",
-            "openai-codex-cli-bin==0.137.0a4",
+            "motyga-cli-bin==0.137.0a4",
         ],
     }
 
@@ -518,10 +518,10 @@ def test_source_sdk_package_declares_beta_documentation() -> None:
         "is_beta": "Development Status :: 4 - Beta" in pyproject["project"]["classifiers"],
         "license": pyproject["project"]["license"],
         "documentation": pyproject["project"]["urls"]["Documentation"],
-        "readme_is_beta": "# OpenAI Codex Python SDK (Beta)" in readme,
+        "readme_is_beta": "# Motyga Python SDK (Beta)" in readme,
         "local_license_file": (ROOT / "LICENSE").exists(),
     } == {
-        "description": "Python SDK for Codex",
+        "description": "Python SDK for Motyga",
         "is_beta": True,
         "license": "Apache-2.0",
         "documentation": "https://github.com/openai/codex/tree/main/sdk/python/docs",
@@ -570,7 +570,7 @@ def test_runtime_setup_reads_independent_runtime_pin_and_release_tags() -> None:
         ),
         "release_tag": runtime_setup._release_tag("0.116.0a1"),
     } == {
-        "package_name": "openai-codex-cli-bin",
+        "package_name": "motyga-cli-bin",
         "sdk_template_version": "0.0.0-dev",
         "runtime_pin": "0.137.0a4",
         "normalized_release_version": "0.116.0a1",
@@ -581,12 +581,12 @@ def test_runtime_setup_reads_independent_runtime_pin_and_release_tags() -> None:
 @pytest.mark.parametrize(
     ("system", "machine", "asset_name"),
     [
-        ("Darwin", "arm64", "codex-package-aarch64-apple-darwin.tar.gz"),
-        ("Linux", "x86_64", "codex-package-x86_64-unknown-linux-musl.tar.gz"),
-        ("Windows", "AMD64", "codex-package-x86_64-pc-windows-msvc.tar.gz"),
+        ("Darwin", "arm64", "motyga-package-aarch64-apple-darwin.tar.gz"),
+        ("Linux", "x86_64", "motyga-package-x86_64-unknown-linux-musl.tar.gz"),
+        ("Windows", "AMD64", "motyga-package-x86_64-pc-windows-msvc.tar.gz"),
     ],
 )
-def test_runtime_setup_downloads_codex_package_archives(
+def test_runtime_setup_downloads_motyga_package_archives(
     monkeypatch: pytest.MonkeyPatch,
     system: str,
     machine: str,
@@ -644,14 +644,14 @@ def test_runtime_package_is_wheel_only_and_builds_platform_specific_wheels() -> 
         elif isinstance(node.value, ast.JoinedStr):
             build_data_assignments[node.targets[0].slice.value] = "joined-string"
 
-    assert pyproject["project"]["name"] == "openai-codex-cli-bin"
+    assert pyproject["project"]["name"] == "motyga-cli-bin"
     assert pyproject["tool"]["hatch"]["build"]["targets"]["wheel"] == {
-        "packages": ["src/codex_cli_bin"],
+        "packages": ["src/motyga_cli_bin"],
         "include": [
-            "src/codex_cli_bin/codex-package.json",
-            "src/codex_cli_bin/bin/**",
-            "src/codex_cli_bin/codex-resources/**",
-            "src/codex_cli_bin/codex-path/**",
+            "src/motyga_cli_bin/motyga-package.json",
+            "src/motyga_cli_bin/bin/**",
+            "src/motyga_cli_bin/motyga-resources/**",
+            "src/motyga_cli_bin/motyga-path/**",
         ],
         "hooks": {"custom": {}},
     }
@@ -670,7 +670,7 @@ def test_stage_runtime_release_copies_package_layout_and_sets_version(
     tmp_path: Path,
 ) -> None:
     script = _load_update_script_module()
-    package_archive = _write_fake_codex_package_archive(tmp_path, script)
+    package_archive = _write_fake_motyga_package_archive(tmp_path, script)
 
     staged = script.stage_python_runtime_package(
         tmp_path / "runtime-stage",
@@ -680,27 +680,27 @@ def test_stage_runtime_release_copies_package_layout_and_sets_version(
     package_root = script.staged_runtime_package_root(staged)
 
     assert {
-        "metadata": (package_root / "codex-package.json").read_text(),
-        "codex": (package_root / "bin" / script.runtime_binary_name()).read_text(),
-        "bwrap": (package_root / "codex-resources" / "bwrap").read_text(),
-        "rg": (package_root / "codex-path" / "rg").read_text(),
+        "metadata": (package_root / "motyga-package.json").read_text(),
+        "motyga": (package_root / "bin" / script.runtime_binary_name()).read_text(),
+        "bwrap": (package_root / "motyga-resources" / "bwrap").read_text(),
+        "rg": (package_root / "motyga-path" / "rg").read_text(),
     } == {
-        "metadata": '{"variant":"codex"}\n',
-        "codex": "fake codex\n",
+        "metadata": '{"variant":"motyga"}\n',
+        "motyga": "fake motyga\n",
         "bwrap": "fake bwrap\n",
         "rg": "fake rg\n",
     }
-    assert 'name = "openai-codex-cli-bin"' in (staged / "pyproject.toml").read_text()
+    assert 'name = "motyga-cli-bin"' in (staged / "pyproject.toml").read_text()
     assert 'version = "1.2.3"' in (staged / "pyproject.toml").read_text()
 
 
-def test_normalize_codex_version_accepts_release_tags_and_pep440_versions() -> None:
+def test_normalize_motyga_version_accepts_release_tags_and_pep440_versions() -> None:
     script = _load_update_script_module()
 
-    assert script.normalize_codex_version("rust-v0.116.0-alpha.1") == "0.116.0a1"
-    assert script.normalize_codex_version("v0.116.0-beta.2") == "0.116.0b2"
-    assert script.normalize_codex_version("0.116.0rc3") == "0.116.0rc3"
-    assert script.normalize_codex_version("0.116.0") == "0.116.0"
+    assert script.normalize_motyga_version("rust-v0.116.0-alpha.1") == "0.116.0a1"
+    assert script.normalize_motyga_version("v0.116.0-beta.2") == "0.116.0b2"
+    assert script.normalize_motyga_version("0.116.0rc3") == "0.116.0rc3"
+    assert script.normalize_motyga_version("0.116.0") == "0.116.0"
 
 
 def test_stage_runtime_release_replaces_existing_staging_dir(tmp_path: Path) -> None:
@@ -709,7 +709,7 @@ def test_stage_runtime_release_replaces_existing_staging_dir(tmp_path: Path) -> 
     old_file = staging_dir / "stale.txt"
     old_file.parent.mkdir(parents=True)
     old_file.write_text("stale")
-    package_archive = _write_fake_codex_package_archive(tmp_path, script)
+    package_archive = _write_fake_motyga_package_archive(tmp_path, script)
 
     staged = script.stage_python_runtime_package(
         staging_dir,
@@ -720,12 +720,12 @@ def test_stage_runtime_release_replaces_existing_staging_dir(tmp_path: Path) -> 
     assert staged == staging_dir
     assert not old_file.exists()
     package_root = script.staged_runtime_package_root(staged)
-    assert (package_root / "bin" / script.runtime_binary_name()).read_text() == "fake codex\n"
+    assert (package_root / "bin" / script.runtime_binary_name()).read_text() == "fake motyga\n"
 
 
 def test_stage_runtime_release_can_pin_wheel_platform_tag(tmp_path: Path) -> None:
     script = _load_update_script_module()
-    package_archive = _write_fake_codex_package_archive(tmp_path, script)
+    package_archive = _write_fake_motyga_package_archive(tmp_path, script)
 
     staged = script.stage_python_runtime_package(
         tmp_path / "runtime-stage",
@@ -740,12 +740,12 @@ def test_stage_runtime_release_can_pin_wheel_platform_tag(tmp_path: Path) -> Non
 
 def test_stage_runtime_release_rejects_incomplete_package_layout(tmp_path: Path) -> None:
     script = _load_update_script_module()
-    package_dir = tmp_path / "codex-package"
+    package_dir = tmp_path / "motyga-package"
     (package_dir / "bin").mkdir(parents=True)
-    package_archive = tmp_path / "codex-package.tar.gz"
+    package_archive = tmp_path / "motyga-package.tar.gz"
     _write_package_archive(package_dir, package_archive)
 
-    with pytest.raises(RuntimeError, match="Missing Codex package layout entries"):
+    with pytest.raises(RuntimeError, match="Missing Motyga package layout entries"):
         script.stage_python_runtime_package(tmp_path / "runtime-stage", "1.2.3", package_archive)
 
 
@@ -753,7 +753,7 @@ def test_runtime_package_layout_is_included_by_wheel_config(
     tmp_path: Path,
 ) -> None:
     script = _load_update_script_module()
-    package_archive = _write_fake_codex_package_archive(tmp_path, script)
+    package_archive = _write_fake_motyga_package_archive(tmp_path, script)
 
     staged = script.stage_python_runtime_package(
         tmp_path / "runtime-stage",
@@ -763,10 +763,10 @@ def test_runtime_package_layout_is_included_by_wheel_config(
 
     pyproject = tomllib.loads((staged / "pyproject.toml").read_text())
     assert pyproject["tool"]["hatch"]["build"]["targets"]["wheel"]["include"] == [
-        "src/codex_cli_bin/codex-package.json",
-        "src/codex_cli_bin/bin/**",
-        "src/codex_cli_bin/codex-resources/**",
-        "src/codex_cli_bin/codex-path/**",
+        "src/motyga_cli_bin/motyga-package.json",
+        "src/motyga_cli_bin/bin/**",
+        "src/motyga_cli_bin/motyga-resources/**",
+        "src/motyga_cli_bin/motyga-path/**",
     ]
 
 
@@ -783,22 +783,22 @@ def test_stage_sdk_release_preserves_reviewed_runtime_pin(tmp_path: Path) -> Non
         "version": pyproject["project"]["version"],
         "dependencies": pyproject["project"]["dependencies"],
     } == {
-        "name": "openai-codex",
+        "name": "motyga-sdk",
         "version": "0.1.0b1",
         "dependencies": [
             "pydantic>=2.12",
-            "openai-codex-cli-bin==0.137.0a4",
+            "motyga-cli-bin==0.137.0a4",
         ],
     }
     assert (
         '__version__ = "0.1.0b1"'
-        not in (staged / "src" / "openai_codex" / "__init__.py").read_text()
+        not in (staged / "src" / "motyga_sdk" / "__init__.py").read_text()
     )
     assert (
         'client_version: str = "0.1.0b1"'
-        not in (staged / "src" / "openai_codex" / "client.py").read_text()
+        not in (staged / "src" / "motyga_sdk" / "client.py").read_text()
     )
-    assert not any((staged / "src" / "openai_codex").glob("bin/**"))
+    assert not any((staged / "src" / "motyga_sdk").glob("bin/**"))
 
 
 def test_stage_sdk_release_replaces_existing_staging_dir(tmp_path: Path) -> None:
@@ -816,7 +816,7 @@ def test_stage_sdk_release_replaces_existing_staging_dir(tmp_path: Path) -> None
 
 def test_sdk_beta_release_can_pin_stable_runtime(tmp_path: Path) -> None:
     script = _load_update_script_module()
-    package_archive = _write_fake_codex_package_archive(tmp_path, script)
+    package_archive = _write_fake_motyga_package_archive(tmp_path, script)
 
     sdk_stage = script.stage_python_sdk_package(
         tmp_path / "sdk-stage",
@@ -840,7 +840,7 @@ def test_sdk_beta_release_can_pin_stable_runtime(tmp_path: Path) -> None:
         "runtime_version": "0.137.0a4",
         "sdk_dependencies": [
             "pydantic>=2.12",
-            "openai-codex-cli-bin==0.137.0a4",
+            "motyga-cli-bin==0.137.0a4",
         ],
     }
 
@@ -889,14 +889,14 @@ def test_stage_sdk_runs_type_generation_before_staging(tmp_path: Path) -> None:
 
 def test_stage_runtime_stages_package_without_type_generation(tmp_path: Path) -> None:
     script = _load_update_script_module()
-    package_archive = _write_fake_codex_package_archive(tmp_path, script)
+    package_archive = _write_fake_motyga_package_archive(tmp_path, script)
     calls: list[str] = []
     args = script.parse_args(
         [
             "stage-runtime",
             str(tmp_path / "runtime-stage"),
             str(package_archive),
-            "--codex-version",
+            "--motyga-version",
             "rust-v0.116.0-alpha.1",
             "--platform-tag",
             "manylinux_2_17_x86_64",
@@ -906,16 +906,16 @@ def test_stage_runtime_stages_package_without_type_generation(tmp_path: Path) ->
     def fake_generate_types() -> None:
         calls.append("generate_types")
 
-    def fake_stage_sdk_package(_staging_dir: Path, _codex_version: str) -> Path:
+    def fake_stage_sdk_package(_staging_dir: Path, _motyga_version: str) -> Path:
         raise AssertionError("sdk staging should not run for stage-runtime")
 
     def fake_stage_runtime_package(
         _staging_dir: Path,
-        codex_version: str,
+        motyga_version: str,
         package_archive: Path,
         platform_tag: str | None,
     ) -> Path:
-        calls.append(f"stage_runtime:{codex_version}:{platform_tag}:{package_archive.name}")
+        calls.append(f"stage_runtime:{motyga_version}:{platform_tag}:{package_archive.name}")
         return tmp_path / "runtime-stage"
 
     def fake_current_sdk_version() -> str:
@@ -930,30 +930,30 @@ def test_stage_runtime_stages_package_without_type_generation(tmp_path: Path) ->
 
     script.run_command(args, ops)
 
-    assert calls == ["stage_runtime:0.116.0a1:manylinux_2_17_x86_64:codex-package.tar.gz"]
+    assert calls == ["stage_runtime:0.116.0a1:manylinux_2_17_x86_64:motyga-package.tar.gz"]
 
 
 def test_default_runtime_is_resolved_from_installed_runtime_package(
     tmp_path: Path,
 ) -> None:
-    from openai_codex import client as client_module
+    from motyga_sdk import client as client_module
 
-    fake_binary = tmp_path / ("codex.exe" if client_module.os.name == "nt" else "codex")
+    fake_binary = tmp_path / ("motyga.exe" if client_module.os.name == "nt" else "motyga")
     fake_binary.write_text("")
-    ops = client_module.CodexBinResolverOps(
-        installed_codex_path=lambda: fake_binary,
+    ops = client_module.MotygaBinResolverOps(
+        installed_motyga_path=lambda: fake_binary,
         path_exists=lambda path: path == fake_binary,
     )
 
-    config = client_module.CodexConfig()
-    assert config.codex_bin is None
-    assert client_module.resolve_codex_bin(config, ops) == fake_binary
+    config = client_module.MotygaConfig()
+    assert config.motyga_bin is None
+    assert client_module.resolve_motyga_bin(config, ops) == fake_binary
 
 
 def test_runtime_path_dir_is_prepended_without_duplicates(tmp_path: Path) -> None:
-    from openai_codex import client as client_module
+    from motyga_sdk import client as client_module
 
-    path_dir = tmp_path / "codex-path"
+    path_dir = tmp_path / "motyga-path"
     env = {"PATH": os.pathsep.join(["/usr/bin", str(path_dir), "/bin"])}
 
     client_module._prepend_path_dirs(env, (path_dir,))
@@ -965,9 +965,9 @@ def test_runtime_path_dir_preserves_windows_path_key(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    from openai_codex import client as client_module
+    from motyga_sdk import client as client_module
 
-    path_dir = tmp_path / "codex-path"
+    path_dir = tmp_path / "motyga-path"
     monkeypatch.setattr(client_module.os, "name", "nt")
     env = {
         "PATH": "/usr/bin",
@@ -979,49 +979,49 @@ def test_runtime_path_dir_preserves_windows_path_key(
     assert env == {"Path": os.pathsep.join([str(path_dir), "C\\Windows"])}
 
 
-def test_explicit_codex_bin_override_takes_priority(tmp_path: Path) -> None:
-    from openai_codex import client as client_module
+def test_explicit_motyga_bin_override_takes_priority(tmp_path: Path) -> None:
+    from motyga_sdk import client as client_module
 
     explicit_binary = tmp_path / (
-        "custom-codex.exe" if client_module.os.name == "nt" else "custom-codex"
+        "custom-motyga.exe" if client_module.os.name == "nt" else "custom-motyga"
     )
     explicit_binary.write_text("")
-    ops = client_module.CodexBinResolverOps(
-        installed_codex_path=lambda: (_ for _ in ()).throw(
+    ops = client_module.MotygaBinResolverOps(
+        installed_motyga_path=lambda: (_ for _ in ()).throw(
             AssertionError("packaged runtime should not be used")
         ),
         path_exists=lambda path: path == explicit_binary,
     )
 
-    config = client_module.CodexConfig(codex_bin=str(explicit_binary))
-    assert client_module.resolve_codex_bin(config, ops) == explicit_binary
+    config = client_module.MotygaConfig(motyga_bin=str(explicit_binary))
+    assert client_module.resolve_motyga_bin(config, ops) == explicit_binary
 
 
-def test_missing_runtime_package_requires_explicit_codex_bin() -> None:
-    from openai_codex import client as client_module
+def test_missing_runtime_package_requires_explicit_motyga_bin() -> None:
+    from motyga_sdk import client as client_module
 
-    ops = client_module.CodexBinResolverOps(
-        installed_codex_path=lambda: (_ for _ in ()).throw(
+    ops = client_module.MotygaBinResolverOps(
+        installed_motyga_path=lambda: (_ for _ in ()).throw(
             FileNotFoundError("missing packaged runtime")
         ),
         path_exists=lambda _path: False,
     )
 
     with pytest.raises(FileNotFoundError, match="missing packaged runtime"):
-        client_module.resolve_codex_bin(client_module.CodexConfig(), ops)
+        client_module.resolve_motyga_bin(client_module.MotygaConfig(), ops)
 
 
 def test_broken_runtime_package_does_not_fall_back() -> None:
-    from openai_codex import client as client_module
+    from motyga_sdk import client as client_module
 
-    ops = client_module.CodexBinResolverOps(
-        installed_codex_path=lambda: (_ for _ in ()).throw(
+    ops = client_module.MotygaBinResolverOps(
+        installed_motyga_path=lambda: (_ for _ in ()).throw(
             FileNotFoundError("missing packaged binary")
         ),
         path_exists=lambda _path: False,
     )
 
     with pytest.raises(FileNotFoundError) as exc_info:
-        client_module.resolve_codex_bin(client_module.CodexConfig(), ops)
+        client_module.resolve_motyga_bin(client_module.MotygaConfig(), ops)
 
     assert str(exc_info.value) == ("missing packaged binary")

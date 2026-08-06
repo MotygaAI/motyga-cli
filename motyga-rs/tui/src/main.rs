@@ -1,12 +1,12 @@
 use clap::Parser;
-use codex_arg0::Arg0DispatchPaths;
-use codex_arg0::arg0_dispatch_or_else;
-use codex_config::LoaderOverrides;
-use codex_tui::AppExitInfo;
-use codex_tui::Cli;
-use codex_tui::ExitReason;
-use codex_tui::run_main;
-use codex_utils_cli::CliConfigOverrides;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_arg0::arg0_dispatch_or_else;
+use motyga_config::LoaderOverrides;
+use motyga_tui::AppExitInfo;
+use motyga_tui::Cli;
+use motyga_tui::ExitReason;
+use motyga_tui::run_main;
+use motyga_utils_cli::CliConfigOverrides;
 use std::io::Write;
 use supports_color::Stream;
 

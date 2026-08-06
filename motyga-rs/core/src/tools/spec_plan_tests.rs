@@ -2,32 +2,32 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use codex_features::Feature;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_mcp::ToolInfo;
-use codex_model_provider::create_model_provider;
-use codex_model_provider_info::AMAZON_BEDROCK_PROVIDER_ID;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::openai_models::ApplyPatchToolType;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::ToolMode;
-use codex_protocol::openai_models::WebSearchToolType;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_tools::DiscoverablePluginInfo;
-use codex_tools::DiscoverableTool;
-use codex_tools::ResponsesApiNamespaceTool;
-use codex_tools::ResponsesApiTool;
-use codex_tools::ToolCall as ExtensionToolCall;
-use codex_tools::ToolExecutor;
-use codex_tools::ToolExposure;
-use codex_tools::ToolName;
-use codex_tools::ToolOutput;
-use codex_tools::ToolSpec;
+use motyga_features::Feature;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_mcp::ToolInfo;
+use motyga_model_provider::create_model_provider;
+use motyga_model_provider_info::AMAZON_BEDROCK_PROVIDER_ID;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::dynamic_tools::DynamicToolSpec;
+use motyga_protocol::openai_models::ApplyPatchToolType;
+use motyga_protocol::openai_models::ConfigShellToolType;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::openai_models::ToolMode;
+use motyga_protocol::openai_models::WebSearchToolType;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_tools::DiscoverablePluginInfo;
+use motyga_tools::DiscoverableTool;
+use motyga_tools::ResponsesApiNamespaceTool;
+use motyga_tools::ResponsesApiTool;
+use motyga_tools::ToolCall as ExtensionToolCall;
+use motyga_tools::ToolExecutor;
+use motyga_tools::ToolExposure;
+use motyga_tools::ToolName;
+use motyga_tools::ToolOutput;
+use motyga_tools::ToolSpec;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 
@@ -226,8 +226,8 @@ fn set_features(turn: &mut TurnContext, features: &[Feature]) {
     }
 }
 
-fn zsh_fork_config_for_spec_plan_tests() -> codex_tools::ZshForkConfig {
-    let placeholder_exe = codex_utils_absolute_path::AbsolutePathBuf::try_from(
+fn zsh_fork_config_for_spec_plan_tests() -> motyga_tools::ZshForkConfig {
+    let placeholder_exe = motyga_utils_absolute_path::AbsolutePathBuf::try_from(
         std::env::current_exe().expect("current exe path"),
     )
     .expect("current exe should be absolute");
@@ -235,7 +235,7 @@ fn zsh_fork_config_for_spec_plan_tests() -> codex_tools::ZshForkConfig {
     // Spec planning only checks whether the shell mode is ZshFork. These paths
     // are never executed, so use a stable absolute placeholder instead of
     // depending on packaged zsh-fork artifacts in schema tests.
-    codex_tools::ZshForkConfig {
+    motyga_tools::ZshForkConfig {
         shell_zsh_path: placeholder_exe.clone(),
         main_execve_wrapper_exe: placeholder_exe,
     }
@@ -258,7 +258,7 @@ fn set_web_search_mode(turn: &mut TurnContext, mode: WebSearchMode) {
 
 fn use_chatgpt_auth(turn: &mut TurnContext) {
     turn.auth_manager = Some(AuthManager::from_auth_for_testing(
-        CodexAuth::create_dummy_chatgpt_auth_for_testing(),
+        MotygaAuth::create_dummy_chatgpt_auth_for_testing(),
     ));
     turn.provider = create_model_provider(
         turn.config.model_provider.clone(),
@@ -303,7 +303,7 @@ impl ToolExecutor<ExtensionToolCall> for WebRunExtensionTool {
     }
 
     fn spec(&self) -> ToolSpec {
-        ToolSpec::Namespace(codex_tools::ResponsesApiNamespace {
+        ToolSpec::Namespace(motyga_tools::ResponsesApiNamespace {
             name: "web".to_string(),
             description: "Test web namespace.".to_string(),
             tools: vec![ResponsesApiNamespaceTool::Function(ResponsesApiTool {
@@ -311,15 +311,15 @@ impl ToolExecutor<ExtensionToolCall> for WebRunExtensionTool {
                 description: "Test standalone web search tool.".to_string(),
                 strict: false,
                 defer_loading: None,
-                parameters: codex_tools::JsonSchema::default(),
+                parameters: motyga_tools::JsonSchema::default(),
                 output_schema: None,
             })],
         })
     }
 
-    fn handle(&self, _call: ExtensionToolCall) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, _call: ExtensionToolCall) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(async {
-            Ok(Box::new(codex_tools::JsonToolOutput::new(json!({}))) as Box<dyn ToolOutput>)
+            Ok(Box::new(motyga_tools::JsonToolOutput::new(json!({}))) as Box<dyn ToolOutput>)
         })
     }
 }
@@ -337,10 +337,10 @@ impl ToolExecutor<ExtensionToolCall> for DeferredExtensionTool {
             description: "Echoes arguments through an extension tool.".to_string(),
             strict: true,
             defer_loading: None,
-            parameters: codex_tools::JsonSchema::object(
+            parameters: motyga_tools::JsonSchema::object(
                 BTreeMap::from([(
                     "message".to_string(),
-                    codex_tools::JsonSchema::string(/*description*/ None),
+                    motyga_tools::JsonSchema::string(/*description*/ None),
                 )]),
                 Some(vec!["message".to_string()]),
                 Some(false.into()),
@@ -353,7 +353,7 @@ impl ToolExecutor<ExtensionToolCall> for DeferredExtensionTool {
         ToolExposure::Deferred
     }
 
-    fn handle(&self, _call: ExtensionToolCall) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, _call: ExtensionToolCall) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(async { panic!("spec planning should not execute extension tools") })
     }
 }
@@ -396,7 +396,7 @@ fn invalid_mcp_tool(server: &str, namespace: &str, name: &str) -> ToolInfo {
 }
 
 fn dynamic_tool(namespace: Option<&str>, name: &str, defer_loading: bool) -> DynamicToolSpec {
-    let function = codex_protocol::dynamic_tools::DynamicToolFunctionSpec {
+    let function = motyga_protocol::dynamic_tools::DynamicToolFunctionSpec {
         name: name.to_string(),
         description: format!("{name} dynamic tool"),
         input_schema: json!({
@@ -408,11 +408,11 @@ fn dynamic_tool(namespace: Option<&str>, name: &str, defer_loading: bool) -> Dyn
     };
     match namespace {
         Some(namespace) => {
-            DynamicToolSpec::Namespace(codex_protocol::dynamic_tools::DynamicToolNamespaceSpec {
+            DynamicToolSpec::Namespace(motyga_protocol::dynamic_tools::DynamicToolNamespaceSpec {
                 name: namespace.to_string(),
                 description: format!("{namespace} dynamic tools"),
                 tools: vec![
-                    codex_protocol::dynamic_tools::DynamicToolNamespaceTool::Function(function),
+                    motyga_protocol::dynamic_tools::DynamicToolNamespaceTool::Function(function),
                 ],
             })
         }
@@ -480,8 +480,8 @@ async fn request_user_input_stays_direct_in_code_mode_only() {
 
     plan.assert_visible_contains(&[
         "request_user_input",
-        codex_code_mode::PUBLIC_TOOL_NAME,
-        codex_code_mode::WAIT_TOOL_NAME,
+        motyga_code_mode::PUBLIC_TOOL_NAME,
+        motyga_code_mode::WAIT_TOOL_NAME,
     ]);
     plan.assert_registered_contains(&["request_user_input"]);
     assert_eq!(
@@ -489,7 +489,7 @@ async fn request_user_input_stays_direct_in_code_mode_only() {
         ToolExposure::DirectModelOnly
     );
 
-    let ToolSpec::Freeform(exec) = plan.visible_spec(codex_code_mode::PUBLIC_TOOL_NAME) else {
+    let ToolSpec::Freeform(exec) = plan.visible_spec(motyga_code_mode::PUBLIC_TOOL_NAME) else {
         panic!("expected code mode exec tool");
     };
     assert!(!exec.description.contains("request_user_input"));
@@ -540,7 +540,7 @@ async fn shell_zsh_fork_stays_standalone_until_unified_exec_composition_is_enabl
     })
     .await;
 
-    if codex_utils_pty::conpty_supported() {
+    if motyga_utils_pty::conpty_supported() {
         composed.assert_visible_contains(&["exec_command", "write_stdin"]);
         composed.assert_visible_lacks(&["shell_command"]);
         composed.assert_registered_contains(&["exec_command", "write_stdin", "shell_command"]);
@@ -553,7 +553,7 @@ async fn shell_zsh_fork_stays_standalone_until_unified_exec_composition_is_enabl
 
 #[tokio::test]
 async fn zsh_fork_unified_exec_hides_shell_parameter() {
-    if !codex_utils_pty::conpty_supported() {
+    if !motyga_utils_pty::conpty_supported() {
         return;
     }
 
@@ -568,7 +568,7 @@ async fn zsh_fork_unified_exec_hides_shell_parameter() {
             ],
         );
         turn.unified_exec_shell_mode =
-            codex_tools::UnifiedExecShellMode::ZshFork(zsh_fork_config_for_spec_plan_tests());
+            motyga_tools::UnifiedExecShellMode::ZshFork(zsh_fork_config_for_spec_plan_tests());
     })
     .await;
 
@@ -578,7 +578,7 @@ async fn zsh_fork_unified_exec_hides_shell_parameter() {
 
 #[tokio::test]
 async fn zsh_fork_unified_exec_keeps_shell_parameter_when_remote_environment_available() {
-    if !codex_utils_pty::conpty_supported() {
+    if !motyga_utils_pty::conpty_supported() {
         return;
     }
 
@@ -593,7 +593,7 @@ async fn zsh_fork_unified_exec_keeps_shell_parameter_when_remote_environment_ava
             ],
         );
         turn.unified_exec_shell_mode =
-            codex_tools::UnifiedExecShellMode::ZshFork(zsh_fork_config_for_spec_plan_tests());
+            motyga_tools::UnifiedExecShellMode::ZshFork(zsh_fork_config_for_spec_plan_tests());
         let remote_cwd = turn
             .environments
             .primary()
@@ -604,7 +604,7 @@ async fn zsh_fork_unified_exec_keeps_shell_parameter_when_remote_environment_ava
             crate::session::turn_context::TurnEnvironment::new(
                 "remote".to_string(),
                 Arc::new(
-                    codex_exec_server::Environment::create_for_tests(Some(
+                    motyga_exec_server::Environment::create_for_tests(Some(
                         "ws://127.0.0.1:1/remote-exec-server".to_string(),
                     ))
                     .expect("remote test environment"),
@@ -1052,7 +1052,7 @@ async fn request_plugin_install_description_refers_to_recommended_plugins_hint()
 async fn code_mode_only_exposes_code_executor_and_hides_nested_tools() {
     let input = ToolPlanInputs {
         dynamic_tools: vec![dynamic_tool(
-            Some("codex_app"),
+            Some("motyga_app"),
             "lookup",
             /*defer_loading*/ false,
         )],
@@ -1060,12 +1060,12 @@ async fn code_mode_only_exposes_code_executor_and_hides_nested_tools() {
     };
     let plain = probe_with(|_| {}, input).await;
     assert_eq!(
-        plain.namespace_function_names("codex_app"),
+        plain.namespace_function_names("motyga_app"),
         &["lookup".to_string()]
     );
     plain.assert_visible_lacks(&[
-        codex_code_mode::PUBLIC_TOOL_NAME,
-        codex_code_mode::WAIT_TOOL_NAME,
+        motyga_code_mode::PUBLIC_TOOL_NAME,
+        motyga_code_mode::WAIT_TOOL_NAME,
     ]);
 
     let code_mode_only = probe_with(
@@ -1074,7 +1074,7 @@ async fn code_mode_only_exposes_code_executor_and_hides_nested_tools() {
         },
         ToolPlanInputs {
             dynamic_tools: vec![dynamic_tool(
-                Some("codex_app"),
+                Some("motyga_app"),
                 "lookup",
                 /*defer_loading*/ false,
             )],
@@ -1083,11 +1083,11 @@ async fn code_mode_only_exposes_code_executor_and_hides_nested_tools() {
     )
     .await;
     code_mode_only.assert_visible_contains(&[
-        codex_code_mode::PUBLIC_TOOL_NAME,
-        codex_code_mode::WAIT_TOOL_NAME,
+        motyga_code_mode::PUBLIC_TOOL_NAME,
+        motyga_code_mode::WAIT_TOOL_NAME,
     ]);
     assert_eq!(
-        code_mode_only.namespace_function_names("codex_app"),
+        code_mode_only.namespace_function_names("motyga_app"),
         Vec::<String>::new().as_slice()
     );
 }
@@ -1114,8 +1114,8 @@ async fn code_mode_only_exposes_configured_dynamic_namespace_directly() {
     .await;
 
     plan.assert_visible_contains(&[
-        codex_code_mode::PUBLIC_TOOL_NAME,
-        codex_code_mode::WAIT_TOOL_NAME,
+        motyga_code_mode::PUBLIC_TOOL_NAME,
+        motyga_code_mode::WAIT_TOOL_NAME,
         "direct_only",
     ]);
     plan.assert_visible_lacks(&["tool_search"]);
@@ -1128,7 +1128,7 @@ async fn code_mode_only_exposes_configured_dynamic_namespace_directly() {
     };
     let ResponsesApiNamespaceTool::Function(tool) = &namespace.tools[0];
     assert_eq!(tool.defer_loading, None);
-    let ToolSpec::Freeform(exec) = plan.visible_spec(codex_code_mode::PUBLIC_TOOL_NAME) else {
+    let ToolSpec::Freeform(exec) = plan.visible_spec(motyga_code_mode::PUBLIC_TOOL_NAME) else {
         panic!("expected code mode exec tool");
     };
     assert!(!exec.description.contains("direct_only_lookup(args:"));
@@ -1156,7 +1156,7 @@ async fn excluded_deferred_namespaces_do_not_enable_nested_tool_guidance() {
     )
     .await;
 
-    let ToolSpec::Freeform(exec) = plan.visible_spec(codex_code_mode::PUBLIC_TOOL_NAME) else {
+    let ToolSpec::Freeform(exec) = plan.visible_spec(motyga_code_mode::PUBLIC_TOOL_NAME) else {
         panic!("expected code mode exec tool");
     };
     assert!(
@@ -1342,8 +1342,8 @@ async fn tool_mode_selector_overrides_feature_flags() {
     })
     .await;
     direct.assert_visible_lacks(&[
-        codex_code_mode::PUBLIC_TOOL_NAME,
-        codex_code_mode::WAIT_TOOL_NAME,
+        motyga_code_mode::PUBLIC_TOOL_NAME,
+        motyga_code_mode::WAIT_TOOL_NAME,
     ]);
 }
 
@@ -1628,8 +1628,8 @@ async fn hosted_tools_follow_provider_auth_model_and_config_gates() {
         code_mode_only.visible_names,
         vec![
             // Code-mode entrypoints.
-            codex_code_mode::PUBLIC_TOOL_NAME,
-            codex_code_mode::WAIT_TOOL_NAME,
+            motyga_code_mode::PUBLIC_TOOL_NAME,
+            motyga_code_mode::WAIT_TOOL_NAME,
             "request_user_input",
             // Multi-agent v2 tools.
             MULTI_AGENT_V2_NAMESPACE,

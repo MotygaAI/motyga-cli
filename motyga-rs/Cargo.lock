@@ -399,16 +399,16 @@ dependencies = [
  "anyhow",
  "base64 0.22.1",
  "chrono",
- "codex-app-server-protocol",
- "codex-config",
- "codex-core",
- "codex-exec-server",
- "codex-features",
- "codex-login",
- "codex-models-manager",
- "codex-protocol",
- "codex-utils-cargo-bin",
  "core_test_support",
+ "motyga-app-server-protocol",
+ "motyga-config",
+ "motyga-core",
+ "motyga-exec-server",
+ "motyga-features",
+ "motyga-login",
+ "motyga-models-manager",
+ "motyga-protocol",
+ "motyga-utils-cargo-bin",
  "serde",
  "serde_json",
  "shlex",
@@ -1863,2621 +1863,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "codex-agent-graph-store"
-version = "0.0.0"
-dependencies = [
- "codex-protocol",
- "codex-state",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
-]
-
-[[package]]
-name = "codex-agent-identity"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "chrono",
- "codex-protocol",
- "crypto_box",
- "ed25519-dalek",
- "jsonwebtoken",
- "pretty_assertions",
- "rand 0.9.3",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "sha2 0.10.9",
-]
-
-[[package]]
-name = "codex-analytics"
-version = "0.0.0"
-dependencies = [
- "codex-app-server-protocol",
- "codex-git-utils",
- "codex-login",
- "codex-model-provider",
- "codex-plugin",
- "codex-protocol",
- "codex-state",
- "codex-utils-absolute-path",
- "os_info",
- "pretty_assertions",
- "serde",
- "serde_json",
- "sha1 0.10.6",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "codex-ansi-escape"
-version = "0.0.0"
-dependencies = [
- "ansi-to-tui",
- "ratatui",
- "tracing",
-]
-
-[[package]]
-name = "codex-api"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "assert_matches",
- "async-channel",
- "base64 0.22.1",
- "bytes",
- "chrono",
- "codex-client",
- "codex-protocol",
- "codex-utils-rustls-provider",
- "eventsource-stream",
- "futures",
- "http 1.4.0",
- "pretty_assertions",
- "regex-lite",
- "reqwest 0.12.28",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tokio-test",
- "tokio-tungstenite",
- "tokio-util",
- "tracing",
- "tungstenite",
- "url",
- "wiremock",
-]
-
-[[package]]
-name = "codex-app-server"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "app_test_support",
- "axum",
- "base64 0.22.1",
- "chrono",
- "clap",
- "codex-analytics",
- "codex-app-server-protocol",
- "codex-app-server-transport",
- "codex-arg0",
- "codex-backend-client",
- "codex-chatgpt",
- "codex-cloud-config",
- "codex-config",
- "codex-connectors",
- "codex-core",
- "codex-core-plugins",
- "codex-exec-server",
- "codex-extension-api",
- "codex-external-agent-migration",
- "codex-external-agent-sessions",
- "codex-features",
- "codex-feedback",
- "codex-file-search",
- "codex-file-watcher",
- "codex-git-utils",
- "codex-goal-extension",
- "codex-guardian",
- "codex-home",
- "codex-hooks",
- "codex-image-generation-extension",
- "codex-login",
- "codex-mcp",
- "codex-mcp-extension",
- "codex-memories-extension",
- "codex-memories-write",
- "codex-model-provider",
- "codex-model-provider-info",
- "codex-models-manager",
- "codex-otel",
- "codex-plugin",
- "codex-protocol",
- "codex-rmcp-client",
- "codex-rollout",
- "codex-sandboxing",
- "codex-shell-command",
- "codex-skills-extension",
- "codex-state",
- "codex-thread-store",
- "codex-tools",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-cli",
- "codex-utils-json-to-toml",
- "codex-utils-path-uri",
- "codex-utils-pty",
- "codex-web-search-extension",
- "codex-windows-sandbox",
- "core_test_support",
- "flate2",
- "futures",
- "hmac 0.12.1",
- "opentelemetry",
- "opentelemetry_sdk",
- "pretty_assertions",
- "reqwest 0.12.28",
- "rmcp",
- "serde",
- "serde_json",
- "serial_test",
- "sha2 0.10.9",
- "shlex",
- "tar",
- "tempfile",
- "thiserror 2.0.18",
- "time",
- "tokio",
- "tokio-tungstenite",
- "tokio-util",
- "toml 0.9.11+spec-1.1.0",
- "toml_edit 0.24.0+spec-1.1.0",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "url",
- "uuid",
- "wiremock",
-]
-
-[[package]]
-name = "codex-app-server-client"
-version = "0.0.0"
-dependencies = [
- "codex-app-server",
- "codex-app-server-protocol",
- "codex-arg0",
- "codex-config",
- "codex-core",
- "codex-exec-server",
- "codex-feedback",
- "codex-protocol",
- "codex-uds",
- "codex-utils-absolute-path",
- "codex-utils-rustls-provider",
- "futures",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tokio-tungstenite",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "codex-app-server-daemon"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-app-server-protocol",
- "codex-app-server-transport",
- "codex-uds",
- "codex-utils-home-dir",
- "futures",
- "libc",
- "pretty_assertions",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "tokio",
- "tokio-tungstenite",
-]
-
-[[package]]
-name = "codex-app-server-protocol"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-experimental-api-macros",
- "codex-protocol",
- "codex-shell-command",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-path-uri",
- "inventory",
- "pretty_assertions",
- "rmcp",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "serde_with",
- "similar",
- "strum_macros 0.28.0",
- "tempfile",
- "thiserror 2.0.18",
- "tracing",
- "ts-rs",
- "uuid",
-]
-
-[[package]]
-name = "codex-app-server-test-client"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-app-server-protocol",
- "codex-core",
- "codex-otel",
- "codex-protocol",
- "codex-utils-cli",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "tungstenite",
- "url",
- "uuid",
-]
-
-[[package]]
-name = "codex-app-server-transport"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "axum",
- "base64 0.22.1",
- "chrono",
- "clap",
- "codex-api",
- "codex-app-server-protocol",
- "codex-config",
- "codex-core",
- "codex-login",
- "codex-model-provider",
- "codex-protocol",
- "codex-state",
- "codex-uds",
- "codex-utils-absolute-path",
- "codex-utils-rustls-provider",
- "constant_time_eq 0.3.1",
- "futures",
- "gethostname",
- "hmac 0.12.1",
- "httpdate",
- "jsonwebtoken",
- "owo-colors",
- "pretty_assertions",
- "rand 0.9.3",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "time",
- "tokio",
- "tokio-tungstenite",
- "tokio-util",
- "tracing",
- "url",
- "uuid",
-]
-
-[[package]]
-name = "codex-apply-patch"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "assert_matches",
- "codex-exec-server",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-path-uri",
- "pretty_assertions",
- "similar",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tree-sitter",
- "tree-sitter-bash",
-]
-
-[[package]]
-name = "codex-arg0"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-apply-patch",
- "codex-exec-server",
- "codex-install-context",
- "codex-linux-sandbox",
- "codex-sandboxing",
- "codex-shell-escalation",
- "codex-utils-absolute-path",
- "codex-utils-home-dir",
- "codex-windows-sandbox",
- "dotenvy",
- "pretty_assertions",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "codex-async-utils"
-version = "0.0.0"
-dependencies = [
- "pretty_assertions",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "codex-aws-auth"
-version = "0.0.0"
-dependencies = [
- "aws-config",
- "aws-credential-types",
- "aws-sigv4",
- "aws-types",
- "bytes",
- "http 1.4.0",
- "pretty_assertions",
- "thiserror 2.0.18",
- "tokio",
-]
-
-[[package]]
-name = "codex-backend-client"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-api",
- "codex-backend-openapi-models",
- "codex-client",
- "codex-login",
- "codex-model-provider",
- "codex-protocol",
- "pretty_assertions",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "codex-backend-openapi-models"
-version = "0.0.0"
-dependencies = [
- "serde",
- "serde_json",
- "serde_with",
-]
-
-[[package]]
-name = "codex-bwrap"
-version = "0.0.0"
-dependencies = [
- "cc",
- "libc",
- "pkg-config",
-]
-
-[[package]]
-name = "codex-chatgpt"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-connectors",
- "codex-core",
- "codex-git-utils",
- "codex-login",
- "codex-model-provider",
- "codex-plugin",
- "codex-utils-cargo-bin",
- "codex-utils-cli",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "codex-cli"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "app_test_support",
- "assert_cmd",
- "assert_matches",
- "clap",
- "clap_complete",
- "codex-api",
- "codex-app-server",
- "codex-app-server-daemon",
- "codex-app-server-protocol",
- "codex-app-server-test-client",
- "codex-arg0",
- "codex-chatgpt",
- "codex-cloud-tasks",
- "codex-config",
- "codex-core",
- "codex-core-plugins",
- "codex-exec",
- "codex-exec-server",
- "codex-execpolicy",
- "codex-features",
- "codex-git-utils",
- "codex-home",
- "codex-install-context",
- "codex-login",
- "codex-mcp",
- "codex-mcp-server",
- "codex-memories-write",
- "codex-model-provider",
- "codex-models-manager",
- "codex-plugin",
- "codex-protocol",
- "codex-responses-api-proxy",
- "codex-rmcp-client",
- "codex-rollout",
- "codex-rollout-trace",
- "codex-sandboxing",
- "codex-state",
- "codex-stdio-to-uds",
- "codex-terminal-detection",
- "codex-tui",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-cli",
- "codex-utils-path",
- "codex-windows-sandbox",
- "crossterm",
- "http 1.4.0",
- "insta",
- "libc",
- "motyga-supply",
- "os_info",
- "owo-colors",
- "predicates",
- "pretty_assertions",
- "regex-lite",
- "serde",
- "serde_json",
- "sqlx",
- "supports-color 3.0.2",
- "sys-locale",
- "tempfile",
- "tokio",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "unicode-segmentation",
- "url",
- "which 8.0.0",
- "windows-sys 0.52.0",
- "wiremock",
-]
-
-[[package]]
-name = "codex-client"
-version = "0.0.0"
-dependencies = [
- "bytes",
- "codex-utils-cargo-bin",
- "codex-utils-rustls-provider",
- "eventsource-stream",
- "futures",
- "http 1.4.0",
- "opentelemetry",
- "opentelemetry_sdk",
- "pretty_assertions",
- "rand 0.9.3",
- "rcgen",
- "reqwest 0.12.28",
- "rustls",
- "rustls-native-certs",
- "rustls-pki-types",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "system-configuration",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "windows-sys 0.52.0",
- "zstd 0.13.3",
-]
-
-[[package]]
-name = "codex-cloud-config"
-version = "0.0.0"
-dependencies = [
- "base64 0.22.1",
- "chrono",
- "codex-agent-identity",
- "codex-backend-client",
- "codex-config",
- "codex-core",
- "codex-login",
- "codex-otel",
- "codex-protocol",
- "hmac 0.12.1",
- "pretty_assertions",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "codex-cloud-tasks"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "codex-client",
- "codex-cloud-tasks-client",
- "codex-cloud-tasks-mock-client",
- "codex-core",
- "codex-git-utils",
- "codex-login",
- "codex-model-provider",
- "codex-tui",
- "codex-utils-cli",
- "crossterm",
- "owo-colors",
- "pretty_assertions",
- "ratatui",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "supports-color 3.0.2",
- "tokio",
- "tokio-stream",
- "tracing",
- "tracing-subscriber",
- "unicode-width 0.2.1",
-]
-
-[[package]]
-name = "codex-cloud-tasks-client"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "codex-api",
- "codex-backend-client",
- "codex-git-utils",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "codex-cloud-tasks-mock-client"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "codex-cloud-tasks-client",
- "diffy",
-]
-
-[[package]]
-name = "codex-code-mode"
-version = "0.0.0"
-dependencies = [
- "codex-code-mode-protocol",
- "codex-protocol",
- "deno_core_icudata",
- "futures",
- "pretty_assertions",
- "serde_json",
- "tokio",
- "tokio-util",
- "tracing",
- "v8",
-]
-
-[[package]]
-name = "codex-code-mode-host"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-code-mode",
- "codex-code-mode-protocol",
- "codex-protocol",
- "codex-utils-cargo-bin",
- "pretty_assertions",
- "serde_json",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "codex-code-mode-protocol"
-version = "0.0.0"
-dependencies = [
- "codex-protocol",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "codex-collaboration-mode-templates"
-version = "0.0.0"
-
-[[package]]
-name = "codex-config"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "codex-execpolicy",
- "codex-features",
- "codex-file-system",
- "codex-git-utils",
- "codex-model-provider-info",
- "codex-network-proxy",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-path",
- "codex-utils-path-uri",
- "core-foundation 0.9.4",
- "dns-lookup",
- "dunce",
- "futures",
- "gethostname",
- "indexmap 2.14.0",
- "libc",
- "multimap",
- "pretty_assertions",
- "prost 0.14.3",
- "regex-lite",
- "schemars 0.8.22",
- "serde",
- "serde_ignored",
- "serde_json",
- "serde_path_to_error",
- "sha2 0.10.9",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tokio-stream",
- "toml 0.9.11+spec-1.1.0",
- "toml_edit 0.24.0+spec-1.1.0",
- "tonic",
- "tonic-prost",
- "tonic-prost-build",
- "tracing",
- "wildmatch",
- "winapi-util",
- "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "codex-connectors"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-config",
- "codex-plugin",
- "indexmap 2.14.0",
- "pretty_assertions",
- "serde",
- "serde_json",
- "sha1 0.10.6",
- "tempfile",
- "tokio",
- "tracing",
- "urlencoding",
-]
-
-[[package]]
-name = "codex-connectors-extension"
-version = "0.0.0"
-dependencies = [
- "codex-connectors",
- "codex-core-plugins",
- "codex-plugin",
- "codex-utils-path-uri",
- "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "codex-context-fragments"
-version = "0.0.0"
-dependencies = [
- "codex-protocol",
- "codex-utils-string",
-]
-
-[[package]]
-name = "codex-core"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "assert_cmd",
- "assert_matches",
- "async-channel",
- "base64 0.22.1",
- "bm25",
- "chrono",
- "clap",
- "codex-agent-graph-store",
- "codex-analytics",
- "codex-api",
- "codex-app-server-protocol",
- "codex-apply-patch",
- "codex-async-utils",
- "codex-code-mode",
- "codex-config",
- "codex-connectors",
- "codex-context-fragments",
- "codex-core-plugins",
- "codex-core-skills",
- "codex-exec-server",
- "codex-execpolicy",
- "codex-extension-api",
- "codex-features",
- "codex-feedback",
- "codex-file-system",
- "codex-git-utils",
- "codex-home",
- "codex-hooks",
- "codex-image-generation-extension",
- "codex-install-context",
- "codex-login",
- "codex-mcp",
- "codex-memories-read",
- "codex-model-provider",
- "codex-model-provider-info",
- "codex-models-manager",
- "codex-network-proxy",
- "codex-otel",
- "codex-plugin",
- "codex-prompts",
- "codex-protocol",
- "codex-response-debug-context",
- "codex-rmcp-client",
- "codex-rollout",
- "codex-rollout-trace",
- "codex-sandboxing",
- "codex-shell-command",
- "codex-shell-escalation",
- "codex-state",
- "codex-terminal-detection",
- "codex-test-binary-support",
- "codex-thread-store",
- "codex-tools",
- "codex-utils-absolute-path",
- "codex-utils-cache",
- "codex-utils-cargo-bin",
- "codex-utils-home-dir",
- "codex-utils-image",
- "codex-utils-output-truncation",
- "codex-utils-path",
- "codex-utils-path-uri",
- "codex-utils-plugins",
- "codex-utils-pty",
- "codex-utils-stream-parser",
- "codex-utils-string",
- "codex-web-search-extension",
- "codex-windows-sandbox",
- "core_test_support",
- "csv",
- "ctor 0.6.3",
- "dirs",
- "dunce",
- "eventsource-stream",
- "futures",
- "http 1.4.0",
- "iana-time-zone",
- "image",
- "indexmap 2.14.0",
- "insta",
- "libc",
- "maplit",
- "once_cell",
- "openssl-sys",
- "opentelemetry",
- "opentelemetry_sdk",
- "predicates",
- "pretty_assertions",
- "rand 0.9.3",
- "regex-lite",
- "reqwest 0.12.28",
- "rmcp",
- "serde",
- "serde_json",
- "serial_test",
- "sha1 0.10.6",
- "shlex",
- "similar",
- "tempfile",
- "test-case",
- "test-log",
- "thiserror 2.0.18",
- "tokio",
- "tokio-tungstenite",
- "tokio-util",
- "toml 0.9.11+spec-1.1.0",
- "toml_edit 0.24.0+spec-1.1.0",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "tracing-test",
- "url",
- "uuid",
- "walkdir",
- "which 8.0.0",
- "whoami 1.6.1",
- "wiremock",
- "zstd 0.13.3",
-]
-
-[[package]]
-name = "codex-core-api"
-version = "0.0.0"
-dependencies = [
- "codex-analytics",
- "codex-app-server-protocol",
- "codex-arg0",
- "codex-config",
- "codex-core",
- "codex-exec-server",
- "codex-extension-api",
- "codex-features",
- "codex-home",
- "codex-login",
- "codex-model-provider-info",
- "codex-models-manager",
- "codex-protocol",
- "codex-utils-absolute-path",
-]
-
-[[package]]
-name = "codex-core-plugins"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "codex-analytics",
- "codex-app-server-protocol",
- "codex-config",
- "codex-connectors",
- "codex-core-skills",
- "codex-exec-server",
- "codex-git-utils",
- "codex-hooks",
- "codex-login",
- "codex-mcp",
- "codex-model-provider",
- "codex-otel",
- "codex-plugin",
- "codex-protocol",
- "codex-tools",
- "codex-utils-absolute-path",
- "codex-utils-path",
- "codex-utils-path-uri",
- "codex-utils-plugins",
- "dirs",
- "flate2",
- "libc",
- "pretty_assertions",
- "regex",
- "reqwest 0.12.28",
- "semver",
- "serde",
- "serde_json",
- "tar",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
- "tracing-subscriber",
- "tracing-test",
- "url",
- "wiremock",
- "zip 2.4.2",
-]
-
-[[package]]
-name = "codex-core-skills"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-analytics",
- "codex-config",
- "codex-context-fragments",
- "codex-exec-server",
- "codex-login",
- "codex-model-provider",
- "codex-otel",
- "codex-protocol",
- "codex-shell-command",
- "codex-skills",
- "codex-utils-absolute-path",
- "codex-utils-output-truncation",
- "codex-utils-path-uri",
- "codex-utils-plugins",
- "dirs",
- "dunce",
- "futures",
- "pretty_assertions",
- "serde",
- "serde_json",
- "serde_yaml",
- "shlex",
- "tempfile",
- "tokio",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
- "zip 2.4.2",
-]
-
-[[package]]
-name = "codex-exec"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "clap",
- "codex-app-server-client",
- "codex-app-server-protocol",
- "codex-apply-patch",
- "codex-arg0",
- "codex-cloud-config",
- "codex-config",
- "codex-core",
- "codex-feedback",
- "codex-git-utils",
- "codex-login",
- "codex-model-provider-info",
- "codex-otel",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-cli",
- "codex-utils-oss",
- "codex-utils-sandbox-summary",
- "core_test_support",
- "libc",
- "opentelemetry",
- "opentelemetry_sdk",
- "owo-colors",
- "predicates",
- "pretty_assertions",
- "serde",
- "serde_json",
- "supports-color 3.0.2",
- "tempfile",
- "tokio",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "ts-rs",
- "uuid",
- "walkdir",
- "wiremock",
-]
-
-[[package]]
-name = "codex-exec-server"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "axum",
- "base64 0.22.1",
- "bytes",
- "clatter",
- "codex-api",
- "codex-client",
- "codex-exec-server-protocol",
- "codex-file-system",
- "codex-network-proxy",
- "codex-otel",
- "codex-protocol",
- "codex-sandboxing",
- "codex-test-binary-support",
- "codex-utils-absolute-path",
- "codex-utils-path-uri",
- "codex-utils-pty",
- "codex-utils-rustls-provider",
- "ctor 0.6.3",
- "futures",
- "http 1.4.0",
- "libc",
- "opentelemetry",
- "opentelemetry_sdk",
- "pretty_assertions",
- "prost 0.14.3",
- "rcgen",
- "reqwest 0.12.28",
- "rustls",
- "serde",
- "serde_json",
- "serial_test",
- "tempfile",
- "test-case",
- "thiserror 2.0.18",
- "tokio",
- "tokio-tungstenite",
- "tokio-util",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "uuid",
- "windows-sys 0.52.0",
- "wiremock",
-]
-
-[[package]]
-name = "codex-exec-server-protocol"
-version = "0.0.0"
-dependencies = [
- "base64 0.22.1",
- "codex-file-system",
- "codex-network-proxy",
- "codex-protocol",
- "codex-shell-command",
- "codex-utils-path-uri",
- "pretty_assertions",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "codex-execpolicy"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-utils-absolute-path",
- "multimap",
- "pretty_assertions",
- "serde",
- "serde_json",
- "shlex",
- "starlark",
- "tempfile",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "codex-execpolicy-legacy"
-version = "0.0.0"
-dependencies = [
- "allocative",
- "anyhow",
- "clap",
- "derive_more 2.1.1",
- "env_logger",
- "log",
- "multimap",
- "path-absolutize",
- "regex-lite",
- "serde",
- "serde_json",
- "serde_with",
- "starlark",
- "tempfile",
-]
-
-[[package]]
-name = "codex-experimental-api-macros"
-version = "0.0.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "codex-extension-api"
-version = "0.0.0"
-dependencies = [
- "codex-config",
- "codex-context-fragments",
- "codex-protocol",
- "codex-tools",
- "codex-utils-absolute-path",
- "pretty_assertions",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "codex-external-agent-migration"
-version = "0.0.0"
-dependencies = [
- "codex-hooks",
- "pretty_assertions",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "toml 0.9.11+spec-1.1.0",
-]
-
-[[package]]
-name = "codex-external-agent-sessions"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "codex-app-server-protocol",
- "codex-protocol",
- "codex-utils-output-truncation",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
-]
-
-[[package]]
-name = "codex-features"
-version = "0.0.0"
-dependencies = [
- "codex-otel",
- "codex-protocol",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
-]
-
-[[package]]
-name = "codex-feedback"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-login",
- "codex-protocol",
- "pretty_assertions",
- "sentry",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "codex-file-search"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "crossbeam-channel",
- "ignore",
- "nucleo",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "codex-file-system"
-version = "0.0.0"
-dependencies = [
- "bytes",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-path-uri",
- "futures",
- "serde",
-]
-
-[[package]]
-name = "codex-file-watcher"
-version = "0.0.0"
-dependencies = [
- "notify",
- "pretty_assertions",
- "tempfile",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "codex-git-utils"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "codex-file-system",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-path-uri",
- "futures",
- "gix",
- "once_cell",
- "pretty_assertions",
- "regex",
- "schemars 0.8.22",
- "serde",
- "similar",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "ts-rs",
- "walkdir",
-]
-
-[[package]]
-name = "codex-goal-extension"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "codex-analytics",
- "codex-core",
- "codex-extension-api",
- "codex-otel",
- "codex-protocol",
- "codex-state",
- "codex-tools",
- "codex-utils-template",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "codex-guardian"
-version = "0.0.0"
-dependencies = [
- "codex-core",
- "codex-extension-api",
- "codex-protocol",
-]
-
-[[package]]
-name = "codex-home"
-version = "0.0.0"
-dependencies = [
- "codex-extension-api",
- "codex-utils-absolute-path",
- "pretty_assertions",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "codex-hooks"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "codex-config",
- "codex-plugin",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-output-truncation",
- "futures",
- "pretty_assertions",
- "regex",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "codex-image-generation-extension"
-version = "0.0.0"
-dependencies = [
- "base64 0.22.1",
- "codex-api",
- "codex-core",
- "codex-exec-server",
- "codex-extension-api",
- "codex-login",
- "codex-model-provider",
- "codex-model-provider-info",
- "codex-protocol",
- "codex-tools",
- "codex-utils-absolute-path",
- "codex-utils-image",
- "codex-utils-path-uri",
- "http 1.4.0",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "codex-install-context"
-version = "0.0.0"
-dependencies = [
- "codex-utils-absolute-path",
- "codex-utils-home-dir",
- "pretty_assertions",
- "tempfile",
-]
-
-[[package]]
-name = "codex-keyring-store"
-version = "0.0.0"
-dependencies = [
- "keyring",
- "tracing",
-]
-
-[[package]]
-name = "codex-linux-sandbox"
-version = "0.0.0"
-dependencies = [
- "clap",
- "codex-core",
- "codex-install-context",
- "codex-process-hardening",
- "codex-protocol",
- "codex-sandboxing",
- "codex-utils-absolute-path",
- "globset",
- "landlock",
- "libc",
- "pretty_assertions",
- "seccompiler",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "tokio",
- "url",
-]
-
-[[package]]
-name = "codex-lmstudio"
-version = "0.0.0"
-dependencies = [
- "codex-core",
- "codex-model-provider-info",
- "reqwest 0.12.28",
- "serde_json",
- "tokio",
- "tracing",
- "which 8.0.0",
- "wiremock",
-]
-
-[[package]]
-name = "codex-login"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "chrono",
- "codex-agent-identity",
- "codex-client",
- "codex-config",
- "codex-keyring-store",
- "codex-model-provider-info",
- "codex-otel",
- "codex-protocol",
- "codex-secrets",
- "codex-terminal-detection",
- "codex-utils-template",
- "core_test_support",
- "jsonwebtoken",
- "keyring",
- "once_cell",
- "os_info",
- "pretty_assertions",
- "rand 0.9.3",
- "regex-lite",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "serial_test",
- "sha2 0.10.9",
- "tempfile",
- "thiserror 2.0.18",
- "tiny_http",
- "tokio",
- "tracing",
- "url",
- "urlencoding",
- "webbrowser",
- "wiremock",
-]
-
-[[package]]
-name = "codex-mcp"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "async-channel",
- "codex-api",
- "codex-async-utils",
- "codex-config",
- "codex-connectors",
- "codex-exec-server",
- "codex-login",
- "codex-model-provider",
- "codex-otel",
- "codex-plugin",
- "codex-protocol",
- "codex-rmcp-client",
- "codex-utils-path-uri",
- "codex-utils-plugins",
- "futures",
- "pretty_assertions",
- "regex-lite",
- "rmcp",
- "serde",
- "serde_json",
- "sha1 0.10.6",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tokio-util",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "codex-mcp-extension"
-version = "0.0.0"
-dependencies = [
- "codex-config",
- "codex-connectors-extension",
- "codex-core",
- "codex-core-plugins",
- "codex-exec-server",
- "codex-extension-api",
- "codex-features",
- "codex-login",
- "codex-mcp",
- "codex-plugin",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-path-uri",
- "pretty_assertions",
- "serde_json",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "codex-mcp-server"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-arg0",
- "codex-config",
- "codex-core",
- "codex-exec-server",
- "codex-extension-api",
- "codex-home",
- "codex-login",
- "codex-protocol",
- "codex-shell-command",
- "codex-utils-absolute-path",
- "codex-utils-cli",
- "codex-utils-json-to-toml",
- "core_test_support",
- "mcp_test_support",
- "os_info",
- "pretty_assertions",
- "rmcp",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "shlex",
- "tempfile",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "wiremock",
-]
-
-[[package]]
-name = "codex-memories-extension"
-version = "0.0.0"
-dependencies = [
- "codex-core",
- "codex-extension-api",
- "codex-features",
- "codex-otel",
- "codex-tools",
- "codex-utils-absolute-path",
- "codex-utils-output-truncation",
- "codex-utils-template",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
-]
-
-[[package]]
-name = "codex-memories-read"
-version = "0.0.0"
-dependencies = [
- "codex-protocol",
- "codex-shell-command",
- "codex-utils-absolute-path",
- "pretty_assertions",
-]
-
-[[package]]
-name = "codex-memories-write"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "codex-backend-client",
- "codex-config",
- "codex-core",
- "codex-features",
- "codex-git-utils",
- "codex-login",
- "codex-model-provider",
- "codex-model-provider-info",
- "codex-models-manager",
- "codex-otel",
- "codex-protocol",
- "codex-rollout",
- "codex-rollout-trace",
- "codex-secrets",
- "codex-state",
- "codex-terminal-detection",
- "codex-utils-absolute-path",
- "codex-utils-output-truncation",
- "codex-utils-template",
- "core_test_support",
- "futures",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
- "uuid",
- "wiremock",
-]
-
-[[package]]
-name = "codex-message-history"
-version = "0.0.0"
-dependencies = [
- "codex-config",
- "memchr",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "codex-model-provider"
-version = "0.0.0"
-dependencies = [
- "codex-agent-identity",
- "codex-api",
- "codex-aws-auth",
- "codex-client",
- "codex-feedback",
- "codex-login",
- "codex-model-provider-info",
- "codex-models-manager",
- "codex-otel",
- "codex-protocol",
- "codex-response-debug-context",
- "http 1.4.0",
- "pretty_assertions",
- "serde_json",
- "tokio",
- "tracing",
- "wiremock",
-]
-
-[[package]]
-name = "codex-model-provider-info"
-version = "0.0.0"
-dependencies = [
- "codex-api",
- "codex-protocol",
- "codex-utils-absolute-path",
- "http 1.4.0",
- "maplit",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "tempfile",
- "toml 0.9.11+spec-1.1.0",
-]
-
-[[package]]
-name = "codex-models-manager"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "codex-collaboration-mode-templates",
- "codex-login",
- "codex-otel",
- "codex-protocol",
- "codex-utils-output-truncation",
- "codex-utils-template",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "codex-network-proxy"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "chrono",
- "clap",
- "codex-utils-absolute-path",
- "codex-utils-home-dir",
- "codex-utils-rustls-provider",
- "globset",
- "pretty_assertions",
- "rama-core",
- "rama-http",
- "rama-http-backend",
- "rama-net",
- "rama-socks5",
- "rama-tcp",
- "rama-tls-rustls",
- "rama-unix",
- "rand 0.9.3",
- "rustls-native-certs",
- "schannel",
- "security-framework 3.5.1",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "thiserror 2.0.18",
- "time",
- "tokio",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "codex-ollama"
-version = "0.0.0"
-dependencies = [
- "assert_matches",
- "async-stream",
- "bytes",
- "codex-core",
- "codex-model-provider-info",
- "futures",
- "memchr",
- "pretty_assertions",
- "reqwest 0.12.28",
- "semver",
- "serde_json",
- "tokio",
- "tracing",
- "wiremock",
-]
-
-[[package]]
-name = "codex-otel"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "codex-api",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-string",
- "eventsource-stream",
- "gethostname",
- "http 1.4.0",
- "opentelemetry",
- "opentelemetry-appender-tracing",
- "opentelemetry-otlp",
- "opentelemetry-semantic-conventions",
- "opentelemetry_sdk",
- "os_info",
- "pretty_assertions",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "strum_macros 0.28.0",
- "thiserror 2.0.18",
- "tokio",
- "tokio-tungstenite",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "codex-plugin"
-version = "0.0.0"
-dependencies = [
- "codex-config",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-path-uri",
- "codex-utils-plugins",
- "pretty_assertions",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "codex-process-hardening"
-version = "0.0.0"
-dependencies = [
- "libc",
- "pretty_assertions",
-]
-
-[[package]]
-name = "codex-prompts"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-context-fragments",
- "codex-execpolicy",
- "codex-git-utils",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-template",
- "pretty_assertions",
-]
-
-[[package]]
-name = "codex-protocol"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chardetng",
- "chrono",
- "codex-async-utils",
- "codex-execpolicy",
- "codex-network-proxy",
- "codex-utils-absolute-path",
- "codex-utils-image",
- "codex-utils-path-uri",
- "codex-utils-string",
- "encoding_rs",
- "globset",
- "http 1.4.0",
- "icu_decimal",
- "icu_locale_core",
- "icu_provider",
- "landlock",
- "pretty_assertions",
- "quick-xml",
- "reqwest 0.12.28",
- "schemars 0.8.22",
- "seccompiler",
- "serde",
- "serde_json",
- "serde_with",
- "strum 0.27.2",
- "strum_macros 0.28.0",
- "sys-locale",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "ts-rs",
- "uuid",
- "wildmatch",
-]
-
-[[package]]
-name = "codex-realtime-webrtc"
-version = "0.0.0"
-dependencies = [
- "libwebrtc",
- "thiserror 2.0.18",
- "tokio",
-]
-
-[[package]]
-name = "codex-response-debug-context"
-version = "0.0.0"
-dependencies = [
- "base64 0.22.1",
- "codex-api",
- "http 1.4.0",
- "pretty_assertions",
- "serde_json",
-]
-
-[[package]]
-name = "codex-responses-api-proxy"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-process-hardening",
- "ctor 0.6.3",
- "libc",
- "pretty_assertions",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "tiny_http",
- "zeroize",
-]
-
-[[package]]
-name = "codex-rmcp-client"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "axum",
- "base64 0.22.1",
- "bytes",
- "codex-api",
- "codex-config",
- "codex-exec-server",
- "codex-keyring-store",
- "codex-protocol",
- "codex-secrets",
- "codex-utils-cargo-bin",
- "codex-utils-home-dir",
- "codex-utils-path-uri",
- "codex-utils-pty",
- "futures",
- "keyring",
- "memchr",
- "oauth2",
- "pretty_assertions",
- "reqwest 0.13.4",
- "rmcp",
- "serde",
- "serde_json",
- "serial_test",
- "sha2 0.10.9",
- "sse-stream",
- "tempfile",
- "thiserror 2.0.18",
- "tiny_http",
- "tokio",
- "tracing",
- "urlencoding",
- "webbrowser",
- "which 8.0.0",
- "wiremock",
-]
-
-[[package]]
-name = "codex-rollout"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "codex-file-search",
- "codex-git-utils",
- "codex-otel",
- "codex-protocol",
- "codex-state",
- "codex-utils-path",
- "pretty_assertions",
- "regex",
- "serde",
- "serde_json",
- "tempfile",
- "time",
- "tokio",
- "tracing",
- "uuid",
- "zstd 0.13.3",
-]
-
-[[package]]
-name = "codex-rollout-trace"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-code-mode",
- "codex-protocol",
- "http 1.4.0",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "codex-sandboxing"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-network-proxy",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-home-dir",
- "codex-utils-path-uri",
- "codex-windows-sandbox",
- "dunce",
- "libc",
- "pretty_assertions",
- "regex-lite",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
- "url",
- "which 8.0.0",
-]
-
-[[package]]
-name = "codex-secrets"
-version = "0.0.0"
-dependencies = [
- "age",
- "anyhow",
- "base64 0.22.1",
- "codex-git-utils",
- "codex-keyring-store",
- "keyring",
- "pretty_assertions",
- "rand 0.9.3",
- "regex",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "tracing",
-]
-
-[[package]]
-name = "codex-shell-command"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "codex-protocol",
- "codex-utils-absolute-path",
- "libc",
- "once_cell",
- "pretty_assertions",
- "regex",
- "serde",
- "serde_json",
- "shlex",
- "tree-sitter",
- "tree-sitter-bash",
- "url",
- "which 8.0.0",
-]
-
-[[package]]
-name = "codex-shell-escalation"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-protocol",
- "codex-utils-absolute-path",
- "libc",
- "pretty_assertions",
- "serde",
- "serde_json",
- "socket2 0.6.3",
- "tempfile",
- "tokio",
- "tokio-util",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "codex-skills"
-version = "0.0.0"
-dependencies = [
- "codex-utils-absolute-path",
- "include_dir",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "codex-skills-extension"
-version = "0.0.0"
-dependencies = [
- "codex-core-skills",
- "codex-exec-server",
- "codex-extension-api",
- "codex-mcp",
- "codex-protocol",
- "codex-tools",
- "codex-utils-absolute-path",
- "codex-utils-path-uri",
- "codex-utils-string",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "codex-state"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "codex-git-utils",
- "codex-protocol",
- "dirs",
- "libsqlite3-sys",
- "log",
- "owo-colors",
- "pretty_assertions",
- "serde",
- "serde_json",
- "sqlx",
- "strum 0.27.2",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
-name = "codex-stdio-to-uds"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-uds",
- "codex-utils-cargo-bin",
- "pretty_assertions",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "codex-terminal-detection"
-version = "0.0.0"
-dependencies = [
- "pretty_assertions",
- "tracing",
-]
-
-[[package]]
-name = "codex-test-binary-support"
-version = "0.0.0"
-dependencies = [
- "codex-arg0",
- "tempfile",
-]
-
-[[package]]
-name = "codex-thread-manager-sample"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-core-api",
- "serde_json",
- "tracing",
-]
-
-[[package]]
-name = "codex-thread-store"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "codex-git-utils",
- "codex-install-context",
- "codex-otel",
- "codex-protocol",
- "codex-rollout",
- "codex-state",
- "codex-utils-path",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "codex-tools"
-version = "0.0.0"
-dependencies = [
- "codex-code-mode",
- "codex-connectors",
- "codex-features",
- "codex-file-system",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-output-truncation",
- "codex-utils-pty",
- "codex-utils-string",
- "jsonptr",
- "pretty_assertions",
- "rmcp",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tracing",
- "urlencoding",
-]
-
-[[package]]
-name = "codex-tui"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "app_test_support",
- "arboard",
- "assert_matches",
- "base64 0.22.1",
- "chrono",
- "clap",
- "codex-ansi-escape",
- "codex-app-server-client",
- "codex-app-server-protocol",
- "codex-arg0",
- "codex-cli",
- "codex-cloud-config",
- "codex-config",
- "codex-connectors",
- "codex-core-plugins",
- "codex-core-skills",
- "codex-exec-server",
- "codex-features",
- "codex-feedback",
- "codex-file-search",
- "codex-git-utils",
- "codex-install-context",
- "codex-login",
- "codex-mcp",
- "codex-message-history",
- "codex-model-provider",
- "codex-model-provider-info",
- "codex-models-manager",
- "codex-otel",
- "codex-plugin",
- "codex-protocol",
- "codex-rollout",
- "codex-sandboxing",
- "codex-shell-command",
- "codex-state",
- "codex-terminal-detection",
- "codex-utils-absolute-path",
- "codex-utils-approval-presets",
- "codex-utils-cargo-bin",
- "codex-utils-cli",
- "codex-utils-elapsed",
- "codex-utils-fuzzy-match",
- "codex-utils-home-dir",
- "codex-utils-oss",
- "codex-utils-path",
- "codex-utils-path-uri",
- "codex-utils-plugins",
- "codex-utils-sandbox-summary",
- "codex-utils-sleep-inhibitor",
- "codex-utils-string",
- "codex-windows-sandbox",
- "color-eyre",
- "core_test_support",
- "crossterm",
- "derive_more 2.1.1",
- "diffy",
- "dirs",
- "dunce",
- "image",
- "insta",
- "itertools 0.14.0",
- "lazy_static",
- "libc",
- "pathdiff",
- "pretty_assertions",
- "pulldown-cmark",
- "rand 0.9.3",
- "ratatui",
- "ratatui-macros",
- "regex-lite",
- "reqwest 0.12.28",
- "rmcp",
- "serde",
- "serde_json",
- "serial_test",
- "sha2 0.10.9",
- "shlex",
- "strum 0.27.2",
- "strum_macros 0.28.0",
- "supports-color 3.0.2",
- "syntect",
- "tempfile",
- "textwrap 0.16.2",
- "thiserror 2.0.18",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "two-face",
- "unicode-segmentation",
- "unicode-width 0.2.1",
- "url",
- "urlencoding",
- "uuid",
- "vt100",
- "webbrowser",
- "which 8.0.0",
- "windows-sys 0.52.0",
- "winsplit",
- "wiremock",
-]
-
-[[package]]
-name = "codex-uds"
-version = "0.0.0"
-dependencies = [
- "async-io",
- "pretty_assertions",
- "tempfile",
- "tokio",
- "tokio-util",
- "uds_windows",
-]
-
-[[package]]
-name = "codex-utils-absolute-path"
-version = "0.0.0"
-dependencies = [
- "dirs",
- "dunce",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "tempfile",
- "ts-rs",
-]
-
-[[package]]
-name = "codex-utils-approval-presets"
-version = "0.0.0"
-dependencies = [
- "codex-protocol",
-]
-
-[[package]]
-name = "codex-utils-cache"
-version = "0.0.0"
-dependencies = [
- "lru 0.16.3",
- "sha1 0.10.6",
- "tokio",
-]
-
-[[package]]
-name = "codex-utils-cargo-bin"
-version = "0.0.0"
-dependencies = [
- "assert_cmd",
- "runfiles",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "codex-utils-cli"
-version = "0.0.0"
-dependencies = [
- "clap",
- "codex-protocol",
- "codex-shell-command",
- "pretty_assertions",
- "serde",
- "toml 0.9.11+spec-1.1.0",
-]
-
-[[package]]
-name = "codex-utils-elapsed"
-version = "0.0.0"
-
-[[package]]
-name = "codex-utils-fuzzy-match"
-version = "0.0.0"
-
-[[package]]
-name = "codex-utils-home-dir"
-version = "0.0.0"
-dependencies = [
- "codex-utils-absolute-path",
- "dirs",
- "pretty_assertions",
- "tempfile",
-]
-
-[[package]]
-name = "codex-utils-image"
-version = "0.0.0"
-dependencies = [
- "base64 0.22.1",
- "codex-utils-cache",
- "divan",
- "image",
- "mime_guess",
- "thiserror 2.0.18",
- "tokio",
-]
-
-[[package]]
-name = "codex-utils-json-to-toml"
-version = "0.0.0"
-dependencies = [
- "pretty_assertions",
- "serde_json",
- "toml 0.9.11+spec-1.1.0",
-]
-
-[[package]]
-name = "codex-utils-oss"
-version = "0.0.0"
-dependencies = [
- "codex-core",
- "codex-lmstudio",
- "codex-model-provider-info",
- "codex-ollama",
-]
-
-[[package]]
-name = "codex-utils-output-truncation"
-version = "0.0.0"
-dependencies = [
- "codex-protocol",
- "codex-utils-string",
- "pretty_assertions",
-]
-
-[[package]]
-name = "codex-utils-path"
-version = "0.0.0"
-dependencies = [
- "codex-utils-absolute-path",
- "dunce",
- "pretty_assertions",
- "tempfile",
-]
-
-[[package]]
-name = "codex-utils-path-uri"
-version = "0.0.0"
-dependencies = [
- "base64 0.22.1",
- "codex-utils-absolute-path",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "ts-rs",
- "url",
- "urlencoding",
-]
-
-[[package]]
-name = "codex-utils-plugins"
-version = "0.0.0"
-dependencies = [
- "codex-exec-server",
- "codex-utils-absolute-path",
- "codex-utils-path-uri",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "codex-utils-pty"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "filedescriptor",
- "lazy_static",
- "libc",
- "log",
- "portable-pty",
- "pretty_assertions",
- "shared_library",
- "tokio",
- "winapi",
-]
-
-[[package]]
-name = "codex-utils-readiness"
-version = "0.0.0"
-dependencies = [
- "assert_matches",
- "thiserror 2.0.18",
- "time",
- "tokio",
-]
-
-[[package]]
-name = "codex-utils-rustls-provider"
-version = "0.0.0"
-dependencies = [
- "rustls",
-]
-
-[[package]]
-name = "codex-utils-sandbox-summary"
-version = "0.0.0"
-dependencies = [
- "codex-core",
- "codex-model-provider-info",
- "codex-protocol",
- "codex-utils-absolute-path",
- "pretty_assertions",
-]
-
-[[package]]
-name = "codex-utils-sleep-inhibitor"
-version = "0.0.0"
-dependencies = [
- "core-foundation 0.9.4",
- "libc",
- "tracing",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "codex-utils-stream-parser"
-version = "0.0.0"
-dependencies = [
- "pretty_assertions",
-]
-
-[[package]]
-name = "codex-utils-string"
-version = "0.0.0"
-dependencies = [
- "pretty_assertions",
- "regex-lite",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "codex-utils-template"
-version = "0.0.0"
-dependencies = [
- "pretty_assertions",
-]
-
-[[package]]
-name = "codex-v8-poc"
-version = "0.0.0"
-dependencies = [
- "pretty_assertions",
- "v8",
-]
-
-[[package]]
-name = "codex-web-search-extension"
-version = "0.0.0"
-dependencies = [
- "codex-api",
- "codex-core",
- "codex-extension-api",
- "codex-login",
- "codex-model-provider",
- "codex-model-provider-info",
- "codex-protocol",
- "codex-tools",
- "http 1.4.0",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde_json",
- "url",
-]
-
-[[package]]
-name = "codex-windows-sandbox"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "chrono",
- "codex-otel",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-pty",
- "codex-utils-string",
- "dirs-next",
- "dunce",
- "glob",
- "pretty_assertions",
- "rand 0.8.6",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing-appender",
- "windows 0.58.0",
- "windows-sys 0.52.0",
-]
-
-[[package]]
 name = "color-eyre"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4715,23 +2100,23 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "base64 0.22.1",
- "codex-arg0",
- "codex-config",
- "codex-core",
- "codex-exec-server",
- "codex-extension-api",
- "codex-features",
- "codex-home",
- "codex-hooks",
- "codex-login",
- "codex-model-provider-info",
- "codex-models-manager",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-path-uri",
  "ctor 0.6.3",
  "futures",
+ "motyga-arg0",
+ "motyga-config",
+ "motyga-core",
+ "motyga-exec-server",
+ "motyga-extension-api",
+ "motyga-features",
+ "motyga-home",
+ "motyga-hooks",
+ "motyga-login",
+ "motyga-model-provider-info",
+ "motyga-models-manager",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-path-uri",
  "notify",
  "opentelemetry",
  "opentelemetry_sdk",
@@ -9099,11 +6484,11 @@ name = "mcp_test_support"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "codex-login",
- "codex-mcp-server",
- "codex-terminal-detection",
- "codex-utils-cargo-bin",
  "core_test_support",
+ "motyga-login",
+ "motyga-mcp-server",
+ "motyga-terminal-detection",
+ "motyga-utils-cargo-bin",
  "os_info",
  "pretty_assertions",
  "rmcp",
@@ -9229,6 +6614,2146 @@ dependencies = [
 ]
 
 [[package]]
+name = "motyga-agent-graph-store"
+version = "0.0.0"
+dependencies = [
+ "motyga-protocol",
+ "motyga-state",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-agent-identity"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "chrono",
+ "crypto_box",
+ "ed25519-dalek",
+ "jsonwebtoken",
+ "motyga-protocol",
+ "pretty_assertions",
+ "rand 0.9.3",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "motyga-analytics"
+version = "0.0.0"
+dependencies = [
+ "motyga-app-server-protocol",
+ "motyga-git-utils",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-plugin",
+ "motyga-protocol",
+ "motyga-state",
+ "motyga-utils-absolute-path",
+ "os_info",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "sha1 0.10.6",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-ansi-escape"
+version = "0.0.0"
+dependencies = [
+ "ansi-to-tui",
+ "ratatui",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-api"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "assert_matches",
+ "async-channel",
+ "base64 0.22.1",
+ "bytes",
+ "chrono",
+ "eventsource-stream",
+ "futures",
+ "http 1.4.0",
+ "motyga-client",
+ "motyga-protocol",
+ "motyga-utils-rustls-provider",
+ "pretty_assertions",
+ "regex-lite",
+ "reqwest 0.12.28",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-test",
+ "tokio-tungstenite",
+ "tokio-util",
+ "tracing",
+ "tungstenite",
+ "url",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-app-server"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "app_test_support",
+ "axum",
+ "base64 0.22.1",
+ "chrono",
+ "clap",
+ "core_test_support",
+ "flate2",
+ "futures",
+ "hmac 0.12.1",
+ "motyga-analytics",
+ "motyga-app-server-protocol",
+ "motyga-app-server-transport",
+ "motyga-arg0",
+ "motyga-backend-client",
+ "motyga-chatgpt",
+ "motyga-cloud-config",
+ "motyga-config",
+ "motyga-connectors",
+ "motyga-core",
+ "motyga-core-plugins",
+ "motyga-exec-server",
+ "motyga-extension-api",
+ "motyga-external-agent-migration",
+ "motyga-external-agent-sessions",
+ "motyga-features",
+ "motyga-feedback",
+ "motyga-file-search",
+ "motyga-file-watcher",
+ "motyga-git-utils",
+ "motyga-goal-extension",
+ "motyga-guardian",
+ "motyga-home",
+ "motyga-hooks",
+ "motyga-image-generation-extension",
+ "motyga-login",
+ "motyga-mcp",
+ "motyga-mcp-extension",
+ "motyga-memories-extension",
+ "motyga-memories-write",
+ "motyga-model-provider",
+ "motyga-model-provider-info",
+ "motyga-models-manager",
+ "motyga-otel",
+ "motyga-plugin",
+ "motyga-protocol",
+ "motyga-rmcp-client",
+ "motyga-rollout",
+ "motyga-sandboxing",
+ "motyga-shell-command",
+ "motyga-skills-extension",
+ "motyga-state",
+ "motyga-thread-store",
+ "motyga-tools",
+ "motyga-utils-absolute-path",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-cli",
+ "motyga-utils-json-to-toml",
+ "motyga-utils-path-uri",
+ "motyga-utils-pty",
+ "motyga-web-search-extension",
+ "motyga-windows-sandbox",
+ "opentelemetry",
+ "opentelemetry_sdk",
+ "pretty_assertions",
+ "reqwest 0.12.28",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "sha2 0.10.9",
+ "shlex",
+ "tar",
+ "tempfile",
+ "thiserror 2.0.18",
+ "time",
+ "tokio",
+ "tokio-tungstenite",
+ "tokio-util",
+ "toml 0.9.11+spec-1.1.0",
+ "toml_edit 0.24.0+spec-1.1.0",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-app-server-client"
+version = "0.0.0"
+dependencies = [
+ "futures",
+ "motyga-app-server",
+ "motyga-app-server-protocol",
+ "motyga-arg0",
+ "motyga-config",
+ "motyga-core",
+ "motyga-exec-server",
+ "motyga-feedback",
+ "motyga-protocol",
+ "motyga-uds",
+ "motyga-utils-absolute-path",
+ "motyga-utils-rustls-provider",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-tungstenite",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "motyga-app-server-daemon"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "futures",
+ "libc",
+ "motyga-app-server-protocol",
+ "motyga-app-server-transport",
+ "motyga-uds",
+ "motyga-utils-home-dir",
+ "pretty_assertions",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "tokio",
+ "tokio-tungstenite",
+]
+
+[[package]]
+name = "motyga-app-server-protocol"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "inventory",
+ "motyga-experimental-api-macros",
+ "motyga-protocol",
+ "motyga-shell-command",
+ "motyga-utils-absolute-path",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-path-uri",
+ "pretty_assertions",
+ "rmcp",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "similar",
+ "strum_macros 0.28.0",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tracing",
+ "ts-rs",
+ "uuid",
+]
+
+[[package]]
+name = "motyga-app-server-test-client"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "motyga-app-server-protocol",
+ "motyga-core",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-utils-cli",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "tungstenite",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "motyga-app-server-transport"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "chrono",
+ "clap",
+ "constant_time_eq 0.3.1",
+ "futures",
+ "gethostname",
+ "hmac 0.12.1",
+ "httpdate",
+ "jsonwebtoken",
+ "motyga-api",
+ "motyga-app-server-protocol",
+ "motyga-config",
+ "motyga-core",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-protocol",
+ "motyga-state",
+ "motyga-uds",
+ "motyga-utils-absolute-path",
+ "motyga-utils-rustls-provider",
+ "owo-colors",
+ "pretty_assertions",
+ "rand 0.9.3",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "time",
+ "tokio",
+ "tokio-tungstenite",
+ "tokio-util",
+ "tracing",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "motyga-apply-patch"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "assert_matches",
+ "motyga-exec-server",
+ "motyga-utils-absolute-path",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-path-uri",
+ "pretty_assertions",
+ "similar",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tree-sitter",
+ "tree-sitter-bash",
+]
+
+[[package]]
+name = "motyga-arg0"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "dotenvy",
+ "motyga-apply-patch",
+ "motyga-exec-server",
+ "motyga-install-context",
+ "motyga-linux-sandbox",
+ "motyga-sandboxing",
+ "motyga-shell-escalation",
+ "motyga-utils-absolute-path",
+ "motyga-utils-home-dir",
+ "motyga-windows-sandbox",
+ "pretty_assertions",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-async-utils"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "motyga-aws-auth"
+version = "0.0.0"
+dependencies = [
+ "aws-config",
+ "aws-credential-types",
+ "aws-sigv4",
+ "aws-types",
+ "bytes",
+ "http 1.4.0",
+ "pretty_assertions",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-backend-client"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "motyga-api",
+ "motyga-backend-openapi-models",
+ "motyga-client",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-protocol",
+ "pretty_assertions",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "motyga-backend-openapi-models"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "serde_with",
+]
+
+[[package]]
+name = "motyga-bwrap"
+version = "0.0.0"
+dependencies = [
+ "cc",
+ "libc",
+ "pkg-config",
+]
+
+[[package]]
+name = "motyga-chatgpt"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "motyga-connectors",
+ "motyga-core",
+ "motyga-git-utils",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-plugin",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-cli",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-cli"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "app_test_support",
+ "assert_cmd",
+ "assert_matches",
+ "clap",
+ "clap_complete",
+ "crossterm",
+ "http 1.4.0",
+ "insta",
+ "libc",
+ "motyga-api",
+ "motyga-app-server",
+ "motyga-app-server-daemon",
+ "motyga-app-server-protocol",
+ "motyga-app-server-test-client",
+ "motyga-arg0",
+ "motyga-chatgpt",
+ "motyga-cloud-tasks",
+ "motyga-config",
+ "motyga-core",
+ "motyga-core-plugins",
+ "motyga-exec",
+ "motyga-exec-server",
+ "motyga-execpolicy",
+ "motyga-features",
+ "motyga-git-utils",
+ "motyga-home",
+ "motyga-install-context",
+ "motyga-login",
+ "motyga-mcp",
+ "motyga-mcp-server",
+ "motyga-memories-write",
+ "motyga-model-provider",
+ "motyga-models-manager",
+ "motyga-plugin",
+ "motyga-protocol",
+ "motyga-responses-api-proxy",
+ "motyga-rmcp-client",
+ "motyga-rollout",
+ "motyga-rollout-trace",
+ "motyga-sandboxing",
+ "motyga-state",
+ "motyga-stdio-to-uds",
+ "motyga-supply",
+ "motyga-terminal-detection",
+ "motyga-tui",
+ "motyga-utils-absolute-path",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-cli",
+ "motyga-utils-path",
+ "motyga-windows-sandbox",
+ "os_info",
+ "owo-colors",
+ "predicates",
+ "pretty_assertions",
+ "regex-lite",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "supports-color 3.0.2",
+ "sys-locale",
+ "tempfile",
+ "tokio",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "unicode-segmentation",
+ "url",
+ "which 8.0.0",
+ "windows-sys 0.52.0",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-client"
+version = "0.0.0"
+dependencies = [
+ "bytes",
+ "eventsource-stream",
+ "futures",
+ "http 1.4.0",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-rustls-provider",
+ "opentelemetry",
+ "opentelemetry_sdk",
+ "pretty_assertions",
+ "rand 0.9.3",
+ "rcgen",
+ "reqwest 0.12.28",
+ "rustls",
+ "rustls-native-certs",
+ "rustls-pki-types",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "system-configuration",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "windows-sys 0.52.0",
+ "zstd 0.13.3",
+]
+
+[[package]]
+name = "motyga-cloud-config"
+version = "0.0.0"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "hmac 0.12.1",
+ "motyga-agent-identity",
+ "motyga-backend-client",
+ "motyga-config",
+ "motyga-core",
+ "motyga-login",
+ "motyga-otel",
+ "motyga-protocol",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-cloud-tasks"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "crossterm",
+ "motyga-client",
+ "motyga-cloud-tasks-client",
+ "motyga-cloud-tasks-mock-client",
+ "motyga-core",
+ "motyga-git-utils",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-tui",
+ "motyga-utils-cli",
+ "owo-colors",
+ "pretty_assertions",
+ "ratatui",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "supports-color 3.0.2",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "tracing-subscriber",
+ "unicode-width 0.2.1",
+]
+
+[[package]]
+name = "motyga-cloud-tasks-client"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "motyga-api",
+ "motyga-backend-client",
+ "motyga-git-utils",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "motyga-cloud-tasks-mock-client"
+version = "0.0.0"
+dependencies = [
+ "chrono",
+ "diffy",
+ "motyga-cloud-tasks-client",
+]
+
+[[package]]
+name = "motyga-code-mode"
+version = "0.0.0"
+dependencies = [
+ "deno_core_icudata",
+ "futures",
+ "motyga-code-mode-protocol",
+ "motyga-protocol",
+ "pretty_assertions",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "v8",
+]
+
+[[package]]
+name = "motyga-code-mode-host"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "motyga-code-mode",
+ "motyga-code-mode-protocol",
+ "motyga-protocol",
+ "motyga-utils-cargo-bin",
+ "pretty_assertions",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "motyga-code-mode-protocol"
+version = "0.0.0"
+dependencies = [
+ "motyga-protocol",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "motyga-collaboration-mode-templates"
+version = "0.0.0"
+
+[[package]]
+name = "motyga-config"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "core-foundation 0.9.4",
+ "dns-lookup",
+ "dunce",
+ "futures",
+ "gethostname",
+ "indexmap 2.14.0",
+ "libc",
+ "motyga-execpolicy",
+ "motyga-features",
+ "motyga-file-system",
+ "motyga-git-utils",
+ "motyga-model-provider-info",
+ "motyga-network-proxy",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-path",
+ "motyga-utils-path-uri",
+ "multimap",
+ "pretty_assertions",
+ "prost 0.14.3",
+ "regex-lite",
+ "schemars 0.8.22",
+ "serde",
+ "serde_ignored",
+ "serde_json",
+ "serde_path_to_error",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "toml 0.9.11+spec-1.1.0",
+ "toml_edit 0.24.0+spec-1.1.0",
+ "tonic",
+ "tonic-prost",
+ "tonic-prost-build",
+ "tracing",
+ "wildmatch",
+ "winapi-util",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "motyga-connectors"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "indexmap 2.14.0",
+ "motyga-config",
+ "motyga-plugin",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "sha1 0.10.6",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "urlencoding",
+]
+
+[[package]]
+name = "motyga-connectors-extension"
+version = "0.0.0"
+dependencies = [
+ "motyga-connectors",
+ "motyga-core-plugins",
+ "motyga-plugin",
+ "motyga-utils-path-uri",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "motyga-context-fragments"
+version = "0.0.0"
+dependencies = [
+ "motyga-protocol",
+ "motyga-utils-string",
+]
+
+[[package]]
+name = "motyga-core"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "assert_cmd",
+ "assert_matches",
+ "async-channel",
+ "base64 0.22.1",
+ "bm25",
+ "chrono",
+ "clap",
+ "core_test_support",
+ "csv",
+ "ctor 0.6.3",
+ "dirs",
+ "dunce",
+ "eventsource-stream",
+ "futures",
+ "http 1.4.0",
+ "iana-time-zone",
+ "image",
+ "indexmap 2.14.0",
+ "insta",
+ "libc",
+ "maplit",
+ "motyga-agent-graph-store",
+ "motyga-analytics",
+ "motyga-api",
+ "motyga-app-server-protocol",
+ "motyga-apply-patch",
+ "motyga-async-utils",
+ "motyga-code-mode",
+ "motyga-config",
+ "motyga-connectors",
+ "motyga-context-fragments",
+ "motyga-core-plugins",
+ "motyga-core-skills",
+ "motyga-exec-server",
+ "motyga-execpolicy",
+ "motyga-extension-api",
+ "motyga-features",
+ "motyga-feedback",
+ "motyga-file-system",
+ "motyga-git-utils",
+ "motyga-home",
+ "motyga-hooks",
+ "motyga-image-generation-extension",
+ "motyga-install-context",
+ "motyga-login",
+ "motyga-mcp",
+ "motyga-memories-read",
+ "motyga-model-provider",
+ "motyga-model-provider-info",
+ "motyga-models-manager",
+ "motyga-network-proxy",
+ "motyga-otel",
+ "motyga-plugin",
+ "motyga-prompts",
+ "motyga-protocol",
+ "motyga-response-debug-context",
+ "motyga-rmcp-client",
+ "motyga-rollout",
+ "motyga-rollout-trace",
+ "motyga-sandboxing",
+ "motyga-shell-command",
+ "motyga-shell-escalation",
+ "motyga-state",
+ "motyga-terminal-detection",
+ "motyga-test-binary-support",
+ "motyga-thread-store",
+ "motyga-tools",
+ "motyga-utils-absolute-path",
+ "motyga-utils-cache",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-home-dir",
+ "motyga-utils-image",
+ "motyga-utils-output-truncation",
+ "motyga-utils-path",
+ "motyga-utils-path-uri",
+ "motyga-utils-plugins",
+ "motyga-utils-pty",
+ "motyga-utils-stream-parser",
+ "motyga-utils-string",
+ "motyga-web-search-extension",
+ "motyga-windows-sandbox",
+ "once_cell",
+ "openssl-sys",
+ "opentelemetry",
+ "opentelemetry_sdk",
+ "predicates",
+ "pretty_assertions",
+ "rand 0.9.3",
+ "regex-lite",
+ "reqwest 0.12.28",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "sha1 0.10.6",
+ "shlex",
+ "similar",
+ "tempfile",
+ "test-case",
+ "test-log",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-tungstenite",
+ "tokio-util",
+ "toml 0.9.11+spec-1.1.0",
+ "toml_edit 0.24.0+spec-1.1.0",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "tracing-test",
+ "url",
+ "uuid",
+ "walkdir",
+ "which 8.0.0",
+ "whoami 1.6.1",
+ "wiremock",
+ "zstd 0.13.3",
+]
+
+[[package]]
+name = "motyga-core-api"
+version = "0.0.0"
+dependencies = [
+ "motyga-analytics",
+ "motyga-app-server-protocol",
+ "motyga-arg0",
+ "motyga-config",
+ "motyga-core",
+ "motyga-exec-server",
+ "motyga-extension-api",
+ "motyga-features",
+ "motyga-home",
+ "motyga-login",
+ "motyga-model-provider-info",
+ "motyga-models-manager",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+]
+
+[[package]]
+name = "motyga-core-plugins"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dirs",
+ "flate2",
+ "libc",
+ "motyga-analytics",
+ "motyga-app-server-protocol",
+ "motyga-config",
+ "motyga-connectors",
+ "motyga-core-skills",
+ "motyga-exec-server",
+ "motyga-git-utils",
+ "motyga-hooks",
+ "motyga-login",
+ "motyga-mcp",
+ "motyga-model-provider",
+ "motyga-otel",
+ "motyga-plugin",
+ "motyga-protocol",
+ "motyga-tools",
+ "motyga-utils-absolute-path",
+ "motyga-utils-path",
+ "motyga-utils-path-uri",
+ "motyga-utils-plugins",
+ "pretty_assertions",
+ "regex",
+ "reqwest 0.12.28",
+ "semver",
+ "serde",
+ "serde_json",
+ "tar",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-test",
+ "url",
+ "wiremock",
+ "zip 2.4.2",
+]
+
+[[package]]
+name = "motyga-core-skills"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "dirs",
+ "dunce",
+ "futures",
+ "motyga-analytics",
+ "motyga-config",
+ "motyga-context-fragments",
+ "motyga-exec-server",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-shell-command",
+ "motyga-skills",
+ "motyga-utils-absolute-path",
+ "motyga-utils-output-truncation",
+ "motyga-utils-path-uri",
+ "motyga-utils-plugins",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "shlex",
+ "tempfile",
+ "tokio",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+ "zip 2.4.2",
+]
+
+[[package]]
+name = "motyga-exec"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "clap",
+ "core_test_support",
+ "libc",
+ "motyga-app-server-client",
+ "motyga-app-server-protocol",
+ "motyga-apply-patch",
+ "motyga-arg0",
+ "motyga-cloud-config",
+ "motyga-config",
+ "motyga-core",
+ "motyga-feedback",
+ "motyga-git-utils",
+ "motyga-login",
+ "motyga-model-provider-info",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-cli",
+ "motyga-utils-oss",
+ "motyga-utils-sandbox-summary",
+ "opentelemetry",
+ "opentelemetry_sdk",
+ "owo-colors",
+ "predicates",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "supports-color 3.0.2",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "ts-rs",
+ "uuid",
+ "walkdir",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-exec-server"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "axum",
+ "base64 0.22.1",
+ "bytes",
+ "clatter",
+ "ctor 0.6.3",
+ "futures",
+ "http 1.4.0",
+ "libc",
+ "motyga-api",
+ "motyga-client",
+ "motyga-exec-server-protocol",
+ "motyga-file-system",
+ "motyga-network-proxy",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-sandboxing",
+ "motyga-test-binary-support",
+ "motyga-utils-absolute-path",
+ "motyga-utils-path-uri",
+ "motyga-utils-pty",
+ "motyga-utils-rustls-provider",
+ "opentelemetry",
+ "opentelemetry_sdk",
+ "pretty_assertions",
+ "prost 0.14.3",
+ "rcgen",
+ "reqwest 0.12.28",
+ "rustls",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "tempfile",
+ "test-case",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-tungstenite",
+ "tokio-util",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "uuid",
+ "windows-sys 0.52.0",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-exec-server-protocol"
+version = "0.0.0"
+dependencies = [
+ "base64 0.22.1",
+ "motyga-file-system",
+ "motyga-network-proxy",
+ "motyga-protocol",
+ "motyga-shell-command",
+ "motyga-utils-path-uri",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "motyga-execpolicy"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "motyga-utils-absolute-path",
+ "multimap",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "shlex",
+ "starlark",
+ "tempfile",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "motyga-execpolicy-legacy"
+version = "0.0.0"
+dependencies = [
+ "allocative",
+ "anyhow",
+ "clap",
+ "derive_more 2.1.1",
+ "env_logger",
+ "log",
+ "multimap",
+ "path-absolutize",
+ "regex-lite",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "starlark",
+ "tempfile",
+]
+
+[[package]]
+name = "motyga-experimental-api-macros"
+version = "0.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "motyga-extension-api"
+version = "0.0.0"
+dependencies = [
+ "motyga-config",
+ "motyga-context-fragments",
+ "motyga-protocol",
+ "motyga-tools",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-external-agent-migration"
+version = "0.0.0"
+dependencies = [
+ "motyga-hooks",
+ "pretty_assertions",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "toml 0.9.11+spec-1.1.0",
+]
+
+[[package]]
+name = "motyga-external-agent-sessions"
+version = "0.0.0"
+dependencies = [
+ "chrono",
+ "motyga-app-server-protocol",
+ "motyga-protocol",
+ "motyga-utils-output-truncation",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+]
+
+[[package]]
+name = "motyga-features"
+version = "0.0.0"
+dependencies = [
+ "motyga-otel",
+ "motyga-protocol",
+ "pretty_assertions",
+ "schemars 0.8.22",
+ "serde",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-feedback"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "motyga-login",
+ "motyga-protocol",
+ "pretty_assertions",
+ "sentry",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "motyga-file-search"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "crossbeam-channel",
+ "ignore",
+ "nucleo",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-file-system"
+version = "0.0.0"
+dependencies = [
+ "bytes",
+ "futures",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-path-uri",
+ "serde",
+]
+
+[[package]]
+name = "motyga-file-watcher"
+version = "0.0.0"
+dependencies = [
+ "notify",
+ "pretty_assertions",
+ "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-git-utils"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "futures",
+ "gix",
+ "motyga-file-system",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-path-uri",
+ "once_cell",
+ "pretty_assertions",
+ "regex",
+ "schemars 0.8.22",
+ "serde",
+ "similar",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "ts-rs",
+ "walkdir",
+]
+
+[[package]]
+name = "motyga-goal-extension"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "motyga-analytics",
+ "motyga-core",
+ "motyga-extension-api",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-state",
+ "motyga-tools",
+ "motyga-utils-template",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-guardian"
+version = "0.0.0"
+dependencies = [
+ "motyga-core",
+ "motyga-extension-api",
+ "motyga-protocol",
+]
+
+[[package]]
+name = "motyga-home"
+version = "0.0.0"
+dependencies = [
+ "motyga-extension-api",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-hooks"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "futures",
+ "motyga-config",
+ "motyga-plugin",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-output-truncation",
+ "pretty_assertions",
+ "regex",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "motyga-image-generation-extension"
+version = "0.0.0"
+dependencies = [
+ "base64 0.22.1",
+ "http 1.4.0",
+ "motyga-api",
+ "motyga-core",
+ "motyga-exec-server",
+ "motyga-extension-api",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-model-provider-info",
+ "motyga-protocol",
+ "motyga-tools",
+ "motyga-utils-absolute-path",
+ "motyga-utils-image",
+ "motyga-utils-path-uri",
+ "pretty_assertions",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-install-context"
+version = "0.0.0"
+dependencies = [
+ "motyga-utils-absolute-path",
+ "motyga-utils-home-dir",
+ "pretty_assertions",
+ "tempfile",
+]
+
+[[package]]
+name = "motyga-keyring-store"
+version = "0.0.0"
+dependencies = [
+ "keyring",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-linux-sandbox"
+version = "0.0.0"
+dependencies = [
+ "clap",
+ "globset",
+ "landlock",
+ "libc",
+ "motyga-core",
+ "motyga-install-context",
+ "motyga-process-hardening",
+ "motyga-protocol",
+ "motyga-sandboxing",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+ "seccompiler",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "motyga-lmstudio"
+version = "0.0.0"
+dependencies = [
+ "motyga-core",
+ "motyga-model-provider-info",
+ "reqwest 0.12.28",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "which 8.0.0",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-login"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "chrono",
+ "core_test_support",
+ "jsonwebtoken",
+ "keyring",
+ "motyga-agent-identity",
+ "motyga-client",
+ "motyga-config",
+ "motyga-keyring-store",
+ "motyga-model-provider-info",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-secrets",
+ "motyga-terminal-detection",
+ "motyga-utils-template",
+ "once_cell",
+ "os_info",
+ "pretty_assertions",
+ "rand 0.9.3",
+ "regex-lite",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tiny_http",
+ "tokio",
+ "tracing",
+ "url",
+ "urlencoding",
+ "webbrowser",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-mcp"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "async-channel",
+ "futures",
+ "motyga-api",
+ "motyga-async-utils",
+ "motyga-config",
+ "motyga-connectors",
+ "motyga-exec-server",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-otel",
+ "motyga-plugin",
+ "motyga-protocol",
+ "motyga-rmcp-client",
+ "motyga-utils-path-uri",
+ "motyga-utils-plugins",
+ "pretty_assertions",
+ "regex-lite",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "sha1 0.10.6",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "motyga-mcp-extension"
+version = "0.0.0"
+dependencies = [
+ "motyga-config",
+ "motyga-connectors-extension",
+ "motyga-core",
+ "motyga-core-plugins",
+ "motyga-exec-server",
+ "motyga-extension-api",
+ "motyga-features",
+ "motyga-login",
+ "motyga-mcp",
+ "motyga-plugin",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-path-uri",
+ "pretty_assertions",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-mcp-server"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "core_test_support",
+ "mcp_test_support",
+ "motyga-arg0",
+ "motyga-config",
+ "motyga-core",
+ "motyga-exec-server",
+ "motyga-extension-api",
+ "motyga-home",
+ "motyga-login",
+ "motyga-protocol",
+ "motyga-shell-command",
+ "motyga-utils-absolute-path",
+ "motyga-utils-cli",
+ "motyga-utils-json-to-toml",
+ "os_info",
+ "pretty_assertions",
+ "rmcp",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "shlex",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-memories-extension"
+version = "0.0.0"
+dependencies = [
+ "motyga-core",
+ "motyga-extension-api",
+ "motyga-features",
+ "motyga-otel",
+ "motyga-tools",
+ "motyga-utils-absolute-path",
+ "motyga-utils-output-truncation",
+ "motyga-utils-template",
+ "pretty_assertions",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-memories-read"
+version = "0.0.0"
+dependencies = [
+ "motyga-protocol",
+ "motyga-shell-command",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+]
+
+[[package]]
+name = "motyga-memories-write"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "core_test_support",
+ "futures",
+ "motyga-backend-client",
+ "motyga-config",
+ "motyga-core",
+ "motyga-features",
+ "motyga-git-utils",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-model-provider-info",
+ "motyga-models-manager",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-rollout",
+ "motyga-rollout-trace",
+ "motyga-secrets",
+ "motyga-state",
+ "motyga-terminal-detection",
+ "motyga-utils-absolute-path",
+ "motyga-utils-output-truncation",
+ "motyga-utils-template",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "uuid",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-message-history"
+version = "0.0.0"
+dependencies = [
+ "memchr",
+ "motyga-config",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-model-provider"
+version = "0.0.0"
+dependencies = [
+ "http 1.4.0",
+ "motyga-agent-identity",
+ "motyga-api",
+ "motyga-aws-auth",
+ "motyga-client",
+ "motyga-feedback",
+ "motyga-login",
+ "motyga-model-provider-info",
+ "motyga-models-manager",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-response-debug-context",
+ "pretty_assertions",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-model-provider-info"
+version = "0.0.0"
+dependencies = [
+ "http 1.4.0",
+ "maplit",
+ "motyga-api",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+ "schemars 0.8.22",
+ "serde",
+ "tempfile",
+ "toml 0.9.11+spec-1.1.0",
+]
+
+[[package]]
+name = "motyga-models-manager"
+version = "0.0.0"
+dependencies = [
+ "chrono",
+ "motyga-collaboration-mode-templates",
+ "motyga-login",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-utils-output-truncation",
+ "motyga-utils-template",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-network-proxy"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "chrono",
+ "clap",
+ "globset",
+ "motyga-utils-absolute-path",
+ "motyga-utils-home-dir",
+ "motyga-utils-rustls-provider",
+ "pretty_assertions",
+ "rama-core",
+ "rama-http",
+ "rama-http-backend",
+ "rama-net",
+ "rama-socks5",
+ "rama-tcp",
+ "rama-tls-rustls",
+ "rama-unix",
+ "rand 0.9.3",
+ "rustls-native-certs",
+ "schannel",
+ "security-framework 3.5.1",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.18",
+ "time",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "motyga-ollama"
+version = "0.0.0"
+dependencies = [
+ "assert_matches",
+ "async-stream",
+ "bytes",
+ "futures",
+ "memchr",
+ "motyga-core",
+ "motyga-model-provider-info",
+ "pretty_assertions",
+ "reqwest 0.12.28",
+ "semver",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-otel"
+version = "0.0.0"
+dependencies = [
+ "chrono",
+ "eventsource-stream",
+ "gethostname",
+ "http 1.4.0",
+ "motyga-api",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-string",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry-semantic-conventions",
+ "opentelemetry_sdk",
+ "os_info",
+ "pretty_assertions",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "strum_macros 0.28.0",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-tungstenite",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "motyga-plugin"
+version = "0.0.0"
+dependencies = [
+ "motyga-config",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-path-uri",
+ "motyga-utils-plugins",
+ "pretty_assertions",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "motyga-process-hardening"
+version = "0.0.0"
+dependencies = [
+ "libc",
+ "pretty_assertions",
+]
+
+[[package]]
+name = "motyga-prompts"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "motyga-context-fragments",
+ "motyga-execpolicy",
+ "motyga-git-utils",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-template",
+ "pretty_assertions",
+]
+
+[[package]]
+name = "motyga-protocol"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chardetng",
+ "chrono",
+ "encoding_rs",
+ "globset",
+ "http 1.4.0",
+ "icu_decimal",
+ "icu_locale_core",
+ "icu_provider",
+ "landlock",
+ "motyga-async-utils",
+ "motyga-execpolicy",
+ "motyga-network-proxy",
+ "motyga-utils-absolute-path",
+ "motyga-utils-image",
+ "motyga-utils-path-uri",
+ "motyga-utils-string",
+ "pretty_assertions",
+ "quick-xml",
+ "reqwest 0.12.28",
+ "schemars 0.8.22",
+ "seccompiler",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "strum 0.27.2",
+ "strum_macros 0.28.0",
+ "sys-locale",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "ts-rs",
+ "uuid",
+ "wildmatch",
+]
+
+[[package]]
+name = "motyga-realtime-webrtc"
+version = "0.0.0"
+dependencies = [
+ "libwebrtc",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-response-debug-context"
+version = "0.0.0"
+dependencies = [
+ "base64 0.22.1",
+ "http 1.4.0",
+ "motyga-api",
+ "pretty_assertions",
+ "serde_json",
+]
+
+[[package]]
+name = "motyga-responses-api-proxy"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ctor 0.6.3",
+ "libc",
+ "motyga-process-hardening",
+ "pretty_assertions",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "tiny_http",
+ "zeroize",
+]
+
+[[package]]
+name = "motyga-rmcp-client"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bytes",
+ "futures",
+ "keyring",
+ "memchr",
+ "motyga-api",
+ "motyga-config",
+ "motyga-exec-server",
+ "motyga-keyring-store",
+ "motyga-protocol",
+ "motyga-secrets",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-home-dir",
+ "motyga-utils-path-uri",
+ "motyga-utils-pty",
+ "oauth2",
+ "pretty_assertions",
+ "reqwest 0.13.4",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "sha2 0.10.9",
+ "sse-stream",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tiny_http",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "webbrowser",
+ "which 8.0.0",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-rollout"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "motyga-file-search",
+ "motyga-git-utils",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-state",
+ "motyga-utils-path",
+ "pretty_assertions",
+ "regex",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "time",
+ "tokio",
+ "tracing",
+ "uuid",
+ "zstd 0.13.3",
+]
+
+[[package]]
+name = "motyga-rollout-trace"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "http 1.4.0",
+ "motyga-code-mode",
+ "motyga-protocol",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "motyga-sandboxing"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "dunce",
+ "libc",
+ "motyga-network-proxy",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-home-dir",
+ "motyga-utils-path-uri",
+ "motyga-windows-sandbox",
+ "pretty_assertions",
+ "regex-lite",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "url",
+ "which 8.0.0",
+]
+
+[[package]]
+name = "motyga-secrets"
+version = "0.0.0"
+dependencies = [
+ "age",
+ "anyhow",
+ "base64 0.22.1",
+ "keyring",
+ "motyga-git-utils",
+ "motyga-keyring-store",
+ "pretty_assertions",
+ "rand 0.9.3",
+ "regex",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-shell-command"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "libc",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "once_cell",
+ "pretty_assertions",
+ "regex",
+ "serde",
+ "serde_json",
+ "shlex",
+ "tree-sitter",
+ "tree-sitter-bash",
+ "url",
+ "which 8.0.0",
+]
+
+[[package]]
+name = "motyga-shell-escalation"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "libc",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "socket2 0.6.3",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "motyga-skills"
+version = "0.0.0"
+dependencies = [
+ "include_dir",
+ "motyga-utils-absolute-path",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "motyga-skills-extension"
+version = "0.0.0"
+dependencies = [
+ "motyga-core-skills",
+ "motyga-exec-server",
+ "motyga-extension-api",
+ "motyga-mcp",
+ "motyga-protocol",
+ "motyga-tools",
+ "motyga-utils-absolute-path",
+ "motyga-utils-path-uri",
+ "motyga-utils-string",
+ "pretty_assertions",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "motyga-state"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "dirs",
+ "libsqlite3-sys",
+ "log",
+ "motyga-git-utils",
+ "motyga-protocol",
+ "owo-colors",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "strum 0.27.2",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "motyga-stdio-to-uds"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "motyga-uds",
+ "motyga-utils-cargo-bin",
+ "pretty_assertions",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "motyga-supply"
 version = "0.0.0"
 dependencies = [
@@ -9245,6 +8770,481 @@ dependencies = [
  "tokio",
  "tokio-tungstenite",
  "tracing",
+]
+
+[[package]]
+name = "motyga-terminal-detection"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-test-binary-support"
+version = "0.0.0"
+dependencies = [
+ "motyga-arg0",
+ "tempfile",
+]
+
+[[package]]
+name = "motyga-thread-manager-sample"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "motyga-core-api",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
+name = "motyga-thread-store"
+version = "0.0.0"
+dependencies = [
+ "chrono",
+ "motyga-git-utils",
+ "motyga-install-context",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-rollout",
+ "motyga-state",
+ "motyga-utils-path",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "motyga-tools"
+version = "0.0.0"
+dependencies = [
+ "jsonptr",
+ "motyga-code-mode",
+ "motyga-connectors",
+ "motyga-features",
+ "motyga-file-system",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-output-truncation",
+ "motyga-utils-pty",
+ "motyga-utils-string",
+ "pretty_assertions",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tracing",
+ "urlencoding",
+]
+
+[[package]]
+name = "motyga-tui"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "app_test_support",
+ "arboard",
+ "assert_matches",
+ "base64 0.22.1",
+ "chrono",
+ "clap",
+ "color-eyre",
+ "core_test_support",
+ "crossterm",
+ "derive_more 2.1.1",
+ "diffy",
+ "dirs",
+ "dunce",
+ "image",
+ "insta",
+ "itertools 0.14.0",
+ "lazy_static",
+ "libc",
+ "motyga-ansi-escape",
+ "motyga-app-server-client",
+ "motyga-app-server-protocol",
+ "motyga-arg0",
+ "motyga-cli",
+ "motyga-cloud-config",
+ "motyga-config",
+ "motyga-connectors",
+ "motyga-core-plugins",
+ "motyga-core-skills",
+ "motyga-exec-server",
+ "motyga-features",
+ "motyga-feedback",
+ "motyga-file-search",
+ "motyga-git-utils",
+ "motyga-install-context",
+ "motyga-login",
+ "motyga-mcp",
+ "motyga-message-history",
+ "motyga-model-provider",
+ "motyga-model-provider-info",
+ "motyga-models-manager",
+ "motyga-otel",
+ "motyga-plugin",
+ "motyga-protocol",
+ "motyga-rollout",
+ "motyga-sandboxing",
+ "motyga-shell-command",
+ "motyga-state",
+ "motyga-terminal-detection",
+ "motyga-utils-absolute-path",
+ "motyga-utils-approval-presets",
+ "motyga-utils-cargo-bin",
+ "motyga-utils-cli",
+ "motyga-utils-elapsed",
+ "motyga-utils-fuzzy-match",
+ "motyga-utils-home-dir",
+ "motyga-utils-oss",
+ "motyga-utils-path",
+ "motyga-utils-path-uri",
+ "motyga-utils-plugins",
+ "motyga-utils-sandbox-summary",
+ "motyga-utils-sleep-inhibitor",
+ "motyga-utils-string",
+ "motyga-windows-sandbox",
+ "pathdiff",
+ "pretty_assertions",
+ "pulldown-cmark",
+ "rand 0.9.3",
+ "ratatui",
+ "ratatui-macros",
+ "regex-lite",
+ "reqwest 0.12.28",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "sha2 0.10.9",
+ "shlex",
+ "strum 0.27.2",
+ "strum_macros 0.28.0",
+ "supports-color 3.0.2",
+ "syntect",
+ "tempfile",
+ "textwrap 0.16.2",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "two-face",
+ "unicode-segmentation",
+ "unicode-width 0.2.1",
+ "url",
+ "urlencoding",
+ "uuid",
+ "vt100",
+ "webbrowser",
+ "which 8.0.0",
+ "windows-sys 0.52.0",
+ "winsplit",
+ "wiremock",
+]
+
+[[package]]
+name = "motyga-uds"
+version = "0.0.0"
+dependencies = [
+ "async-io",
+ "pretty_assertions",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "uds_windows",
+]
+
+[[package]]
+name = "motyga-utils-absolute-path"
+version = "0.0.0"
+dependencies = [
+ "dirs",
+ "dunce",
+ "pretty_assertions",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "ts-rs",
+]
+
+[[package]]
+name = "motyga-utils-approval-presets"
+version = "0.0.0"
+dependencies = [
+ "motyga-protocol",
+]
+
+[[package]]
+name = "motyga-utils-cache"
+version = "0.0.0"
+dependencies = [
+ "lru 0.16.3",
+ "sha1 0.10.6",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-utils-cargo-bin"
+version = "0.0.0"
+dependencies = [
+ "assert_cmd",
+ "runfiles",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "motyga-utils-cli"
+version = "0.0.0"
+dependencies = [
+ "clap",
+ "motyga-protocol",
+ "motyga-shell-command",
+ "pretty_assertions",
+ "serde",
+ "toml 0.9.11+spec-1.1.0",
+]
+
+[[package]]
+name = "motyga-utils-elapsed"
+version = "0.0.0"
+
+[[package]]
+name = "motyga-utils-fuzzy-match"
+version = "0.0.0"
+
+[[package]]
+name = "motyga-utils-home-dir"
+version = "0.0.0"
+dependencies = [
+ "dirs",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+ "tempfile",
+]
+
+[[package]]
+name = "motyga-utils-image"
+version = "0.0.0"
+dependencies = [
+ "base64 0.22.1",
+ "divan",
+ "image",
+ "mime_guess",
+ "motyga-utils-cache",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-utils-json-to-toml"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+ "serde_json",
+ "toml 0.9.11+spec-1.1.0",
+]
+
+[[package]]
+name = "motyga-utils-oss"
+version = "0.0.0"
+dependencies = [
+ "motyga-core",
+ "motyga-lmstudio",
+ "motyga-model-provider-info",
+ "motyga-ollama",
+]
+
+[[package]]
+name = "motyga-utils-output-truncation"
+version = "0.0.0"
+dependencies = [
+ "motyga-protocol",
+ "motyga-utils-string",
+ "pretty_assertions",
+]
+
+[[package]]
+name = "motyga-utils-path"
+version = "0.0.0"
+dependencies = [
+ "dunce",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+ "tempfile",
+]
+
+[[package]]
+name = "motyga-utils-path-uri"
+version = "0.0.0"
+dependencies = [
+ "base64 0.22.1",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "ts-rs",
+ "url",
+ "urlencoding",
+]
+
+[[package]]
+name = "motyga-utils-plugins"
+version = "0.0.0"
+dependencies = [
+ "motyga-exec-server",
+ "motyga-utils-absolute-path",
+ "motyga-utils-path-uri",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-utils-pty"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "filedescriptor",
+ "lazy_static",
+ "libc",
+ "log",
+ "portable-pty",
+ "pretty_assertions",
+ "shared_library",
+ "tokio",
+ "winapi",
+]
+
+[[package]]
+name = "motyga-utils-readiness"
+version = "0.0.0"
+dependencies = [
+ "assert_matches",
+ "thiserror 2.0.18",
+ "time",
+ "tokio",
+]
+
+[[package]]
+name = "motyga-utils-rustls-provider"
+version = "0.0.0"
+dependencies = [
+ "rustls",
+]
+
+[[package]]
+name = "motyga-utils-sandbox-summary"
+version = "0.0.0"
+dependencies = [
+ "motyga-core",
+ "motyga-model-provider-info",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "pretty_assertions",
+]
+
+[[package]]
+name = "motyga-utils-sleep-inhibitor"
+version = "0.0.0"
+dependencies = [
+ "core-foundation 0.9.4",
+ "libc",
+ "tracing",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "motyga-utils-stream-parser"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+]
+
+[[package]]
+name = "motyga-utils-string"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+ "regex-lite",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "motyga-utils-template"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+]
+
+[[package]]
+name = "motyga-v8-poc"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+ "v8",
+]
+
+[[package]]
+name = "motyga-web-search-extension"
+version = "0.0.0"
+dependencies = [
+ "http 1.4.0",
+ "motyga-api",
+ "motyga-core",
+ "motyga-extension-api",
+ "motyga-login",
+ "motyga-model-provider",
+ "motyga-model-provider-info",
+ "motyga-protocol",
+ "motyga-tools",
+ "pretty_assertions",
+ "schemars 0.8.22",
+ "serde_json",
+ "url",
+]
+
+[[package]]
+name = "motyga-windows-sandbox"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "chrono",
+ "dirs-next",
+ "dunce",
+ "glob",
+ "motyga-otel",
+ "motyga-protocol",
+ "motyga-utils-absolute-path",
+ "motyga-utils-pty",
+ "motyga-utils-string",
+ "pretty_assertions",
+ "rand 0.8.6",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing-appender",
+ "windows 0.58.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

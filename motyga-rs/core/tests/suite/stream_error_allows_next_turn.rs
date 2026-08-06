@@ -1,14 +1,14 @@
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::WireApi;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::WireApi;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use wiremock::Mock;
 use wiremock::MockServer;
@@ -83,7 +83,7 @@ async fn continue_after_stream_error() {
         supports_websockets: false,
     };
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_config(move |config| {
             config.base_instructions = Some("You are a helpful assistant".to_string());
             config.model_provider = provider;
@@ -92,7 +92,7 @@ async fn continue_after_stream_error() {
         .await
         .unwrap();
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first message".into(),
@@ -107,14 +107,14 @@ async fn continue_after_stream_error() {
         .unwrap();
 
     // Expect an Error followed by TurnComplete so the session is released.
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::Error(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::Error(_))).await;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // 2) Second turn: now send another prompt that should succeed using the
     // mock server SSE stream. If the agent failed to clear the running task on
     // error above, this submission would be rejected/queued indefinitely.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "follow up".into(),
@@ -128,5 +128,5 @@ async fn continue_after_stream_error() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }

@@ -3,19 +3,19 @@ use app_test_support::TestAppServer;
 use app_test_support::create_final_assistant_message_sse_response;
 use app_test_support::create_mock_responses_server_sequence_unchecked;
 use app_test_support::to_response;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::InitializeResponse;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_cargo_bin::cargo_bin;
+use motyga_app_server_protocol::ClientInfo;
+use motyga_app_server_protocol::InitializeCapabilities;
+use motyga_app_server_protocol::InitializeResponse;
+use motyga_app_server_protocol::JSONRPCMessage;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_cargo_bin::cargo_bin;
 use core_test_support::fs_wait;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -30,16 +30,16 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 async fn initialize_uses_client_info_name_as_originator() -> Result<()> {
     let responses = Vec::new();
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
-    let codex_home = TempDir::new()?;
-    let expected_codex_home = AbsolutePathBuf::try_from(codex_home.path().canonicalize()?)?;
-    create_config_toml(codex_home.path(), &server.uri(), "never")?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let expected_motyga_home = AbsolutePathBuf::try_from(motyga_home.path().canonicalize()?)?;
+    create_config_toml(motyga_home.path(), &server.uri(), "never")?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
 
     let message = timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.initialize_with_client_info(ClientInfo {
-            name: "codex_vscode".to_string(),
-            title: Some("Codex VS Code Extension".to_string()),
+            name: "motyga_vscode".to_string(),
+            title: Some("Motyga VS Code Extension".to_string()),
             version: "0.1.0".to_string(),
         }),
     )
@@ -50,13 +50,13 @@ async fn initialize_uses_client_info_name_as_originator() -> Result<()> {
     };
     let InitializeResponse {
         user_agent,
-        codex_home: response_codex_home,
+        motyga_home: response_motyga_home,
         platform_family,
         platform_os,
     } = to_response::<InitializeResponse>(response)?;
 
-    assert!(user_agent.starts_with("codex_vscode/"));
-    assert_eq!(response_codex_home, expected_codex_home);
+    assert!(user_agent.starts_with("motyga_vscode/"));
+    assert_eq!(response_motyga_home, expected_motyga_home);
     assert_eq!(platform_family, std::env::consts::FAMILY);
     assert_eq!(platform_os, std::env::consts::OS);
     Ok(())
@@ -66,15 +66,15 @@ async fn initialize_uses_client_info_name_as_originator() -> Result<()> {
 async fn initialize_probe_does_not_override_originator() -> Result<()> {
     let responses = Vec::new();
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri(), "never")?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri(), "never")?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
 
     let message = timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.initialize_with_client_info(ClientInfo {
-            name: "codex_app_server_daemon".to_string(),
-            title: Some("Codex App Server Daemon".to_string()),
+            name: "motyga_app_server_daemon".to_string(),
+            title: Some("Motyga App Server Daemon".to_string()),
             version: "0.1.0".to_string(),
         }),
     )
@@ -90,18 +90,18 @@ async fn initialize_probe_does_not_override_originator() -> Result<()> {
 }
 
 #[tokio::test]
-async fn initialize_codex_backend_does_not_override_originator() -> Result<()> {
+async fn initialize_motyga_backend_does_not_override_originator() -> Result<()> {
     let responses = Vec::new();
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri(), "never")?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri(), "never")?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
 
     let message = timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.initialize_with_client_info(ClientInfo {
-            name: "codex-backend".to_string(),
-            title: Some("Codex Backend".to_string()),
+            name: "motyga-backend".to_string(),
+            title: Some("Motyga Backend".to_string()),
             version: "0.1.0".to_string(),
         }),
     )
@@ -120,14 +120,14 @@ async fn initialize_codex_backend_does_not_override_originator() -> Result<()> {
 async fn initialize_respects_originator_override_env_var() -> Result<()> {
     let responses = Vec::new();
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
-    let codex_home = TempDir::new()?;
-    let expected_codex_home = AbsolutePathBuf::try_from(codex_home.path().canonicalize()?)?;
-    create_config_toml(codex_home.path(), &server.uri(), "never")?;
+    let motyga_home = TempDir::new()?;
+    let expected_motyga_home = AbsolutePathBuf::try_from(motyga_home.path().canonicalize()?)?;
+    create_config_toml(motyga_home.path(), &server.uri(), "never")?;
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(
-            "CODEX_INTERNAL_ORIGINATOR_OVERRIDE",
-            Some("codex_originator_via_env_var"),
+            "MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE",
+            Some("motyga_originator_via_env_var"),
         )],
     )
     .await?;
@@ -135,8 +135,8 @@ async fn initialize_respects_originator_override_env_var() -> Result<()> {
     let message = timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.initialize_with_client_info(ClientInfo {
-            name: "codex_vscode".to_string(),
-            title: Some("Codex VS Code Extension".to_string()),
+            name: "motyga_vscode".to_string(),
+            title: Some("Motyga VS Code Extension".to_string()),
             version: "0.1.0".to_string(),
         }),
     )
@@ -147,13 +147,13 @@ async fn initialize_respects_originator_override_env_var() -> Result<()> {
     };
     let InitializeResponse {
         user_agent,
-        codex_home: response_codex_home,
+        motyga_home: response_motyga_home,
         platform_family,
         platform_os,
     } = to_response::<InitializeResponse>(response)?;
 
-    assert!(user_agent.starts_with("codex_originator_via_env_var/"));
-    assert_eq!(response_codex_home, expected_codex_home);
+    assert!(user_agent.starts_with("motyga_originator_via_env_var/"));
+    assert_eq!(response_motyga_home, expected_motyga_home);
     assert_eq!(platform_family, std::env::consts::FAMILY);
     assert_eq!(platform_os, std::env::consts::OS);
     Ok(())
@@ -163,11 +163,11 @@ async fn initialize_respects_originator_override_env_var() -> Result<()> {
 async fn initialize_rejects_invalid_client_name() -> Result<()> {
     let responses = Vec::new();
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri(), "never")?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri(), "never")?;
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
-        &[("CODEX_INTERNAL_ORIGINATOR_OVERRIDE", None)],
+        motyga_home.path(),
+        &[("MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE", None)],
     )
     .await?;
 
@@ -198,16 +198,16 @@ async fn initialize_rejects_invalid_client_name() -> Result<()> {
 async fn initialize_opt_out_notification_methods_filters_notifications() -> Result<()> {
     let responses = Vec::new();
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri(), "never")?;
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri(), "never")?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
 
     let message = timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.initialize_with_capabilities(
             ClientInfo {
-                name: "codex_vscode".to_string(),
-                title: Some("Codex VS Code Extension".to_string()),
+                name: "motyga_vscode".to_string(),
+                title: Some("Motyga VS Code Extension".to_string()),
                 version: "0.1.0".to_string(),
             },
             Some(InitializeCapabilities {
@@ -263,9 +263,9 @@ async fn initialize_opt_out_notification_methods_filters_notifications() -> Resu
 async fn turn_start_notify_payload_includes_initialize_client_name() -> Result<()> {
     let responses = vec![create_final_assistant_message_sse_response("Done")?];
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
-    let codex_home = TempDir::new()?;
-    let notify_file = codex_home.path().join("notify.json");
-    let notify_capture = cargo_bin("codex-app-server-test-notify-capture")?;
+    let motyga_home = TempDir::new()?;
+    let notify_file = motyga_home.path().join("notify.json");
+    let notify_capture = cargo_bin("motyga-app-server-test-notify-capture")?;
     let notify_capture = notify_capture
         .to_str()
         .expect("notify capture path should be valid UTF-8");
@@ -273,7 +273,7 @@ async fn turn_start_notify_payload_includes_initialize_client_name() -> Result<(
         .to_str()
         .expect("notify file path should be valid UTF-8");
     create_config_toml_with_extra(
-        codex_home.path(),
+        motyga_home.path(),
         &server.uri(),
         "never",
         &format!(
@@ -283,7 +283,7 @@ async fn turn_start_notify_payload_includes_initialize_client_name() -> Result<(
         ),
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.initialize_with_client_info(ClientInfo {
@@ -338,20 +338,20 @@ async fn turn_start_notify_payload_includes_initialize_client_name() -> Result<(
 
 // Helper to create a config.toml pointing at the mock model server.
 fn create_config_toml(
-    codex_home: &Path,
+    motyga_home: &Path,
     server_uri: &str,
     approval_policy: &str,
 ) -> std::io::Result<()> {
-    create_config_toml_with_extra(codex_home, server_uri, approval_policy, "")
+    create_config_toml_with_extra(motyga_home, server_uri, approval_policy, "")
 }
 
 fn create_config_toml_with_extra(
-    codex_home: &Path,
+    motyga_home: &Path,
     server_uri: &str,
     approval_policy: &str,
     extra: &str,
 ) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

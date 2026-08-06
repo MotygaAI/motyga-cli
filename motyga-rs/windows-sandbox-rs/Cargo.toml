@@ -2,20 +2,20 @@
 build = "build.rs"
 edition.workspace = true
 license.workspace = true
-name = "codex-windows-sandbox"
+name = "motyga-windows-sandbox"
 version.workspace = true
 
 [lib]
-name = "codex_windows_sandbox"
+name = "motyga_windows_sandbox"
 path = "src/lib.rs"
 doctest = false
 
 [[bin]]
-name = "codex-windows-sandbox-setup"
+name = "motyga-windows-sandbox-setup"
 path = "src/bin/setup_main/main.rs"
 
 [[bin]]
-name = "codex-command-runner"
+name = "motyga-command-runner"
 path = "src/bin/command_runner/main.rs"
 
 [lints]
@@ -28,10 +28,10 @@ chrono = { version = "0.4.42", default-features = false, features = [
     "clock",
     "std",
 ] }
-codex-utils-pty = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-string = { workspace = true }
-codex-otel = { workspace = true }
+motyga-utils-pty = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-string = { workspace = true }
+motyga-otel = { workspace = true }
 dunce = "1.0"
 glob = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
@@ -46,8 +46,8 @@ windows = { version = "0.58", features = [
     "Win32_System_Variant",
 ] }
 
-[dependencies.codex-protocol]
-package = "codex-protocol"
+[dependencies.motyga-protocol]
+package = "motyga-protocol"
 path = "../protocol"
 
 [dependencies.rand]

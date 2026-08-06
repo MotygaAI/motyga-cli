@@ -1,6 +1,6 @@
-use codex_tools::JsonSchema;
-use codex_tools::ResponsesApiTool;
-use codex_tools::ToolSpec;
+use motyga_tools::JsonSchema;
+use motyga_tools::ResponsesApiTool;
+use motyga_tools::ToolSpec;
 use std::collections::BTreeMap;
 
 pub fn create_spawn_agents_on_csv_tool() -> ToolSpec {

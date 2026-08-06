@@ -1,9 +1,9 @@
 use super::ContextualUserFragment;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::CONTEXT_WINDOW_CLOSE_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_CLOSE_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_OPEN_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_OPEN_TAG;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::CONTEXT_WINDOW_CLOSE_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_CLOSE_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_OPEN_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_OPEN_TAG;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

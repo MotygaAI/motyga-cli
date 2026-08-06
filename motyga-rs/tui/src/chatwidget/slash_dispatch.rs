@@ -262,7 +262,7 @@ impl ChatWidget {
             }
             SlashCommand::Rename => {
                 self.session_telemetry
-                    .counter("codex.thread.rename", /*inc*/ 1, &[]);
+                    .counter("motyga.thread.rename", /*inc*/ 1, &[]);
                 self.show_rename_prompt();
             }
             SlashCommand::Model => {
@@ -343,7 +343,7 @@ impl ChatWidget {
                     }
 
                     self.session_telemetry.counter(
-                        "codex.windows_sandbox.setup_elevated_sandbox_command",
+                        "motyga.windows_sandbox.setup_elevated_sandbox_command",
                         /*inc*/ 1,
                         &[],
                     );
@@ -714,7 +714,7 @@ impl ChatWidget {
                     return;
                 }
                 self.session_telemetry
-                    .counter("codex.thread.rename", /*inc*/ 1, &[]);
+                    .counter("motyga.thread.rename", /*inc*/ 1, &[]);
                 let Some(name) = normalize_thread_name(&args) else {
                     self.add_error_message("Thread name cannot be empty.".to_string());
                     return;
@@ -1018,7 +1018,7 @@ impl ChatWidget {
             collaboration_modes_enabled: self.collaboration_modes_enabled(),
             connectors_enabled: self.connectors_enabled(),
             plugins_command_enabled: self.config.features.enabled(Feature::Plugins),
-            token_activity_command_enabled: self.has_codex_backend_auth,
+            token_activity_command_enabled: self.has_motyga_backend_auth,
             goal_command_enabled: self.config.features.enabled(Feature::Goals),
             service_tier_commands_enabled: self.fast_mode_enabled(),
             personality_command_enabled: self.config.features.enabled(Feature::Personality),
@@ -1028,7 +1028,7 @@ impl ChatWidget {
     }
 
     fn ensure_usage_command_available(&mut self) -> bool {
-        if self.has_codex_backend_auth {
+        if self.has_motyga_backend_auth {
             return true;
         }
         self.add_error_message(USAGE_CHATGPT_LOGIN_REQUIRED.to_string());

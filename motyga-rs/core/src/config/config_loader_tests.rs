@@ -3,41 +3,41 @@ use crate::config::ConfigOverrides;
 use crate::config::ConstraintError;
 use crate::config::PermissionProfileCatalogEntry;
 use crate::config::permission_profile_catalog;
-use codex_config::CONFIG_TOML_FILE;
-use codex_config::CloudConfigBundleLoadError;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::ConfigError;
-use codex_config::ConfigLayerEntry;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::ConfigLoadError;
-use codex_config::ConfigLoadOptions;
-use codex_config::ConfigRequirements;
-use codex_config::ConfigRequirementsToml;
-use codex_config::ConfigRequirementsWithSources;
-use codex_config::FilesystemDenyReadPattern;
-use codex_config::LoaderOverrides;
-use codex_config::RequirementSource;
-use codex_config::RequirementsLayerEntry;
-use codex_config::SessionThreadConfig;
-use codex_config::StaticThreadConfigLoader;
-use codex_config::ThreadConfigSource;
-use codex_config::compose_requirements;
-use codex_config::config_error_from_ignored_toml_fields;
-use codex_config::config_error_from_toml;
-use codex_config::config_toml::ConfigToml;
-use codex_config::config_toml::ProjectConfig;
-use codex_config::loader::load_config_layers_state;
-use codex_config::loader::load_requirements_toml;
-use codex_config::test_support::CloudConfigBundleFixture;
-use codex_exec_server::LOCAL_FS;
-use codex_protocol::config_types::TrustLevel;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_config::CONFIG_TOML_FILE;
+use motyga_config::CloudConfigBundleLoadError;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::ConfigError;
+use motyga_config::ConfigLayerEntry;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::ConfigLoadError;
+use motyga_config::ConfigLoadOptions;
+use motyga_config::ConfigRequirements;
+use motyga_config::ConfigRequirementsToml;
+use motyga_config::ConfigRequirementsWithSources;
+use motyga_config::FilesystemDenyReadPattern;
+use motyga_config::LoaderOverrides;
+use motyga_config::RequirementSource;
+use motyga_config::RequirementsLayerEntry;
+use motyga_config::SessionThreadConfig;
+use motyga_config::StaticThreadConfigLoader;
+use motyga_config::ThreadConfigSource;
+use motyga_config::compose_requirements;
+use motyga_config::config_error_from_ignored_toml_fields;
+use motyga_config::config_error_from_toml;
+use motyga_config::config_toml::ConfigToml;
+use motyga_config::config_toml::ProjectConfig;
+use motyga_config::loader::load_config_layers_state;
+use motyga_config::loader::load_requirements_toml;
+use motyga_config::test_support::CloudConfigBundleFixture;
+use motyga_exec_server::LOCAL_FS;
+use motyga_protocol::config_types::TrustLevel;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -69,13 +69,13 @@ async fn load_single_requirements_toml(
 }
 
 async fn make_config_for_test(
-    codex_home: &Path,
+    motyga_home: &Path,
     project_path: &Path,
     trust_level: TrustLevel,
     project_root_markers: Option<Vec<String>>,
 ) -> std::io::Result<()> {
     tokio::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         toml::to_string(&ConfigToml {
             projects: Some(HashMap::from([(
                 project_path.to_string_lossy().to_string(),
@@ -105,16 +105,16 @@ async fn write_linked_worktree_pointer(
 }
 
 async fn write_project_hook_config(
-    dot_codex_folder: &Path,
+    dot_motyga_folder: &Path,
     foo: Option<&str>,
     command: &str,
 ) -> std::io::Result<()> {
-    tokio::fs::create_dir_all(dot_codex_folder).await?;
+    tokio::fs::create_dir_all(dot_motyga_folder).await?;
     let foo = foo
         .map(|value| format!("foo = \"{value}\"\n\n"))
         .unwrap_or_default();
     tokio::fs::write(
-        dot_codex_folder.join(CONFIG_TOML_FILE),
+        dot_motyga_folder.join(CONFIG_TOML_FILE),
         format!(
             r#"{foo}[hooks]
 
@@ -132,12 +132,12 @@ command = "{command}"
 
 #[tokio::test]
 async fn cli_overrides_resolve_relative_paths_against_cwd() -> std::io::Result<()> {
-    let codex_home = tempdir().expect("tempdir");
+    let motyga_home = tempdir().expect("tempdir");
     let cwd_dir = tempdir().expect("tempdir");
     let cwd_path = cwd_dir.path().to_path_buf();
 
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cli_overrides(vec![(
             "log_dir".to_string(),
             TomlValue::String("run-logs".to_string()),
@@ -169,7 +169,7 @@ invalid = ["#;
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await
     .expect_err("expected error");
@@ -200,7 +200,7 @@ invalid = ["#,
             ignore_user_config: true,
             ..Default::default()
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -230,7 +230,7 @@ async fn ignore_rules_marks_config_stack_for_exec_policy_rule_skip() -> std::io:
             ignore_user_and_project_exec_policy_rules: true,
             ..Default::default()
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -255,7 +255,7 @@ invalid = ["#;
         Some(cwd),
         &[] as &[(String, TomlValue)],
         overrides,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await
     .expect_err("expected error");
@@ -275,16 +275,16 @@ async fn returns_config_error_for_schema_error_in_user_config() {
     std::fs::write(&config_path, contents).expect("write config");
 
     let err = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .build()
         .await
         .expect_err("expected error");
 
     let config_error = config_error_from_io(&err);
-    let _guard = codex_utils_absolute_path::AbsolutePathBufGuard::new(tmp.path());
+    let _guard = motyga_utils_absolute_path::AbsolutePathBufGuard::new(tmp.path());
     let expected_config_error =
-        codex_config::config_error_from_typed_toml::<ConfigToml>(&config_path, contents)
+        motyga_config::config_error_from_typed_toml::<ConfigToml>(&config_path, contents)
             .expect("schema error");
     assert_eq!(config_error, &expected_config_error);
 }
@@ -306,7 +306,7 @@ async fn top_level_allow_managed_hooks_only_in_user_config_does_not_enable_requi
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -340,7 +340,7 @@ command = "python3 /tmp/user-hook.py"
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -366,7 +366,7 @@ unknown_key = true"#;
     std::fs::write(&config_path, contents).expect("write config");
 
     let err = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(LoaderOverrides::without_managed_config_for_tests())
         .strict_config(/*strict_config*/ true)
@@ -386,7 +386,7 @@ async fn strict_config_rejects_unknown_cli_override_key() {
     let tmp = tempdir().expect("tempdir");
 
     let err = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(LoaderOverrides::without_managed_config_for_tests())
         .cli_overrides(vec![(
@@ -411,7 +411,7 @@ async fn strict_config_rejects_unknown_cli_override_key_with_relative_path_overr
     std::fs::write(&instructions_path, "instructions").expect("write instructions");
 
     let err = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(LoaderOverrides::without_managed_config_for_tests())
         .cli_overrides(vec![
@@ -437,7 +437,7 @@ async fn strict_config_rejects_unknown_feature_cli_override_key() {
     let tmp = tempdir().expect("tempdir");
 
     let err = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(LoaderOverrides::without_managed_config_for_tests())
         .cli_overrides(vec![("features.foo".to_string(), TomlValue::Boolean(true))])
@@ -461,7 +461,7 @@ foo = true"#;
     std::fs::write(&config_path, contents).expect("write config");
 
     let err = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(LoaderOverrides::without_managed_config_for_tests())
         .strict_config(/*strict_config*/ true)
@@ -505,8 +505,8 @@ collaboration_modes = "true""#;
     let config_path = tmp.path().join(CONFIG_TOML_FILE);
     std::fs::write(&config_path, contents).expect("write config");
 
-    let _guard = codex_utils_absolute_path::AbsolutePathBufGuard::new(tmp.path());
-    let error = codex_config::config_error_from_typed_toml::<ConfigToml>(&config_path, contents)
+    let _guard = motyga_utils_absolute_path::AbsolutePathBufGuard::new(tmp.path());
+    let error = motyga_config::config_error_from_typed_toml::<ConfigToml>(&config_path, contents)
         .expect("schema error");
 
     let value_line = contents.lines().nth(1).expect("value line");
@@ -549,7 +549,7 @@ extra = true
         Some(cwd),
         &[] as &[(String, TomlValue)],
         overrides,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await
     .expect("load config");
@@ -582,7 +582,7 @@ async fn returns_empty_when_all_layers_missing() {
         Some(cwd),
         &[] as &[(String, TomlValue)],
         overrides,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await
     .expect("load layers");
@@ -658,7 +658,7 @@ approval_policy = "on-request"
         Some(cwd),
         &[] as &[(String, TomlValue)],
         overrides,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await
     .expect("load layers");
@@ -799,7 +799,7 @@ flag = false
         Some(cwd),
         &[] as &[(String, TomlValue)],
         overrides,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await
     .expect("load config");
@@ -833,7 +833,7 @@ flag = false
 async fn managed_preferences_expand_home_directory_in_workspace_write_roots() -> anyhow::Result<()>
 {
     use base64::Engine;
-    use codex_protocol::protocol::SandboxPolicy;
+    use motyga_protocol::protocol::SandboxPolicy;
 
     let Some(home) = dirs::home_dir() else {
         return Ok(());
@@ -854,7 +854,7 @@ writable_roots = ["~/code"]
     );
 
     let config = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(loader_overrides)
         .build()
@@ -902,7 +902,7 @@ allowed_sandbox_modes = ["read-only"]
         Some(AbsolutePathBuf::try_from(tmp.path())?),
         &[] as &[(String, TomlValue)],
         loader_overrides,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -963,7 +963,7 @@ allowed_approval_policies = ["never"]
         Some(AbsolutePathBuf::try_from(tmp.path())?),
         &[] as &[(String, TomlValue)],
         loader_overrides,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -1014,14 +1014,14 @@ personality = true
             .allowed_web_search_modes
             .as_deref()
             .cloned(),
-        Some(vec![codex_config::WebSearchModeRequirement::Cached])
+        Some(vec![motyga_config::WebSearchModeRequirement::Cached])
     );
     assert_eq!(
         config_requirements_toml
             .feature_requirements
             .as_ref()
             .map(|requirements| requirements.value.clone()),
-        Some(codex_config::FeatureRequirementsToml {
+        Some(motyga_config::FeatureRequirementsToml {
             entries: BTreeMap::from([("personality".to_string(), true)]),
         })
     );
@@ -1054,14 +1054,14 @@ personality = true
     );
     assert_eq!(
         config_requirements.enforce_residency.value(),
-        Some(codex_config::ResidencyRequirement::Us)
+        Some(motyga_config::ResidencyRequirement::Us)
     );
     assert_eq!(
         config_requirements
             .feature_requirements
             .as_ref()
             .map(|requirements| requirements.value.clone()),
-        Some(codex_config::FeatureRequirementsToml {
+        Some(motyga_config::FeatureRequirementsToml {
             entries: BTreeMap::from([("personality".to_string(), true)]),
         })
     );
@@ -1095,7 +1095,7 @@ allowed_approval_policies = ["on-request"]
             ),
             ..Default::default()
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -1313,8 +1313,8 @@ deny_read = ["./sensitive/**/*.txt"]
 #[tokio::test]
 async fn load_config_layers_includes_cloud_config_bundle() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let cwd = AbsolutePathBuf::from_absolute_path(tmp.path())?;
 
     let requirements = r#"allowed_approval_policies = ["never"]"#;
@@ -1324,14 +1324,14 @@ async fn load_config_layers_includes_cloud_config_bundle() -> anyhow::Result<()>
 
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         ConfigLoadOptions {
             cloud_config_bundle,
             ..Default::default()
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -1358,10 +1358,10 @@ async fn load_config_layers_includes_cloud_config_bundle() -> anyhow::Result<()>
 #[tokio::test]
 async fn system_requirements_define_managed_permission_profiles() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"
 default_permissions = "managed-standard"
 "#,
@@ -1386,7 +1386,7 @@ extends = ":workspace"
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(cwd.to_path_buf()))
         .loader_overrides(overrides)
         .build()
@@ -1414,11 +1414,11 @@ async fn system_allowed_permission_profiles_select_managed_default_without_local
 -> anyhow::Result<()> {
     for trust_level in [Some(TrustLevel::Trusted), Some(TrustLevel::Untrusted), None] {
         let tmp = tempdir()?;
-        let codex_home = tmp.path().join("home");
-        tokio::fs::create_dir_all(&codex_home).await?;
+        let motyga_home = tmp.path().join("home");
+        tokio::fs::create_dir_all(&motyga_home).await?;
         if let Some(trust_level) = trust_level {
             make_config_for_test(
-                &codex_home,
+                &motyga_home,
                 tmp.path(),
                 trust_level,
                 /*project_root_markers*/ None,
@@ -1448,7 +1448,7 @@ extends = ":workspace"
         let mut overrides = LoaderOverrides::without_managed_config_for_tests();
         overrides.system_requirements_path = Some(requirements_path);
         let config = ConfigBuilder::default()
-            .codex_home(codex_home)
+            .motyga_home(motyga_home)
             .fallback_cwd(Some(cwd.to_path_buf()))
             .loader_overrides(overrides)
             .build()
@@ -1475,8 +1475,8 @@ extends = ":workspace"
 #[tokio::test]
 async fn system_allowed_permission_profiles_require_managed_default() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let requirements_path = tmp.path().join("requirements.toml");
     tokio::fs::write(
         &requirements_path,
@@ -1493,7 +1493,7 @@ managed-standard = true
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let err = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(overrides)
         .build()
@@ -1513,8 +1513,8 @@ managed-standard = true
 async fn system_allowed_permission_profiles_standard_pair_defaults_to_workspace()
 -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let requirements_path = tmp.path().join("requirements.toml");
     tokio::fs::write(
         &requirements_path,
@@ -1529,7 +1529,7 @@ async fn system_allowed_permission_profiles_standard_pair_defaults_to_workspace(
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(overrides)
         .build()
@@ -1548,8 +1548,8 @@ async fn system_allowed_permission_profiles_standard_pair_defaults_to_workspace(
 #[tokio::test]
 async fn system_managed_default_must_be_allowed() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let requirements_path = tmp.path().join("requirements.toml");
     tokio::fs::write(
         &requirements_path,
@@ -1571,7 +1571,7 @@ extends = ":workspace"
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let err = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(overrides)
         .build()
@@ -1590,8 +1590,8 @@ extends = ":workspace"
 #[tokio::test]
 async fn system_managed_default_requires_allowed_permission_profiles() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let requirements_path = tmp.path().join("requirements.toml");
     tokio::fs::write(
         &requirements_path,
@@ -1604,7 +1604,7 @@ default_permissions = ":read-only"
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let err = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(tmp.path().to_path_buf()))
         .loader_overrides(overrides)
         .build()
@@ -1623,10 +1623,10 @@ default_permissions = ":read-only"
 async fn system_allowed_permission_profiles_fall_back_from_disallowed_danger_full_access()
 -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         format!(
             r#"
 default_permissions = "{BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS}"
@@ -1653,7 +1653,7 @@ managed-standard = true
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(cwd.to_path_buf()))
         .loader_overrides(overrides)
         .build()
@@ -1679,10 +1679,10 @@ managed-standard = true
 async fn system_allowed_permission_profiles_fall_back_from_disallowed_workspace()
 -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"
 default_permissions = ":workspace"
 "#,
@@ -1707,7 +1707,7 @@ managed-standard = true
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(cwd.to_path_buf()))
         .loader_overrides(overrides)
         .build()
@@ -1733,8 +1733,8 @@ managed-standard = true
 async fn permission_profile_catalog_marks_profiles_disallowed_by_requirements() -> anyhow::Result<()>
 {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let requirements_path = tmp.path().join("requirements.toml");
     tokio::fs::write(
         &requirements_path,
@@ -1758,7 +1758,7 @@ extends = ":workspace"
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(cwd.to_path_buf()))
         .loader_overrides(overrides)
         .build()
@@ -1801,10 +1801,10 @@ extends = ":workspace"
 async fn system_requirements_preserve_allowed_configured_permission_default() -> anyhow::Result<()>
 {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"
 default_permissions = "managed-build"
 "#,
@@ -1833,7 +1833,7 @@ extends = ":workspace"
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(cwd.to_path_buf()))
         .loader_overrides(overrides)
         .build()
@@ -1853,8 +1853,8 @@ extends = ":workspace"
 async fn system_requirements_warn_for_disallowed_explicit_permission_override() -> anyhow::Result<()>
 {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let requirements_path = tmp.path().join("requirements.toml");
     tokio::fs::write(
         &requirements_path,
@@ -1874,7 +1874,7 @@ extends = ":workspace"
     let mut overrides = LoaderOverrides::without_managed_config_for_tests();
     overrides.system_requirements_path = Some(requirements_path);
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(cwd.to_path_buf()))
         .harness_overrides(ConfigOverrides {
             default_permissions: Some("managed-build".to_string()),
@@ -1903,10 +1903,10 @@ extends = ":workspace"
 #[tokio::test]
 async fn load_config_layers_inserts_cloud_config_between_system_and_user() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"model = "user"
 "#,
     )
@@ -1928,7 +1928,7 @@ review_model = "system-review"
     let cwd = AbsolutePathBuf::from_absolute_path(tmp.path())?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         ConfigLoadOptions {
@@ -1940,7 +1940,7 @@ model_provider = "cloud-provider"
             ),
             ..Default::default()
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -1973,7 +1973,7 @@ model_provider = "cloud-provider"
                 name: "Base config".to_string(),
             },
             ConfigLayerSource::User {
-                file: AbsolutePathBuf::from_absolute_path(codex_home.join(CONFIG_TOML_FILE))?,
+                file: AbsolutePathBuf::from_absolute_path(motyga_home.join(CONFIG_TOML_FILE))?,
                 profile: None,
             },
         ]
@@ -1985,8 +1985,8 @@ model_provider = "cloud-provider"
 #[tokio::test]
 async fn load_config_layers_can_ignore_managed_requirements() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let cwd = AbsolutePathBuf::from_absolute_path(tmp.path())?;
 
     let managed_config_path = tmp.path().join("managed_config.toml");
@@ -2013,7 +2013,7 @@ async fn load_config_layers_can_ignore_managed_requirements() -> anyhow::Result<
     );
 
     let mut config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .fallback_cwd(Some(cwd.to_path_buf()))
         .loader_overrides(overrides)
         .cloud_config_bundle(cloud_config_bundle)
@@ -2040,8 +2040,8 @@ async fn load_config_layers_can_ignore_managed_requirements() -> anyhow::Result<
 #[tokio::test]
 async fn load_config_layers_includes_cloud_hook_requirements() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let managed_dir = tmp.path().join("managed-hooks");
     tokio::fs::create_dir_all(&managed_dir).await?;
     let cwd = AbsolutePathBuf::from_absolute_path(tmp.path())?;
@@ -2069,14 +2069,14 @@ statusMessage = "checking"
 
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         ConfigLoadOptions {
             cloud_config_bundle,
             ..Default::default()
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -2094,11 +2094,11 @@ statusMessage = "checking"
 }
 
 #[tokio::test]
-async fn load_config_layers_resolves_relative_bundle_requirements_paths_against_codex_home()
+async fn load_config_layers_resolves_relative_bundle_requirements_paths_against_motyga_home()
 -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let cwd = AbsolutePathBuf::from_absolute_path(tmp.path())?;
 
     let requirements = r#"
@@ -2110,7 +2110,7 @@ deny_read = ["secrets/**"]
 
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         ConfigLoadOptions {
@@ -2118,7 +2118,7 @@ deny_read = ["secrets/**"]
             cloud_config_bundle,
             ..Default::default()
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -2134,8 +2134,8 @@ deny_read = ["secrets/**"]
     assert_eq!(
         filesystem.deny_read,
         Some(vec![
-            FilesystemDenyReadPattern::from_input(&format!("{}/secrets/**", codex_home.display()))
-                .expect("bundle requirements path should resolve against codex_home")
+            FilesystemDenyReadPattern::from_input(&format!("{}/secrets/**", motyga_home.display()))
+                .expect("bundle requirements path should resolve against motyga_home")
         ])
     );
 
@@ -2145,15 +2145,15 @@ deny_read = ["secrets/**"]
 #[tokio::test]
 async fn strict_config_rejects_unknown_cloud_config_key() {
     let tmp = tempdir().expect("tempdir");
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home)
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home)
         .await
         .expect("create motyga home");
     let cwd = AbsolutePathBuf::from_absolute_path(tmp.path()).expect("cwd");
 
     let err = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         ConfigLoadOptions {
@@ -2163,7 +2163,7 @@ async fn strict_config_rejects_unknown_cloud_config_key() {
                 "unknown_key = true",
             ),
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await
     .expect_err("strict config should reject unknown cloud config keys");
@@ -2178,8 +2178,8 @@ async fn strict_config_rejects_unknown_cloud_config_key() {
 #[tokio::test]
 async fn load_config_layers_applies_matching_remote_sandbox_config() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let cwd = AbsolutePathBuf::from_absolute_path(tmp.path())?;
 
     let requirements = r#"
@@ -2193,22 +2193,22 @@ async fn load_config_layers_applies_matching_remote_sandbox_config() -> anyhow::
         CloudConfigBundleFixture::loader_with_enterprise_requirement(requirements);
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         ConfigLoadOptions {
             cloud_config_bundle,
             ..Default::default()
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
     assert_eq!(
         layers.requirements_toml().allowed_sandbox_modes,
         Some(vec![
-            codex_config::SandboxModeRequirement::ReadOnly,
-            codex_config::SandboxModeRequirement::WorkspaceWrite,
+            motyga_config::SandboxModeRequirement::ReadOnly,
+            motyga_config::SandboxModeRequirement::WorkspaceWrite,
         ])
     );
     assert!(
@@ -2225,26 +2225,26 @@ async fn load_config_layers_applies_matching_remote_sandbox_config() -> anyhow::
 #[tokio::test]
 async fn load_config_layers_fails_when_cloud_config_bundle_loader_fails() -> anyhow::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     let cwd = AbsolutePathBuf::from_absolute_path(tmp.path())?;
 
     let err = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         ConfigLoadOptions {
             cloud_config_bundle: CloudConfigBundleLoader::new(async {
                 Err(CloudConfigBundleLoadError::new(
-                    codex_config::CloudConfigBundleLoadErrorCode::RequestFailed,
+                    motyga_config::CloudConfigBundleLoadErrorCode::RequestFailed,
                     /*status_code*/ None,
                     "cloud config bundle failed",
                 ))
             }),
             ..Default::default()
         },
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await
     .expect_err("cloud config bundle failure should fail closed");
@@ -2277,10 +2277,10 @@ async fn project_layers_prefer_closest_cwd() -> std::io::Result<()> {
     )
     .await?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &project_root,
         TrustLevel::Trusted,
         /*project_root_markers*/ None,
@@ -2289,11 +2289,11 @@ async fn project_layers_prefer_closest_cwd() -> std::io::Result<()> {
     let cwd = AbsolutePathBuf::from_absolute_path(&nested)?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -2301,7 +2301,7 @@ async fn project_layers_prefer_closest_cwd() -> std::io::Result<()> {
         .layers_high_to_low()
         .into_iter()
         .filter_map(|layer| match &layer.name {
-            ConfigLayerSource::Project { dot_codex_folder } => Some(dot_codex_folder),
+            ConfigLayerSource::Project { dot_motyga_folder } => Some(dot_motyga_folder),
             _ => None,
         })
         .collect();
@@ -2358,10 +2358,10 @@ async fn linked_worktree_project_layers_keep_worktree_config_but_use_root_repo_h
     )
     .await?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &repo_root,
         TrustLevel::Trusted,
         /*project_root_markers*/ None,
@@ -2371,11 +2371,11 @@ async fn linked_worktree_project_layers_keep_worktree_config_but_use_root_repo_h
     let cwd = AbsolutePathBuf::from_absolute_path(&worktree_child)?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -2439,10 +2439,10 @@ async fn linked_worktree_project_layers_use_root_repo_hooks_without_worktree_con
     )
     .await?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &repo_root,
         TrustLevel::Trusted,
         /*project_root_markers*/ None,
@@ -2452,11 +2452,11 @@ async fn linked_worktree_project_layers_use_root_repo_hooks_without_worktree_con
     let cwd = AbsolutePathBuf::from_absolute_path(&worktree_root)?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -2509,10 +2509,10 @@ async fn nested_project_root_markers_do_not_redirect_regular_repo_hooks() -> std
     )
     .await?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &project_root,
         TrustLevel::Trusted,
         Some(vec![".hg".to_string()]),
@@ -2522,11 +2522,11 @@ async fn nested_project_root_markers_do_not_redirect_regular_repo_hooks() -> std
     let cwd = AbsolutePathBuf::from_absolute_path(&nested)?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -2573,7 +2573,7 @@ fn project_hook_command(layer: &ConfigLayerEntry) -> Option<&str> {
 }
 
 #[tokio::test]
-async fn project_paths_resolve_relative_to_dot_codex_and_override_in_order() -> std::io::Result<()>
+async fn project_paths_resolve_relative_to_dot_motyga_and_override_in_order() -> std::io::Result<()>
 {
     let tmp = tempdir()?;
     let project_root = tmp.path().join("project");
@@ -2601,10 +2601,10 @@ model_instructions_file = "child.txt"
     )
     .await?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &project_root,
         TrustLevel::Trusted,
         /*project_root_markers*/ None,
@@ -2612,7 +2612,7 @@ model_instructions_file = "child.txt"
     .await?;
 
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .harness_overrides(ConfigOverrides {
             cwd: Some(nested.clone()),
             ..ConfigOverrides::default()
@@ -2631,9 +2631,9 @@ model_instructions_file = "child.txt"
 #[tokio::test]
 async fn cli_override_model_instructions_file_sets_base_instructions() -> std::io::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
-    tokio::fs::write(codex_home.join(CONFIG_TOML_FILE), "").await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
+    tokio::fs::write(motyga_home.join(CONFIG_TOML_FILE), "").await?;
 
     let cwd = tmp.path().join("work");
     tokio::fs::create_dir_all(&cwd).await?;
@@ -2647,7 +2647,7 @@ async fn cli_override_model_instructions_file_sets_base_instructions() -> std::i
     )];
 
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .cli_overrides(cli_overrides)
         .harness_overrides(ConfigOverrides {
             cwd: Some(cwd),
@@ -2667,16 +2667,16 @@ async fn cli_override_model_instructions_file_sets_base_instructions() -> std::i
 #[tokio::test]
 async fn inline_instructions_set_base_instructions() -> std::io::Result<()> {
     let tmp = tempdir()?;
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"instructions = "snapshot instructions""#,
     )
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .build()
         .await?;
 
@@ -2689,7 +2689,7 @@ async fn inline_instructions_set_base_instructions() -> std::io::Result<()> {
 }
 
 #[tokio::test]
-async fn project_layer_is_added_when_dot_codex_exists_without_config_toml() -> std::io::Result<()> {
+async fn project_layer_is_added_when_dot_motyga_exists_without_config_toml() -> std::io::Result<()> {
     let tmp = tempdir()?;
     let project_root = tmp.path().join("project");
     let nested = project_root.join("child");
@@ -2697,10 +2697,10 @@ async fn project_layer_is_added_when_dot_codex_exists_without_config_toml() -> s
     tokio::fs::create_dir_all(project_root.join(".motyga")).await?;
     tokio::fs::write(project_root.join(".git"), "gitdir: here").await?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &project_root,
         TrustLevel::Trusted,
         /*project_root_markers*/ None,
@@ -2709,11 +2709,11 @@ async fn project_layer_is_added_when_dot_codex_exists_without_config_toml() -> s
     let cwd = AbsolutePathBuf::from_absolute_path(&nested)?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -2724,7 +2724,7 @@ async fn project_layer_is_added_when_dot_codex_exists_without_config_toml() -> s
         .collect();
     let expected_project_layer = ConfigLayerEntry::new(
         ConfigLayerSource::Project {
-            dot_codex_folder: AbsolutePathBuf::from_absolute_path(project_root.join(".motyga"))?,
+            dot_motyga_folder: AbsolutePathBuf::from_absolute_path(project_root.join(".motyga"))?,
         },
         TomlValue::Table(toml::map::Map::new()),
     );
@@ -2734,13 +2734,13 @@ async fn project_layer_is_added_when_dot_codex_exists_without_config_toml() -> s
 }
 
 #[tokio::test]
-async fn codex_home_is_not_loaded_as_project_layer_from_home_dir() -> std::io::Result<()> {
+async fn motyga_home_is_not_loaded_as_project_layer_from_home_dir() -> std::io::Result<()> {
     let tmp = tempdir()?;
     let home_dir = tmp.path().join("home");
-    let codex_home = home_dir.join(".motyga");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = home_dir.join(".motyga");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"foo = "user"
 "#,
     )
@@ -2749,11 +2749,11 @@ async fn codex_home_is_not_loaded_as_project_layer_from_home_dir() -> std::io::R
     let cwd = AbsolutePathBuf::from_absolute_path(&home_dir)?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -2776,31 +2776,31 @@ async fn codex_home_is_not_loaded_as_project_layer_from_home_dir() -> std::io::R
 }
 
 #[tokio::test]
-async fn codex_home_within_project_tree_is_not_double_loaded() -> std::io::Result<()> {
+async fn motyga_home_within_project_tree_is_not_double_loaded() -> std::io::Result<()> {
     let tmp = tempdir()?;
     let project_root = tmp.path().join("project");
     let nested = project_root.join("child");
-    let project_dot_codex = project_root.join(".motyga");
-    let nested_dot_codex = nested.join(".motyga");
+    let project_dot_motyga = project_root.join(".motyga");
+    let nested_dot_motyga = nested.join(".motyga");
 
-    tokio::fs::create_dir_all(&nested_dot_codex).await?;
+    tokio::fs::create_dir_all(&nested_dot_motyga).await?;
     tokio::fs::create_dir_all(project_root.join(".git")).await?;
     tokio::fs::write(
-        nested_dot_codex.join(CONFIG_TOML_FILE),
+        nested_dot_motyga.join(CONFIG_TOML_FILE),
         r#"foo = "child"
 "#,
     )
     .await?;
 
-    tokio::fs::create_dir_all(&project_dot_codex).await?;
+    tokio::fs::create_dir_all(&project_dot_motyga).await?;
     make_config_for_test(
-        &project_dot_codex,
+        &project_dot_motyga,
         &project_root,
         TrustLevel::Trusted,
         /*project_root_markers*/ None,
     )
     .await?;
-    let user_config_path = project_dot_codex.join(CONFIG_TOML_FILE);
+    let user_config_path = project_dot_motyga.join(CONFIG_TOML_FILE);
     let user_config_contents = tokio::fs::read_to_string(&user_config_path).await?;
     tokio::fs::write(
         &user_config_path,
@@ -2814,11 +2814,11 @@ async fn codex_home_within_project_tree_is_not_double_loaded() -> std::io::Resul
     let cwd = AbsolutePathBuf::from_absolute_path(&nested)?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &project_dot_codex,
+        &project_dot_motyga,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -2838,7 +2838,7 @@ async fn codex_home_within_project_tree_is_not_double_loaded() -> std::io::Resul
     .expect("parse child config");
     let expected_project_layer = ConfigLayerEntry::new(
         ConfigLayerSource::Project {
-            dot_codex_folder: AbsolutePathBuf::from_absolute_path(&nested_dot_codex)?,
+            dot_motyga_folder: AbsolutePathBuf::from_absolute_path(&nested_dot_motyga)?,
         },
         child_config,
     );
@@ -2867,16 +2867,16 @@ profile = "ignored"
 
     let cwd = AbsolutePathBuf::from_absolute_path(&nested)?;
 
-    let codex_home_untrusted = tmp.path().join("home_untrusted");
-    tokio::fs::create_dir_all(&codex_home_untrusted).await?;
+    let motyga_home_untrusted = tmp.path().join("home_untrusted");
+    tokio::fs::create_dir_all(&motyga_home_untrusted).await?;
     make_config_for_test(
-        &codex_home_untrusted,
+        &motyga_home_untrusted,
         &project_root,
         TrustLevel::Untrusted,
         /*project_root_markers*/ None,
     )
     .await?;
-    let untrusted_config_path = codex_home_untrusted.join(CONFIG_TOML_FILE);
+    let untrusted_config_path = motyga_home_untrusted.join(CONFIG_TOML_FILE);
     let untrusted_config_contents = tokio::fs::read_to_string(&untrusted_config_path).await?;
     tokio::fs::write(
         &untrusted_config_path,
@@ -2889,11 +2889,11 @@ profile = "ignored"
 
     let layers_untrusted = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home_untrusted,
+        &motyga_home_untrusted,
         Some(cwd.clone()),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
     let project_layers_untrusted: Vec<_> = layers_untrusted
@@ -2924,10 +2924,10 @@ profile = "ignored"
     let empty_warnings: &[String] = &[];
     assert_eq!(layers_untrusted.startup_warnings(), Some(empty_warnings));
 
-    let codex_home_unknown = tmp.path().join("home_unknown");
-    tokio::fs::create_dir_all(&codex_home_unknown).await?;
+    let motyga_home_unknown = tmp.path().join("home_unknown");
+    tokio::fs::create_dir_all(&motyga_home_unknown).await?;
     tokio::fs::write(
-        codex_home_unknown.join(CONFIG_TOML_FILE),
+        motyga_home_unknown.join(CONFIG_TOML_FILE),
         r#"foo = "user"
 "#,
     )
@@ -2935,11 +2935,11 @@ profile = "ignored"
 
     let layers_unknown = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home_unknown,
+        &motyga_home_unknown,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
     let project_layers_unknown: Vec<_> = layers_unknown
@@ -2976,14 +2976,14 @@ profile = "ignored"
 async fn project_layer_ignores_unsupported_config_keys() -> std::io::Result<()> {
     let tmp = tempdir()?;
     let project_root = tmp.path().join("project");
-    let dot_codex = project_root.join(".motyga");
-    tokio::fs::create_dir_all(&dot_codex).await?;
+    let dot_motyga = project_root.join(".motyga");
+    tokio::fs::create_dir_all(&dot_motyga).await?;
     // `model_instructions_file` is intentionally allowed from project config:
     // it is the control case that should still be resolved relative to this
-    // `.codex` folder. The malformed profile value below would fail typed path
+    // `.motyga` folder. The malformed profile value below would fail typed path
     // resolution if `profiles` were not stripped before that pass runs.
     tokio::fs::write(
-        dot_codex.join(CONFIG_TOML_FILE),
+        dot_motyga.join(CONFIG_TOML_FILE),
         r#"
 model = "project-model"
 model_instructions_file = "instructions.md"
@@ -3013,10 +3013,10 @@ wire_api = "responses"
     )
     .await?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &project_root,
         TrustLevel::Trusted,
         /*project_root_markers*/ None,
@@ -3026,11 +3026,11 @@ wire_api = "responses"
     let cwd = AbsolutePathBuf::from_absolute_path(&project_root)?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -3059,7 +3059,7 @@ wire_api = "responses"
             "If you want these settings to apply, manually set them in your ",
             "user-level config.toml."
         ),
-        dot_codex.join(CONFIG_TOML_FILE).display(),
+        dot_motyga.join(CONFIG_TOML_FILE).display(),
         ignored_project_config_keys.join(", ")
     )];
     assert_eq!(
@@ -3073,11 +3073,11 @@ wire_api = "responses"
         Some(&TomlValue::String("project-model".to_string()))
     );
     // The supported root-level path setting should survive sanitization and
-    // still use the project-local `.codex` folder as its relative-path base.
+    // still use the project-local `.motyga` folder as its relative-path base.
     assert_eq!(
         effective_config.get("model_instructions_file"),
         Some(&TomlValue::String(
-            dot_codex
+            dot_motyga
                 .join("instructions.md")
                 .to_string_lossy()
                 .to_string()
@@ -3109,10 +3109,10 @@ async fn project_trust_does_not_match_configured_alias_for_canonical_cwd() -> st
     .await?;
     std::os::unix::fs::symlink(&project_root, &alias_root)?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         toml::to_string(&ConfigToml {
             projects: Some(HashMap::from([(
                 alias_root.to_string_lossy().to_string(),
@@ -3128,11 +3128,11 @@ async fn project_trust_does_not_match_configured_alias_for_canonical_cwd() -> st
 
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(AbsolutePathBuf::from_absolute_path(&project_root)?),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -3160,14 +3160,14 @@ async fn cli_override_can_update_project_local_mcp_server_when_project_is_truste
     let tmp = tempdir()?;
     let project_root = tmp.path().join("project");
     let nested = project_root.join("child");
-    let dot_codex = project_root.join(".motyga");
-    let codex_home = tmp.path().join("home");
+    let dot_motyga = project_root.join(".motyga");
+    let motyga_home = tmp.path().join("home");
     tokio::fs::create_dir_all(&nested).await?;
-    tokio::fs::create_dir_all(&dot_codex).await?;
-    tokio::fs::create_dir_all(&codex_home).await?;
+    tokio::fs::create_dir_all(&dot_motyga).await?;
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(project_root.join(".git"), "gitdir: here").await?;
     tokio::fs::write(
-        dot_codex.join(CONFIG_TOML_FILE),
+        dot_motyga.join(CONFIG_TOML_FILE),
         r#"
 [mcp_servers.sentry]
 url = "https://mcp.sentry.dev/mcp"
@@ -3176,7 +3176,7 @@ enabled = false
     )
     .await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &project_root,
         TrustLevel::Trusted,
         /*project_root_markers*/ None,
@@ -3184,7 +3184,7 @@ enabled = false
     .await?;
 
     let config = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .cli_overrides(vec![(
             "mcp_servers.sentry.enabled".to_string(),
             TomlValue::Boolean(true),
@@ -3209,14 +3209,14 @@ async fn cli_override_for_disabled_project_local_mcp_server_returns_invalid_tran
     let tmp = tempdir()?;
     let project_root = tmp.path().join("project");
     let nested = project_root.join("child");
-    let dot_codex = project_root.join(".motyga");
-    let codex_home = tmp.path().join("home");
+    let dot_motyga = project_root.join(".motyga");
+    let motyga_home = tmp.path().join("home");
     tokio::fs::create_dir_all(&nested).await?;
-    tokio::fs::create_dir_all(&dot_codex).await?;
-    tokio::fs::create_dir_all(&codex_home).await?;
+    tokio::fs::create_dir_all(&dot_motyga).await?;
+    tokio::fs::create_dir_all(&motyga_home).await?;
     tokio::fs::write(project_root.join(".git"), "gitdir: here").await?;
     tokio::fs::write(
-        dot_codex.join(CONFIG_TOML_FILE),
+        dot_motyga.join(CONFIG_TOML_FILE),
         r#"
 [mcp_servers.sentry]
 url = "https://mcp.sentry.dev/mcp"
@@ -3226,7 +3226,7 @@ enabled = false
     .await?;
 
     let err = ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .cli_overrides(vec![(
             "mcp_servers.sentry.enabled".to_string(),
             TomlValue::Boolean(true),
@@ -3261,13 +3261,13 @@ async fn invalid_project_config_ignored_when_untrusted_or_unknown() -> std::io::
     ];
 
     for (name, trust_level) in cases {
-        let codex_home = tmp.path().join(format!("home_{name}"));
-        tokio::fs::create_dir_all(&codex_home).await?;
-        let config_path = codex_home.join(CONFIG_TOML_FILE);
+        let motyga_home = tmp.path().join(format!("home_{name}"));
+        tokio::fs::create_dir_all(&motyga_home).await?;
+        let config_path = motyga_home.join(CONFIG_TOML_FILE);
 
         if let Some(trust_level) = trust_level {
             make_config_for_test(
-                &codex_home,
+                &motyga_home,
                 &project_root,
                 trust_level,
                 /*project_root_markers*/ None,
@@ -3293,11 +3293,11 @@ async fn invalid_project_config_ignored_when_untrusted_or_unknown() -> std::io::
 
         let layers = load_config_layers_state(
             LOCAL_FS.as_ref(),
-            &codex_home,
+            &motyga_home,
             Some(cwd.clone()),
             &[] as &[(String, TomlValue)],
             LoaderOverrides::default(),
-            &codex_config::NoopThreadConfigLoader,
+            &motyga_config::NoopThreadConfigLoader,
         )
         .await?;
         let project_layers: Vec<_> = layers
@@ -3347,11 +3347,11 @@ async fn project_layer_without_config_toml_is_disabled_when_untrusted_or_unknown
     ];
 
     for (name, trust_level, expect_disabled) in cases {
-        let codex_home = tmp.path().join(format!("home_no_config_{name}"));
-        tokio::fs::create_dir_all(&codex_home).await?;
+        let motyga_home = tmp.path().join(format!("home_no_config_{name}"));
+        tokio::fs::create_dir_all(&motyga_home).await?;
         if let Some(trust_level) = trust_level {
             make_config_for_test(
-                &codex_home,
+                &motyga_home,
                 &project_root,
                 trust_level,
                 /*project_root_markers*/ None,
@@ -3361,11 +3361,11 @@ async fn project_layer_without_config_toml_is_disabled_when_untrusted_or_unknown
 
         let layers = load_config_layers_state(
             LOCAL_FS.as_ref(),
-            &codex_home,
+            &motyga_home,
             Some(cwd.clone()),
             &[] as &[(String, TomlValue)],
             LoaderOverrides::default(),
-            &codex_config::NoopThreadConfigLoader,
+            &motyga_config::NoopThreadConfigLoader,
         )
         .await?;
         let project_layers: Vec<_> = layers
@@ -3403,10 +3403,10 @@ async fn cli_overrides_with_relative_paths_do_not_break_trust_check() -> std::io
     tokio::fs::create_dir_all(&nested).await?;
     tokio::fs::write(project_root.join(".git"), "gitdir: here").await?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &project_root,
         TrustLevel::Trusted,
         /*project_root_markers*/ None,
@@ -3421,11 +3421,11 @@ async fn cli_overrides_with_relative_paths_do_not_break_trust_check() -> std::io
 
     load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &cli_overrides,
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -3453,10 +3453,10 @@ async fn project_root_markers_supports_alternate_markers() -> std::io::Result<()
     )
     .await?;
 
-    let codex_home = tmp.path().join("home");
-    tokio::fs::create_dir_all(&codex_home).await?;
+    let motyga_home = tmp.path().join("home");
+    tokio::fs::create_dir_all(&motyga_home).await?;
     make_config_for_test(
-        &codex_home,
+        &motyga_home,
         &project_root,
         TrustLevel::Trusted,
         Some(vec![".hg".to_string()]),
@@ -3466,11 +3466,11 @@ async fn project_root_markers_supports_alternate_markers() -> std::io::Result<()
     let cwd = AbsolutePathBuf::from_absolute_path(&nested)?;
     let layers = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        &codex_home,
+        &motyga_home,
         Some(cwd),
         &[] as &[(String, TomlValue)],
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
@@ -3478,7 +3478,7 @@ async fn project_root_markers_supports_alternate_markers() -> std::io::Result<()
         .layers_high_to_low()
         .into_iter()
         .filter_map(|layer| match &layer.name {
-            ConfigLayerSource::Project { dot_codex_folder } => Some(dot_codex_folder),
+            ConfigLayerSource::Project { dot_motyga_folder } => Some(dot_motyga_folder),
             _ => None,
         })
         .collect();
@@ -3501,22 +3501,22 @@ async fn project_root_markers_supports_alternate_markers() -> std::io::Result<()
 
 mod requirements_exec_policy_tests {
     use crate::exec_policy::load_exec_policy;
-    use codex_config::ConfigLayerEntry;
-    use codex_config::ConfigLayerSource;
-    use codex_config::ConfigLayerStack;
-    use codex_config::ConfigRequirements;
-    use codex_config::ConfigRequirementsToml;
-    use codex_config::ConfigRequirementsWithSources;
-    use codex_config::RequirementSource;
-    use codex_config::RequirementsExecPolicyDecisionToml;
-    use codex_config::RequirementsExecPolicyParseError;
-    use codex_config::RequirementsExecPolicyPatternTokenToml;
-    use codex_config::RequirementsExecPolicyPrefixRuleToml;
-    use codex_config::RequirementsExecPolicyToml;
-    use codex_execpolicy::Decision;
-    use codex_execpolicy::Evaluation;
-    use codex_execpolicy::RuleMatch;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_config::ConfigLayerEntry;
+    use motyga_config::ConfigLayerSource;
+    use motyga_config::ConfigLayerStack;
+    use motyga_config::ConfigRequirements;
+    use motyga_config::ConfigRequirementsToml;
+    use motyga_config::ConfigRequirementsWithSources;
+    use motyga_config::RequirementSource;
+    use motyga_config::RequirementsExecPolicyDecisionToml;
+    use motyga_config::RequirementsExecPolicyParseError;
+    use motyga_config::RequirementsExecPolicyPatternTokenToml;
+    use motyga_config::RequirementsExecPolicyPrefixRuleToml;
+    use motyga_config::RequirementsExecPolicyToml;
+    use motyga_execpolicy::Decision;
+    use motyga_execpolicy::Evaluation;
+    use motyga_execpolicy::RuleMatch;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
     use std::path::Path;
     use tempfile::tempdir;
@@ -3531,14 +3531,14 @@ mod requirements_exec_policy_tests {
         panic!("rule should match so heuristic should not be called");
     }
 
-    fn config_stack_for_dot_codex_folder_with_requirements(
-        dot_codex_folder: &Path,
+    fn config_stack_for_dot_motyga_folder_with_requirements(
+        dot_motyga_folder: &Path,
         requirements: ConfigRequirements,
     ) -> ConfigLayerStack {
-        let dot_codex_folder = AbsolutePathBuf::from_absolute_path(dot_codex_folder)
-            .expect("absolute dot_codex_folder");
+        let dot_motyga_folder = AbsolutePathBuf::from_absolute_path(dot_motyga_folder)
+            .expect("absolute dot_motyga_folder");
         let layer = ConfigLayerEntry::new(
-            ConfigLayerSource::Project { dot_codex_folder },
+            ConfigLayerSource::Project { dot_motyga_folder },
             TomlValue::Table(Default::default()),
         );
         ConfigLayerStack::new(vec![layer], requirements, ConfigRequirementsToml::default())
@@ -3752,7 +3752,7 @@ prefix_rules = []
             "#,
         );
         let config_stack =
-            config_stack_for_dot_codex_folder_with_requirements(temp_dir.path(), requirements);
+            config_stack_for_dot_motyga_folder_with_requirements(temp_dir.path(), requirements);
 
         let policy = load_exec_policy(&config_stack).await?;
 
@@ -3791,7 +3791,7 @@ prefix_rules = []
             "#,
         );
         let config_stack =
-            config_stack_for_dot_codex_folder_with_requirements(temp_dir.path(), requirements);
+            config_stack_for_dot_motyga_folder_with_requirements(temp_dir.path(), requirements);
 
         let policy = load_exec_policy(&config_stack).await?;
 

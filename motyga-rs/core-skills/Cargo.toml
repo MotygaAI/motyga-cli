@@ -1,12 +1,12 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-core-skills"
+name = "motyga-core-skills"
 version.workspace = true
 
 [lib]
 doctest = false
-name = "codex_core_skills"
+name = "motyga_core_skills"
 path = "src/lib.rs"
 
 [lints]
@@ -14,20 +14,20 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-codex-analytics = { workspace = true }
-codex-config = { workspace = true }
-codex-context-fragments = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-login = { workspace = true }
-codex-model-provider = { workspace = true }
-codex-otel = { workspace = true }
-codex-protocol = { workspace = true }
-codex-shell-command = { workspace = true }
-codex-skills = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-output-truncation = { workspace = true }
-codex-utils-path-uri = { workspace = true }
-codex-utils-plugins = { workspace = true }
+motyga-analytics = { workspace = true }
+motyga-config = { workspace = true }
+motyga-context-fragments = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-login = { workspace = true }
+motyga-model-provider = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-shell-command = { workspace = true }
+motyga-skills = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-output-truncation = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
+motyga-utils-plugins = { workspace = true }
 dirs = { workspace = true }
 dunce = { workspace = true }
 futures = { workspace = true }

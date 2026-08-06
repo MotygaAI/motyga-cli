@@ -9,13 +9,13 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::diff_model::FileChange;
-use codex_app_server_protocol::AdditionalPermissionProfile;
-use codex_app_server_protocol::CommandExecutionApprovalDecision;
-use codex_app_server_protocol::ExecPolicyAmendment;
-use codex_app_server_protocol::NetworkApprovalContext;
-use codex_app_server_protocol::NetworkPolicyAmendment;
-use codex_app_server_protocol::NetworkPolicyRuleAction;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::AdditionalPermissionProfile;
+use motyga_app_server_protocol::CommandExecutionApprovalDecision;
+use motyga_app_server_protocol::ExecPolicyAmendment;
+use motyga_app_server_protocol::NetworkApprovalContext;
+use motyga_app_server_protocol::NetworkPolicyAmendment;
+use motyga_app_server_protocol::NetworkPolicyRuleAction;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use serde::Deserialize;
 use serde::Serialize;
 

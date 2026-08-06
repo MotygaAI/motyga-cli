@@ -3,34 +3,34 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_core::config::Config;
-use codex_extension_api::ExtensionRegistry;
-use codex_extension_api::ExtensionRegistryBuilder;
-use codex_features::Feature;
-use codex_image_generation_extension::install as install_image_generation_extension;
-use codex_login::CodexAuth;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::models::ImageDetail;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
-use codex_web_search_extension::install as install_web_search_extension;
+use motyga_core::config::Config;
+use motyga_extension_api::ExtensionRegistry;
+use motyga_extension_api::ExtensionRegistryBuilder;
+use motyga_features::Feature;
+use motyga_image_generation_extension::install as install_image_generation_extension;
+use motyga_login::MotygaAuth;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::models::ImageDetail;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
+use motyga_web_search_extension::install as install_web_search_extension;
 use core_test_support::responses;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 
 const RESPONSES_LITE_HEADER: &str = "x-openai-internal-codex-responses-lite";
 
-fn responses_extensions(auth: &CodexAuth) -> Arc<ExtensionRegistry<Config>> {
-    let auth_manager = codex_core::test_support::auth_manager_from_auth(auth.clone());
+fn responses_extensions(auth: &MotygaAuth) -> Arc<ExtensionRegistry<Config>> {
+    let auth_manager = motyga_core::test_support::auth_manager_from_auth(auth.clone());
     let mut extension_builder = ExtensionRegistryBuilder::<Config>::new();
     install_web_search_extension(&mut extension_builder, Arc::clone(&auth_manager));
     install_image_generation_extension(&mut extension_builder, auth_manager, |config| {
-        Some(config.codex_home.clone())
+        Some(config.motyga_home.clone())
     });
     Arc::new(extension_builder.build())
 }
@@ -47,7 +47,7 @@ fn configure_responses_tools(config: &mut Config) {
     assert!(config.features.disable(Feature::ImageGenExt).is_ok());
 }
 
-fn configure_image_capable_model(model_info: &mut codex_protocol::openai_models::ModelInfo) {
+fn configure_image_capable_model(model_info: &mut motyga_protocol::openai_models::ModelInfo) {
     model_info.input_modalities = vec![InputModality::Text, InputModality::Image];
 }
 
@@ -95,7 +95,7 @@ async fn responses_lite_uses_input_items_for_instructions_and_tools() -> Result<
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model_info_override("gpt-5.4", |model_info| {
             model_info.use_responses_lite = true;
         })
@@ -148,13 +148,13 @@ async fn responses_lite_prepares_images() -> Result<()> {
     .await;
     let image_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";
     let remote_image_url = "https://example.com/image.png";
-    let mut builder = test_codex().with_model_info_override("gpt-5.4", |model_info| {
+    let mut builder = test_motyga().with_model_info_override("gpt-5.4", |model_info| {
         model_info.use_responses_lite = true;
         configure_image_capable_model(model_info);
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![
                 UserInput::Image {
@@ -172,7 +172,7 @@ async fn responses_lite_prepares_images() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -217,10 +217,10 @@ async fn responses_lite_uses_standalone_web_search_and_image_generation() -> Res
     )
     .await;
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
     let extensions = responses_extensions(&auth);
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_auth(auth)
         .with_extensions(extensions)
         .with_model_info_override("gpt-5.4", |model_info| {
@@ -262,9 +262,9 @@ async fn responses_lite_exposes_standalone_tools_for_actor_authorized_provider()
     )
     .await;
 
-    let auth = CodexAuth::from_api_key("dummy");
+    let auth = MotygaAuth::from_api_key("dummy");
     let extensions = responses_extensions(&auth);
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_auth(auth)
         .with_extensions(extensions)
         .with_model_info_override("gpt-5.4", |model_info| {
@@ -308,7 +308,7 @@ async fn responses_lite_compact_request_uses_lite_transport_contract() -> Result
     let compact_mock =
         responses::mount_compact_json_once(&server, serde_json::json!({ "output": [] })).await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model_info_override("gpt-5.4", |model_info| {
             model_info.use_responses_lite = true;
             model_info.supports_parallel_tool_calls = true;
@@ -319,8 +319,8 @@ async fn responses_lite_compact_request_uses_lite_transport_contract() -> Result
     let test = builder.build(&server).await?;
 
     test.submit_turn("Compact this conversation").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -361,8 +361,8 @@ async fn responses_lite_omits_hosted_tools_without_standalone_extensions() -> Re
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model_info_override("gpt-5.4", |model_info| {
             model_info.use_responses_lite = true;
             configure_image_capable_model(model_info);
@@ -395,9 +395,9 @@ async fn non_lite_uses_hosted_tools_when_standalone_features_are_disabled() -> R
     )
     .await;
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
     let extensions = responses_extensions(&auth);
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_auth(auth)
         .with_extensions(extensions)
         .with_model_info_override("gpt-5.4", configure_image_capable_model)

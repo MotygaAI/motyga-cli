@@ -1,6 +1,6 @@
 use super::*;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::ThreadGoalStatus;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::ThreadGoalStatus;
 
 #[test]
 fn continuation_prompt_allows_complete_and_strict_blocked_updates() {

@@ -6,22 +6,22 @@ use crate::history_cell::with_border_with_inner_width;
 use crate::legacy_core::config::Config;
 use crate::token_usage::TokenUsage;
 use crate::token_usage::TokenUsageInfo;
-use crate::version::CODEX_CLI_VERSION;
+use crate::version::MOTYGA_CLI_VERSION;
 use chrono::DateTime;
 use chrono::Local;
-use codex_app_server_protocol::AskForApproval;
-use codex_model_provider_info::WireApi;
-use codex_protocol::ThreadId;
-use codex_protocol::account::PlanType;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_sandbox_summary::summarize_permission_profile;
+use motyga_app_server_protocol::AskForApproval;
+use motyga_model_provider_info::WireApi;
+use motyga_protocol::ThreadId;
+use motyga_protocol::account::PlanType;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_sandbox_summary::summarize_permission_profile;
 use ratatui::prelude::*;
 use ratatui::style::Stylize;
 use std::collections::BTreeSet;
@@ -712,7 +712,7 @@ impl HistoryCell for StatusHistoryCell {
             Span::from(format!("{}>_ ", FieldFormatter::INDENT)).dim(),
             Span::from("Motyga").bold(),
             Span::from(" ").dim(),
-            Span::from(format!("(v{CODEX_CLI_VERSION})")).dim(),
+            Span::from(format!("(v{MOTYGA_CLI_VERSION})")).dim(),
         ]));
 
         let available_inner_width = usize::from(width.saturating_sub(4));

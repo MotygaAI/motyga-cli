@@ -1,32 +1,32 @@
-use core_test_support::test_codex::local_selections;
+use core_test_support::test_motyga::local_selections;
 use std::fs;
 
 use anyhow::Result;
-use codex_core::compact::SUMMARY_PREFIX;
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_login::auth::AgentIdentityAuth;
-use codex_login::auth::AgentIdentityAuthRecord;
-use codex_protocol::account::PlanType as AccountPlanType;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::dynamic_tools::DynamicToolFunctionSpec;
-use codex_protocol::dynamic_tools::DynamicToolNamespaceSpec;
-use codex_protocol::dynamic_tools::DynamicToolNamespaceTool;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::ConversationStartParams;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ItemCompletedEvent;
-use codex_protocol::protocol::ItemStartedEvent;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RealtimeConversationRealtimeEvent;
-use codex_protocol::protocol::RealtimeEvent;
-use codex_protocol::protocol::RealtimeOutputModality;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::user_input::UserInput;
+use motyga_core::compact::SUMMARY_PREFIX;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_login::auth::AgentIdentityAuth;
+use motyga_login::auth::AgentIdentityAuthRecord;
+use motyga_protocol::account::PlanType as AccountPlanType;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::dynamic_tools::DynamicToolFunctionSpec;
+use motyga_protocol::dynamic_tools::DynamicToolNamespaceSpec;
+use motyga_protocol::dynamic_tools::DynamicToolNamespaceTool;
+use motyga_protocol::dynamic_tools::DynamicToolSpec;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::ConversationStartParams;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ItemCompletedEvent;
+use motyga_protocol::protocol::ItemStartedEvent;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RealtimeConversationRealtimeEvent;
+use motyga_protocol::protocol::RealtimeEvent;
+use motyga_protocol::protocol::RealtimeOutputModality;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::PathBufExt;
 use core_test_support::apps_test_server::configure_search_capable_model;
 use core_test_support::context_snapshot;
@@ -37,9 +37,9 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_websocket_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodexBuilder;
-use core_test_support::test_codex::TestCodexHarness;
-use core_test_support::test_codex::test_codex as base_test_codex;
+use core_test_support::test_motyga::TestMotygaBuilder;
+use core_test_support::test_motyga::TestMotygaHarness;
+use core_test_support::test_motyga::test_motyga as base_test_motyga;
 use core_test_support::test_path_buf;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
@@ -168,18 +168,18 @@ fn compacted_summary_only_output(summary: &str) -> Vec<ResponseItem> {
     }]
 }
 
-fn test_codex() -> TestCodexBuilder {
-    base_test_codex().with_config(|config| {
+fn test_motyga() -> TestMotygaBuilder {
+    base_test_motyga().with_config(|config| {
         let _ = config.features.disable(Feature::RemoteCompactionV2);
     })
 }
 
-fn remote_realtime_test_codex_builder(
+fn remote_realtime_test_motyga_builder(
     realtime_server: &responses::WebSocketTestServer,
-) -> TestCodexBuilder {
+) -> TestMotygaBuilder {
     let realtime_base_url = realtime_server.uri().to_string();
-    test_codex()
-        .with_auth(CodexAuth::from_api_key("dummy"))
+    test_motyga()
+        .with_auth(MotygaAuth::from_api_key("dummy"))
         .with_config(move |config| {
             config.experimental_realtime_ws_base_url = Some(realtime_base_url);
         })
@@ -205,13 +205,13 @@ async fn start_remote_realtime_server() -> responses::WebSocketTestServer {
     .await
 }
 
-async fn start_realtime_conversation(codex: &codex_core::CodexThread) -> Result<()> {
-    codex
+async fn start_realtime_conversation(motyga: &motyga_core::MotygaThread) -> Result<()> {
+    motyga
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
-            codex_responses_as_items: false,
-            codex_response_item_prefix: None,
-            codex_response_handoff_prefix: None,
+            motyga_responses_as_items: false,
+            motyga_response_item_prefix: None,
+            motyga_response_handoff_prefix: None,
             model: None,
             output_modality: RealtimeOutputModality::Audio,
             include_startup_context: true,
@@ -223,7 +223,7 @@ async fn start_realtime_conversation(codex: &codex_core::CodexThread) -> Result<
         }))
         .await?;
 
-    wait_for_event_match(codex, |msg| match msg {
+    wait_for_event_match(motyga, |msg| match msg {
         EventMsg::RealtimeConversationStarted(started) => Some(Ok(started.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -231,7 +231,7 @@ async fn start_realtime_conversation(codex: &codex_core::CodexThread) -> Result<
     .await
     .expect("conversation start failed");
 
-    wait_for_event_match(codex, |msg| match msg {
+    wait_for_event_match(motyga, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -246,9 +246,9 @@ async fn start_realtime_conversation(codex: &codex_core::CodexThread) -> Result<
     Ok(())
 }
 
-async fn close_realtime_conversation(codex: &codex_core::CodexThread) -> Result<()> {
-    codex.submit(Op::RealtimeConversationClose).await?;
-    wait_for_event_match(codex, |msg| match msg {
+async fn close_realtime_conversation(motyga: &motyga_core::MotygaThread) -> Result<()> {
+    motyga.submit(Op::RealtimeConversationClose).await?;
+    wait_for_event_match(motyga, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
         _ => None,
     })
@@ -299,9 +299,9 @@ fn assert_request_contains_realtime_end(request: &responses::ResponsesRequest) {
     );
 }
 
-async fn wait_for_turn_complete(codex: &codex_core::CodexThread) {
+async fn wait_for_turn_complete(motyga: &motyga_core::MotygaThread) {
     wait_for_event_with_timeout(
-        codex,
+        motyga,
         |ev| matches!(ev, EventMsg::TurnComplete(_)),
         REMOTE_COMPACT_TURN_COMPLETE_TIMEOUT,
     )
@@ -312,11 +312,11 @@ async fn wait_for_turn_complete(codex: &codex_core::CodexThread) {
 async fn remote_compact_replaces_history_for_followups() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
     let session_id = harness.test().session_configured.session_id.to_string();
     let thread_id = harness.test().session_configured.thread_id.to_string();
 
@@ -346,7 +346,7 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello remote compact".into(),
@@ -358,12 +358,12 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact".into(),
@@ -375,7 +375,7 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
     let compact_request = compact_mock.single_request();
     assert_eq!(compact_request.path(), "/v1/responses/compact");
@@ -541,8 +541,8 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
 async fn remote_compact_uses_agent_identity_assertion() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::AgentIdentity(
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga().with_auth(MotygaAuth::AgentIdentity(
             AgentIdentityAuth::from_record(
                 AgentIdentityAuthRecord {
                     agent_runtime_id: "agent-runtime-compact".to_string(),
@@ -561,7 +561,7 @@ async fn remote_compact_uses_agent_identity_assertion() -> Result<()> {
         )),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let _responses_mock = responses::mount_sse_once(
         harness.server(),
@@ -577,7 +577,7 @@ async fn remote_compact_uses_agent_identity_assertion() -> Result<()> {
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello remote compact".into(),
@@ -589,10 +589,10 @@ async fn remote_compact_uses_agent_identity_assertion() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
     let compact_request = compact_mock.single_request();
     assert_eq!(compact_request.path(), "/v1/responses/compact");
@@ -611,20 +611,20 @@ async fn remote_compact_uses_agent_identity_assertion() -> Result<()> {
 }
 
 async fn assert_remote_manual_compact_request_parity(
-    auth: CodexAuth,
+    auth: MotygaAuth,
     configured_service_tier: Option<ServiceTier>,
     expected_service_tier: Option<&str>,
     snapshot_name: &str,
     scenario: &str,
 ) -> Result<()> {
-    let mut builder = test_codex().with_auth(auth);
+    let mut builder = test_motyga().with_auth(auth);
     if let Some(service_tier) = configured_service_tier {
         builder = builder.with_config(move |config| {
             config.service_tier = Some(service_tier.request_value().to_string());
         });
     }
-    let harness = TestCodexHarness::with_builder(builder).await?;
-    let codex = harness.test().codex.clone();
+    let harness = TestMotygaHarness::with_builder(builder).await?;
+    let motyga = harness.test().motyga.clone();
     let image_url =
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
             .to_string();
@@ -682,7 +682,7 @@ async fn assert_remote_manual_compact_request_parity(
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "TURN_ONE_USER".to_string(),
@@ -694,9 +694,9 @@ async fn assert_remote_manual_compact_request_parity(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![
                 UserInput::Text {
@@ -714,9 +714,9 @@ async fn assert_remote_manual_compact_request_parity(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "TURN_THREE_TOOL_USER".to_string(),
@@ -728,9 +728,9 @@ async fn assert_remote_manual_compact_request_parity(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![
                 UserInput::Image {
@@ -748,9 +748,9 @@ async fn assert_remote_manual_compact_request_parity(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "TURN_FIVE_USER".to_string(),
@@ -762,10 +762,10 @@ async fn assert_remote_manual_compact_request_parity(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
     let response_requests = responses_mock.requests();
     assert_eq!(
@@ -851,7 +851,7 @@ async fn remote_manual_compact_api_auth_omits_service_tier_and_reuses_prompt_cac
     skip_if_no_network!(Ok(()));
 
     assert_remote_manual_compact_request_parity(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         Some(ServiceTier::Fast),
         /*expected_service_tier*/ None,
         "remote_manual_compact_api_auth_prompt_cache_key_request_diff",
@@ -868,7 +868,7 @@ async fn remote_manual_compact_chatgpt_auth_reuses_service_tier_and_prompt_cache
     skip_if_no_network!(Ok(()));
 
     assert_remote_manual_compact_request_parity(
-        CodexAuth::create_dummy_chatgpt_auth_for_testing(),
+        MotygaAuth::create_dummy_chatgpt_auth_for_testing(),
         Some(ServiceTier::Fast),
         Some("priority"),
         "remote_manual_compact_chatgpt_auth_service_tier_prompt_cache_key_request_diff",
@@ -883,15 +883,15 @@ async fn remote_manual_compact_chatgpt_auth_reuses_service_tier_and_prompt_cache
 async fn remote_compact_v2_reuses_compaction_trigger_for_followups() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 let _ = config.features.enable(Feature::RemoteCompactionV2);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -918,7 +918,7 @@ async fn remote_compact_v2_reuses_compaction_trigger_for_followups() -> Result<(
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello remote compact".into(),
@@ -930,12 +930,12 @@ async fn remote_compact_v2_reuses_compaction_trigger_for_followups() -> Result<(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact".into(),
@@ -947,7 +947,7 @@ async fn remote_compact_v2_reuses_compaction_trigger_for_followups() -> Result<(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
     let response_requests = responses_mock.requests();
     let compact_request = &response_requests[1];
@@ -1021,9 +1021,9 @@ async fn remote_compact_v2_reuses_compaction_trigger_for_followups() -> Result<(
 async fn remote_compact_v2_retries_failures_with_stream_retry_budget() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 let _ = config.features.enable(Feature::RemoteCompactionV2);
                 config.model_provider.request_max_retries = Some(0);
@@ -1031,7 +1031,7 @@ async fn remote_compact_v2_retries_failures_with_stream_retry_budget() -> Result
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let responses_mock = responses::mount_response_sequence(
         harness.server(),
@@ -1066,7 +1066,7 @@ async fn remote_compact_v2_retries_failures_with_stream_retry_budget() -> Result
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello remote compact".into(),
@@ -1078,12 +1078,12 @@ async fn remote_compact_v2_retries_failures_with_stream_retry_budget() -> Result
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact".into(),
@@ -1095,7 +1095,7 @@ async fn remote_compact_v2_retries_failures_with_stream_retry_budget() -> Result
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
     let response_requests = responses_mock.requests();
     assert_eq!(
@@ -1133,15 +1133,15 @@ async fn remote_compact_v2_retries_failures_with_stream_retry_budget() -> Result
 async fn remote_compact_v2_accepts_additional_output_items_before_compaction() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 let _ = config.features.enable(Feature::RemoteCompactionV2);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -1169,7 +1169,7 @@ async fn remote_compact_v2_accepts_additional_output_items_before_compaction() -
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello remote compact".into(),
@@ -1181,12 +1181,12 @@ async fn remote_compact_v2_accepts_additional_output_items_before_compaction() -
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact".into(),
@@ -1198,7 +1198,7 @@ async fn remote_compact_v2_accepts_additional_output_items_before_compaction() -
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
     let response_requests = responses_mock.requests();
     let follow_up_request = response_requests.last().expect("follow-up request missing");
@@ -1224,7 +1224,7 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = responses::start_mock_server().await;
-    let mut builder = test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+    let mut builder = test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let mut test = builder.build(&server).await?;
     let hidden_tool = "hidden_dynamic_tool";
     let visible_tool = "visible_dynamic_tool";
@@ -1234,8 +1234,8 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
         "additionalProperties": false,
     });
     let dynamic_tools = vec![DynamicToolSpec::Namespace(DynamicToolNamespaceSpec {
-        name: "codex_app".to_string(),
-        description: "Codex app tools.".to_string(),
+        name: "motyga_app".to_string(),
+        description: "Motyga app tools.".to_string(),
         tools: vec![
             DynamicToolNamespaceTool::Function(DynamicToolFunctionSpec {
                 name: hidden_tool.to_string(),
@@ -1255,9 +1255,9 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
         .thread_manager
         .start_thread_with_tools(test.config.clone(), dynamic_tools)
         .await?;
-    test.codex = new_thread.thread;
+    test.motyga = new_thread.thread;
     test.session_configured = new_thread.session_configured;
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
     let responses_mock = mount_sse_once(
         &server,
@@ -1275,7 +1275,7 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello remote compact".into(),
@@ -1287,10 +1287,10 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
     let first_response_body = responses_mock.single_request().body_json();
     let compact_body = compact_mock.single_request().body_json();
@@ -1301,11 +1301,11 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
     assert_tools_payload_does_not_defer(&first_response_body);
     assert_tools_payload_does_not_defer(&compact_body);
     assert_eq!(
-        namespace_child_tool_names(&first_response_body, "codex_app"),
+        namespace_child_tool_names(&first_response_body, "motyga_app"),
         vec![visible_tool.to_string()]
     );
     assert_eq!(
-        namespace_child_tool_names(&compact_body, "codex_app"),
+        namespace_child_tool_names(&compact_body, "motyga_app"),
         vec![visible_tool.to_string()]
     );
 
@@ -1316,11 +1316,11 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
 async fn remote_compact_runs_automatically() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
     let session_id = harness.test().session_configured.session_id.to_string();
     let thread_id = harness.test().session_configured.thread_id.to_string();
 
@@ -1347,7 +1347,7 @@ async fn remote_compact_runs_automatically() -> Result<()> {
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello remote compact".into(),
@@ -1360,12 +1360,12 @@ async fn remote_compact_runs_automatically() -> Result<()> {
         })
         .await?;
 
-    let message = wait_for_event_match(&codex, |event| match event {
+    let message = wait_for_event_match(&motyga, |event| match event {
         EventMsg::ContextCompacted(_) => Some(true),
         _ => None,
     })
     .await;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
     assert!(message);
     assert_eq!(compact_mock.requests().len(), 1);
     assert_eq!(
@@ -1454,16 +1454,16 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
     let retained_command = "echo retained-shell-output";
     let trimmed_command = "yes x | head -n 3000";
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(2_000);
                 config.model_auto_compact_token_limit = Some(200_000);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     responses::mount_sse_sequence(
         harness.server(),
@@ -1484,7 +1484,7 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -1496,9 +1496,9 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -1510,7 +1510,7 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let compact_mock = responses::mount_compact_user_history_with_summary_once(
         harness.server(),
@@ -1518,8 +1518,8 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
     )
     .await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let compact_request = compact_mock.single_request();
     let user_messages = compact_request.message_input_texts("user");
@@ -1581,16 +1581,16 @@ async fn remote_compact_rewrites_multiple_trailing_function_call_outputs() -> Re
     let first_trimmed_command = "yes x | head -n 3000";
     let second_trimmed_command = "yes y | head -n 3000";
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(2_000);
                 config.model_auto_compact_token_limit = Some(200_000);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     responses::mount_sse_sequence(
         harness.server(),
@@ -1612,7 +1612,7 @@ async fn remote_compact_rewrites_multiple_trailing_function_call_outputs() -> Re
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -1624,9 +1624,9 @@ async fn remote_compact_rewrites_multiple_trailing_function_call_outputs() -> Re
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -1638,7 +1638,7 @@ async fn remote_compact_rewrites_multiple_trailing_function_call_outputs() -> Re
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let compact_mock = responses::mount_compact_user_history_with_summary_once(
         harness.server(),
@@ -1646,8 +1646,8 @@ async fn remote_compact_rewrites_multiple_trailing_function_call_outputs() -> Re
     )
     .await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let compact_request = compact_mock.single_request();
     assert!(
@@ -1698,16 +1698,16 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
     let trimmed_call_id = "trimmed-call";
     let retained_command = "echo retained-shell-output";
     let trimmed_command = "yes x | head -n 3000";
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(2_000);
                 config.model_auto_compact_token_limit = Some(200_000);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     responses::mount_sse_sequence(
         harness.server(),
@@ -1738,7 +1738,7 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -1750,9 +1750,9 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -1764,7 +1764,7 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let compact_mock = responses::mount_compact_user_history_with_summary_once(
         harness.server(),
@@ -1772,7 +1772,7 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "turn that triggers auto compact".into(),
@@ -1784,7 +1784,7 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
     assert_eq!(
         compact_mock.requests().len(),
         1,
@@ -1873,8 +1873,8 @@ async fn remote_compact_trims_tool_search_output_to_empty_tools_array() -> Resul
         "additionalProperties": false,
     });
     let dynamic_tool = DynamicToolSpec::Namespace(DynamicToolNamespaceSpec {
-        name: "codex_app".to_string(),
-        description: "Codex app tools.".to_string(),
+        name: "motyga_app".to_string(),
+        description: "Motyga app tools.".to_string(),
         tools: vec![DynamicToolNamespaceTool::Function(
             DynamicToolFunctionSpec {
                 name: tool_name.to_string(),
@@ -1885,8 +1885,8 @@ async fn remote_compact_trims_tool_search_output_to_empty_tools_array() -> Resul
         )],
     });
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             configure_search_capable_model(config);
             config.model_context_window = Some(2_000);
@@ -1896,11 +1896,11 @@ async fn remote_compact_trims_tool_search_output_to_empty_tools_array() -> Resul
         .thread_manager
         .start_thread_with_tools(test.config.clone(), vec![dynamic_tool])
         .await?;
-    test.codex = new_thread.thread;
+    test.motyga = new_thread.thread;
     test.session_configured = new_thread.session_configured;
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Find the oversized deferred tool".to_string(),
@@ -1912,14 +1912,14 @@ async fn remote_compact_trims_tool_search_output_to_empty_tools_array() -> Resul
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
     let compact_mock =
         responses::mount_compact_user_history_with_summary_once(&server, "REMOTE_COMPACT_SUMMARY")
             .await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
     let compact_request = compact_mock.single_request();
     let compact_tools = compact_request
@@ -1947,15 +1947,15 @@ async fn remote_compact_trims_tool_search_output_to_empty_tools_array() -> Resul
 async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(120);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     mount_sse_once(
         harness.server(),
@@ -1980,7 +1980,7 @@ async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "turn that exceeds token threshold".into(),
@@ -1992,9 +1992,9 @@ async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "turn that triggers auto compact".into(),
@@ -2007,12 +2007,12 @@ async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
         })
         .await?;
 
-    let error_message = wait_for_event_match(&codex, |event| match event {
+    let error_message = wait_for_event_match(&motyga, |event| match event {
         EventMsg::Error(err) => Some(err.message.clone()),
         _ => None,
     })
     .await;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     assert!(
         error_message.contains("Error running remote compact task"),
@@ -2056,15 +2056,15 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     let retained_command = "printf retained-shell-output";
     let trailing_command = "printf '%020000d' 0";
 
-    let baseline_harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let baseline_harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(200_000);
             }),
     )
     .await?;
-    let baseline_codex = baseline_harness.test().codex.clone();
+    let baseline_motyga = baseline_harness.test().motyga.clone();
 
     responses::mount_sse_sequence(
         baseline_harness.server(),
@@ -2088,7 +2088,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     )
     .await;
 
-    baseline_codex
+    baseline_motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -2100,12 +2100,12 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&baseline_codex, |event| {
+    wait_for_event(&baseline_motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    baseline_codex
+    baseline_motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -2117,7 +2117,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&baseline_codex, |event| {
+    wait_for_event(&baseline_motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2128,8 +2128,8 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     )
     .await;
 
-    baseline_codex.submit(Op::Compact).await?;
-    wait_for_event(&baseline_codex, |event| {
+    baseline_motyga.submit(Op::Compact).await?;
+    wait_for_event(&baseline_motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2160,9 +2160,9 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
         "expected override instructions to push pre-trim estimate past the context window"
     );
 
-    let override_harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let override_harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config({
                 let override_base_instructions = override_base_instructions.clone();
                 move |config| {
@@ -2172,7 +2172,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             }),
     )
     .await?;
-    let override_codex = override_harness.test().codex.clone();
+    let override_motyga = override_harness.test().motyga.clone();
 
     responses::mount_sse_sequence(
         override_harness.server(),
@@ -2196,7 +2196,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     )
     .await;
 
-    override_codex
+    override_motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -2208,12 +2208,12 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&override_codex, |event| {
+    wait_for_event(&override_motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    override_codex
+    override_motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -2225,7 +2225,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&override_codex, |event| {
+    wait_for_event(&override_motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2236,8 +2236,8 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     )
     .await;
 
-    override_codex.submit(Op::Compact).await?;
-    wait_for_event(&override_codex, |event| {
+    override_motyga.submit(Op::Compact).await?;
+    wait_for_event(&override_motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2268,11 +2268,11 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
 async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     mount_sse_once(
         harness.server(),
@@ -2289,7 +2289,7 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "manual remote compact".into(),
@@ -2301,9 +2301,9 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await?;
+    motyga.submit(Op::Compact).await?;
 
     let mut started_item = None;
     let mut completed_item = None;
@@ -2312,7 +2312,7 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
 
     while !saw_turn_complete || started_item.is_none() || completed_item.is_none() || !legacy_event
     {
-        let event = codex.next_event().await.unwrap();
+        let event = motyga.next_event().await.unwrap();
         match event.msg {
             EventMsg::ItemStarted(ItemStartedEvent {
                 item: TurnItem::ContextCompaction(item),
@@ -2349,11 +2349,11 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
 async fn remote_manual_compact_failure_emits_task_error_event() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     mount_sse_once(
         harness.server(),
@@ -2370,7 +2370,7 @@ async fn remote_manual_compact_failure_emits_task_error_event() -> Result<()> {
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "manual remote compact".into(),
@@ -2382,11 +2382,11 @@ async fn remote_manual_compact_failure_emits_task_error_event() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await?;
+    motyga.submit(Op::Compact).await?;
 
-    let error_message = wait_for_event_match(&codex, |event| match event {
+    let error_message = wait_for_event_match(&motyga, |event| match event {
         EventMsg::Error(err) => Some(err.message.clone()),
         _ => None,
     })
@@ -2400,7 +2400,7 @@ async fn remote_manual_compact_failure_emits_task_error_event() -> Result<()> {
             || error_message.contains("invalid type: string"),
         "expected invalid compact payload details, got {error_message}"
     );
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
 
@@ -2414,11 +2414,11 @@ async fn remote_manual_compact_failure_emits_task_error_event() -> Result<()> {
 async fn remote_compact_persists_replacement_history_in_rollout() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
     let rollout_path = harness
         .test()
         .session_configured
@@ -2457,7 +2457,7 @@ async fn remote_compact_persists_replacement_history_in_rollout() -> Result<()> 
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "needs compaction".into(),
@@ -2469,13 +2469,13 @@ async fn remote_compact_persists_replacement_history_in_rollout() -> Result<()> 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Shutdown).await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    motyga.submit(Op::Shutdown).await?;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
     assert_eq!(responses_mock.requests().len(), 1);
     assert_eq!(compact_mock.requests().len(), 1);
@@ -2554,7 +2554,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
     let stale_developer_message = "STALE_DEVELOPER_INSTRUCTIONS_SHOULD_BE_REMOVED";
 
     let mut start_builder =
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let initial = start_builder.build(&server).await?;
     let home = initial.home.clone();
     let rollout_path = initial
@@ -2605,7 +2605,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
     .await;
 
     initial
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "start remote compact flow".into(),
@@ -2617,13 +2617,13 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    initial.codex.submit(Op::Compact).await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    initial.motyga.submit(Op::Compact).await?;
+    wait_for_event(&initial.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     initial
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact in same session".into(),
@@ -2635,20 +2635,20 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    initial.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&initial.codex, |ev| {
+    initial.motyga.submit(Op::Shutdown).await?;
+    wait_for_event(&initial.motyga, |ev| {
         matches!(ev, EventMsg::ShutdownComplete)
     })
     .await;
 
     let mut resume_builder =
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
 
     resumed
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after resume".into(),
@@ -2660,7 +2660,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&resumed.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -2707,7 +2707,7 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
     let server = wiremock::MockServer::start().await;
     let stale_developer_message = "STALE_DEVELOPER_INSTRUCTIONS_SHOULD_BE_REMOVED";
 
-    let mut builder = test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+    let mut builder = test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let test = builder.build(&server).await?;
 
     let responses_mock = responses::mount_sse_sequence(
@@ -2747,7 +2747,7 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
     )
     .await;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "start remote compact flow".into(),
@@ -2759,12 +2759,12 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact in same session".into(),
@@ -2776,7 +2776,7 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -2805,7 +2805,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_sta
 
     let server = wiremock::MockServer::start().await;
     let realtime_server = start_remote_realtime_server().await;
-    let mut builder = remote_realtime_test_codex_builder(&realtime_server).with_config(|config| {
+    let mut builder = remote_realtime_test_motyga_builder(&realtime_server).with_config(|config| {
         config.model_auto_compact_token_limit = Some(200);
     });
     let test = builder.build(&server).await?;
@@ -2834,9 +2834,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_sta
     )
     .await;
 
-    start_realtime_conversation(test.codex.as_ref()).await?;
+    start_realtime_conversation(test.motyga.as_ref()).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -2848,9 +2848,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_sta
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -2862,7 +2862,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_sta
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -2886,7 +2886,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_sta
         )
     );
 
-    close_realtime_conversation(test.codex.as_ref()).await?;
+    close_realtime_conversation(test.motyga.as_ref()).await?;
     realtime_server.shutdown().await;
     Ok(())
 }
@@ -2898,7 +2898,7 @@ async fn remote_request_uses_custom_experimental_realtime_start_instructions() -
     let server = wiremock::MockServer::start().await;
     let realtime_server = start_remote_realtime_server().await;
     let custom_instructions = "custom realtime start instructions";
-    let mut builder = remote_realtime_test_codex_builder(&realtime_server).with_config({
+    let mut builder = remote_realtime_test_motyga_builder(&realtime_server).with_config({
         let custom_instructions = custom_instructions.to_string();
         move |config| {
             config.experimental_realtime_start_instructions = Some(custom_instructions);
@@ -2915,9 +2915,9 @@ async fn remote_request_uses_custom_experimental_realtime_start_instructions() -
     )
     .await;
 
-    start_realtime_conversation(test.codex.as_ref()).await?;
+    start_realtime_conversation(test.motyga.as_ref()).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -2929,14 +2929,14 @@ async fn remote_request_uses_custom_experimental_realtime_start_instructions() -
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_request_contains_custom_realtime_start(
         &responses_mock.single_request(),
         custom_instructions,
     );
 
-    close_realtime_conversation(test.codex.as_ref()).await?;
+    close_realtime_conversation(test.motyga.as_ref()).await?;
     realtime_server.shutdown().await;
     Ok(())
 }
@@ -2947,7 +2947,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_end
 
     let server = wiremock::MockServer::start().await;
     let realtime_server = start_remote_realtime_server().await;
-    let mut builder = remote_realtime_test_codex_builder(&realtime_server).with_config(|config| {
+    let mut builder = remote_realtime_test_motyga_builder(&realtime_server).with_config(|config| {
         config.model_auto_compact_token_limit = Some(200);
     });
     let test = builder.build(&server).await?;
@@ -2976,9 +2976,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_end
     )
     .await;
 
-    start_realtime_conversation(test.codex.as_ref()).await?;
+    start_realtime_conversation(test.motyga.as_ref()).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -2990,11 +2990,11 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_end
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    close_realtime_conversation(test.codex.as_ref()).await?;
+    close_realtime_conversation(test.motyga.as_ref()).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -3006,7 +3006,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_end
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3040,7 +3040,7 @@ async fn snapshot_request_shape_remote_manual_compact_restates_realtime_start() 
 
     let server = wiremock::MockServer::start().await;
     let realtime_server = start_remote_realtime_server().await;
-    let mut builder = remote_realtime_test_codex_builder(&realtime_server);
+    let mut builder = remote_realtime_test_motyga_builder(&realtime_server);
     let test = builder.build(&server).await?;
 
     let responses_mock = responses::mount_sse_sequence(
@@ -3067,9 +3067,9 @@ async fn snapshot_request_shape_remote_manual_compact_restates_realtime_start() 
     )
     .await;
 
-    start_realtime_conversation(test.codex.as_ref()).await?;
+    start_realtime_conversation(test.motyga.as_ref()).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -3081,12 +3081,12 @@ async fn snapshot_request_shape_remote_manual_compact_restates_realtime_start() 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -3098,7 +3098,7 @@ async fn snapshot_request_shape_remote_manual_compact_restates_realtime_start() 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3122,7 +3122,7 @@ async fn snapshot_request_shape_remote_manual_compact_restates_realtime_start() 
         )
     );
 
-    close_realtime_conversation(test.codex.as_ref()).await?;
+    close_realtime_conversation(test.motyga.as_ref()).await?;
     realtime_server.shutdown().await;
     Ok(())
 }
@@ -3134,7 +3134,7 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_does_not_restate_real
 
     let server = wiremock::MockServer::start().await;
     let realtime_server = start_remote_realtime_server().await;
-    let mut builder = remote_realtime_test_codex_builder(&realtime_server).with_config(|config| {
+    let mut builder = remote_realtime_test_motyga_builder(&realtime_server).with_config(|config| {
         config.model_auto_compact_token_limit = Some(200);
     });
     let test = builder.build(&server).await?;
@@ -3167,9 +3167,9 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_does_not_restate_real
     )
     .await;
 
-    start_realtime_conversation(test.codex.as_ref()).await?;
+    start_realtime_conversation(test.motyga.as_ref()).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "SETUP_USER".to_string(),
@@ -3181,11 +3181,11 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_does_not_restate_real
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    close_realtime_conversation(test.codex.as_ref()).await?;
+    close_realtime_conversation(test.motyga.as_ref()).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -3197,7 +3197,7 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_does_not_restate_real
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3240,7 +3240,7 @@ async fn snapshot_request_shape_remote_compact_resume_restates_realtime_end() ->
 
     let server = wiremock::MockServer::start().await;
     let realtime_server = start_remote_realtime_server().await;
-    let mut builder = remote_realtime_test_codex_builder(&realtime_server);
+    let mut builder = remote_realtime_test_motyga_builder(&realtime_server);
     let initial = builder.build(&server).await?;
     let home = initial.home.clone();
     let rollout_path = initial
@@ -3273,10 +3273,10 @@ async fn snapshot_request_shape_remote_compact_resume_restates_realtime_end() ->
     )
     .await;
 
-    start_realtime_conversation(initial.codex.as_ref()).await?;
+    start_realtime_conversation(initial.motyga.as_ref()).await?;
 
     initial
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -3288,25 +3288,25 @@ async fn snapshot_request_shape_remote_compact_resume_restates_realtime_end() ->
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    close_realtime_conversation(initial.codex.as_ref()).await?;
+    close_realtime_conversation(initial.motyga.as_ref()).await?;
 
-    initial.codex.submit(Op::Compact).await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    initial.motyga.submit(Op::Compact).await?;
+    wait_for_event(&initial.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    initial.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&initial.codex, |ev| {
+    initial.motyga.submit(Op::Shutdown).await?;
+    wait_for_event(&initial.motyga, |ev| {
         matches!(ev, EventMsg::ShutdownComplete)
     })
     .await;
 
     let mut resume_builder =
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
 
     resumed
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -3318,7 +3318,7 @@ async fn snapshot_request_shape_remote_compact_resume_restates_realtime_end() ->
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&resumed.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3349,15 +3349,15 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_including_incoming_us
 -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -3387,8 +3387,8 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_including_incoming_us
     for user in ["USER_ONE", "USER_TWO", "USER_THREE"] {
         if user == "USER_THREE" {
             core_test_support::submit_thread_settings(
-                &codex,
-                codex_protocol::protocol::ThreadSettingsOverrides {
+                &motyga,
+                motyga_protocol::protocol::ThreadSettingsOverrides {
                     environments: Some(local_selections(
                         test_path_buf(PRETURN_CONTEXT_DIFF_CWD).abs(),
                     )),
@@ -3397,7 +3397,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_including_incoming_us
             )
             .await?;
         }
-        codex
+        motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.to_string(),
@@ -3409,7 +3409,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_including_incoming_us
                 thread_settings: Default::default(),
             })
             .await?;
-        wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+        wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     }
 
     assert_eq!(compact_mock.requests().len(), 1);
@@ -3451,16 +3451,16 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_strips_incoming_model
 
     let previous_model = "gpt-5.4";
     let next_model = "gpt-5.3-codex";
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_model(previous_model)
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let initial_turn_request_mock = responses::mount_sse_once(
         harness.server(),
@@ -3484,7 +3484,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_strips_incoming_model
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "BEFORE_SWITCH_USER".to_string(),
@@ -3496,17 +3496,17 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_strips_incoming_model
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             model: Some(next_model.to_string()),
             ..Default::default()
         },
     )
     .await?;
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "AFTER_SWITCH_USER".to_string(),
@@ -3518,7 +3518,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_strips_incoming_model
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(
         compact_mock.requests().len(),
@@ -3587,15 +3587,15 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_strips_incoming_model
 async fn snapshot_request_shape_remote_pre_turn_compaction_context_window_exceeded() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -3625,7 +3625,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_context_window_exceed
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -3637,9 +3637,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_context_window_exceed
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -3651,12 +3651,12 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_context_window_exceed
             thread_settings: Default::default(),
         })
         .await?;
-    let error_message = wait_for_event_match(&codex, |event| match event {
+    let error_message = wait_for_event_match(&motyga, |event| match event {
         EventMsg::Error(err) => Some(err.message.clone()),
         _ => None,
     })
     .await;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3693,15 +3693,15 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_context_window_exceed
 async fn remote_pre_turn_compact_response_seeds_turn_state() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let responses_mock = responses::mount_response_sequence(
         harness.server(),
@@ -3731,7 +3731,7 @@ async fn remote_pre_turn_compact_response_seeds_turn_state() -> Result<()> {
     // Phase 1: the first turn raises usage above the pre-turn compact threshold.
     // Phase 2: the next turn compacts before sampling and establishes turn state.
     for text in ["BEFORE_COMPACT_USER", "AFTER_COMPACT_USER"] {
-        codex
+        motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: text.to_string(),
@@ -3743,7 +3743,7 @@ async fn remote_pre_turn_compact_response_seeds_turn_state() -> Result<()> {
                 thread_settings: Default::default(),
             })
             .await?;
-        wait_for_turn_complete(&codex).await;
+        wait_for_turn_complete(&motyga).await;
     }
 
     // Phase 3: compact starts empty, and its returned state is sent to the first sample.
@@ -3766,15 +3766,15 @@ async fn remote_pre_turn_compact_response_seeds_turn_state() -> Result<()> {
 async fn remote_mid_turn_compact_v1_sends_turn_state_over_http() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
     let responses_mock = responses::mount_response_sequence(
         harness.server(),
         vec![
@@ -3807,7 +3807,7 @@ async fn remote_mid_turn_compact_v1_sends_turn_state_over_http() -> Result<()> {
     .await;
 
     // Phase 1: sampling mints state and crosses the token limit with a pending tool follow-up.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "RUN_WITH_MID_TURN_COMPACT".to_string(),
@@ -3819,7 +3819,7 @@ async fn remote_mid_turn_compact_v1_sends_turn_state_over_http() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
     // Phase 2: v1 compact receives the state established by sampling.
     let compact_request = compact_mock.single_request();
@@ -3849,16 +3849,16 @@ async fn remote_mid_turn_compact_v1_sends_turn_state_over_http() -> Result<()> {
 async fn remote_mid_turn_compact_v2_sends_turn_state_over_http() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 let _ = config.features.enable(Feature::RemoteCompactionV2);
                 config.model_auto_compact_token_limit = Some(200);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
     let responses_mock = responses::mount_response_sequence(
         harness.server(),
         vec![
@@ -3892,7 +3892,7 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_http() -> Result<()> {
     .await;
 
     // Phase 1: sampling mints state and schedules inline v2 compaction.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "RUN_WITH_MID_TURN_COMPACT_V2".to_string(),
@@ -3904,7 +3904,7 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_http() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&codex).await;
+    wait_for_turn_complete(&motyga).await;
 
     let requests = responses_mock.requests();
     assert_eq!(requests.len(), 4);
@@ -3985,8 +3985,8 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_websocket() -> Result<
         ],
     ]])
     .await;
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             let _ = config.features.enable(Feature::RemoteCompactionV2);
             config.model_auto_compact_token_limit = Some(200);
@@ -3995,7 +3995,7 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_websocket() -> Result<
 
     // Phase 1: startup prewarm stays empty, then WebSocket sampling mints state and schedules
     // inline v2 compaction.
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "RUN_WITH_WS_MID_TURN_COMPACT_V2".to_string(),
@@ -4007,7 +4007,7 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_websocket() -> Result<
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&test.codex).await;
+    wait_for_turn_complete(&test.motyga).await;
 
     let requests = server.single_connection();
     assert_eq!(requests.len(), 5);
@@ -4042,15 +4042,15 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_websocket() -> Result<
 async fn snapshot_request_shape_remote_mid_turn_continuation_compaction() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -4073,7 +4073,7 @@ async fn snapshot_request_shape_remote_mid_turn_continuation_compaction() -> Res
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -4085,7 +4085,7 @@ async fn snapshot_request_shape_remote_mid_turn_continuation_compaction() -> Res
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -4115,15 +4115,15 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_summary_only_reinject
 -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let initial_turn_request_mock = responses::mount_sse_once(
         harness.server(),
@@ -4153,7 +4153,7 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_summary_only_reinject
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -4165,7 +4165,7 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_summary_only_reinject
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     assert_eq!(
@@ -4203,15 +4203,15 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_multi_summary_reinjec
 -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga()
+            .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let setup_turn_request_mock = responses::mount_sse_once(
         harness.server(),
@@ -4239,7 +4239,7 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_multi_summary_reinjec
     )
     .await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -4251,12 +4251,12 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_multi_summary_reinjec
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -4268,7 +4268,7 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_multi_summary_reinjec
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 2);
     assert_eq!(
@@ -4316,11 +4316,11 @@ async fn snapshot_request_shape_remote_manual_compact_without_previous_user_mess
 {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestMotygaHarness::with_builder(
+        test_motyga().with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let responses_mock = responses::mount_sse_once(
         harness.server(),
@@ -4335,10 +4335,10 @@ async fn snapshot_request_shape_remote_manual_compact_without_previous_user_mess
         responses::mount_compact_json_once(harness.server(), serde_json::json!({ "output": [] }))
             .await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -4350,7 +4350,7 @@ async fn snapshot_request_shape_remote_manual_compact_without_previous_user_mess
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(
         compact_mock.requests().len(),

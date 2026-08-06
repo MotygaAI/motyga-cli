@@ -1,6 +1,6 @@
-use codex_chatgpt::apply_command::apply_diff_from_task;
-use codex_chatgpt::get_task::GetTaskResponse;
-use codex_utils_cargo_bin::find_resource;
+use motyga_chatgpt::apply_command::apply_diff_from_task;
+use motyga_chatgpt::get_task::GetTaskResponse;
+use motyga_utils_cargo_bin::find_resource;
 use tempfile::TempDir;
 use tokio::process::Command;
 

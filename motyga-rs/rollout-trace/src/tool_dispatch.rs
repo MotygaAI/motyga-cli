@@ -7,10 +7,10 @@
 use std::fmt::Display;
 use std::sync::Arc;
 
-use codex_protocol::models::AdditionalPermissionProfile;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::SandboxPermissions;
-use codex_protocol::models::SearchToolCallParams;
+use motyga_protocol::models::AdditionalPermissionProfile;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::models::SandboxPermissions;
+use motyga_protocol::models::SearchToolCallParams;
 use serde::Serialize;
 use serde_json::Value as JsonValue;
 use serde_json::json;
@@ -18,7 +18,7 @@ use tracing::warn;
 
 use crate::model::AgentThreadId;
 use crate::model::CodeModeRuntimeToolId;
-use crate::model::CodexTurnId;
+use crate::model::MotygaTurnId;
 use crate::model::ExecutionStatus;
 use crate::model::ModelVisibleCallId;
 use crate::model::ToolCallId;
@@ -47,14 +47,14 @@ enum ToolDispatchTraceContextState {
 struct EnabledToolDispatchTraceContext {
     writer: Arc<TraceWriter>,
     thread_id: AgentThreadId,
-    codex_turn_id: CodexTurnId,
+    motyga_turn_id: MotygaTurnId,
     tool_call_id: ToolCallId,
 }
 
-/// Core-facing request data for the canonical Codex tool boundary.
+/// Core-facing request data for the canonical Motyga tool boundary.
 pub struct ToolDispatchInvocation {
     pub thread_id: AgentThreadId,
-    pub codex_turn_id: CodexTurnId,
+    pub motyga_turn_id: MotygaTurnId,
     pub tool_call_id: ToolCallId,
     pub tool_name: String,
     pub tool_namespace: Option<String>,
@@ -103,7 +103,7 @@ pub enum ToolDispatchResult {
     CodeModeResponse { value: JsonValue },
 }
 
-/// Raw invocation payload for the canonical Codex tool boundary.
+/// Raw invocation payload for the canonical Motyga tool boundary.
 #[derive(Serialize)]
 struct DispatchedToolTraceRequest<'a> {
     tool_name: &'a str,
@@ -151,7 +151,7 @@ impl ToolDispatchTraceContext {
         let context = EnabledToolDispatchTraceContext {
             writer,
             thread_id: invocation.thread_id.clone(),
-            codex_turn_id: invocation.codex_turn_id.clone(),
+            motyga_turn_id: invocation.motyga_turn_id.clone(),
             tool_call_id: invocation.tool_call_id.clone(),
         };
         record_started(&context, invocation);
@@ -194,7 +194,7 @@ impl ToolDispatchTraceContext {
 fn suppresses_tool_dispatch_trace(invocation: &ToolDispatchInvocation) -> bool {
     matches!(invocation.payload, ToolDispatchPayload::Custom { .. })
         && invocation.tool_namespace.is_none()
-        && invocation.tool_name == codex_code_mode::PUBLIC_TOOL_NAME
+        && invocation.tool_name == motyga_code_mode::PUBLIC_TOOL_NAME
 }
 
 fn record_started(context: &EnabledToolDispatchTraceContext, invocation: ToolDispatchInvocation) {
@@ -380,7 +380,7 @@ fn append_with_context_best_effort(
 ) {
     let event_context = RawTraceEventContext {
         thread_id: Some(context.thread_id.clone()),
-        codex_turn_id: Some(context.codex_turn_id.clone()),
+        motyga_turn_id: Some(context.motyga_turn_id.clone()),
     };
     if let Err(err) = context.writer.append_with_context(event_context, payload) {
         warn!("failed to append rollout trace event: {err:#}");
@@ -394,7 +394,7 @@ mod tests {
     #[test]
     fn suppresses_only_noncanonical_dispatch_boundaries() {
         assert!(suppresses_tool_dispatch_trace(&invocation(
-            codex_code_mode::PUBLIC_TOOL_NAME,
+            motyga_code_mode::PUBLIC_TOOL_NAME,
             /*tool_namespace*/ None,
             ToolDispatchRequester::Model {
                 model_visible_call_id: "call-exec".to_string(),
@@ -414,7 +414,7 @@ mod tests {
             },
         )));
         assert!(!suppresses_tool_dispatch_trace(&invocation(
-            codex_code_mode::PUBLIC_TOOL_NAME,
+            motyga_code_mode::PUBLIC_TOOL_NAME,
             Some("mcp__server".to_string()),
             ToolDispatchRequester::Model {
                 model_visible_call_id: "call-namespaced".to_string(),
@@ -446,7 +446,7 @@ mod tests {
     ) -> ToolDispatchInvocation {
         ToolDispatchInvocation {
             thread_id: "thread-1".to_string(),
-            codex_turn_id: "turn-1".to_string(),
+            motyga_turn_id: "turn-1".to_string(),
             tool_call_id: "tool-call-1".to_string(),
             tool_name: tool_name.to_string(),
             tool_namespace,

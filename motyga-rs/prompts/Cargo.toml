@@ -1,12 +1,12 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-prompts"
+name = "motyga-prompts"
 version.workspace = true
 
 [lib]
 doctest = false
-name = "codex_prompts"
+name = "motyga_prompts"
 path = "src/lib.rs"
 
 [lints]
@@ -14,12 +14,12 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-codex-context-fragments = { workspace = true }
-codex-git-utils = { workspace = true }
-codex-execpolicy = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-template = { workspace = true }
+motyga-context-fragments = { workspace = true }
+motyga-git-utils = { workspace = true }
+motyga-execpolicy = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-template = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

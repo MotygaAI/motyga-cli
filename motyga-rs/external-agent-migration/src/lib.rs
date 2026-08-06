@@ -1,7 +1,7 @@
-//! Migration helpers for importing external-agent configuration into Codex.
+//! Migration helpers for importing external-agent configuration into Motyga.
 
-use codex_hooks::HOOK_EVENT_NAMES;
-use codex_hooks::HOOK_EVENT_NAMES_WITH_MATCHERS;
+use motyga_hooks::HOOK_EVENT_NAMES;
+use motyga_hooks::HOOK_EVENT_NAMES_WITH_MATCHERS;
 use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
 use std::collections::BTreeMap;
@@ -1412,7 +1412,7 @@ mod tests {
     }
 
     fn migrated_quoted_hook_command(script_name: &str) -> String {
-        let hook_path = Path::new("/repo/.codex")
+        let hook_path = Path::new("/repo/.motyga")
             .join(EXTERNAL_AGENT_MIGRATED_HOOKS_SUBDIR)
             .join(script_name);
         format!(
@@ -1712,7 +1712,7 @@ command = "enabled-server"
     }
 
     #[test]
-    fn command_skill_names_must_fit_codex_skill_loader_limit() {
+    fn command_skill_names_must_fit_motyga_skill_loader_limit() {
         let root = source_path("commands");
         let file = source_path("commands/this/is/a/deeply/nested/command/with/a/very/long/name.md");
         let document = parse_document_content("---\ndescription: Review PR\n---\nReview\n");
@@ -1801,7 +1801,7 @@ command = "enabled-server"
     }
 
     #[test]
-    fn subagent_requires_minimum_codex_agent_fields() {
+    fn subagent_requires_minimum_motyga_agent_fields() {
         let missing_description =
             parse_document_content("---\nname: incomplete\n---\nInvestigate carefully.\n");
         let missing_body =
@@ -1910,7 +1910,7 @@ Review carefully."""
             }
         });
         let mut migration = serde_json::Map::new();
-        append_convertible_hook_groups(&settings, &mut migration, Some(Path::new("/repo/.codex")));
+        append_convertible_hook_groups(&settings, &mut migration, Some(Path::new("/repo/.motyga")));
 
         assert_eq!(
             migration,
@@ -2019,17 +2019,17 @@ Review carefully."""
         assert_eq!(
             rewrite_hook_command(
                 &source_hook_command_with_project_dir("check.py"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             migrated_hook_command("check.py")
         );
         assert_eq!(
             rewrite_hook_command(
                 &format!("\"${project_dir_env_var}\"/{source_hooks_path}/check-style.sh"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             shell_single_quote(
-                Path::new("/repo/.codex")
+                Path::new("/repo/.motyga")
                     .join(EXTERNAL_AGENT_MIGRATED_HOOKS_SUBDIR)
                     .join("check-style.sh")
                     .to_string_lossy()
@@ -2039,35 +2039,35 @@ Review carefully."""
         assert_eq!(
             rewrite_hook_command(
                 &source_hook_command("check.py"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             migrated_hook_command("check.py")
         );
         assert_eq!(
             rewrite_hook_command(
                 &format!("python3 ./{source_hooks_path}/check.py"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             migrated_hook_command("check.py")
         );
         assert_eq!(
             rewrite_hook_command(
                 &format!("python3 '${{{project_dir_env_var}}}/{source_hooks_path}/check.py'"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             migrated_quoted_hook_command("check.py")
         );
         assert_eq!(
             rewrite_hook_command(
                 &format!("python3 \"${{{project_dir_env_var}}}/{source_hooks_path}/check.py\""),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             migrated_quoted_hook_command("check.py")
         );
         assert_eq!(
             rewrite_hook_command(
                 &format!("bash -lc \"python3 {source_hooks_path}/check.py\""),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             format!("bash -lc \"python3 {source_hooks_path}/check.py\"")
         );
@@ -2076,7 +2076,7 @@ Review carefully."""
                 &format!(
                     "HOOK=${{{project_dir_env_var}}}/{source_hooks_path}/check.py python3 \"$HOOK\""
                 ),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             format!(
                 "HOOK=${{{project_dir_env_var}}}/{source_hooks_path}/check.py python3 \"$HOOK\""
@@ -2085,28 +2085,28 @@ Review carefully."""
         assert_eq!(
             rewrite_hook_command(
                 &format!("python3 {source_hooks_path}/${{SCRIPT}}.py"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             format!("python3 {source_hooks_path}/${{SCRIPT}}.py")
         );
         assert_eq!(
             rewrite_hook_command(
                 &format!("python3 {source_hooks_path}/{{lint,fmt}}.sh"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             format!("python3 {source_hooks_path}/{{lint,fmt}}.sh")
         );
         assert_eq!(
             rewrite_hook_command(
                 &format!("python3 {source_hooks_path}/my\\ script.py"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             format!("python3 {source_hooks_path}/my\\ script.py")
         );
         assert_eq!(
             rewrite_hook_command(
                 &format!("python3 .{SOURCE_EXTERNAL_AGENT_NAME}\\hooks\\check.py"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             format!("python3 .{}\\hooks\\check.py", SOURCE_EXTERNAL_AGENT_NAME)
         );
@@ -2117,7 +2117,7 @@ Review carefully."""
                     project_dir_env_var,
                     external_agent_config_dir()
                 ),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             format!(
                 "python3 \"%{}%\\{}\\hooks\\check.py\"",
@@ -2128,19 +2128,19 @@ Review carefully."""
         assert_eq!(
             rewrite_hook_command(
                 &format!("python3 '${{{project_dir_env_var}}}/{source_hooks_path}/my script.py'"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             migrated_quoted_hook_command("my script.py")
         );
         assert_eq!(
             rewrite_hook_command(
                 &format!("/repo/{source_hooks_path}/check.py 2>/dev/null || true"),
-                Some(Path::new("/repo/.codex")),
+                Some(Path::new("/repo/.motyga")),
             ),
             format!(
                 "{} 2>/dev/null || true",
                 shell_single_quote(
-                    Path::new("/repo/.codex")
+                    Path::new("/repo/.motyga")
                         .join(EXTERNAL_AGENT_MIGRATED_HOOKS_SUBDIR)
                         .join("check.py")
                         .to_string_lossy()
@@ -2150,7 +2150,7 @@ Review carefully."""
         );
         let plugin_script_command = format!("${{{plugin_root_env_var}}}/scripts/format.sh");
         assert_eq!(
-            rewrite_hook_command(&plugin_script_command, Some(Path::new("/repo/.codex")),),
+            rewrite_hook_command(&plugin_script_command, Some(Path::new("/repo/.motyga")),),
             plugin_script_command
         );
     }

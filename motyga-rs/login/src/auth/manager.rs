@@ -21,13 +21,13 @@ use tokio::sync::Semaphore;
 use tokio::sync::watch;
 use tracing::instrument;
 
-use codex_agent_identity::ChatGptEnvironment;
-use codex_protocol::auth::AuthMode;
-use codex_protocol::config_types::ForcedLoginMethod;
-use codex_protocol::config_types::ModelProviderAuthInfo;
+use motyga_agent_identity::ChatGptEnvironment;
+use motyga_protocol::auth::AuthMode;
+use motyga_protocol::config_types::ForcedLoginMethod;
+use motyga_protocol::config_types::ModelProviderAuthInfo;
 
-use super::access_token::CodexAccessToken;
-use super::access_token::classify_codex_access_token;
+use super::access_token::MotygaAccessToken;
+use super::access_token::classify_motyga_access_token;
 use super::agent_identity::ManagedChatGptAgentIdentityBinding;
 use super::agent_identity::agent_identity_authapi_base_url;
 use super::agent_identity::classify_bootstrap_error;
@@ -55,19 +55,19 @@ use crate::outbound_proxy::AuthRouteConfig;
 use crate::token_data::TokenData;
 use crate::token_data::parse_chatgpt_jwt_claims;
 use crate::token_data::parse_jwt_expiration;
-use codex_client::CodexHttpClient;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_protocol::account::PlanType as AccountPlanType;
-use codex_protocol::auth::PlanType as InternalPlanType;
-use codex_protocol::auth::RefreshTokenFailedError;
-use codex_protocol::auth::RefreshTokenFailedReason;
-use codex_protocol::protocol::SessionSource;
+use motyga_client::MotygaHttpClient;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_protocol::account::PlanType as AccountPlanType;
+use motyga_protocol::auth::PlanType as InternalPlanType;
+use motyga_protocol::auth::RefreshTokenFailedError;
+use motyga_protocol::auth::RefreshTokenFailedReason;
+use motyga_protocol::protocol::SessionSource;
 use serde_json::Value;
 use thiserror::Error;
 
 /// Authentication mechanism used by the current user.
 #[derive(Debug, Clone)]
-pub enum CodexAuth {
+pub enum MotygaAuth {
     ApiKey(ApiKeyAuth),
     Chatgpt(ChatgptAuth),
     ChatgptAuthTokens(ChatgptAuthTokens),
@@ -76,7 +76,7 @@ pub enum CodexAuth {
     BedrockApiKey(BedrockApiKeyAuth),
 }
 
-/// Policy for resolving Agent Identity auth from a broader Codex auth snapshot.
+/// Policy for resolving Agent Identity auth from a broader Motyga auth snapshot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AgentIdentityAuthPolicy {
     /// Use Agent Identity auth only when the current auth is already Agent Identity.
@@ -142,7 +142,7 @@ impl AgentIdentityBootstrapCooldown {
     }
 }
 
-impl PartialEq for CodexAuth {
+impl PartialEq for MotygaAuth {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::PersonalAccessToken(a), Self::PersonalAccessToken(b)) => a == b,
@@ -171,7 +171,7 @@ pub struct ChatgptAuthTokens {
 #[derive(Debug, Clone)]
 struct ChatgptAuthState {
     auth_dot_json: Arc<Mutex<Option<AuthDotJson>>>,
-    client: CodexHttpClient,
+    client: MotygaHttpClient,
 }
 
 const TOKEN_REFRESH_INTERVAL: i64 = 8;
@@ -185,9 +185,9 @@ const REFRESH_TOKEN_UNKNOWN_MESSAGE: &str =
 const REFRESH_TOKEN_ACCOUNT_MISMATCH_MESSAGE: &str = "Your access token could not be refreshed because you have since logged out or signed in to another account. Please sign in again.";
 const REFRESH_TOKEN_URL: &str = "https://api.motyga.com/oauth/token";
 pub(super) const REVOKE_TOKEN_URL: &str = "https://api.motyga.com/oauth/revoke";
-pub const REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR: &str = "CODEX_REFRESH_TOKEN_URL_OVERRIDE";
-pub const REVOKE_TOKEN_URL_OVERRIDE_ENV_VAR: &str = "CODEX_REVOKE_TOKEN_URL_OVERRIDE";
-pub const CLIENT_ID_OVERRIDE_ENV_VAR: &str = "CODEX_APP_SERVER_LOGIN_CLIENT_ID";
+pub const REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR: &str = "MOTYGA_REFRESH_TOKEN_URL_OVERRIDE";
+pub const REVOKE_TOKEN_URL_OVERRIDE_ENV_VAR: &str = "MOTYGA_REVOKE_TOKEN_URL_OVERRIDE";
+pub const CLIENT_ID_OVERRIDE_ENV_VAR: &str = "MOTYGA_APP_SERVER_LOGIN_CLIENT_ID";
 static NEXT_DUMMY_AUTH_ID: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Error)]
@@ -289,9 +289,9 @@ impl From<RefreshTokenError> for std::io::Error {
     }
 }
 
-impl CodexAuth {
+impl MotygaAuth {
     async fn from_auth_dot_json(
-        codex_home: &Path,
+        motyga_home: &Path,
         auth_dot_json: AuthDotJson,
         auth_credentials_store_mode: AuthCredentialsStoreMode,
         chatgpt_base_url: Option<&str>,
@@ -368,7 +368,7 @@ impl CodexAuth {
         match auth_mode {
             AuthMode::Chatgpt => {
                 let storage = create_auth_storage(
-                    codex_home.to_path_buf(),
+                    motyga_home.to_path_buf(),
                     storage_mode,
                     keyring_backend_kind,
                 );
@@ -385,7 +385,7 @@ impl CodexAuth {
     }
 
     pub async fn from_auth_storage(
-        codex_home: &Path,
+        motyga_home: &Path,
         auth_credentials_store_mode: AuthCredentialsStoreMode,
         chatgpt_base_url: Option<&str>,
         keyring_backend_kind: AuthKeyringBackendKind,
@@ -394,8 +394,8 @@ impl CodexAuth {
         let agent_identity_authapi_base_url =
             agent_identity_authapi_base_url(chatgpt_base_url).ok();
         load_auth(
-            codex_home,
-            /*enable_codex_api_key_env*/ false,
+            motyga_home,
+            /*enable_motyga_api_key_env*/ false,
             auth_credentials_store_mode,
             /*forced_chatgpt_workspace_id*/ None,
             chatgpt_base_url,
@@ -488,8 +488,8 @@ impl CodexAuth {
         self.api_auth_mode().has_chatgpt_account()
     }
 
-    pub fn uses_codex_backend(&self) -> bool {
-        self.api_auth_mode().uses_codex_backend()
+    pub fn uses_motyga_backend(&self) -> bool {
+        self.api_auth_mode().uses_motyga_backend()
     }
 
     pub fn is_external_chatgpt_tokens(&self) -> bool {
@@ -543,7 +543,7 @@ impl CodexAuth {
         }
     }
 
-    /// Returns `None` if Codex backend auth does not expose an account id.
+    /// Returns `None` if Motyga backend auth does not expose an account id.
     pub fn get_account_id(&self) -> Option<String> {
         match self {
             Self::AgentIdentity(auth) => Some(auth.account_id().to_string()),
@@ -552,7 +552,7 @@ impl CodexAuth {
         }
     }
 
-    /// Returns false if Codex backend auth omits the FedRAMP claim.
+    /// Returns false if Motyga backend auth omits the FedRAMP claim.
     pub fn is_fedramp_account(&self) -> bool {
         match self {
             Self::AgentIdentity(auth) => auth.is_fedramp_account(),
@@ -563,7 +563,7 @@ impl CodexAuth {
         }
     }
 
-    /// Returns `None` if Codex backend auth does not expose an account email.
+    /// Returns `None` if Motyga backend auth does not expose an account email.
     pub fn get_account_email(&self) -> Option<String> {
         match self {
             Self::AgentIdentity(auth) => auth.email().map(str::to_string),
@@ -572,7 +572,7 @@ impl CodexAuth {
         }
     }
 
-    /// Returns `None` if Codex backend auth does not expose a ChatGPT user id.
+    /// Returns `None` if Motyga backend auth does not expose a ChatGPT user id.
     pub fn get_chatgpt_user_id(&self) -> Option<String> {
         match self {
             Self::AgentIdentity(auth) => Some(auth.chatgpt_user_id().to_string()),
@@ -687,7 +687,7 @@ impl CodexAuth {
             ManagedChatGptAgentIdentityBinding::from_auth(self, forced_chatgpt_workspace_id)
                 .ok_or_else(|| std::io::Error::other("ChatGPT auth is unavailable"))?;
 
-        // JWT auth is loaded as CodexAuth::AgentIdentity; this path only reuses
+        // JWT auth is loaded as MotygaAuth::AgentIdentity; this path only reuses
         // records created by the managed ChatGPT Agent Identity bootstrap.
         if let Some(record) = self.stored_managed_chatgpt_agent_identity_record(&binding.account_id)
             && record_matches_managed_chatgpt_binding(&record, &binding)
@@ -755,7 +755,7 @@ impl CodexAuth {
 }
 
 impl ManagedChatGptAgentIdentityBinding {
-    fn from_auth(auth: &CodexAuth, forced_workspace_id: Option<Vec<String>>) -> Option<Self> {
+    fn from_auth(auth: &MotygaAuth, forced_workspace_id: Option<Vec<String>>) -> Option<Self> {
         if !auth.is_chatgpt_auth() {
             return None;
         }
@@ -805,7 +805,7 @@ impl ChatgptAuth {
         &self.storage
     }
 
-    fn client(&self) -> &CodexHttpClient {
+    fn client(&self) -> &MotygaHttpClient {
         &self.state.client
     }
 
@@ -836,8 +836,8 @@ fn persist_agent_identity_record(
 }
 
 pub const OPENAI_API_KEY_ENV_VAR: &str = "OPENAI_API_KEY";
-pub const CODEX_API_KEY_ENV_VAR: &str = "MOTYGA_API_KEY";
-pub const CODEX_ACCESS_TOKEN_ENV_VAR: &str = "CODEX_ACCESS_TOKEN";
+pub const MOTYGA_API_KEY_ENV_VAR: &str = "MOTYGA_API_KEY";
+pub const MOTYGA_ACCESS_TOKEN_ENV_VAR: &str = "MOTYGA_ACCESS_TOKEN";
 
 pub fn read_openai_api_key_from_env() -> Option<String> {
     env::var(OPENAI_API_KEY_ENV_VAR)
@@ -846,12 +846,12 @@ pub fn read_openai_api_key_from_env() -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
-pub fn read_codex_api_key_from_env() -> Option<String> {
-    read_non_empty_env_var(CODEX_API_KEY_ENV_VAR)
+pub fn read_motyga_api_key_from_env() -> Option<String> {
+    read_non_empty_env_var(MOTYGA_API_KEY_ENV_VAR)
 }
 
-pub fn read_codex_access_token_from_env() -> Option<String> {
-    read_non_empty_env_var(CODEX_ACCESS_TOKEN_ENV_VAR)
+pub fn read_motyga_access_token_from_env() -> Option<String> {
+    read_non_empty_env_var(MOTYGA_ACCESS_TOKEN_ENV_VAR)
 }
 
 fn read_non_empty_env_var(key: &str) -> Option<String> {
@@ -861,15 +861,15 @@ fn read_non_empty_env_var(key: &str) -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
-/// Delete the auth.json file inside `codex_home` if it exists. Returns `Ok(true)`
+/// Delete the auth.json file inside `motyga_home` if it exists. Returns `Ok(true)`
 /// if a file was removed, `Ok(false)` if no auth file was present.
 pub fn logout(
-    codex_home: &Path,
+    motyga_home: &Path,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
 ) -> std::io::Result<bool> {
     let storage = create_auth_storage(
-        codex_home.to_path_buf(),
+        motyga_home.to_path_buf(),
         auth_credentials_store_mode,
         keyring_backend_kind,
     );
@@ -877,13 +877,13 @@ pub fn logout(
 }
 
 pub async fn logout_with_revoke(
-    codex_home: &Path,
+    motyga_home: &Path,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
     auth_route_config: Option<&AuthRouteConfig>,
 ) -> std::io::Result<bool> {
     let auth_dot_json = match load_auth_dot_json(
-        codex_home,
+        motyga_home,
         auth_credentials_store_mode,
         keyring_backend_kind,
     ) {
@@ -897,7 +897,7 @@ pub async fn logout_with_revoke(
         tracing::warn!("failed to revoke auth tokens during logout: {err}");
     }
     logout_all_stores(
-        codex_home,
+        motyga_home,
         auth_credentials_store_mode,
         keyring_backend_kind,
     )
@@ -905,7 +905,7 @@ pub async fn logout_with_revoke(
 
 /// Writes an `auth.json` that contains only the API key.
 pub fn login_with_api_key(
-    codex_home: &Path,
+    motyga_home: &Path,
     api_key: &str,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
@@ -920,7 +920,7 @@ pub fn login_with_api_key(
         bedrock_api_key: None,
     };
     save_auth(
-        codex_home,
+        motyga_home,
         &auth_dot_json,
         auth_credentials_store_mode,
         keyring_backend_kind,
@@ -929,7 +929,7 @@ pub fn login_with_api_key(
 
 /// Writes an `auth.json` that contains only the access token.
 pub async fn login_with_access_token(
-    codex_home: &Path,
+    motyga_home: &Path,
     access_token: &str,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     forced_chatgpt_workspace_id: Option<&[String]>,
@@ -937,12 +937,12 @@ pub async fn login_with_access_token(
     keyring_backend_kind: AuthKeyringBackendKind,
     auth_route_config: Option<&AuthRouteConfig>,
 ) -> std::io::Result<()> {
-    let auth_dot_json = match classify_codex_access_token(access_token) {
-        CodexAccessToken::PersonalAccessToken(access_token) => {
+    let auth_dot_json = match classify_motyga_access_token(access_token) {
+        MotygaAccessToken::PersonalAccessToken(access_token) => {
             let auth = PersonalAccessTokenAuth::load(access_token, auth_route_config).await?;
             ensure_personal_access_token_workspace_allowed(forced_chatgpt_workspace_id, &auth)?;
             AuthDotJson {
-                // Infer PAT auth from the credential field so older Codex builds can still
+                // Infer PAT auth from the credential field so older Motyga builds can still
                 // deserialize auth.json after a rollback.
                 auth_mode: None,
                 openai_api_key: None,
@@ -953,7 +953,7 @@ pub async fn login_with_access_token(
                 bedrock_api_key: None,
             }
         }
-        CodexAccessToken::AgentIdentityJwt(jwt) => {
+        MotygaAccessToken::AgentIdentityJwt(jwt) => {
             let base_url = chatgpt_base_url
                 .unwrap_or(ChatGptEnvironment::default().chatgpt_base_url())
                 .trim_end_matches('/')
@@ -971,7 +971,7 @@ pub async fn login_with_access_token(
         }
     };
     save_auth(
-        codex_home,
+        motyga_home,
         &auth_dot_json,
         auth_credentials_store_mode,
         keyring_backend_kind,
@@ -988,7 +988,7 @@ fn ensure_personal_access_token_workspace_allowed(
 
 /// Writes an in-memory auth payload for externally managed ChatGPT tokens.
 pub fn login_with_chatgpt_auth_tokens(
-    codex_home: &Path,
+    motyga_home: &Path,
     access_token: &str,
     chatgpt_account_id: &str,
     chatgpt_plan_type: Option<&str>,
@@ -999,7 +999,7 @@ pub fn login_with_chatgpt_auth_tokens(
         chatgpt_plan_type,
     )?;
     save_auth(
-        codex_home,
+        motyga_home,
         &auth_dot_json,
         AuthCredentialsStoreMode::Ephemeral,
         AuthKeyringBackendKind::default(),
@@ -1008,13 +1008,13 @@ pub fn login_with_chatgpt_auth_tokens(
 
 /// Persist the provided auth payload using the specified backend.
 pub fn save_auth(
-    codex_home: &Path,
+    motyga_home: &Path,
     auth: &AuthDotJson,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
 ) -> std::io::Result<()> {
     let storage = create_auth_storage(
-        codex_home.to_path_buf(),
+        motyga_home.to_path_buf(),
         auth_credentials_store_mode,
         keyring_backend_kind,
     );
@@ -1027,12 +1027,12 @@ pub fn save_auth(
 /// ordinary production reads; this helper is for tests and write-side
 /// maintenance that must inspect the exact payload in storage.
 pub fn load_auth_dot_json(
-    codex_home: &Path,
+    motyga_home: &Path,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
 ) -> std::io::Result<Option<AuthDotJson>> {
     let storage = create_auth_storage(
-        codex_home.to_path_buf(),
+        motyga_home.to_path_buf(),
         auth_credentials_store_mode,
         keyring_backend_kind,
     );
@@ -1041,7 +1041,7 @@ pub fn load_auth_dot_json(
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthConfig {
-    pub codex_home: PathBuf,
+    pub motyga_home: PathBuf,
     pub auth_credentials_store_mode: AuthCredentialsStoreMode,
     pub keyring_backend_kind: AuthKeyringBackendKind,
     pub forced_login_method: Option<ForcedLoginMethod>,
@@ -1066,8 +1066,8 @@ async fn enforce_login_restrictions_with_agent_identity_authapi_base_url(
     agent_identity_authapi_base_url: Option<&str>,
 ) -> std::io::Result<()> {
     let Some(auth) = load_auth(
-        &config.codex_home,
-        /*enable_codex_api_key_env*/ true,
+        &config.motyga_home,
+        /*enable_motyga_api_key_env*/ true,
         config.auth_credentials_store_mode,
         /*forced_chatgpt_workspace_id*/ None,
         config.chatgpt_base_url.as_deref(),
@@ -1104,7 +1104,7 @@ async fn enforce_login_restrictions_with_agent_identity_authapi_base_url(
 
         if let Some(message) = method_violation {
             return logout_with_message(
-                &config.codex_home,
+                &config.motyga_home,
                 message,
                 config.auth_credentials_store_mode,
                 config.keyring_backend_kind,
@@ -1114,16 +1114,16 @@ async fn enforce_login_restrictions_with_agent_identity_authapi_base_url(
 
     if let Some(expected_account_ids) = config.forced_chatgpt_workspace_id.as_deref() {
         let chatgpt_account_id = match &auth {
-            CodexAuth::ApiKey(_) | CodexAuth::BedrockApiKey(_) => return Ok(()),
-            CodexAuth::AgentIdentity(_) | CodexAuth::PersonalAccessToken(_) => {
+            MotygaAuth::ApiKey(_) | MotygaAuth::BedrockApiKey(_) => return Ok(()),
+            MotygaAuth::AgentIdentity(_) | MotygaAuth::PersonalAccessToken(_) => {
                 auth.get_account_id()
             }
-            CodexAuth::Chatgpt(_) | CodexAuth::ChatgptAuthTokens(_) => {
+            MotygaAuth::Chatgpt(_) | MotygaAuth::ChatgptAuthTokens(_) => {
                 let token_data = match auth.get_token_data() {
                     Ok(data) => data,
                     Err(err) => {
                         return logout_with_message(
-                            &config.codex_home,
+                            &config.motyga_home,
                             format!(
                                 "Failed to load ChatGPT credentials while enforcing workspace restrictions: {err}. Logging out."
                             ),
@@ -1153,7 +1153,7 @@ async fn enforce_login_restrictions_with_agent_identity_authapi_base_url(
                 ),
             };
             return logout_with_message(
-                &config.codex_home,
+                &config.motyga_home,
                 message,
                 config.auth_credentials_store_mode,
                 config.keyring_backend_kind,
@@ -1165,7 +1165,7 @@ async fn enforce_login_restrictions_with_agent_identity_authapi_base_url(
 }
 
 fn logout_with_message(
-    codex_home: &Path,
+    motyga_home: &Path,
     message: String,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
@@ -1173,7 +1173,7 @@ fn logout_with_message(
     // External auth tokens live in the ephemeral store, but persistent auth may still exist
     // from earlier logins. Clear both so a forced logout truly removes all active auth.
     let removal_result = logout_all_stores(
-        codex_home,
+        motyga_home,
         auth_credentials_store_mode,
         keyring_backend_kind,
     );
@@ -1185,24 +1185,24 @@ fn logout_with_message(
 }
 
 fn logout_all_stores(
-    codex_home: &Path,
+    motyga_home: &Path,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
 ) -> std::io::Result<bool> {
     if auth_credentials_store_mode == AuthCredentialsStoreMode::Ephemeral {
         return logout(
-            codex_home,
+            motyga_home,
             AuthCredentialsStoreMode::Ephemeral,
             AuthKeyringBackendKind::default(),
         );
     }
     let removed_ephemeral = logout(
-        codex_home,
+        motyga_home,
         AuthCredentialsStoreMode::Ephemeral,
         AuthKeyringBackendKind::default(),
     )?;
     let removed_managed = logout(
-        codex_home,
+        motyga_home,
         auth_credentials_store_mode,
         keyring_backend_kind,
     )?;
@@ -1211,30 +1211,30 @@ fn logout_all_stores(
 
 #[allow(clippy::too_many_arguments)]
 async fn load_auth(
-    codex_home: &Path,
-    enable_codex_api_key_env: bool,
+    motyga_home: &Path,
+    enable_motyga_api_key_env: bool,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     forced_chatgpt_workspace_id: Option<&[String]>,
     chatgpt_base_url: Option<&str>,
     keyring_backend_kind: AuthKeyringBackendKind,
     agent_identity_authapi_base_url: Option<&str>,
     auth_route_config: Option<&AuthRouteConfig>,
-) -> std::io::Result<Option<CodexAuth>> {
+) -> std::io::Result<Option<MotygaAuth>> {
     // API key via env var takes precedence over any other auth method.
-    if enable_codex_api_key_env && let Some(api_key) = read_codex_api_key_from_env() {
-        return Ok(Some(CodexAuth::from_api_key(api_key.as_str())));
+    if enable_motyga_api_key_env && let Some(api_key) = read_motyga_api_key_from_env() {
+        return Ok(Some(MotygaAuth::from_api_key(api_key.as_str())));
     }
 
     // External ChatGPT auth tokens live in the in-memory (ephemeral) store. Always check this
     // first so external auth takes precedence over any persisted credentials.
     let ephemeral_storage = create_auth_storage(
-        codex_home.to_path_buf(),
+        motyga_home.to_path_buf(),
         AuthCredentialsStoreMode::Ephemeral,
         AuthKeyringBackendKind::default(),
     );
     if let Some(auth_dot_json) = ephemeral_storage.load()? {
-        let auth = CodexAuth::from_auth_dot_json(
-            codex_home,
+        let auth = MotygaAuth::from_auth_dot_json(
+            motyga_home,
             auth_dot_json,
             AuthCredentialsStoreMode::Ephemeral,
             chatgpt_base_url,
@@ -1243,21 +1243,21 @@ async fn load_auth(
             auth_route_config,
         )
         .await?;
-        if let CodexAuth::PersonalAccessToken(auth) = &auth {
+        if let MotygaAuth::PersonalAccessToken(auth) = &auth {
             ensure_personal_access_token_workspace_allowed(forced_chatgpt_workspace_id, auth)?;
         }
         return Ok(Some(auth));
     }
 
-    if let Some(access_token) = read_codex_access_token_from_env() {
-        return match classify_codex_access_token(&access_token) {
-            CodexAccessToken::PersonalAccessToken(access_token) => {
+    if let Some(access_token) = read_motyga_access_token_from_env() {
+        return match classify_motyga_access_token(&access_token) {
+            MotygaAccessToken::PersonalAccessToken(access_token) => {
                 let auth = PersonalAccessTokenAuth::load(access_token, auth_route_config).await?;
                 ensure_personal_access_token_workspace_allowed(forced_chatgpt_workspace_id, &auth)?;
-                Ok(Some(CodexAuth::PersonalAccessToken(auth)))
+                Ok(Some(MotygaAuth::PersonalAccessToken(auth)))
             }
-            CodexAccessToken::AgentIdentityJwt(jwt) => {
-                CodexAuth::from_agent_identity_jwt_with_authapi_base_url(
+            MotygaAccessToken::AgentIdentityJwt(jwt) => {
+                MotygaAuth::from_agent_identity_jwt_with_authapi_base_url(
                     jwt,
                     chatgpt_base_url,
                     require_agent_identity_authapi_base_url(agent_identity_authapi_base_url)?,
@@ -1276,7 +1276,7 @@ async fn load_auth(
 
     // Fall back to the configured persistent store (file/keyring/auto) for managed auth.
     let storage = create_auth_storage(
-        codex_home.to_path_buf(),
+        motyga_home.to_path_buf(),
         auth_credentials_store_mode,
         keyring_backend_kind,
     );
@@ -1285,8 +1285,8 @@ async fn load_auth(
         None => return Ok(None),
     };
 
-    let auth = CodexAuth::from_auth_dot_json(
-        codex_home,
+    let auth = MotygaAuth::from_auth_dot_json(
+        motyga_home,
         auth_dot_json,
         auth_credentials_store_mode,
         chatgpt_base_url,
@@ -1295,7 +1295,7 @@ async fn load_auth(
         auth_route_config,
     )
     .await?;
-    if let CodexAuth::PersonalAccessToken(auth) = &auth {
+    if let MotygaAuth::PersonalAccessToken(auth) = &auth {
         ensure_personal_access_token_workspace_allowed(forced_chatgpt_workspace_id, auth)?;
     }
     Ok(Some(auth))
@@ -1331,7 +1331,7 @@ fn persist_tokens(
 // The caller is responsible for persisting any returned tokens.
 async fn request_chatgpt_token_refresh(
     refresh_token: String,
-    client: &CodexHttpClient,
+    client: &MotygaHttpClient,
 ) -> Result<RefreshResponse, RefreshTokenError> {
     let refresh_request = RefreshRequest {
         client_id: oauth_client_id(),
@@ -1533,7 +1533,7 @@ impl AuthDotJson {
 /// Internal cached auth state.
 #[derive(Clone)]
 struct CachedAuth {
-    auth: Option<CodexAuth>,
+    auth: Option<MotygaAuth>,
     /// Permanent refresh failure cached for the current auth snapshot so
     /// later refresh attempts for the same credentials fail fast without network.
     permanent_refresh_failure: Option<AuthScopedRefreshFailure>,
@@ -1541,7 +1541,7 @@ struct CachedAuth {
 
 #[derive(Clone)]
 struct AuthScopedRefreshFailure {
-    auth: CodexAuth,
+    auth: MotygaAuth,
     error: RefreshTokenFailedError,
 }
 
@@ -1550,7 +1550,7 @@ impl Debug for CachedAuth {
         f.debug_struct("CachedAuth")
             .field(
                 "auth_mode",
-                &self.auth.as_ref().map(CodexAuth::api_auth_mode),
+                &self.auth.as_ref().map(MotygaAuth::api_auth_mode),
             )
             .field(
                 "permanent_refresh_failure",
@@ -1624,11 +1624,11 @@ impl UnauthorizedRecoveryStepResult {
 impl UnauthorizedRecovery {
     fn new(manager: Arc<AuthManager>) -> Self {
         let cached_auth = manager.auth_cached();
-        let expected_account_id = cached_auth.as_ref().and_then(CodexAuth::get_account_id);
+        let expected_account_id = cached_auth.as_ref().and_then(MotygaAuth::get_account_id);
         let mode = if manager.has_external_api_key_auth()
             || cached_auth
                 .as_ref()
-                .is_some_and(CodexAuth::is_external_chatgpt_tokens)
+                .is_some_and(MotygaAuth::is_external_chatgpt_tokens)
         {
             UnauthorizedRecoveryMode::External
         } else {
@@ -1655,7 +1655,7 @@ impl UnauthorizedRecovery {
             .manager
             .auth_cached()
             .as_ref()
-            .is_some_and(CodexAuth::supports_unauthorized_recovery)
+            .is_some_and(MotygaAuth::supports_unauthorized_recovery)
         {
             return false;
         }
@@ -1680,7 +1680,7 @@ impl UnauthorizedRecovery {
             .manager
             .auth_cached()
             .as_ref()
-            .is_some_and(CodexAuth::is_personal_access_token_auth)
+            .is_some_and(MotygaAuth::is_personal_access_token_auth)
         {
             return "not_refreshable_auth";
         }
@@ -1689,7 +1689,7 @@ impl UnauthorizedRecovery {
             .manager
             .auth_cached()
             .as_ref()
-            .is_some_and(CodexAuth::supports_unauthorized_recovery)
+            .is_some_and(MotygaAuth::supports_unauthorized_recovery)
         {
             return "not_chatgpt_auth";
         }
@@ -1783,17 +1783,17 @@ impl UnauthorizedRecovery {
 
 /// Central manager providing a single source of truth for auth.json derived
 /// authentication data. It loads once (or on preference change) and then
-/// hands out cloned `CodexAuth` values so the rest of the program has a
+/// hands out cloned `MotygaAuth` values so the rest of the program has a
 /// consistent snapshot.
 ///
 /// External modifications to `auth.json` will NOT be observed until
 /// `reload()` is called explicitly. This matches the design goal of avoiding
 /// different parts of the program seeing inconsistent auth data mid‑run.
 pub struct AuthManager {
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     inner: RwLock<CachedAuth>,
     auth_change_tx: watch::Sender<u64>,
-    enable_codex_api_key_env: bool,
+    enable_motyga_api_key_env: bool,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
     forced_chatgpt_workspace_id: RwLock<Option<Vec<String>>>,
@@ -1810,11 +1810,11 @@ pub struct AuthManager {
 ///
 /// Implementations should return the auth-related config values for the
 /// already-resolved runtime configuration. The primary implementation is
-/// `codex_core::config::Config`, but this trait keeps `codex-login` independent
-/// from `codex-core`.
+/// `motyga_core::config::Config`, but this trait keeps `motyga-login` independent
+/// from `motyga-core`.
 pub trait AuthManagerConfig {
-    /// Returns the Codex home directory used for auth storage.
-    fn codex_home(&self) -> PathBuf;
+    /// Returns the Motyga home directory used for auth storage.
+    fn motyga_home(&self) -> PathBuf;
 
     /// Returns the CLI auth credential storage mode for auth loading.
     fn cli_auth_credentials_store_mode(&self) -> AuthCredentialsStoreMode;
@@ -1835,9 +1835,9 @@ pub trait AuthManagerConfig {
 impl Debug for AuthManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AuthManager")
-            .field("codex_home", &self.codex_home)
+            .field("motyga_home", &self.motyga_home)
             .field("inner", &self.inner)
-            .field("enable_codex_api_key_env", &self.enable_codex_api_key_env)
+            .field("enable_motyga_api_key_env", &self.enable_motyga_api_key_env)
             .field(
                 "auth_credentials_store_mode",
                 &self.auth_credentials_store_mode,
@@ -1864,8 +1864,8 @@ impl AuthManager {
     /// simply return `None` in that case so callers can treat it as an
     /// unauthenticated state.
     pub async fn new(
-        codex_home: PathBuf,
-        enable_codex_api_key_env: bool,
+        motyga_home: PathBuf,
+        enable_motyga_api_key_env: bool,
         auth_credentials_store_mode: AuthCredentialsStoreMode,
         forced_chatgpt_workspace_id: Option<Vec<String>>,
         chatgpt_base_url: Option<String>,
@@ -1875,8 +1875,8 @@ impl AuthManager {
         let agent_identity_authapi_base_url =
             agent_identity_authapi_base_url(chatgpt_base_url.as_deref()).ok();
         let managed_auth = load_auth(
-            &codex_home,
-            enable_codex_api_key_env,
+            &motyga_home,
+            enable_motyga_api_key_env,
             auth_credentials_store_mode,
             forced_chatgpt_workspace_id.as_deref(),
             chatgpt_base_url.as_deref(),
@@ -1889,13 +1889,13 @@ impl AuthManager {
         .flatten();
         let (auth_change_tx, _auth_change_rx) = watch::channel(0);
         Self {
-            codex_home,
+            motyga_home,
             inner: RwLock::new(CachedAuth {
                 auth: managed_auth,
                 permanent_refresh_failure: None,
             }),
             auth_change_tx,
-            enable_codex_api_key_env,
+            enable_motyga_api_key_env,
             auth_credentials_store_mode,
             keyring_backend_kind,
             forced_chatgpt_workspace_id: RwLock::new(forced_chatgpt_workspace_id),
@@ -1909,8 +1909,8 @@ impl AuthManager {
         }
     }
 
-    /// Create an AuthManager with a specific CodexAuth, for testing only.
-    pub fn from_auth_for_testing(auth: CodexAuth) -> Arc<Self> {
+    /// Create an AuthManager with a specific MotygaAuth, for testing only.
+    pub fn from_auth_for_testing(auth: MotygaAuth) -> Arc<Self> {
         let cached = CachedAuth {
             auth: Some(auth),
             permanent_refresh_failure: None,
@@ -1918,10 +1918,10 @@ impl AuthManager {
         let (auth_change_tx, _auth_change_rx) = watch::channel(0);
 
         Arc::new(Self {
-            codex_home: PathBuf::from("non-existent"),
+            motyga_home: PathBuf::from("non-existent"),
             inner: RwLock::new(cached),
             auth_change_tx,
-            enable_codex_api_key_env: false,
+            enable_motyga_api_key_env: false,
             auth_credentials_store_mode: AuthCredentialsStoreMode::File,
             keyring_backend_kind: AuthKeyringBackendKind::default(),
             forced_chatgpt_workspace_id: RwLock::new(None),
@@ -1935,18 +1935,18 @@ impl AuthManager {
         })
     }
 
-    /// Create an AuthManager with a specific CodexAuth and codex home, for testing only.
-    pub fn from_auth_for_testing_with_home(auth: CodexAuth, codex_home: PathBuf) -> Arc<Self> {
+    /// Create an AuthManager with a specific MotygaAuth and motyga home, for testing only.
+    pub fn from_auth_for_testing_with_home(auth: MotygaAuth, motyga_home: PathBuf) -> Arc<Self> {
         let cached = CachedAuth {
             auth: Some(auth),
             permanent_refresh_failure: None,
         };
         let (auth_change_tx, _auth_change_rx) = watch::channel(0);
         Arc::new(Self {
-            codex_home,
+            motyga_home,
             inner: RwLock::new(cached),
             auth_change_tx,
-            enable_codex_api_key_env: false,
+            enable_motyga_api_key_env: false,
             auth_credentials_store_mode: AuthCredentialsStoreMode::File,
             keyring_backend_kind: AuthKeyringBackendKind::default(),
             forced_chatgpt_workspace_id: RwLock::new(None),
@@ -1960,10 +1960,10 @@ impl AuthManager {
         })
     }
 
-    /// Create an AuthManager with a specific CodexAuth and Agent Identity AuthAPI base URL, for testing only.
+    /// Create an AuthManager with a specific MotygaAuth and Agent Identity AuthAPI base URL, for testing only.
     #[doc(hidden)]
     pub fn from_auth_for_testing_with_agent_identity_authapi_base_url(
-        auth: CodexAuth,
+        auth: MotygaAuth,
         agent_identity_authapi_base_url: String,
     ) -> Arc<Self> {
         let cached = CachedAuth {
@@ -1972,10 +1972,10 @@ impl AuthManager {
         };
         let (auth_change_tx, _auth_change_rx) = watch::channel(0);
         Arc::new(Self {
-            codex_home: PathBuf::from("non-existent"),
+            motyga_home: PathBuf::from("non-existent"),
             inner: RwLock::new(cached),
             auth_change_tx,
-            enable_codex_api_key_env: false,
+            enable_motyga_api_key_env: false,
             auth_credentials_store_mode: AuthCredentialsStoreMode::File,
             keyring_backend_kind: AuthKeyringBackendKind::default(),
             forced_chatgpt_workspace_id: RwLock::new(None),
@@ -1996,13 +1996,13 @@ impl AuthManager {
     pub fn external_bearer_only(config: ModelProviderAuthInfo) -> Arc<Self> {
         let (auth_change_tx, _auth_change_rx) = watch::channel(0);
         Arc::new(Self {
-            codex_home: PathBuf::from("non-existent"),
+            motyga_home: PathBuf::from("non-existent"),
             inner: RwLock::new(CachedAuth {
                 auth: None,
                 permanent_refresh_failure: None,
             }),
             auth_change_tx,
-            enable_codex_api_key_env: false,
+            enable_motyga_api_key_env: false,
             auth_credentials_store_mode: AuthCredentialsStoreMode::File,
             keyring_backend_kind: AuthKeyringBackendKind::default(),
             forced_chatgpt_workspace_id: RwLock::new(None),
@@ -2019,7 +2019,7 @@ impl AuthManager {
     }
 
     /// Current cached auth (clone) without attempting a refresh.
-    pub fn auth_cached(&self) -> Option<CodexAuth> {
+    pub fn auth_cached(&self) -> Option<MotygaAuth> {
         self.inner.read().ok().and_then(|c| c.auth.clone())
     }
 
@@ -2028,7 +2028,7 @@ impl AuthManager {
         self.auth_change_tx.subscribe()
     }
 
-    pub fn refresh_failure_for_auth(&self, auth: &CodexAuth) -> Option<RefreshTokenFailedError> {
+    pub fn refresh_failure_for_auth(&self, auth: &MotygaAuth) -> Option<RefreshTokenFailedError> {
         self.inner.read().ok().and_then(|cached| {
             cached
                 .permanent_refresh_failure
@@ -2042,7 +2042,7 @@ impl AuthManager {
     /// For managed ChatGPT auth that needs a proactive refresh, first performs
     /// a guarded reload and then refreshes only if the on-disk auth is unchanged.
     #[instrument(level = "trace", skip_all)]
-    pub async fn auth(&self) -> Option<CodexAuth> {
+    pub async fn auth(&self) -> Option<MotygaAuth> {
         if let Some(auth) = self.resolve_external_api_key_auth().await {
             return Some(auth);
         }
@@ -2065,7 +2065,7 @@ impl AuthManager {
         let Some(auth) = self.auth().await else {
             return Ok(None);
         };
-        if policy == AgentIdentityAuthPolicy::ChatGptAuth && matches!(auth, CodexAuth::Chatgpt(_)) {
+        if policy == AgentIdentityAuthPolicy::ChatGptAuth && matches!(auth, MotygaAuth::Chatgpt(_)) {
             let _bootstrap_permit = self
                 .agent_identity_lock
                 .acquire()
@@ -2141,7 +2141,7 @@ impl AuthManager {
         };
 
         let new_auth = self.load_auth_from_storage().await;
-        let new_account_id = new_auth.as_ref().and_then(CodexAuth::get_account_id);
+        let new_account_id = new_auth.as_ref().and_then(MotygaAuth::get_account_id);
 
         if new_account_id.as_deref() != Some(expected_account_id) {
             let found_account_id = new_account_id.as_deref().unwrap_or("unknown");
@@ -2163,7 +2163,7 @@ impl AuthManager {
         }
     }
 
-    fn auths_equal_for_refresh(a: Option<&CodexAuth>, b: Option<&CodexAuth>) -> bool {
+    fn auths_equal_for_refresh(a: Option<&MotygaAuth>, b: Option<&MotygaAuth>) -> bool {
         match (a, b) {
             (None, None) => true,
             (Some(a), Some(b)) => match (a.api_auth_mode(), b.api_auth_mode()) {
@@ -2173,7 +2173,7 @@ impl AuthManager {
                     a.get_current_auth_json() == b.get_current_auth_json()
                 }
                 (AuthMode::AgentIdentity, AuthMode::AgentIdentity) => match (a, b) {
-                    (CodexAuth::AgentIdentity(a), CodexAuth::AgentIdentity(b)) => {
+                    (MotygaAuth::AgentIdentity(a), MotygaAuth::AgentIdentity(b)) => {
                         a.record() == b.record()
                     }
                     _ => false,
@@ -2186,7 +2186,7 @@ impl AuthManager {
         }
     }
 
-    fn auths_equal(a: Option<&CodexAuth>, b: Option<&CodexAuth>) -> bool {
+    fn auths_equal(a: Option<&MotygaAuth>, b: Option<&MotygaAuth>) -> bool {
         match (a, b) {
             (None, None) => true,
             (Some(a), Some(b)) => a == b,
@@ -2198,7 +2198,7 @@ impl AuthManager {
     /// attempted against the auth snapshot that is still cached.
     fn record_permanent_refresh_failure_if_unchanged(
         &self,
-        attempted_auth: &CodexAuth,
+        attempted_auth: &MotygaAuth,
         error: &RefreshTokenFailedError,
     ) {
         if let Ok(mut guard) = self.inner.write() {
@@ -2213,11 +2213,11 @@ impl AuthManager {
         }
     }
 
-    async fn load_auth_from_storage(&self) -> Option<CodexAuth> {
+    async fn load_auth_from_storage(&self) -> Option<MotygaAuth> {
         let forced_chatgpt_workspace_id = self.forced_chatgpt_workspace_id();
         load_auth(
-            &self.codex_home,
-            self.enable_codex_api_key_env,
+            &self.motyga_home,
+            self.enable_motyga_api_key_env,
             self.auth_credentials_store_mode,
             forced_chatgpt_workspace_id.as_deref(),
             self.chatgpt_base_url.as_deref(),
@@ -2230,7 +2230,7 @@ impl AuthManager {
         .flatten()
     }
 
-    fn set_cached_auth(&self, new_auth: Option<CodexAuth>) -> bool {
+    fn set_cached_auth(&self, new_auth: Option<MotygaAuth>) -> bool {
         if let Ok(mut guard) = self.inner.write() {
             let previous = guard.auth.as_ref();
             let changed = !AuthManager::auths_equal(previous, new_auth.as_ref());
@@ -2284,17 +2284,17 @@ impl AuthManager {
     pub fn is_external_chatgpt_auth_active(&self) -> bool {
         self.auth_cached()
             .as_ref()
-            .is_some_and(CodexAuth::is_external_chatgpt_tokens)
+            .is_some_and(MotygaAuth::is_external_chatgpt_tokens)
     }
 
-    pub fn codex_api_key_env_enabled(&self) -> bool {
-        self.enable_codex_api_key_env
+    pub fn motyga_api_key_env_enabled(&self) -> bool {
+        self.enable_motyga_api_key_env
     }
 
     /// Convenience constructor returning an `Arc` wrapper.
     pub async fn shared(
-        codex_home: PathBuf,
-        enable_codex_api_key_env: bool,
+        motyga_home: PathBuf,
+        enable_motyga_api_key_env: bool,
         auth_credentials_store_mode: AuthCredentialsStoreMode,
         forced_chatgpt_workspace_id: Option<Vec<String>>,
         chatgpt_base_url: Option<String>,
@@ -2303,8 +2303,8 @@ impl AuthManager {
     ) -> Arc<Self> {
         Arc::new(
             Self::new(
-                codex_home,
-                enable_codex_api_key_env,
+                motyga_home,
+                enable_motyga_api_key_env,
                 auth_credentials_store_mode,
                 forced_chatgpt_workspace_id,
                 chatgpt_base_url,
@@ -2318,11 +2318,11 @@ impl AuthManager {
     /// Convenience constructor returning an `Arc` wrapper from resolved config.
     pub async fn shared_from_config(
         config: &impl AuthManagerConfig,
-        enable_codex_api_key_env: bool,
+        enable_motyga_api_key_env: bool,
     ) -> Arc<Self> {
         Self::shared(
-            config.codex_home(),
-            enable_codex_api_key_env,
+            config.motyga_home(),
+            enable_motyga_api_key_env,
             config.cli_auth_credentials_store_mode(),
             config.forced_chatgpt_workspace_id(),
             Some(config.chatgpt_base_url()),
@@ -2353,7 +2353,7 @@ impl AuthManager {
         self.external_auth_mode() == Some(AuthMode::ApiKey)
     }
 
-    async fn resolve_external_api_key_auth(&self) -> Option<CodexAuth> {
+    async fn resolve_external_api_key_auth(&self) -> Option<MotygaAuth> {
         if !self.has_external_api_key_auth() {
             return None;
         }
@@ -2361,7 +2361,7 @@ impl AuthManager {
         let external_auth = self.external_auth()?;
 
         match external_auth.resolve().await {
-            Ok(Some(tokens)) => Some(CodexAuth::from_api_key(&tokens.access_token)),
+            Ok(Some(tokens)) => Some(MotygaAuth::from_api_key(&tokens.access_token)),
             Ok(None) => None,
             Err(err) => {
                 tracing::error!("Failed to resolve external API key auth: {err}");
@@ -2391,7 +2391,7 @@ impl AuthManager {
         }
         let expected_account_id = auth_before_reload
             .as_ref()
-            .and_then(CodexAuth::get_account_id);
+            .and_then(MotygaAuth::get_account_id);
 
         match self
             .reload_if_account_id_matches(expected_account_id.as_deref())
@@ -2438,11 +2438,11 @@ impl AuthManager {
 
         let attempted_auth = auth.clone();
         let result = match auth {
-            CodexAuth::ChatgptAuthTokens(_) => {
+            MotygaAuth::ChatgptAuthTokens(_) => {
                 self.refresh_external_auth(ExternalAuthRefreshReason::Unauthorized)
                     .await
             }
-            CodexAuth::Chatgpt(chatgpt_auth) => {
+            MotygaAuth::Chatgpt(chatgpt_auth) => {
                 let token_data = chatgpt_auth.current_token_data().ok_or_else(|| {
                     RefreshTokenError::Transient(std::io::Error::other(
                         "Token data is not available.",
@@ -2451,10 +2451,10 @@ impl AuthManager {
                 self.refresh_and_persist_chatgpt_token(&chatgpt_auth, token_data.refresh_token)
                     .await
             }
-            CodexAuth::ApiKey(_)
-            | CodexAuth::AgentIdentity(_)
-            | CodexAuth::PersonalAccessToken(_)
-            | CodexAuth::BedrockApiKey(_) => Ok(()),
+            MotygaAuth::ApiKey(_)
+            | MotygaAuth::AgentIdentity(_)
+            | MotygaAuth::PersonalAccessToken(_)
+            | MotygaAuth::BedrockApiKey(_) => Ok(()),
         };
         if let Err(RefreshTokenError::Permanent(error)) = &result {
             self.record_permanent_refresh_failure_if_unchanged(&attempted_auth, error);
@@ -2468,7 +2468,7 @@ impl AuthManager {
     /// unauthenticated state.
     pub async fn logout(&self) -> std::io::Result<bool> {
         let removed = logout_all_stores(
-            &self.codex_home,
+            &self.motyga_home,
             self.auth_credentials_store_mode,
             self.keyring_backend_kind,
         )?;
@@ -2487,7 +2487,7 @@ impl AuthManager {
             tracing::warn!("failed to revoke auth tokens during logout: {err}");
         }
         let result = logout_all_stores(
-            &self.codex_home,
+            &self.motyga_home,
             self.auth_credentials_store_mode,
             self.keyring_backend_kind,
         )?;
@@ -2501,7 +2501,7 @@ impl AuthManager {
         if self.has_external_api_key_auth() {
             return Some(AuthMode::ApiKey);
         }
-        self.auth_cached().as_ref().map(CodexAuth::api_auth_mode)
+        self.auth_cached().as_ref().map(MotygaAuth::api_auth_mode)
     }
 
     /// Returns the effective backend auth mode for the current authentication.
@@ -2509,17 +2509,17 @@ impl AuthManager {
         if self.has_external_api_key_auth() {
             return Some(AuthMode::ApiKey);
         }
-        self.auth_cached().as_ref().map(CodexAuth::auth_mode)
+        self.auth_cached().as_ref().map(MotygaAuth::auth_mode)
     }
 
-    pub fn current_auth_uses_codex_backend(&self) -> bool {
+    pub fn current_auth_uses_motyga_backend(&self) -> bool {
         self.get_api_auth_mode()
-            .is_some_and(AuthMode::uses_codex_backend)
+            .is_some_and(AuthMode::uses_motyga_backend)
     }
 
-    fn should_refresh_proactively(auth: &CodexAuth) -> bool {
+    fn should_refresh_proactively(auth: &MotygaAuth) -> bool {
         let chatgpt_auth = match auth {
-            CodexAuth::Chatgpt(chatgpt_auth) => chatgpt_auth,
+            MotygaAuth::Chatgpt(chatgpt_auth) => chatgpt_auth,
             _ => return false,
         };
 
@@ -2554,7 +2554,7 @@ impl AuthManager {
         let previous_account_id = self
             .auth_cached()
             .as_ref()
-            .and_then(CodexAuth::get_account_id);
+            .and_then(MotygaAuth::get_account_id);
         let context = ExternalAuthRefreshContext {
             reason,
             previous_account_id,
@@ -2585,7 +2585,7 @@ impl AuthManager {
         let auth_dot_json =
             AuthDotJson::from_external_tokens(&refreshed).map_err(RefreshTokenError::Transient)?;
         save_auth(
-            &self.codex_home,
+            &self.motyga_home,
             &auth_dot_json,
             AuthCredentialsStoreMode::Ephemeral,
             AuthKeyringBackendKind::default(),

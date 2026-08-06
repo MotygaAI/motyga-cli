@@ -3,8 +3,8 @@ from __future__ import annotations
 from app_server_harness import AppServerHarness
 from app_server_helpers import agent_message_texts, streaming_response
 
-from openai_codex import Codex
-from openai_codex.generated.v2_all import TurnStatus
+from motyga_sdk import Motyga
+from motyga_sdk.generated.v2_all import TurnStatus
 
 
 def test_turn_steer_adds_follow_up_input(tmp_path) -> None:
@@ -19,8 +19,8 @@ def test_turn_steer_adds_follow_up_input(tmp_path) -> None:
             response_id="steer-second",
         )
 
-        with Codex(config=harness.app_server_config()) as codex:
-            thread = codex.thread_start()
+        with Motyga(config=harness.app_server_config()) as motyga:
+            thread = motyga.thread_start()
             turn = thread.turn("Start a steerable turn.")
             harness.responses.wait_for_requests(1)
             steer = turn.steer("Use this steering input.")
@@ -59,8 +59,8 @@ def test_turn_interrupt_stops_active_turn_and_follow_up_runs(tmp_path) -> None:
             response_id="interrupt-follow-up",
         )
 
-        with Codex(config=harness.app_server_config()) as codex:
-            thread = codex.thread_start()
+        with Motyga(config=harness.app_server_config()) as motyga:
+            thread = motyga.thread_start()
             interrupted_turn = thread.turn("Start a long turn.")
             harness.responses.wait_for_requests(1)
             interrupt_response = interrupted_turn.interrupt()

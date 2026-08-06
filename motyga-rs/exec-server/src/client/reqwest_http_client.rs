@@ -8,9 +8,9 @@
 use std::error::Error as StdError;
 use std::time::Duration;
 
-use codex_client::build_reqwest_client_with_custom_ca;
-use codex_client::with_chatgpt_cloudflare_cookie_store;
-use codex_exec_server_protocol::JSONRPCErrorError;
+use motyga_client::build_reqwest_client_with_custom_ca;
+use motyga_client::with_chatgpt_cloudflare_cookie_store;
+use motyga_exec_server_protocol::JSONRPCErrorError;
 use futures::FutureExt;
 use futures::StreamExt;
 use futures::future::BoxFuture;
@@ -149,7 +149,7 @@ impl ReqwestHttpRequestRunner {
         }
 
         let request_span = tracing::info_span!(
-            "codex.exec_server.http_request",
+            "motyga.exec_server.http_request",
             otel.kind = "client",
             http.request.method = method.as_str(),
             server.address = url.host_str().unwrap_or_default(),
@@ -158,7 +158,7 @@ impl ReqwestHttpRequestRunner {
             error.type = tracing::field::Empty,
         );
         let mut headers = Self::build_headers(params.headers)?;
-        codex_otel::inject_span_w3c_trace_headers(&request_span, &mut headers);
+        motyga_otel::inject_span_w3c_trace_headers(&request_span, &mut headers);
         let mut request = self.client.request(method.clone(), url).headers(headers);
         if let Some(body) = params.body {
             request = request.body(body.into_inner());

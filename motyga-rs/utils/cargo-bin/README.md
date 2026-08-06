@@ -1,9 +1,9 @@
-# codex-utils-cargo-bin runfiles strategy
+# motyga-utils-cargo-bin runfiles strategy
 
 We disable the directory-based runfiles strategy and rely on the manifest
 strategy across all platforms. This avoids Windows path length issues and keeps
 behavior consistent in local and remote builds on all platforms. Bazel sets
-`RUNFILES_MANIFEST_FILE`, and the `codex-utils-cargo-bin` helpers use the
+`RUNFILES_MANIFEST_FILE`, and the `motyga-utils-cargo-bin` helpers use the
 `runfiles` crate to resolve runfiles via that manifest.
 
 Function behavior:

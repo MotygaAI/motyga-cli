@@ -2,8 +2,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
-use codex_api::AuthProvider;
-use codex_api::SharedAuthProvider;
+use motyga_api::AuthProvider;
+use motyga_api::SharedAuthProvider;
 use futures::FutureExt;
 use http::HeaderMap;
 use http::HeaderName;
@@ -19,7 +19,7 @@ use tracing::debug;
 use tracing::info;
 use tracing::warn;
 
-use codex_utils_rustls_provider::ensure_rustls_crypto_provider;
+use motyga_utils_rustls_provider::ensure_rustls_crypto_provider;
 
 use crate::EnvironmentRegistryConnectRequest;
 use crate::EnvironmentRegistryConnectResponse;
@@ -88,11 +88,11 @@ impl EnvironmentRegistryClient {
     /// Register the executor public key and obtain the rendezvous allocation.
     /// The returned registration ID is included in each stream's Noise prologue.
     #[tracing::instrument(
-        name = "codex.exec_server.remote.register",
+        name = "motyga.exec_server.remote.register",
         skip_all,
         fields(
             otel.kind = "client",
-            otel.name = "codex.exec_server.remote.register",
+            otel.name = "motyga.exec_server.remote.register",
             result = tracing::field::Empty,
         )
     )]
@@ -285,7 +285,7 @@ impl HarnessKeyValidator for RegistryHarnessKeyValidator {
     }
 }
 
-/// Noise connection configuration for a Codex harness.
+/// Noise connection configuration for a Motyga harness.
 ///
 /// The provider holds the authenticated registry client so every reconnect
 /// receives fresh URL and harness-key authorization material.
@@ -444,7 +444,7 @@ impl RemoteEnvironmentConfig {
         Ok(Self {
             base_url,
             environment_id,
-            name: "codex-exec-server".to_string(),
+            name: "motyga-exec-server".to_string(),
             auth_provider,
             telemetry: ExecServerTelemetry::default(),
         })
@@ -545,11 +545,11 @@ pub async fn run_remote_environment(
 }
 
 #[tracing::instrument(
-    name = "codex.exec_server.remote.rendezvous.connect",
+    name = "motyga.exec_server.remote.rendezvous.connect",
     skip_all,
     fields(
         otel.kind = "client",
-        otel.name = "codex.exec_server.remote.rendezvous.connect",
+        otel.name = "motyga.exec_server.remote.rendezvous.connect",
         result = tracing::field::Empty,
     )
 )]
@@ -671,7 +671,7 @@ fn preview_error_body(body: &str) -> Option<String> {
 mod tests {
     use std::sync::Arc;
 
-    use codex_api::AuthProvider;
+    use motyga_api::AuthProvider;
     use http::HeaderMap;
     use http::HeaderValue;
     use opentelemetry::trace::TracerProvider as _;

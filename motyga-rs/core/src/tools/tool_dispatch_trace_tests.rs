@@ -3,10 +3,10 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use codex_protocol::protocol::SessionSource;
-use codex_rollout_trace::ExecutionStatus;
-use codex_rollout_trace::ThreadStartedTraceMetadata;
-use codex_rollout_trace::ToolCallRequester;
+use motyga_protocol::protocol::SessionSource;
+use motyga_rollout_trace::ExecutionStatus;
+use motyga_rollout_trace::ThreadStartedTraceMetadata;
+use motyga_rollout_trace::ToolCallRequester;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use tokio_util::sync::CancellationToken;
@@ -28,26 +28,26 @@ use crate::tools::registry::ToolRegistry;
 use crate::turn_diff_tracker::TurnDiffTracker;
 
 struct TestHandler {
-    tool_name: codex_tools::ToolName,
+    tool_name: motyga_tools::ToolName,
 }
 
 impl ToolExecutor<ToolInvocation> for TestHandler {
-    fn tool_name(&self) -> codex_tools::ToolName {
+    fn tool_name(&self) -> motyga_tools::ToolName {
         self.tool_name.clone()
     }
 
-    fn spec(&self) -> codex_tools::ToolSpec {
-        codex_tools::ToolSpec::Function(codex_tools::ResponsesApiTool {
+    fn spec(&self) -> motyga_tools::ToolSpec {
+        motyga_tools::ToolSpec::Function(motyga_tools::ResponsesApiTool {
             name: self.tool_name.name.clone(),
             description: "Test tool.".to_string(),
             strict: false,
             defer_loading: None,
-            parameters: codex_tools::JsonSchema::default(),
+            parameters: motyga_tools::JsonSchema::default(),
             output_schema: None,
         })
     }
 
-    fn handle(&self, _invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, _invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(async {
             Ok(
                 Box::new(FunctionToolOutput::from_text("ok".to_string(), Some(true)))
@@ -72,7 +72,7 @@ async fn dispatch_lifecycle_trace_records_direct_and_code_mode_requesters() -> a
     );
 
     let registry = ToolRegistry::with_handler_for_test(Arc::new(TestHandler {
-        tool_name: codex_tools::ToolName::plain("test_tool"),
+        tool_name: motyga_tools::ToolName::plain("test_tool"),
     }));
     let session = Arc::new(session);
     let turn = Arc::new(turn);
@@ -101,7 +101,7 @@ async fn dispatch_lifecycle_trace_records_direct_and_code_mode_requesters() -> a
         ))
         .await?;
 
-    let replayed = codex_rollout_trace::replay_bundle(single_bundle_dir(temp.path())?)?;
+    let replayed = motyga_rollout_trace::replay_bundle(single_bundle_dir(temp.path())?)?;
     assert_eq!(
         replayed.tool_calls["direct-call"].model_visible_call_id,
         Some("direct-call".to_string()),
@@ -168,7 +168,7 @@ async fn dispatch_lifecycle_trace_records_unsupported_tool_failures() -> anyhow:
         .await;
 
     assert!(matches!(result, Err(FunctionCallError::RespondToModel(_))));
-    let replayed = codex_rollout_trace::replay_bundle(single_bundle_dir(temp.path())?)?;
+    let replayed = motyga_rollout_trace::replay_bundle(single_bundle_dir(temp.path())?)?;
     let tool_call = &replayed.tool_calls["unsupported-call"];
     assert_eq!(tool_call.execution.status, ExecutionStatus::Failed);
     assert!(tool_call.raw_result_payload_id.is_some());
@@ -183,7 +183,7 @@ async fn dispatch_lifecycle_trace_records_incompatible_payload_failures() -> any
     attach_test_trace(&mut session, &turn, temp.path())?;
 
     let registry = ToolRegistry::with_handler_for_test(Arc::new(TestHandler {
-        tool_name: codex_tools::ToolName::plain("test_tool"),
+        tool_name: motyga_tools::ToolName::plain("test_tool"),
     }));
     let session = Arc::new(session);
     let turn = Arc::new(turn);
@@ -193,7 +193,7 @@ async fn dispatch_lifecycle_trace_records_incompatible_payload_failures() -> any
             session,
             turn,
             "incompatible-call",
-            codex_tools::ToolName::plain("test_tool"),
+            motyga_tools::ToolName::plain("test_tool"),
             ToolCallSource::Direct,
             ToolPayload::Custom {
                 input: "{}".to_string(),
@@ -202,7 +202,7 @@ async fn dispatch_lifecycle_trace_records_incompatible_payload_failures() -> any
         .await;
 
     assert!(matches!(result, Err(FunctionCallError::Fatal(_))));
-    let replayed = codex_rollout_trace::replay_bundle(single_bundle_dir(temp.path())?)?;
+    let replayed = motyga_rollout_trace::replay_bundle(single_bundle_dir(temp.path())?)?;
     let tool_call = &replayed.tool_calls["incompatible-call"];
     assert_eq!(tool_call.execution.status, ExecutionStatus::Failed);
     assert!(tool_call.raw_result_payload_id.is_some());
@@ -231,7 +231,7 @@ async fn missing_code_mode_wait_traces_only_the_wait_tool_call() -> anyhow::Resu
         ))
         .await?;
 
-    let replayed = codex_rollout_trace::replay_bundle(single_bundle_dir(temp.path())?)?;
+    let replayed = motyga_rollout_trace::replay_bundle(single_bundle_dir(temp.path())?)?;
     assert_eq!(replayed.code_cells.len(), 0);
     assert!(
         replayed.tool_calls["wait-call"]
@@ -254,7 +254,7 @@ fn test_invocation(
         session,
         turn,
         call_id,
-        codex_tools::ToolName::plain(tool_name),
+        motyga_tools::ToolName::plain(tool_name),
         source,
         ToolPayload::Function {
             arguments: arguments.to_string(),
@@ -266,7 +266,7 @@ fn test_invocation_with_payload(
     session: Arc<Session>,
     turn: Arc<TurnContext>,
     call_id: &str,
-    tool_name: codex_tools::ToolName,
+    tool_name: motyga_tools::ToolName,
     source: ToolCallSource,
     payload: ToolPayload,
 ) -> ToolInvocation {
@@ -287,7 +287,7 @@ fn test_invocation_with_payload(
 fn attach_test_trace(session: &mut Session, turn: &TurnContext, root: &Path) -> anyhow::Result<()> {
     let thread_id = session.thread_id;
     let rollout_thread_trace =
-        codex_rollout_trace::ThreadTraceContext::start_root_in_root_for_test(
+        motyga_rollout_trace::ThreadTraceContext::start_root_in_root_for_test(
             root,
             ThreadStartedTraceMetadata {
                 thread_id: thread_id.to_string(),
@@ -304,7 +304,7 @@ fn attach_test_trace(session: &mut Session, turn: &TurnContext, root: &Path) -> 
                 sandbox_policy: "danger-full-access".to_string(),
             },
         )?;
-    rollout_thread_trace.record_codex_turn_started(turn.sub_id.as_str());
+    rollout_thread_trace.record_motyga_turn_started(turn.sub_id.as_str());
     session.services.rollout_thread_trace = rollout_thread_trace;
     Ok(())
 }

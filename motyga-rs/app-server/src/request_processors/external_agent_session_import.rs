@@ -2,28 +2,28 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use chrono::Utc;
-use codex_arg0::Arg0DispatchPaths;
-use codex_core::ThreadManager;
-use codex_core::config::ConfigOverrides;
-use codex_external_agent_sessions::CompletedExternalAgentSessionImport;
-use codex_external_agent_sessions::ExternalAgentSessionMigration;
-use codex_external_agent_sessions::ImportedExternalAgentSession;
-use codex_external_agent_sessions::PendingSessionImport;
-use codex_external_agent_sessions::prepare_validated_session_import;
-use codex_external_agent_sessions::record_completed_session_imports;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_protocol::ThreadId;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::ThreadHistoryMode;
-use codex_protocol::protocol::ThreadMemoryMode;
-use codex_rollout::is_persisted_rollout_item;
-use codex_thread_store::AppendThreadItemsParams;
-use codex_thread_store::CreateThreadParams;
-use codex_thread_store::ThreadMetadataPatch;
-use codex_thread_store::ThreadPersistenceMetadata;
-use codex_thread_store::ThreadStore;
-use codex_thread_store::UpdateThreadMetadataParams;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_core::ThreadManager;
+use motyga_core::config::ConfigOverrides;
+use motyga_external_agent_sessions::CompletedExternalAgentSessionImport;
+use motyga_external_agent_sessions::ExternalAgentSessionMigration;
+use motyga_external_agent_sessions::ImportedExternalAgentSession;
+use motyga_external_agent_sessions::PendingSessionImport;
+use motyga_external_agent_sessions::prepare_validated_session_import;
+use motyga_external_agent_sessions::record_completed_session_imports;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::ThreadHistoryMode;
+use motyga_protocol::protocol::ThreadMemoryMode;
+use motyga_rollout::is_persisted_rollout_item;
+use motyga_thread_store::AppendThreadItemsParams;
+use motyga_thread_store::CreateThreadParams;
+use motyga_thread_store::ThreadMetadataPatch;
+use motyga_thread_store::ThreadPersistenceMetadata;
+use motyga_thread_store::ThreadStore;
+use motyga_thread_store::UpdateThreadMetadataParams;
 use futures::StreamExt;
 use tokio::sync::Semaphore;
 
@@ -35,7 +35,7 @@ const SESSION_IMPORT_CONCURRENCY: usize = 5;
 
 #[derive(Clone)]
 pub(super) struct ExternalAgentSessionImporter {
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     permits: Arc<Semaphore>,
     thread_manager: Arc<ThreadManager>,
     thread_store: Arc<dyn ThreadStore>,
@@ -45,14 +45,14 @@ pub(super) struct ExternalAgentSessionImporter {
 
 impl ExternalAgentSessionImporter {
     pub(super) fn new(
-        codex_home: PathBuf,
+        motyga_home: PathBuf,
         thread_manager: Arc<ThreadManager>,
         thread_store: Arc<dyn ThreadStore>,
         config_manager: ConfigManager,
         arg0_paths: Arg0DispatchPaths,
     ) -> Self {
         Self {
-            codex_home,
+            motyga_home,
             permits: Arc::new(Semaphore::new(1)),
             thread_manager,
             thread_store,
@@ -107,7 +107,7 @@ impl ExternalAgentSessionImporter {
                 }
             }
         }
-        if let Err(err) = record_completed_session_imports(&self.codex_home, completed_imports) {
+        if let Err(err) = record_completed_session_imports(&self.motyga_home, completed_imports) {
             record_import_error(
                 &mut item_result,
                 "session_ledger_update",
@@ -153,8 +153,8 @@ impl ExternalAgentSessionImporter {
         &self,
         session: ExternalAgentSessionMigration,
     ) -> Result<Option<PendingSessionImport>, String> {
-        let codex_home = self.codex_home.clone();
-        tokio::task::spawn_blocking(move || prepare_validated_session_import(&codex_home, session))
+        let motyga_home = self.motyga_home.clone();
+        tokio::task::spawn_blocking(move || prepare_validated_session_import(&motyga_home, session))
             .await
             .map_err(|err| format!("external agent session preparation task failed: {err}"))?
             .map_err(|err| format!("failed to prepare external agent session: {err}"))
@@ -176,7 +176,7 @@ impl ExternalAgentSessionImporter {
                 /*request_overrides*/ None,
                 ConfigOverrides {
                     cwd: Some(cwd),
-                    codex_linux_sandbox_exe: self.arg0_paths.codex_linux_sandbox_exe.clone(),
+                    motyga_linux_sandbox_exe: self.arg0_paths.motyga_linux_sandbox_exe.clone(),
                     main_execve_wrapper_exe: self.arg0_paths.main_execve_wrapper_exe.clone(),
                     ..Default::default()
                 },
@@ -212,7 +212,7 @@ impl ExternalAgentSessionImporter {
             parent_thread_id: None,
             source: source.clone(),
             thread_source: None,
-            originator: codex_login::default_client::originator().value,
+            originator: motyga_login::default_client::originator().value,
             base_instructions: BaseInstructions {
                 text: config
                     .base_instructions
@@ -233,7 +233,7 @@ impl ExternalAgentSessionImporter {
         rollout_items.retain(is_persisted_rollout_item);
         let title = title
             .as_deref()
-            .and_then(codex_core::util::normalize_thread_name);
+            .and_then(motyga_core::util::normalize_thread_name);
         let metadata = ThreadMetadataPatch {
             title,
             preview: first_user_message.clone(),

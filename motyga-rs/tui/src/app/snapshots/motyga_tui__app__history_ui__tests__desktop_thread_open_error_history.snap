@@ -1,0 +1,5 @@
+---
+source: tui/src/app/history_ui_tests.rs
+expression: render_cell(&cell)
+---
+■ Failed to open this session in the Motyga desktop app: launch failed. Install or launch the Motyga desktop app and try again.

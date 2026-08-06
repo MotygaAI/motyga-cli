@@ -3,9 +3,9 @@ use std::future::Future;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use codex_mcp::McpResourceClient;
-use codex_mcp::McpResourceClientCacheKey;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_mcp::McpResourceClient;
+use motyga_mcp::McpResourceClientCacheKey;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
 use tokio::sync::OnceCell;
 
 use crate::SkillsExtensionConfig;

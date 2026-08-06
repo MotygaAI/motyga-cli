@@ -3,11 +3,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use codex_rmcp_client::ElicitationAction;
-use codex_rmcp_client::ElicitationResponse;
-use codex_rmcp_client::LocalStdioServerLauncher;
-use codex_rmcp_client::RmcpClient;
-use codex_utils_cargo_bin::CargoBinError;
+use motyga_rmcp_client::ElicitationAction;
+use motyga_rmcp_client::ElicitationResponse;
+use motyga_rmcp_client::LocalStdioServerLauncher;
+use motyga_rmcp_client::RmcpClient;
+use motyga_utils_cargo_bin::CargoBinError;
 use futures::FutureExt as _;
 use rmcp::model::AnnotateAble;
 use rmcp::model::ClientCapabilities;
@@ -21,10 +21,10 @@ use rmcp::model::ReadResourceRequestParams;
 use rmcp::model::ResourceContents;
 use serde_json::json;
 
-const RESOURCE_URI: &str = "memo://codex/example-note";
+const RESOURCE_URI: &str = "memo://motyga/example-note";
 
 fn stdio_server_bin() -> Result<PathBuf, CargoBinError> {
-    codex_utils_cargo_bin::cargo_bin("test_stdio_server")
+    motyga_utils_cargo_bin::cargo_bin("test_stdio_server")
 }
 
 fn init_params() -> InitializeRequestParams {
@@ -37,7 +37,7 @@ fn init_params() -> InitializeRequestParams {
     });
     InitializeRequestParams::new(
         capabilities,
-        Implementation::new("codex-test", "0.0.0-test").with_title("Codex rmcp resource test"),
+        Implementation::new("motyga-test", "0.0.0-test").with_title("Motyga rmcp resource test"),
     )
     .with_protocol_version(ProtocolVersion::V_2025_06_18)
 }
@@ -103,11 +103,11 @@ async fn rmcp_client_can_list_and_read_resources() -> anyhow::Result<()> {
             next_cursor: None,
             resource_templates: vec![
                 rmcp::model::RawResourceTemplate {
-                    uri_template: "memo://codex/{slug}".to_string(),
-                    name: "codex-memo".to_string(),
-                    title: Some("Codex Memo".to_string()),
+                    uri_template: "memo://motyga/{slug}".to_string(),
+                    name: "motyga-memo".to_string(),
+                    title: Some("Motyga Memo".to_string()),
                     description: Some(
-                        "Template for memo://codex/{slug} resources used in tests.".to_string(),
+                        "Template for memo://motyga/{slug} resources used in tests.".to_string(),
                     ),
                     mime_type: Some("text/plain".to_string()),
                     icons: None,

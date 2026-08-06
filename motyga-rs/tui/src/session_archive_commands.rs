@@ -1,4 +1,4 @@
-//! Shared implementation for `codex archive`, `codex delete`, and `codex unarchive`.
+//! Shared implementation for `motyga archive`, `motyga delete`, and `motyga unarchive`.
 //!
 //! The CLI commands are thin app-server clients: resolve a user-provided UUID or exact session
 //! name, then call the corresponding app-server RPC.
@@ -16,20 +16,20 @@ use crate::legacy_core::config::resolve_bootstrap_auth_keyring_backend_kind;
 use crate::legacy_core::config::resolve_bootstrap_auth_route_config;
 use crate::legacy_core::config::resolve_oss_provider;
 use crate::legacy_core::config::resolve_profile_v2_config_path;
-use codex_app_server_protocol::Thread as AppServerThread;
-use codex_app_server_protocol::ThreadListParams;
-use codex_app_server_protocol::ThreadSortKey;
-use codex_arg0::Arg0DispatchPaths;
-use codex_cloud_config::cloud_config_bundle_loader_for_storage;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::ConfigLoadOptions;
-use codex_config::LoaderOverrides;
-use codex_exec_server::EnvironmentManager;
-use codex_exec_server::ExecServerRuntimePaths;
-use codex_protocol::ThreadId;
-use codex_utils_cli::CliConfigOverrides;
-use codex_utils_home_dir::find_codex_home;
-use codex_utils_oss::get_default_model_for_oss_provider;
+use motyga_app_server_protocol::Thread as AppServerThread;
+use motyga_app_server_protocol::ThreadListParams;
+use motyga_app_server_protocol::ThreadSortKey;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_cloud_config::cloud_config_bundle_loader_for_storage;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::ConfigLoadOptions;
+use motyga_config::LoaderOverrides;
+use motyga_exec_server::EnvironmentManager;
+use motyga_exec_server::ExecServerRuntimePaths;
+use motyga_protocol::ThreadId;
+use motyga_utils_cli::CliConfigOverrides;
+use motyga_utils_home_dir::find_motyga_home;
+use motyga_utils_oss::get_default_model_for_oss_provider;
 use color_eyre::eyre::Result;
 use color_eyre::eyre::WrapErr;
 use color_eyre::eyre::eyre;
@@ -257,12 +257,12 @@ async fn start_app_server_for_archive_command(
     let cli_kv_overrides = overrides_cli
         .parse_overrides()
         .map_err(|err| eyre!("failed to parse -c overrides: {err}"))?;
-    let codex_home = find_codex_home().wrap_err("failed to find Motyga home")?;
+    let motyga_home = find_motyga_home().wrap_err("failed to find Motyga home")?;
 
     let mut launch_loader_overrides = loader_overrides.clone();
     if let Some(profile_v2) = cli.config_profile_v2.as_ref() {
         launch_loader_overrides.user_config_path = Some(resolve_profile_v2_config_path(
-            codex_home.as_path(),
+            motyga_home.as_path(),
             profile_v2,
         ));
         launch_loader_overrides.user_config_profile = Some(profile_v2.clone());
@@ -275,7 +275,7 @@ async fn start_app_server_for_archive_command(
         cli.bypass_hook_trust,
     );
     let default_daemon = if explicit_remote_endpoint.is_none() && reuse_implicit_local_daemon {
-        super::maybe_probe_default_daemon_socket(codex_home.as_path()).await
+        super::maybe_probe_default_daemon_socket(motyga_home.as_path()).await
     } else {
         None
     };
@@ -290,8 +290,8 @@ async fn start_app_server_for_archive_command(
         .filter(|_| app_server_target.uses_remote_workspace());
 
     let local_runtime_paths = ExecServerRuntimePaths::from_optional_paths(
-        arg0_paths.codex_self_exe.clone(),
-        arg0_paths.codex_linux_sandbox_exe.clone(),
+        arg0_paths.motyga_self_exe.clone(),
+        arg0_paths.motyga_linux_sandbox_exe.clone(),
     )
     .wrap_err("failed to resolve local runtime paths")?;
     let environment_manager = EnvironmentManager::from_env(Some(local_runtime_paths))
@@ -308,14 +308,14 @@ async fn start_app_server_for_archive_command(
     let mut loader_overrides = loader_overrides;
     if let Some(profile_v2) = cli.config_profile_v2.as_ref() {
         loader_overrides.user_config_path = Some(resolve_profile_v2_config_path(
-            codex_home.as_path(),
+            motyga_home.as_path(),
             profile_v2,
         ));
         loader_overrides.user_config_profile = Some(profile_v2.clone());
     }
 
     let bootstrap_config = load_config_toml_with_layer_stack(
-        codex_home.as_path(),
+        motyga_home.as_path(),
         config_cwd.as_ref(),
         cli_kv_overrides.clone(),
         ConfigLoadOptions {
@@ -340,8 +340,8 @@ async fn start_app_server_for_archive_command(
             .as_ref(),
     )?;
     let cloud_config_bundle = cloud_config_bundle_loader_for_storage(
-        codex_home.to_path_buf(),
-        /*enable_codex_api_key_env*/ false,
+        motyga_home.to_path_buf(),
+        /*enable_motyga_api_key_env*/ false,
         config_toml.cli_auth_credentials_store.unwrap_or_default(),
         resolve_bootstrap_auth_keyring_backend_kind(&bootstrap_config)?,
         chatgpt_base_url,
@@ -371,8 +371,8 @@ async fn start_app_server_for_archive_command(
                 cwd
             },
             model_provider,
-            codex_self_exe: arg0_paths.codex_self_exe.clone(),
-            codex_linux_sandbox_exe: arg0_paths.codex_linux_sandbox_exe.clone(),
+            motyga_self_exe: arg0_paths.motyga_self_exe.clone(),
+            motyga_linux_sandbox_exe: arg0_paths.motyga_linux_sandbox_exe.clone(),
             main_execve_wrapper_exe: arg0_paths.main_execve_wrapper_exe.clone(),
             show_raw_agent_reasoning: cli.oss.then_some(true),
             bypass_hook_trust: cli.bypass_hook_trust.then_some(true),
@@ -395,7 +395,7 @@ async fn start_app_server_for_archive_command(
         loader_overrides,
         strict_config,
         cloud_config_bundle,
-        codex_feedback::CodexFeedback::new(),
+        motyga_feedback::MotygaFeedback::new(),
         /*log_db*/ None,
         state_db,
         environment_manager,

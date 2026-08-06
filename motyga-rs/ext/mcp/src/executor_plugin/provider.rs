@@ -1,13 +1,13 @@
-use codex_config::McpServerConfig;
-use codex_core_plugins::ResolvedExecutorPlugin;
-use codex_exec_server::ExecutorFileSystem;
-use codex_mcp::parse_executor_plugin_mcp_config;
-use codex_plugin::PluginResourceLocator;
-use codex_plugin::ResolvedPlugin;
-use codex_plugin::ResolvedPluginLocation;
-use codex_plugin::manifest::PluginManifestMcpServers;
-use codex_utils_path_uri::PathUri;
-use codex_utils_path_uri::PathUriParseError;
+use motyga_config::McpServerConfig;
+use motyga_core_plugins::ResolvedExecutorPlugin;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_mcp::parse_executor_plugin_mcp_config;
+use motyga_plugin::PluginResourceLocator;
+use motyga_plugin::ResolvedPlugin;
+use motyga_plugin::ResolvedPluginLocation;
+use motyga_plugin::manifest::PluginManifestMcpServers;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_path_uri::PathUriParseError;
 use std::io;
 use thiserror::Error;
 

@@ -289,11 +289,11 @@ impl ChatWidget {
 
     pub(super) fn handle_app_server_steer_rejected_error(
         &mut self,
-        codex_error_info: &AppServerCodexErrorInfo,
+        motyga_error_info: &AppServerMotygaErrorInfo,
     ) -> bool {
         matches!(
-            codex_error_info,
-            AppServerCodexErrorInfo::ActiveTurnNotSteerable { .. }
+            motyga_error_info,
+            AppServerMotygaErrorInfo::ActiveTurnNotSteerable { .. }
         ) && self.enqueue_rejected_steer()
     }
 
@@ -373,7 +373,7 @@ impl ChatWidget {
 
     pub(super) fn on_rate_limit_error(&mut self, error_kind: RateLimitErrorKind, message: String) {
         let usage_limit_error = matches!(error_kind, RateLimitErrorKind::UsageLimit);
-        let rate_limit_reached_type = self.codex_rate_limit_reached_type.map(|kind| {
+        let rate_limit_reached_type = self.motyga_rate_limit_reached_type.map(|kind| {
             if usage_limit_error {
                 match kind {
                     RateLimitReachedType::WorkspaceOwnerCreditsDepleted => {
@@ -388,7 +388,7 @@ impl ChatWidget {
                 kind
             }
         });
-        self.codex_rate_limit_reached_type = rate_limit_reached_type;
+        self.motyga_rate_limit_reached_type = rate_limit_reached_type;
         match rate_limit_reached_type {
             Some(RateLimitReachedType::WorkspaceOwnerCreditsDepleted) => {
                 self.on_error(
@@ -411,7 +411,7 @@ impl ChatWidget {
                 self.open_workspace_owner_nudge_prompt(AddCreditsNudgeCreditType::UsageLimit);
             }
             Some(RateLimitReachedType::ModelWarmingUp) => {
-                // Keep this copy in sync with UsageLimitReachedError::fmt in codex-protocol.
+                // Keep this copy in sync with UsageLimitReachedError::fmt in motyga-protocol.
                 self.on_error(
                     "This model is warming up on Motyga and isn't ready yet — we're bringing more capacity online for it. Try another model, or check back in a few hours."
                         .to_string(),
@@ -426,13 +426,13 @@ impl ChatWidget {
     pub(super) fn handle_non_retry_error(
         &mut self,
         message: String,
-        codex_error_info: Option<AppServerCodexErrorInfo>,
+        motyga_error_info: Option<AppServerMotygaErrorInfo>,
     ) {
-        if codex_error_info
+        if motyga_error_info
             .as_ref()
             .is_some_and(|info| self.handle_app_server_steer_rejected_error(info))
         {
-        } else if codex_error_info
+        } else if motyga_error_info
             .as_ref()
             .is_some_and(is_app_server_cyber_policy_error)
         {
@@ -449,7 +449,7 @@ impl ChatWidget {
             self.add_to_history(history_cell::new_safety_access_block_event());
             self.request_redraw();
             self.maybe_send_next_queued_input();
-        } else if let Some(info) = codex_error_info
+        } else if let Some(info) = motyga_error_info
             .as_ref()
             .and_then(app_server_rate_limit_error_kind)
         {

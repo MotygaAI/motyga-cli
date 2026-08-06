@@ -4,7 +4,7 @@
     {
       "source_tool_index": 0,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "add_comment_to_issue",
       "template_params": [
         {
@@ -25,7 +25,7 @@
     {
       "source_tool_index": 1,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "add_reaction_to_issue_comment",
       "template_params": [
         {
@@ -46,7 +46,7 @@
     {
       "source_tool_index": 2,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "add_reaction_to_pr",
       "template_params": [
         {
@@ -67,7 +67,7 @@
     {
       "source_tool_index": 3,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "add_reaction_to_pr_review_comment",
       "template_params": [
         {
@@ -88,7 +88,7 @@
     {
       "source_tool_index": 4,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "add_review_to_pr",
       "template_params": [
         {
@@ -109,7 +109,7 @@
     {
       "source_tool_index": 5,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_blob",
       "template_params": [
         {
@@ -126,7 +126,7 @@
     {
       "source_tool_index": 6,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_branch",
       "template_params": [
         {
@@ -143,7 +143,7 @@
     {
       "source_tool_index": 7,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_commit",
       "template_params": [
         {
@@ -160,7 +160,7 @@
     {
       "source_tool_index": 8,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_pull_request",
       "template_params": [
         {
@@ -181,7 +181,7 @@
     {
       "source_tool_index": 9,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_tree",
       "template_params": [
         {
@@ -198,7 +198,7 @@
     {
       "source_tool_index": 10,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "enable_auto_merge",
       "template_params": [
         {
@@ -215,7 +215,7 @@
     {
       "source_tool_index": 11,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "label_pr",
       "template_params": [
         {
@@ -236,7 +236,7 @@
     {
       "source_tool_index": 12,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "remove_reaction_from_issue_comment",
       "template_params": [
         {
@@ -257,7 +257,7 @@
     {
       "source_tool_index": 13,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "remove_reaction_from_pr",
       "template_params": [
         {
@@ -278,7 +278,7 @@
     {
       "source_tool_index": 14,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "remove_reaction_from_pr_review_comment",
       "template_params": [
         {
@@ -299,7 +299,7 @@
     {
       "source_tool_index": 15,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "reply_to_review_comment",
       "template_params": [
         {
@@ -320,7 +320,7 @@
     {
       "source_tool_index": 16,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "update_issue_comment",
       "template_params": [
         {
@@ -341,7 +341,7 @@
     {
       "source_tool_index": 17,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "update_ref",
       "template_params": [
         {
@@ -362,7 +362,7 @@
     {
       "source_tool_index": 18,
       "connector_id": "connector_76869538009648d5b282a4bb21c3d157",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "update_review_comment",
       "template_params": [
         {
@@ -383,7 +383,7 @@
     {
       "source_tool_index": 19,
       "connector_id": "connector_947e0d954944416db111db556030eea6",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_event",
       "template_params": [
         {
@@ -404,7 +404,7 @@
     {
       "source_tool_index": 20,
       "connector_id": "connector_947e0d954944416db111db556030eea6",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "delete_event",
       "template_params": [
         {
@@ -417,7 +417,7 @@
     {
       "source_tool_index": 21,
       "connector_id": "connector_947e0d954944416db111db556030eea6",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "respond_event",
       "template_params": [
         {
@@ -434,7 +434,7 @@
     {
       "source_tool_index": 22,
       "connector_id": "connector_947e0d954944416db111db556030eea6",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "update_event",
       "template_params": [
         {
@@ -447,7 +447,7 @@
     {
       "source_tool_index": 23,
       "connector_id": "connector_9d7cfa34e6654a5f98d3387af34b2e1c",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "batch_update",
       "template_params": [
         {
@@ -464,7 +464,7 @@
     {
       "source_tool_index": 24,
       "connector_id": "connector_9d7cfa34e6654a5f98d3387af34b2e1c",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_spreadsheet",
       "template_params": [
         {
@@ -477,7 +477,7 @@
     {
       "source_tool_index": 25,
       "connector_id": "connector_9d7cfa34e6654a5f98d3387af34b2e1c",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "duplicate_sheet_in_new_file",
       "template_params": [
         {
@@ -498,7 +498,7 @@
     {
       "source_tool_index": 26,
       "connector_id": "connector_6f1ec045b8fa4ced8738e32c7f74514b",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "batch_update",
       "template_params": [
         {
@@ -515,7 +515,7 @@
     {
       "source_tool_index": 27,
       "connector_id": "connector_6f1ec045b8fa4ced8738e32c7f74514b",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_presentation",
       "template_params": [
         {
@@ -528,7 +528,7 @@
     {
       "source_tool_index": 28,
       "connector_id": "connector_4964e3b22e3e427e9b4ae1acf2c1fa34",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "batch_update",
       "template_params": [
         {
@@ -545,7 +545,7 @@
     {
       "source_tool_index": 29,
       "connector_id": "connector_4964e3b22e3e427e9b4ae1acf2c1fa34",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_document",
       "template_params": [
         {
@@ -558,7 +558,7 @@
     {
       "source_tool_index": 30,
       "connector_id": "connector_5f3c8c41a1e54ad7a76272c89e2554fa",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "copy_document",
       "template_params": [
         {
@@ -571,7 +571,7 @@
     {
       "source_tool_index": 31,
       "connector_id": "connector_5f3c8c41a1e54ad7a76272c89e2554fa",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "share_document",
       "template_params": [
         {
@@ -588,7 +588,7 @@
     {
       "source_tool_index": 32,
       "connector_id": "asdk_app_69a1d78e929881919bba0dbda1f6436d",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "slack_send_message",
       "template_params": [
         {
@@ -605,7 +605,7 @@
     {
       "source_tool_index": 33,
       "connector_id": "asdk_app_69a1d78e929881919bba0dbda1f6436d",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "slack_schedule_message",
       "template_params": [
         {
@@ -626,7 +626,7 @@
     {
       "source_tool_index": 34,
       "connector_id": "asdk_app_69a1d78e929881919bba0dbda1f6436d",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "slack_create_canvas",
       "template_params": [
         {
@@ -643,7 +643,7 @@
     {
       "source_tool_index": 35,
       "connector_id": "asdk_app_69a1d78e929881919bba0dbda1f6436d",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "slack_send_message_draft",
       "template_params": [
         {
@@ -660,7 +660,7 @@
     {
       "source_tool_index": 36,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "add_comment_to_issue",
       "template_params": [
         {
@@ -677,7 +677,7 @@
     {
       "source_tool_index": 37,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "add_label_to_issue",
       "template_params": [
         {
@@ -694,7 +694,7 @@
     {
       "source_tool_index": 38,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "add_url_attachment_to_issue",
       "template_params": [
         {
@@ -715,7 +715,7 @@
     {
       "source_tool_index": 39,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "assign_issue",
       "template_params": [
         {
@@ -732,7 +732,7 @@
     {
       "source_tool_index": 40,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_issue",
       "template_params": [
         {
@@ -749,7 +749,7 @@
     {
       "source_tool_index": 41,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_label",
       "template_params": [
         {
@@ -762,7 +762,7 @@
     {
       "source_tool_index": 42,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_project",
       "template_params": [
         {
@@ -779,7 +779,7 @@
     {
       "source_tool_index": 43,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "remove_label_from_issue",
       "template_params": [
         {
@@ -796,7 +796,7 @@
     {
       "source_tool_index": 44,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "resolve_comment",
       "template_params": [
         {
@@ -809,7 +809,7 @@
     {
       "source_tool_index": 45,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "set_issue_state",
       "template_params": [
         {
@@ -826,7 +826,7 @@
     {
       "source_tool_index": 46,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "unassign_issue",
       "template_params": [
         {
@@ -839,7 +839,7 @@
     {
       "source_tool_index": 47,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "update_issue",
       "template_params": [
         {
@@ -856,7 +856,7 @@
     {
       "source_tool_index": 48,
       "connector_id": "connector_686fad9b54914a35b75be6d06a0f6f31",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "update_project",
       "template_params": [
         {
@@ -873,7 +873,7 @@
     {
       "source_tool_index": 49,
       "connector_id": "connector_2128aebfecb84f64a069897515042a44",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "apply_labels_to_emails",
       "template_params": [],
       "template": "Allow {connector_name} to apply label changes to messages?"
@@ -881,7 +881,7 @@
     {
       "source_tool_index": 50,
       "connector_id": "connector_2128aebfecb84f64a069897515042a44",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "batch_modify_email",
       "template_params": [],
       "template": "Allow {connector_name} to update message labels?"
@@ -889,7 +889,7 @@
     {
       "source_tool_index": 51,
       "connector_id": "connector_2128aebfecb84f64a069897515042a44",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "bulk_label_matching_emails",
       "template_params": [
         {
@@ -906,7 +906,7 @@
     {
       "source_tool_index": 52,
       "connector_id": "connector_2128aebfecb84f64a069897515042a44",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_draft",
       "template_params": [
         {
@@ -927,7 +927,7 @@
     {
       "source_tool_index": 53,
       "connector_id": "connector_2128aebfecb84f64a069897515042a44",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "create_label",
       "template_params": [
         {
@@ -940,7 +940,7 @@
     {
       "source_tool_index": 54,
       "connector_id": "connector_2128aebfecb84f64a069897515042a44",
-      "server_name": "codex_apps",
+      "server_name": "motyga_apps",
       "tool_title": "send_email",
       "template_params": [
         {

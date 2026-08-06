@@ -1,6 +1,6 @@
 use crate::color::perceptual_distance;
-use codex_terminal_detection::TerminalName;
-use codex_terminal_detection::terminal_info;
+use motyga_terminal_detection::TerminalName;
+use motyga_terminal_detection::terminal_info;
 use ratatui::style::Color;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

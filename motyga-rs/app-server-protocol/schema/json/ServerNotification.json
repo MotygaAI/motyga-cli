@@ -516,14 +516,14 @@
       "description": "Authentication mode for OpenAI-backed providers.",
       "oneOf": [
         {
-          "description": "OpenAI API key provided by the caller and stored by Codex.",
+          "description": "OpenAI API key provided by the caller and stored by Motyga.",
           "enum": [
             "apikey"
           ],
           "type": "string"
         },
         {
-          "description": "ChatGPT OAuth managed by Codex (tokens persisted and refreshed by Codex).",
+          "description": "ChatGPT OAuth managed by Motyga (tokens persisted and refreshed by Motyga).",
           "enum": [
             "chatgpt"
           ],
@@ -537,21 +537,21 @@
           "type": "string"
         },
         {
-          "description": "Programmatic Codex auth backed by a registered Agent Identity.",
+          "description": "Programmatic Motyga auth backed by a registered Agent Identity.",
           "enum": [
             "agentIdentity"
           ],
           "type": "string"
         },
         {
-          "description": "Programmatic Codex auth backed by a personal access token.",
+          "description": "Programmatic Motyga auth backed by a personal access token.",
           "enum": [
             "personalAccessToken"
           ],
           "type": "string"
         },
         {
-          "description": "Amazon Bedrock bearer token managed by Codex.",
+          "description": "Amazon Bedrock bearer token managed by Motyga.",
           "enum": [
             "bedrockApiKey"
           ],
@@ -585,8 +585,8 @@
       ],
       "type": "object"
     },
-    "CodexErrorInfo": {
-      "description": "This translation layer make sure that we expose codex error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `codexErrorInfo` variant.",
+    "MotygaErrorInfo": {
+      "description": "This translation layer make sure that we expose motyga error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `motygaErrorInfo` variant.",
       "oneOf": [
         {
           "enum": [
@@ -624,7 +624,7 @@
           "required": [
             "httpConnectionFailed"
           ],
-          "title": "HttpConnectionFailedCodexErrorInfo",
+          "title": "HttpConnectionFailedMotygaErrorInfo",
           "type": "object"
         },
         {
@@ -648,7 +648,7 @@
           "required": [
             "responseStreamConnectionFailed"
           ],
-          "title": "ResponseStreamConnectionFailedCodexErrorInfo",
+          "title": "ResponseStreamConnectionFailedMotygaErrorInfo",
           "type": "object"
         },
         {
@@ -672,7 +672,7 @@
           "required": [
             "responseStreamDisconnected"
           ],
-          "title": "ResponseStreamDisconnectedCodexErrorInfo",
+          "title": "ResponseStreamDisconnectedMotygaErrorInfo",
           "type": "object"
         },
         {
@@ -696,7 +696,7 @@
           "required": [
             "responseTooManyFailedAttempts"
           ],
-          "title": "ResponseTooManyFailedAttemptsCodexErrorInfo",
+          "title": "ResponseTooManyFailedAttemptsMotygaErrorInfo",
           "type": "object"
         },
         {
@@ -718,7 +718,7 @@
           "required": [
             "activeTurnNotSteerable"
           ],
-          "title": "ActiveTurnNotSteerableCodexErrorInfo",
+          "title": "ActiveTurnNotSteerableMotygaErrorInfo",
           "type": "object"
         }
       ]
@@ -771,7 +771,7 @@
       "type": "string"
     },
     "CollaborationMode": {
-      "description": "Collaboration mode for a Codex session.",
+      "description": "Collaboration mode for a Motyga session.",
       "properties": {
         "mode": {
           "$ref": "#/definitions/ModeKind"
@@ -1591,7 +1591,7 @@
       "type": "string"
     },
     "FuzzyFileSearchResult": {
-      "description": "Superset of [`codex_file_search::FileMatch`]",
+      "description": "Superset of [`motyga_file_search::FileMatch`]",
       "properties": {
         "file_name": {
           "type": "string"
@@ -3684,7 +3684,7 @@
           "description": "Optional Git metadata captured when the thread was created."
         },
         "id": {
-          "description": "Identifier for this thread. Codex-generated thread IDs are UUIDv7.",
+          "description": "Identifier for this thread. Motyga-generated thread IDs are UUIDv7.",
           "type": "string"
         },
         "modelProvider": {
@@ -3734,7 +3734,7 @@
               "$ref": "#/definitions/SessionSource"
             }
           ],
-          "description": "Origin of the thread (CLI, VSCode, codex exec, codex app-server, etc.)."
+          "description": "Origin of the thread (CLI, VSCode, motyga exec, motyga app-server, etc.)."
         },
         "status": {
           "allOf": [
@@ -5181,7 +5181,7 @@
           "description": "Only populated when the Turn's status is failed."
         },
         "id": {
-          "description": "Identifier for this turn. Codex-generated turn IDs are UUIDv7.",
+          "description": "Identifier for this turn. Motyga-generated turn IDs are UUIDv7.",
           "type": "string"
         },
         "items": {
@@ -5263,10 +5263,10 @@
             "null"
           ]
         },
-        "codexErrorInfo": {
+        "motygaErrorInfo": {
           "anyOf": [
             {
-              "$ref": "#/definitions/CodexErrorInfo"
+              "$ref": "#/definitions/MotygaErrorInfo"
             },
             {
               "type": "null"

@@ -18,21 +18,21 @@ use crate::tools::sandboxing::ToolCtx;
 use crate::tools::sandboxing::ToolError;
 use crate::tools::sandboxing::ToolRuntime;
 use crate::tools::sandboxing::with_cached_approval;
-use codex_apply_patch::AppliedPatchDelta;
-use codex_apply_patch::ApplyPatchAction;
-use codex_exec_server::FileSystemSandboxContext;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::SandboxErr;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::exec_output::StreamOutput;
-use codex_protocol::models::AdditionalPermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::FileChange;
-use codex_protocol::protocol::ReviewDecision;
-use codex_sandboxing::SandboxType;
-use codex_sandboxing::SandboxablePreference;
-use codex_sandboxing::policy_transforms::effective_permission_profile;
-use codex_utils_path_uri::PathUri;
+use motyga_apply_patch::AppliedPatchDelta;
+use motyga_apply_patch::ApplyPatchAction;
+use motyga_exec_server::FileSystemSandboxContext;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::SandboxErr;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::exec_output::StreamOutput;
+use motyga_protocol::models::AdditionalPermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::FileChange;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_sandboxing::SandboxType;
+use motyga_sandboxing::SandboxablePreference;
+use motyga_sandboxing::policy_transforms::effective_permission_profile;
+use motyga_utils_path_uri::PathUri;
 use futures::future::BoxFuture;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -248,7 +248,7 @@ impl ToolRuntime<ApplyPatchRequest, ApplyPatchRuntimeOutput> for ApplyPatchRunti
         let sandbox = Self::file_system_sandbox_context_for_attempt(req, attempt);
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
-        let result = codex_apply_patch::apply_patch(
+        let result = motyga_apply_patch::apply_patch(
             &req.action.patch,
             &req.action.cwd,
             &mut stdout,
@@ -275,7 +275,7 @@ impl ToolRuntime<ApplyPatchRequest, ApplyPatchRuntimeOutput> for ApplyPatchRunti
             timed_out: false,
         };
         if failed && is_likely_sandbox_denied(attempt.sandbox, &output) {
-            return Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+            return Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied {
                 output: Box::new(output),
                 network_policy_decision: None,
             })));

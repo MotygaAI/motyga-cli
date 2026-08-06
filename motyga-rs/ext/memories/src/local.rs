@@ -2,7 +2,7 @@ use std::path::Component;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 use crate::backend::AddAdHocMemoryNoteRequest;
 use crate::backend::AddAdHocMemoryNoteResponse;
@@ -27,8 +27,8 @@ pub(crate) struct LocalMemoriesBackend {
 }
 
 impl LocalMemoriesBackend {
-    pub(crate) fn from_codex_home(codex_home: &AbsolutePathBuf) -> Self {
-        Self::from_memory_root(codex_home.join("memories").to_path_buf())
+    pub(crate) fn from_motyga_home(motyga_home: &AbsolutePathBuf) -> Self {
+        Self::from_memory_root(motyga_home.join("memories").to_path_buf())
     }
 
     pub(crate) fn from_memory_root(root: impl Into<PathBuf>) -> Self {

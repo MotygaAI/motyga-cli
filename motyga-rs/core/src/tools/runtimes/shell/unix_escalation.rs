@@ -24,49 +24,49 @@ use crate::tools::sandboxing::ToolError;
 use crate::tools::sandboxing::managed_network_for_sandbox_permissions;
 use crate::tools::sandboxing::sandbox_permissions_preserving_denied_reads;
 use crate::tools::sandboxing::unsandboxed_execution_allowed;
-use codex_execpolicy::Decision;
-use codex_execpolicy::Evaluation;
-use codex_execpolicy::MatchOptions;
-use codex_execpolicy::Policy;
-use codex_execpolicy::RuleMatch;
-use codex_features::Feature;
-use codex_hooks::PermissionRequestDecision;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::SandboxErr;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::exec_output::StreamOutput;
-use codex_protocol::models::AdditionalPermissionProfile;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::GuardianCommandSource;
-use codex_protocol::protocol::NetworkPolicyRuleAction;
-use codex_protocol::protocol::ReviewDecision;
-use codex_sandboxing::SandboxCommand;
-use codex_sandboxing::SandboxManager;
-use codex_sandboxing::SandboxTransformRequest;
-use codex_sandboxing::SandboxType;
-use codex_sandboxing::SandboxablePreference;
-use codex_shell_command::bash::parse_shell_lc_plain_commands;
-use codex_shell_command::bash::parse_shell_lc_single_command_prefix;
-use codex_shell_escalation::EscalateServer;
-use codex_shell_escalation::EscalationDecision;
-use codex_shell_escalation::EscalationExecution;
-use codex_shell_escalation::EscalationPermissions;
-use codex_shell_escalation::EscalationPolicy;
-use codex_shell_escalation::EscalationPolicyFuture;
-use codex_shell_escalation::EscalationSession;
-use codex_shell_escalation::ExecParams;
-use codex_shell_escalation::ExecResult;
-use codex_shell_escalation::PreparedExec;
-use codex_shell_escalation::ResolvedPermissionProfile;
-use codex_shell_escalation::ShellCommandExecutor;
-use codex_shell_escalation::ShellCommandExecutorFuture;
-use codex_shell_escalation::Stopwatch;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_execpolicy::Decision;
+use motyga_execpolicy::Evaluation;
+use motyga_execpolicy::MatchOptions;
+use motyga_execpolicy::Policy;
+use motyga_execpolicy::RuleMatch;
+use motyga_features::Feature;
+use motyga_hooks::PermissionRequestDecision;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::SandboxErr;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::exec_output::StreamOutput;
+use motyga_protocol::models::AdditionalPermissionProfile;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::GuardianCommandSource;
+use motyga_protocol::protocol::NetworkPolicyRuleAction;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_sandboxing::SandboxCommand;
+use motyga_sandboxing::SandboxManager;
+use motyga_sandboxing::SandboxTransformRequest;
+use motyga_sandboxing::SandboxType;
+use motyga_sandboxing::SandboxablePreference;
+use motyga_shell_command::bash::parse_shell_lc_plain_commands;
+use motyga_shell_command::bash::parse_shell_lc_single_command_prefix;
+use motyga_shell_escalation::EscalateServer;
+use motyga_shell_escalation::EscalationDecision;
+use motyga_shell_escalation::EscalationExecution;
+use motyga_shell_escalation::EscalationPermissions;
+use motyga_shell_escalation::EscalationPolicy;
+use motyga_shell_escalation::EscalationPolicyFuture;
+use motyga_shell_escalation::EscalationSession;
+use motyga_shell_escalation::ExecParams;
+use motyga_shell_escalation::ExecResult;
+use motyga_shell_escalation::PreparedExec;
+use motyga_shell_escalation::ResolvedPermissionProfile;
+use motyga_shell_escalation::ShellCommandExecutor;
+use motyga_shell_escalation::ShellCommandExecutorFuture;
+use motyga_shell_escalation::Stopwatch;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use std::collections::HashMap;
 use std::io;
 use std::path::PathBuf;
@@ -146,7 +146,7 @@ pub(super) async fn try_run_zsh_fork(
             managed_network_for_sandbox_permissions(req.network.as_ref(), req.sandbox_permissions),
             Some(&req.turn_environment.environment_id),
         )
-        .map_err(ToolError::Codex)?;
+        .map_err(ToolError::Motyga)?;
     let crate::sandboxing::ExecRequest {
         command,
         cwd: sandbox_cwd,
@@ -200,7 +200,7 @@ pub(super) async fn try_run_zsh_fork(
         arg0,
         sandbox_policy_cwd,
         windows_sandbox_workspace_roots,
-        codex_linux_sandbox_exe: ctx.turn.config.codex_linux_sandbox_exe.clone(),
+        motyga_linux_sandbox_exe: ctx.turn.config.motyga_linux_sandbox_exe.clone(),
         use_legacy_landlock: ctx.turn.config.features.use_legacy_landlock(),
     };
     let main_execve_wrapper_exe = ctx
@@ -313,7 +313,7 @@ pub(crate) async fn prepare_unified_exec_zsh_fork(
         arg0: exec_request.arg0.clone(),
         sandbox_policy_cwd,
         windows_sandbox_workspace_roots: exec_request.windows_sandbox_workspace_roots.clone(),
-        codex_linux_sandbox_exe: ctx.turn.config.codex_linux_sandbox_exe.clone(),
+        motyga_linux_sandbox_exe: ctx.turn.config.motyga_linux_sandbox_exe.clone(),
         use_legacy_landlock: ctx.turn.config.features.use_legacy_landlock(),
     };
     let escalation_policy = CoreShellActionProvider {
@@ -460,7 +460,7 @@ impl CoreShellActionProvider {
             .pause_for(async move {
                 // 1) Run PermissionRequest hooks
                 let permission_request = PermissionRequestPayload::bash(
-                    codex_shell_command::parse_command::shlex_join(&command),
+                    motyga_shell_command::parse_command::shlex_join(&command),
                     /*description*/ None,
                 );
                 let effective_approval_id = approval_id.clone().unwrap_or_else(|| call_id.clone());
@@ -816,13 +816,13 @@ struct CoreShellCommandExecutor {
     network_sandbox_policy: NetworkSandboxPolicy,
     sandbox: SandboxType,
     env: HashMap<String, String>,
-    network: Option<codex_network_proxy::NetworkProxy>,
+    network: Option<motyga_network_proxy::NetworkProxy>,
     network_environment_id: Option<String>,
     windows_sandbox_level: WindowsSandboxLevel,
     arg0: Option<String>,
     sandbox_policy_cwd: AbsolutePathBuf,
     windows_sandbox_workspace_roots: Vec<AbsolutePathBuf>,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    motyga_linux_sandbox_exe: Option<PathBuf>,
     use_legacy_landlock: bool,
 }
 
@@ -875,7 +875,7 @@ impl CoreShellCommandExecutor {
         let mut exec_env = self.env.clone();
         // `env_overlay` comes from `EscalationSession::env()`, so merge only the
         // wrapper/socket variables into the base shell environment.
-        for var in ["CODEX_ESCALATE_SOCKET", "EXEC_WRAPPER"] {
+        for var in ["MOTYGA_ESCALATE_SOCKET", "EXEC_WRAPPER"] {
             if let Some(value) = env_overlay.get(var) {
                 exec_env.insert(var.to_string(), value.clone());
             }
@@ -1027,7 +1027,7 @@ impl CoreShellCommandExecutor {
             environment_id: self.network_environment_id.as_deref(),
             network: self.network.as_ref(),
             sandbox_policy_cwd: &sandbox_policy_cwd,
-            codex_linux_sandbox_exe: self.codex_linux_sandbox_exe.as_deref(),
+            motyga_linux_sandbox_exe: self.motyga_linux_sandbox_exe.as_deref(),
             use_legacy_landlock: self.use_legacy_landlock,
             windows_sandbox_level: self.windows_sandbox_level,
             windows_sandbox_private_desktop: false,
@@ -1046,7 +1046,7 @@ impl CoreShellCommandExecutor {
                 .map_err(|err| {
                     let environment_id =
                         self.network_environment_id.as_deref().unwrap_or("default");
-                    CodexErr::Io(io::Error::other(format!(
+                    MotygaErr::Io(io::Error::other(format!(
                         "failed to prepare network proxy for environment `{environment_id}`: {err}"
                     )))
                 })?;
@@ -1108,13 +1108,13 @@ fn map_exec_result(
     };
 
     if result.timed_out {
-        return Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Timeout {
+        return Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Timeout {
             output: Box::new(output),
         })));
     }
 
     if is_likely_sandbox_denied(sandbox, &output) {
-        return Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+        return Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied {
             output: Box::new(output),
             network_policy_decision: None,
         })));

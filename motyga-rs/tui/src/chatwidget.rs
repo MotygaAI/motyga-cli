@@ -1,4 +1,4 @@
-//! The main Codex TUI chat surface.
+//! The main Motyga TUI chat surface.
 //!
 //! `ChatWidget` consumes protocol events, builds and updates history cells, and drives rendering
 //! for both the main viewport and overlay UIs.
@@ -77,94 +77,94 @@ use crate::terminal_title::set_terminal_title;
 use crate::text_formatting::proper_join;
 use crate::token_usage::TokenUsage;
 use crate::token_usage::TokenUsageInfo;
-use crate::version::CODEX_CLI_VERSION;
-use codex_app_server_protocol::AddCreditsNudgeCreditType;
-use codex_app_server_protocol::AddCreditsNudgeEmailStatus;
-use codex_app_server_protocol::AppSummary;
-use codex_app_server_protocol::CodexErrorInfo as AppServerCodexErrorInfo;
-use codex_app_server_protocol::CollabAgentTool;
-use codex_app_server_protocol::CollabAgentToolCallStatus;
-use codex_app_server_protocol::CommandExecutionRequestApprovalParams;
-use codex_app_server_protocol::CommandExecutionSource as ExecCommandSource;
-use codex_app_server_protocol::CreditsSnapshot;
-use codex_app_server_protocol::ErrorNotification;
-use codex_app_server_protocol::FileChangeRequestApprovalParams;
-use codex_app_server_protocol::GuardianApprovalReviewAction;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::ItemStartedNotification;
-use codex_app_server_protocol::McpServerElicitationRequest;
-use codex_app_server_protocol::McpServerElicitationRequestParams;
-use codex_app_server_protocol::McpServerStatusDetail;
-use codex_app_server_protocol::ModelVerification as AppServerModelVerification;
-use codex_app_server_protocol::RateLimitReachedType;
-use codex_app_server_protocol::RateLimitSnapshot;
-use codex_app_server_protocol::RequestId as AppServerRequestId;
-use codex_app_server_protocol::ReviewTarget;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::SkillMetadata as ProtocolSkillMetadata;
-use codex_app_server_protocol::SkillsListResponse;
-use codex_app_server_protocol::ThreadGoal as AppThreadGoal;
-use codex_app_server_protocol::ThreadGoalStatus as AppThreadGoalStatus;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadSettings;
-use codex_app_server_protocol::ThreadSettingsUpdatedNotification;
-use codex_app_server_protocol::ThreadTokenUsage;
-use codex_app_server_protocol::ToolRequestUserInputParams;
-use codex_app_server_protocol::Turn;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnPlanStepStatus;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::UserInput;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::Constrained;
-use codex_config::ConstraintResult;
-use codex_config::types::ApprovalsReviewer;
-use codex_config::types::Notifications;
-use codex_config::types::WindowsSandboxModeToml;
-use codex_connectors::AppInfo;
-use codex_core_skills::model::SkillMetadata;
-use codex_features::FEATURES;
-use codex_features::Feature;
+use crate::version::MOTYGA_CLI_VERSION;
+use motyga_app_server_protocol::AddCreditsNudgeCreditType;
+use motyga_app_server_protocol::AddCreditsNudgeEmailStatus;
+use motyga_app_server_protocol::AppSummary;
+use motyga_app_server_protocol::MotygaErrorInfo as AppServerMotygaErrorInfo;
+use motyga_app_server_protocol::CollabAgentTool;
+use motyga_app_server_protocol::CollabAgentToolCallStatus;
+use motyga_app_server_protocol::CommandExecutionRequestApprovalParams;
+use motyga_app_server_protocol::CommandExecutionSource as ExecCommandSource;
+use motyga_app_server_protocol::CreditsSnapshot;
+use motyga_app_server_protocol::ErrorNotification;
+use motyga_app_server_protocol::FileChangeRequestApprovalParams;
+use motyga_app_server_protocol::GuardianApprovalReviewAction;
+use motyga_app_server_protocol::ItemCompletedNotification;
+use motyga_app_server_protocol::ItemStartedNotification;
+use motyga_app_server_protocol::McpServerElicitationRequest;
+use motyga_app_server_protocol::McpServerElicitationRequestParams;
+use motyga_app_server_protocol::McpServerStatusDetail;
+use motyga_app_server_protocol::ModelVerification as AppServerModelVerification;
+use motyga_app_server_protocol::RateLimitReachedType;
+use motyga_app_server_protocol::RateLimitSnapshot;
+use motyga_app_server_protocol::RequestId as AppServerRequestId;
+use motyga_app_server_protocol::ReviewTarget;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::SkillMetadata as ProtocolSkillMetadata;
+use motyga_app_server_protocol::SkillsListResponse;
+use motyga_app_server_protocol::ThreadGoal as AppThreadGoal;
+use motyga_app_server_protocol::ThreadGoalStatus as AppThreadGoalStatus;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadSettings;
+use motyga_app_server_protocol::ThreadSettingsUpdatedNotification;
+use motyga_app_server_protocol::ThreadTokenUsage;
+use motyga_app_server_protocol::ToolRequestUserInputParams;
+use motyga_app_server_protocol::Turn;
+use motyga_app_server_protocol::TurnCompletedNotification;
+use motyga_app_server_protocol::TurnPlanStepStatus;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_app_server_protocol::UserInput;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::Constrained;
+use motyga_config::ConstraintResult;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_config::types::Notifications;
+use motyga_config::types::WindowsSandboxModeToml;
+use motyga_connectors::AppInfo;
+use motyga_core_skills::model::SkillMetadata;
+use motyga_features::FEATURES;
+use motyga_features::Feature;
 #[cfg(test)]
-use codex_git_utils::CommitLogEntry;
-use codex_git_utils::current_branch_name;
-use codex_git_utils::get_git_repo_root;
-use codex_git_utils::local_git_branches;
-use codex_git_utils::recent_commits;
-use codex_otel::RuntimeMetricsSummary;
-use codex_otel::SessionTelemetry;
-use codex_plugin::PluginCapabilitySummary;
-use codex_protocol::ThreadId;
-use codex_protocol::account::PlanType;
-use codex_protocol::approvals::GuardianAssessmentAction;
-use codex_protocol::approvals::GuardianAssessmentDecisionSource;
-use codex_protocol::approvals::GuardianAssessmentEvent;
-use codex_protocol::approvals::GuardianAssessmentStatus;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::Settings;
+use motyga_git_utils::CommitLogEntry;
+use motyga_git_utils::current_branch_name;
+use motyga_git_utils::get_git_repo_root;
+use motyga_git_utils::local_git_branches;
+use motyga_git_utils::recent_commits;
+use motyga_otel::RuntimeMetricsSummary;
+use motyga_otel::SessionTelemetry;
+use motyga_plugin::PluginCapabilitySummary;
+use motyga_protocol::ThreadId;
+use motyga_protocol::account::PlanType;
+use motyga_protocol::approvals::GuardianAssessmentAction;
+use motyga_protocol::approvals::GuardianAssessmentDecisionSource;
+use motyga_protocol::approvals::GuardianAssessmentEvent;
+use motyga_protocol::approvals::GuardianAssessmentStatus;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::CollaborationModeMask;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::Personality;
+use motyga_protocol::config_types::Settings;
 #[cfg(any(target_os = "windows", test))]
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::items::AgentMessageContent;
-use codex_protocol::items::AgentMessageItem;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::plan_tool::PlanItemArg as UpdatePlanItemArg;
-use codex_protocol::plan_tool::StepStatus as UpdatePlanItemStatus;
-use codex_protocol::request_permissions::RequestPermissionsEvent;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::TextElement;
-use codex_terminal_detection::Multiplexer;
-use codex_terminal_detection::TerminalInfo;
-use codex_terminal_detection::TerminalName;
-use codex_terminal_detection::terminal_info;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_cli::resume_hint;
-use codex_utils_path_uri::PathUri;
-use codex_utils_plugins::mention_syntax::PLUGIN_TEXT_MENTION_SIGIL;
-use codex_utils_plugins::mention_syntax::TOOL_MENTION_SIGIL;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::items::AgentMessageContent;
+use motyga_protocol::items::AgentMessageItem;
+use motyga_protocol::models::MessagePhase;
+use motyga_protocol::plan_tool::PlanItemArg as UpdatePlanItemArg;
+use motyga_protocol::plan_tool::StepStatus as UpdatePlanItemStatus;
+use motyga_protocol::request_permissions::RequestPermissionsEvent;
+use motyga_protocol::user_input::ByteRange;
+use motyga_protocol::user_input::TextElement;
+use motyga_terminal_detection::Multiplexer;
+use motyga_terminal_detection::TerminalInfo;
+use motyga_terminal_detection::TerminalName;
+use motyga_terminal_detection::terminal_info;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_cli::resume_hint;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_plugins::mention_syntax::PLUGIN_TEXT_MENTION_SIGIL;
+use motyga_utils_plugins::mention_syntax::TOOL_MENTION_SIGIL;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -453,17 +453,17 @@ use crate::streaming::controller::StreamController;
 use crate::workspace_command::WorkspaceCommandRunner;
 
 use chrono::Local;
-use codex_app_server_protocol::AskForApproval;
-use codex_file_search::FileMatch;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
-use codex_protocol::plan_tool::StepStatus;
-use codex_protocol::plan_tool::UpdatePlanArgs;
-use codex_utils_approval_presets::ApprovalPreset;
-use codex_utils_approval_presets::builtin_approval_presets;
+use motyga_app_server_protocol::AskForApproval;
+use motyga_file_search::FileMatch;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use motyga_protocol::plan_tool::StepStatus;
+use motyga_protocol::plan_tool::UpdatePlanArgs;
+use motyga_utils_approval_presets::ApprovalPreset;
+use motyga_utils_approval_presets::builtin_approval_presets;
 use strum::IntoEnumIterator;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -489,9 +489,9 @@ pub(crate) struct ChatWidgetInit {
     pub(crate) initial_user_message: Option<UserMessage>,
     pub(crate) enhanced_keys_supported: bool,
     pub(crate) has_chatgpt_account: bool,
-    pub(crate) has_codex_backend_auth: bool,
+    pub(crate) has_motyga_backend_auth: bool,
     pub(crate) model_catalog: Arc<ModelCatalog>,
-    pub(crate) feedback: codex_feedback::CodexFeedback,
+    pub(crate) feedback: motyga_feedback::MotygaFeedback,
     pub(crate) is_first_run: bool,
     pub(crate) status_account_display: Option<StatusAccountDisplay>,
     pub(crate) runtime_model_provider_base_url: Option<String>,
@@ -520,14 +520,14 @@ pub(crate) enum ExternalEditorState {
 /// intent (`Op` submissions and `AppEvent` requests).
 ///
 /// It is not responsible for running the agent itself; it reflects progress by updating UI state
-/// and by sending requests back to codex-core.
+/// and by sending requests back to motyga-core.
 ///
 /// Quit/interrupt behavior intentionally spans layers: the bottom pane owns local input routing
 /// (which view gets Ctrl+C), while `ChatWidget` owns process-level decisions such as interrupting
 /// active work, arming the double-press quit shortcut, and requesting shutdown-first exit.
 pub(crate) struct ChatWidget {
     app_event_tx: AppEventSender,
-    codex_op_target: CodexOpTarget,
+    motyga_op_target: MotygaOpTarget,
     bottom_pane: BottomPane,
     transcript: TranscriptState,
     config: Config,
@@ -541,7 +541,7 @@ pub(crate) struct ChatWidget {
     /// The currently active collaboration mask, if any.
     active_collaboration_mask: Option<CollaborationModeMask>,
     has_chatgpt_account: bool,
-    has_codex_backend_auth: bool,
+    has_motyga_backend_auth: bool,
     model_catalog: Arc<ModelCatalog>,
     session_telemetry: SessionTelemetry,
     session_header: SessionHeader,
@@ -563,7 +563,7 @@ pub(crate) struct ChatWidget {
     available_rate_limit_reset_credits: Option<i64>,
     next_rate_limit_reset_request_id: u64,
     plan_type: Option<PlanType>,
-    codex_rate_limit_reached_type: Option<RateLimitReachedType>,
+    motyga_rate_limit_reached_type: Option<RateLimitReachedType>,
     rate_limit_warnings: RateLimitWarningState,
     warning_display_state: WarningDisplayState,
     rate_limit_switch_prompt: RateLimitSwitchPromptState,
@@ -683,7 +683,7 @@ pub(crate) struct ChatWidget {
     turn_runtime_metrics: RuntimeMetricsSummary,
     last_rendered_width: std::cell::Cell<Option<usize>>,
     // Feedback sink for /feedback
-    feedback: codex_feedback::CodexFeedback,
+    feedback: motyga_feedback::MotygaFeedback,
     // Current session rollout path (if known)
     current_rollout_path: Option<PathBuf>,
     // Current working directory (if known)
@@ -749,7 +749,7 @@ pub(crate) struct ChatWidget {
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
-enum CodexOpTarget {
+enum MotygaOpTarget {
     Direct(UnboundedSender<AppCommand>),
     AppEvent,
 }
@@ -893,7 +893,7 @@ fn patch_approval_request_from_params(
 }
 
 fn request_permissions_from_params(
-    params: codex_app_server_protocol::PermissionsRequestApprovalParams,
+    params: motyga_app_server_protocol::PermissionsRequestApprovalParams,
 ) -> std::io::Result<RequestPermissionsEvent> {
     Ok(RequestPermissionsEvent {
         turn_id: params.turn_id,
@@ -1020,7 +1020,7 @@ impl ChatWidget {
         let snapshot = self.feedback.snapshot(self.thread_id);
         #[cfg(target_os = "windows")]
         let include_windows_sandbox_log =
-            codex_windows_sandbox::current_log_file_path_for_codex_home(&self.config.codex_home)
+            motyga_windows_sandbox::current_log_file_path_for_motyga_home(&self.config.motyga_home)
                 .is_file();
         #[cfg(not(target_os = "windows"))]
         let include_windows_sandbox_log = false;
@@ -1301,7 +1301,7 @@ impl ChatWidget {
                                 .unwrap_or(plugin_id)
                                 .to_string()
                         } else if path.starts_with("app://") {
-                            codex_connectors::metadata::connector_mention_slug_from_name(name)
+                            motyga_connectors::metadata::connector_mention_slug_from_name(name)
                         } else {
                             name.clone()
                         };
@@ -1498,7 +1498,7 @@ impl ChatWidget {
                 /*reasoning_effort*/ None,
                 /*show_fast_status*/ false,
                 config.cwd.to_path_buf(),
-                CODEX_CLI_VERSION,
+                MOTYGA_CLI_VERSION,
             )
             .with_yolo_mode(history_cell::is_yolo_mode(config)),
         )
@@ -1803,7 +1803,7 @@ impl ChatWidget {
         ));
     }
 
-    /// Forward a command directly to codex.
+    /// Forward a command directly to motyga.
     pub(crate) fn submit_op<T>(&mut self, op: T) -> bool
     where
         T: Into<AppCommand>,
@@ -1813,16 +1813,16 @@ impl ChatWidget {
         if op.is_review() && !self.bottom_pane.is_task_running() {
             self.bottom_pane.set_task_running(/*running*/ true);
         }
-        match &self.codex_op_target {
-            CodexOpTarget::Direct(codex_op_tx) => {
+        match &self.motyga_op_target {
+            MotygaOpTarget::Direct(motyga_op_tx) => {
                 crate::session_log::log_outbound_op(&op);
-                if let Err(e) = codex_op_tx.send(op) {
+                if let Err(e) = motyga_op_tx.send(op) {
                     tracing::error!("failed to submit op: {e}");
                     return false;
                 }
             }
-            CodexOpTarget::AppEvent => {
-                self.app_event_tx.send(AppEvent::CodexOp(op));
+            MotygaOpTarget::AppEvent => {
+                self.app_event_tx.send(AppEvent::MotygaOp(op));
             }
         }
         true

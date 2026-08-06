@@ -3,22 +3,22 @@
 use std::fs;
 use std::path::Path;
 
-use codex_core::shell::default_user_shell;
-use codex_features::Feature;
-use codex_prompts::APPLY_PATCH_TOOL_INSTRUCTIONS;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::Settings;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_core::shell::default_user_shell;
+use motyga_features::Feature;
+use motyga_prompts::APPLY_PATCH_TOOL_INSTRUCTIONS;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::config_types::Settings;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::TempDirExt;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
@@ -27,10 +27,10 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::responses::strip_metadata_from_json;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
@@ -132,12 +132,12 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
     )
     .await;
 
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         config,
         thread_manager,
         ..
-    } = test_codex()
+    } = test_motyga()
         .with_pre_build_hook(write_global_instructions)
         .with_config(|config| {
             config.model = Some("gpt-5.2".to_string());
@@ -165,7 +165,7 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
         .await
         .base_instructions;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -177,9 +177,9 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -191,7 +191,7 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let mut expected_tools_names = if cfg!(windows) {
         vec!["shell_command"]
@@ -247,7 +247,7 @@ async fn gpt_5_tools_without_apply_patch_append_apply_patch_instructions() -> an
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_pre_build_hook(write_global_instructions)
         .with_config(|config| {
             config
@@ -259,7 +259,7 @@ async fn gpt_5_tools_without_apply_patch_append_apply_patch_instructions() -> an
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -272,8 +272,8 @@ async fn gpt_5_tools_without_apply_patch_append_apply_patch_instructions() -> an
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
-    codex
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -286,7 +286,7 @@ async fn gpt_5_tools_without_apply_patch_append_apply_patch_instructions() -> an
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body0 = req1.single_request().body_json();
     let instructions0 = body0["instructions"]
@@ -327,7 +327,7 @@ async fn prefixes_context_and_instructions_once_and_consistently_across_requests
     )
     .await;
 
-    let TestCodex { codex, config, .. } = test_codex()
+    let TestMotyga { motyga, config, .. } = test_motyga()
         .with_pre_build_hook(write_global_instructions)
         .with_config(|config| {
             config
@@ -338,7 +338,7 @@ async fn prefixes_context_and_instructions_once_and_consistently_across_requests
         .build(&server)
         .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -350,9 +350,9 @@ async fn prefixes_context_and_instructions_once_and_consistently_across_requests
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -364,7 +364,7 @@ async fn prefixes_context_and_instructions_once_and_consistently_across_requests
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body1 = req1.single_request().body_json();
     let input1 = body1["input"].as_array().expect("input array");
@@ -425,7 +425,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
     )
     .await;
 
-    let TestCodex { codex, config, .. } = test_codex()
+    let TestMotyga { motyga, config, .. } = test_motyga()
         .with_pre_build_hook(write_global_instructions)
         .with_config(|config| {
             config
@@ -437,7 +437,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
         .await?;
 
     // First turn
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -449,7 +449,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let writable = TempDir::new().unwrap();
     let permission_profile = PermissionProfile::workspace_write_with(
@@ -462,8 +462,8 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
         .to_legacy_sandbox_policy(config.cwd.as_path())
         .expect("workspace profile should have legacy projection");
     core_test_support::submit_thread_settings(
-        &codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             approval_policy: Some(AskForApproval::Never),
             sandbox_policy: Some(sandbox_policy),
             permission_profile: Some(permission_profile),
@@ -475,7 +475,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
     .await?;
 
     // Second turn after overrides
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -487,7 +487,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request1 = req1.single_request();
     let request2 = req2.single_request();
@@ -552,7 +552,7 @@ async fn override_before_first_turn_emits_environment_context() -> anyhow::Resul
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex().build(&server).await?;
+    let TestMotyga { motyga, .. } = test_motyga().build(&server).await?;
 
     let collaboration_mode = CollaborationMode {
         mode: ModeKind::Default,
@@ -564,8 +564,8 @@ async fn override_before_first_turn_emits_environment_context() -> anyhow::Resul
     };
 
     core_test_support::submit_thread_settings(
-        &codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             approval_policy: Some(AskForApproval::Never),
             model: Some("gpt-5.4".to_string()),
             effort: Some(Some(ReasoningEffort::Low)),
@@ -575,7 +575,7 @@ async fn override_before_first_turn_emits_environment_context() -> anyhow::Resul
     )
     .await?;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first message".into(),
@@ -588,7 +588,7 @@ async fn override_before_first_turn_emits_environment_context() -> anyhow::Resul
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body = req.single_request().body_json();
     assert_eq!(body["model"].as_str(), Some("gpt-5.4"));
@@ -717,7 +717,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestMotyga { motyga, .. } = test_motyga()
         .with_pre_build_hook(write_global_instructions)
         .with_config(|config| {
             config
@@ -729,7 +729,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
         .await?;
 
     // First turn
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -741,7 +741,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Second turn using per-turn thread-settings overrides.
     let new_cwd = TempDir::new().unwrap();
@@ -754,7 +754,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
     );
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, new_cwd.path());
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -763,7 +763,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(new_cwd.abs())),
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(sandbox_policy),
@@ -775,7 +775,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
             },
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request1 = req1.single_request();
     let request2 = req2.single_request();
@@ -847,12 +847,12 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
     )
     .await;
 
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         config,
         session_configured,
         ..
-    } = test_codex()
+    } = test_motyga()
         .with_pre_build_hook(write_global_instructions)
         .with_config(|config| {
             config
@@ -870,7 +870,7 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
     let default_effort = config.model_reasoning_effort.clone();
     let default_summary = config.model_reasoning_summary;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -879,14 +879,14 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(default_cwd.clone())),
                 approval_policy: Some(default_approval_policy),
                 sandbox_policy: Some(default_sandbox_policy.clone()),
                 summary: Some(default_summary.unwrap_or(ReasoningSummary::Auto)),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: default_model.clone(),
                         reasoning_effort: default_effort.clone(),
                         developer_instructions: None,
@@ -896,9 +896,9 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
             },
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -907,14 +907,14 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(default_cwd.clone())),
                 approval_policy: Some(default_approval_policy),
                 sandbox_policy: Some(default_sandbox_policy.clone()),
                 summary: Some(default_summary.unwrap_or(ReasoningSummary::Auto)),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: default_model.clone(),
                         reasoning_effort: default_effort,
                         developer_instructions: None,
@@ -924,7 +924,7 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
             },
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request1 = req1.single_request();
     let request2 = req2.single_request();
@@ -986,12 +986,12 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
         sse(vec![ev_response_created("resp-2"), ev_completed("resp-2")]),
     )
     .await;
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         config,
         session_configured,
         ..
-    } = test_codex()
+    } = test_motyga()
         .with_pre_build_hook(write_global_instructions)
         .with_config(|config| {
             config
@@ -1009,7 +1009,7 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
     let default_effort = config.model_reasoning_effort.clone();
     let default_summary = config.model_reasoning_summary;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -1018,14 +1018,14 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(default_cwd.clone())),
                 approval_policy: Some(default_approval_policy),
                 sandbox_policy: Some(default_sandbox_policy.clone()),
                 summary: Some(default_summary.unwrap_or(ReasoningSummary::Auto)),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: default_model,
                         reasoning_effort: default_effort,
                         developer_instructions: None,
@@ -1035,11 +1035,11 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
             },
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, default_cwd.as_path());
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -1048,15 +1048,15 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(default_cwd.clone())),
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
                 summary: Some(ReasoningSummary::Detailed),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: "o3".to_string(),
                         reasoning_effort: Some(ReasoningEffort::High),
                         developer_instructions: None,
@@ -1066,7 +1066,7 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
             },
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request1 = req1.single_request();
     let request2 = req2.single_request();

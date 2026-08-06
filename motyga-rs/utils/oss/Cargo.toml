@@ -1,5 +1,5 @@
 [package]
-name = "codex-utils-oss"
+name = "motyga-utils-oss"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,10 +8,10 @@ license.workspace = true
 workspace = true
 
 [dependencies]
-codex-core = { workspace = true }
-codex-lmstudio = { workspace = true }
-codex-model-provider-info = { workspace = true }
-codex-ollama = { workspace = true }
+motyga-core = { workspace = true }
+motyga-lmstudio = { workspace = true }
+motyga-model-provider-info = { workspace = true }
+motyga-ollama = { workspace = true }
 
 [lib]
 doctest = false

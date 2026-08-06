@@ -2,43 +2,43 @@ use anyhow::Result;
 use app_test_support::TestAppServer;
 use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::to_response;
-use codex_app_server::in_process;
-use codex_app_server::in_process::InProcessStartArgs;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadArchiveParams;
-use codex_app_server_protocol::ThreadArchiveResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::ThreadStatus;
-use codex_app_server_protocol::ThreadUnarchiveParams;
-use codex_app_server_protocol::ThreadUnarchiveResponse;
-use codex_app_server_protocol::ThreadUnarchivedNotification;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput;
-use codex_arg0::Arg0DispatchPaths;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::LoaderOverrides;
-use codex_core::config::ConfigBuilder;
-use codex_core::find_archived_thread_path_by_id_str;
-use codex_core::find_thread_path_by_id_str;
-use codex_exec_server::EnvironmentManager;
-use codex_feedback::CodexFeedback;
-use codex_protocol::ThreadId;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::ThreadMemoryMode;
-use codex_thread_store::CreateThreadParams;
-use codex_thread_store::InMemoryThreadStore;
-use codex_thread_store::ThreadMetadataPatch;
-use codex_thread_store::ThreadPersistenceMetadata;
-use codex_thread_store::ThreadStore;
-use codex_thread_store::UpdateThreadMetadataParams;
+use motyga_app_server::in_process;
+use motyga_app_server::in_process::InProcessStartArgs;
+use motyga_app_server_protocol::ClientInfo;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::InitializeCapabilities;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadArchiveParams;
+use motyga_app_server_protocol::ThreadArchiveResponse;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::ThreadStatus;
+use motyga_app_server_protocol::ThreadUnarchiveParams;
+use motyga_app_server_protocol::ThreadUnarchiveResponse;
+use motyga_app_server_protocol::ThreadUnarchivedNotification;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::LoaderOverrides;
+use motyga_core::config::ConfigBuilder;
+use motyga_core::find_archived_thread_path_by_id_str;
+use motyga_core::find_thread_path_by_id_str;
+use motyga_exec_server::EnvironmentManager;
+use motyga_feedback::MotygaFeedback;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::ThreadMemoryMode;
+use motyga_thread_store::CreateThreadParams;
+use motyga_thread_store::InMemoryThreadStore;
+use motyga_thread_store::ThreadMetadataPatch;
+use motyga_thread_store::ThreadPersistenceMetadata;
+use motyga_thread_store::ThreadStore;
+use motyga_thread_store::UpdateThreadMetadataParams;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use std::fs::FileTimes;
@@ -56,10 +56,10 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 #[tokio::test]
 async fn thread_unarchive_moves_rollout_back_into_sessions_directory() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -101,7 +101,7 @@ async fn thread_unarchive_moves_rollout_back_into_sessions_directory() -> Result
     .await??;
 
     let found_rollout_path =
-        find_thread_path_by_id_str(codex_home.path(), &thread.id, /*state_db_ctx*/ None)
+        find_thread_path_by_id_str(motyga_home.path(), &thread.id, /*state_db_ctx*/ None)
             .await?
             .expect("expected rollout path for thread id to exist");
     assert_paths_match_on_disk(&found_rollout_path, &rollout_path)?;
@@ -119,7 +119,7 @@ async fn thread_unarchive_moves_rollout_back_into_sessions_directory() -> Result
     let _: ThreadArchiveResponse = to_response::<ThreadArchiveResponse>(archive_resp)?;
 
     let archived_path = find_archived_thread_path_by_id_str(
-        codex_home.path(),
+        motyga_home.path(),
         &thread.id,
         /*state_db_ctx*/ None,
     )
@@ -199,9 +199,9 @@ async fn thread_unarchive_moves_rollout_back_into_sessions_directory() -> Result
 
 #[tokio::test]
 async fn thread_unarchive_preserves_pathless_store_metadata() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let store_id = Uuid::new_v4().to_string();
-    create_config_toml_with_in_memory_thread_store(codex_home.path(), &store_id)?;
+    create_config_toml_with_in_memory_thread_store(motyga_home.path(), &store_id)?;
     let store = InMemoryThreadStore::for_id(store_id.clone());
     let _in_memory_store = InMemoryThreadStoreId { store_id };
     let thread_id = ThreadId::from_string("00000000-0000-4000-8000-000000000126")?;
@@ -242,8 +242,8 @@ async fn thread_unarchive_preserves_pathless_store_metadata() -> Result<()> {
 
     let loader_overrides = LoaderOverrides::without_managed_config_for_tests();
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .loader_overrides(loader_overrides.clone())
         .build()
         .await?;
@@ -254,17 +254,17 @@ async fn thread_unarchive_preserves_pathless_store_metadata() -> Result<()> {
         loader_overrides,
         strict_config: false,
         cloud_config_bundle: CloudConfigBundleLoader::default(),
-        thread_config_loader: Arc::new(codex_config::NoopThreadConfigLoader),
-        feedback: CodexFeedback::new(),
+        thread_config_loader: Arc::new(motyga_config::NoopThreadConfigLoader),
+        feedback: MotygaFeedback::new(),
         log_db: None,
         state_db: None,
         environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
         config_warnings: Vec::new(),
         session_source: SessionSource::Cli,
-        enable_codex_api_key_env: false,
+        enable_motyga_api_key_env: false,
         initialize: InitializeParams {
             client_info: ClientInfo {
-                name: "codex-app-server-tests".to_string(),
+                name: "motyga-app-server-tests".to_string(),
                 title: None,
                 version: "0.1.0".to_string(),
             },
@@ -297,8 +297,8 @@ async fn thread_unarchive_preserves_pathless_store_metadata() -> Result<()> {
     Ok(())
 }
 
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(motyga_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(config_toml, config_contents(server_uri))
 }
 
@@ -313,11 +313,11 @@ impl Drop for InMemoryThreadStoreId {
 }
 
 fn create_config_toml_with_in_memory_thread_store(
-    codex_home: &Path,
+    motyga_home: &Path,
     store_id: &str,
 ) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 model = "mock-model"

@@ -1,10 +1,10 @@
 use anyhow::Result;
-use codex_model_provider_info::WireApi;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_model_provider_info::WireApi;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::TempDirExt;
 use core_test_support::responses;
 use core_test_support::responses::ev_completed;
@@ -13,10 +13,10 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use pretty_assertions::assert_eq;
 use tokio::time::Duration;
 use tokio::time::timeout;
@@ -43,7 +43,7 @@ async fn websocket_fallback_switches_to_http_on_upgrade_required_connect() -> Re
     )
     .await;
 
-    let mut builder = test_codex().with_config({
+    let mut builder = test_motyga().with_config({
         let base_url = format!("{}/v1", server.uri());
         move |config| {
             config.model_provider.base_url = Some(base_url);
@@ -89,7 +89,7 @@ async fn websocket_fallback_switches_to_http_after_retries_exhausted() -> Result
     )
     .await;
 
-    let mut builder = test_codex().with_config({
+    let mut builder = test_motyga().with_config({
         let base_url = format!("{}/v1", server.uri());
         move |config| {
             config.model_provider.base_url = Some(base_url);
@@ -134,7 +134,7 @@ async fn websocket_fallback_hides_first_websocket_retry_stream_error() -> Result
     )
     .await;
 
-    let mut builder = test_codex().with_config({
+    let mut builder = test_motyga().with_config({
         let base_url = format!("{}/v1", server.uri());
         move |config| {
             config.model_provider.base_url = Some(base_url);
@@ -144,8 +144,8 @@ async fn websocket_fallback_hides_first_websocket_retry_stream_error() -> Result
             config.model_provider.request_max_retries = Some(0);
         }
     });
-    let TestCodex {
-        codex,
+    let TestMotyga {
+        motyga,
         session_configured,
         cwd,
         ..
@@ -153,7 +153,7 @@ async fn websocket_fallback_hides_first_websocket_retry_stream_error() -> Result
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, cwd.path());
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -162,14 +162,14 @@ async fn websocket_fallback_hides_first_websocket_retry_stream_error() -> Result
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(cwd.abs())),
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: session_configured.model.clone(),
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -182,7 +182,7 @@ async fn websocket_fallback_hides_first_websocket_retry_stream_error() -> Result
 
     let mut stream_error_messages = Vec::new();
     loop {
-        let event = timeout(Duration::from_secs(10), codex.next_event())
+        let event = timeout(Duration::from_secs(10), motyga.next_event())
             .await
             .expect("timeout waiting for event")
             .expect("event stream ended unexpectedly")
@@ -219,7 +219,7 @@ async fn websocket_fallback_is_sticky_across_turns() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_config({
+    let mut builder = test_motyga().with_config({
         let base_url = format!("{}/v1", server.uri());
         move |config| {
             config.model_provider.base_url = Some(base_url);

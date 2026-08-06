@@ -1,5 +1,5 @@
-use codex_exec_server_protocol::JSONRPCMessage;
-use codex_exec_server_protocol::JSONRPCNotification;
+use motyga_exec_server_protocol::JSONRPCMessage;
+use motyga_exec_server_protocol::JSONRPCNotification;
 use pretty_assertions::assert_eq;
 
 use super::JsonRpcMessageDecoder;

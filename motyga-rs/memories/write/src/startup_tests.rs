@@ -4,29 +4,29 @@ use crate::phase1;
 use crate::phase2;
 use crate::runtime::MemoryStartupContext;
 use crate::start_memories_startup_task;
-use codex_config::types::MemoriesConfig;
-use codex_features::Feature;
-use codex_git_utils::diff_since_latest_init;
-use codex_git_utils::reset_git_repository;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_model_provider::ModelProvider;
-use codex_model_provider::ModelProviderFuture;
-use codex_model_provider::ProviderAccountResult;
-use codex_model_provider::SharedModelProvider;
-use codex_model_provider::create_model_provider;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SessionSource;
+use motyga_config::types::MemoriesConfig;
+use motyga_features::Feature;
+use motyga_git_utils::diff_since_latest_init;
+use motyga_git_utils::reset_git_repository;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_model_provider::ModelProvider;
+use motyga_model_provider::ModelProviderFuture;
+use motyga_model_provider::ProviderAccountResult;
+use motyga_model_provider::SharedModelProvider;
+use motyga_model_provider::create_model_provider;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::openai_models::ModelsResponse;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::protocol::SessionSource;
 use core_test_support::responses::ResponseMock;
 use core_test_support::responses::ResponsesRequest;
 use core_test_support::responses::ev_assistant_message;
@@ -35,8 +35,8 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use std::path::Path;
@@ -51,13 +51,13 @@ async fn memories_startup_creates_memory_root() -> anyhow::Result<()> {
     let server = start_mock_server().await;
     let home = Arc::new(TempDir::new()?);
     let memory_root = home.path().join("memories");
-    let test = build_test_codex(&server, home).await?;
+    let test = build_test_motyga(&server, home).await?;
 
     assert!(!memory_root.exists());
     trigger_memories_startup(&test).await;
     wait_for_dir(&memory_root).await?;
 
-    shutdown_test_codex(&test).await?;
+    shutdown_test_motyga(&test).await?;
     Ok(())
 }
 
@@ -113,7 +113,7 @@ async fn memories_startup_phase2_tracks_workspace_diff_across_runs() -> anyhow::
     )
     .await;
 
-    let test = build_test_codex(&server, home.clone()).await?;
+    let test = build_test_motyga(&server, home.clone()).await?;
     trigger_memories_startup(&test).await;
 
     let request = wait_for_single_request(&phase2).await;
@@ -145,7 +145,7 @@ async fn memories_startup_phase2_tracks_workspace_diff_across_runs() -> anyhow::
             .all(|summary| !summary.contains("rollout summary A"))
     );
 
-    shutdown_test_codex(&test).await?;
+    shutdown_test_motyga(&test).await?;
     Ok(())
 }
 
@@ -194,7 +194,7 @@ async fn memories_startup_phase2_prunes_old_extension_resources() -> anyhow::Res
     )
     .await;
 
-    let test = build_test_codex(&server, home.clone()).await?;
+    let test = build_test_motyga(&server, home.clone()).await?;
     trigger_memories_startup(&test).await;
 
     let request = wait_for_single_request(&phase2).await;
@@ -215,7 +215,7 @@ async fn memories_startup_phase2_prunes_old_extension_resources() -> anyhow::Res
         "recent extension resource should be retained"
     );
 
-    shutdown_test_codex(&test).await?;
+    shutdown_test_motyga(&test).await?;
     Ok(())
 }
 
@@ -254,7 +254,7 @@ async fn memories_startup_phase2_prunes_old_extension_resources_without_stage1_i
     )
     .await;
 
-    let test = build_test_codex(&server, home.clone()).await?;
+    let test = build_test_motyga(&server, home.clone()).await?;
     trigger_memories_startup(&test).await;
 
     let request = wait_for_single_request(&phase2).await;
@@ -267,7 +267,7 @@ async fn memories_startup_phase2_prunes_old_extension_resources_without_stage1_i
     wait_for_file_removed(&old_file).await?;
     wait_for_phase2_workspace_reset(&home.path().join("memories")).await?;
 
-    shutdown_test_codex(&test).await?;
+    shutdown_test_motyga(&test).await?;
     Ok(())
 }
 
@@ -276,13 +276,13 @@ async fn memories_startup_phase1_uses_live_thread_service_tier_and_detached_meta
 -> anyhow::Result<()> {
     let server = start_mock_server().await;
     let home = Arc::new(TempDir::new()?);
-    let test = build_test_codex(&server, home).await?;
+    let test = build_test_motyga(&server, home).await?;
     assert_eq!(test.config.service_tier, None);
     reset_git_repository(&test.config.cwd).await?;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &test.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             service_tier: Some(Some(ServiceTier::Fast.request_value().to_string())),
             ..Default::default()
         },
@@ -300,7 +300,7 @@ async fn memories_startup_phase1_uses_live_thread_service_tier_and_detached_meta
         Arc::clone(&test.thread_manager),
         test.thread_manager.auth_manager(),
         test.session_configured.thread_id,
-        Arc::clone(&test.codex),
+        Arc::clone(&test.motyga),
         &test.config,
         config_snapshot.session_source.clone(),
     );
@@ -328,7 +328,7 @@ async fn memories_startup_phase1_uses_live_thread_service_tier_and_detached_meta
     context
         .stream_stage_one_prompt(
             &test.config,
-            &codex_core::Prompt::default(),
+            &motyga_core::Prompt::default(),
             &request_context,
         )
         .await?;
@@ -345,7 +345,7 @@ async fn memories_startup_phase1_uses_live_thread_service_tier_and_detached_meta
     assert!(metadata.get("window_id").is_none());
     assert!(metadata.get("workspaces").is_some());
 
-    shutdown_test_codex(&test).await?;
+    shutdown_test_motyga(&test).await?;
     Ok(())
 }
 
@@ -420,13 +420,13 @@ async fn run_memory_phase_one_model_request_test(
     home: Arc<TempDir>,
     memories: MemoriesConfig,
 ) -> anyhow::Result<ResponsesRequest> {
-    let test = build_test_codex_with_memories_config(server, Arc::clone(&home), memories).await?;
+    let test = build_test_motyga_with_memories_config(server, Arc::clone(&home), memories).await?;
     let provider = Arc::new(MockMemoryModelProvider::new(
         test.config.model_provider.clone(),
         Some(test.thread_manager.auth_manager()),
     ));
     let db = test
-        .codex
+        .motyga
         .state_db()
         .ok_or_else(|| anyhow::anyhow!("state db should be enabled for memory startup test"))?;
     seed_stage1_candidate(
@@ -452,7 +452,7 @@ async fn run_memory_phase_one_model_request_test(
     let (context, config) = memory_startup_context_with_provider(&test, provider).await;
     phase1::run(context, config).await;
     let request = wait_for_single_request(&response).await;
-    shutdown_test_codex(&test).await?;
+    shutdown_test_motyga(&test).await?;
     Ok(request)
 }
 
@@ -461,13 +461,13 @@ async fn run_memory_phase_two_model_request_test(
     home: Arc<TempDir>,
     memories: MemoriesConfig,
 ) -> anyhow::Result<ResponsesRequest> {
-    let test = build_test_codex_with_memories_config(server, home.clone(), memories).await?;
+    let test = build_test_motyga_with_memories_config(server, home.clone(), memories).await?;
     let provider = Arc::new(MockMemoryModelProvider::new(
         test.config.model_provider.clone(),
         Some(test.thread_manager.auth_manager()),
     ));
     let db = test
-        .codex
+        .motyga
         .state_db()
         .ok_or_else(|| anyhow::anyhow!("state db should be enabled for memory startup test"))?;
     seed_stage1_output(
@@ -491,13 +491,13 @@ async fn run_memory_phase_two_model_request_test(
     .await;
 
     let (context, config) = memory_startup_context_with_provider(&test, provider).await;
-    let root = memory_root(&config.codex_home);
+    let root = memory_root(&config.motyga_home);
     tokio::fs::create_dir_all(&root).await?;
     seed_extension_instructions(&root).await?;
     phase2::run(context, config).await;
     let request = wait_for_single_request(&response).await;
     wait_for_phase2_workspace_reset(&home.path().join("memories")).await?;
-    shutdown_test_codex(&test).await?;
+    shutdown_test_motyga(&test).await?;
     Ok(request)
 }
 
@@ -509,19 +509,19 @@ fn startup_test_memories_config() -> MemoriesConfig {
     }
 }
 
-async fn build_test_codex(
+async fn build_test_motyga(
     server: &wiremock::MockServer,
     home: Arc<TempDir>,
-) -> anyhow::Result<TestCodex> {
-    build_test_codex_with_memories_config(server, home, startup_test_memories_config()).await
+) -> anyhow::Result<TestMotyga> {
+    build_test_motyga_with_memories_config(server, home, startup_test_memories_config()).await
 }
 
-async fn build_test_codex_with_memories_config(
+async fn build_test_motyga_with_memories_config(
     server: &wiremock::MockServer,
     home: Arc<TempDir>,
     memories: MemoriesConfig,
-) -> anyhow::Result<TestCodex> {
-    test_codex()
+) -> anyhow::Result<TestMotyga> {
+    test_motyga()
         .with_home(home)
         .with_config(move |config| {
             config
@@ -534,15 +534,15 @@ async fn build_test_codex_with_memories_config(
         .await
 }
 
-async fn init_state_db(home: &Arc<TempDir>) -> anyhow::Result<Arc<codex_state::StateRuntime>> {
+async fn init_state_db(home: &Arc<TempDir>) -> anyhow::Result<Arc<motyga_state::StateRuntime>> {
     let db =
-        codex_state::StateRuntime::init(home.path().to_path_buf(), "test-provider".into()).await?;
+        motyga_state::StateRuntime::init(home.path().to_path_buf(), "test-provider".into()).await?;
     db.mark_backfill_complete(/*last_watermark*/ None).await?;
     Ok(db)
 }
 
-async fn trigger_memories_startup(test: &TestCodex) {
-    let config_snapshot = test.codex.config_snapshot().await;
+async fn trigger_memories_startup(test: &TestMotyga) {
+    let config_snapshot = test.motyga.config_snapshot().await;
     let mut config = test.config.clone();
     config
         .features
@@ -552,17 +552,17 @@ async fn trigger_memories_startup(test: &TestCodex) {
         Arc::clone(&test.thread_manager),
         test.thread_manager.auth_manager(),
         test.session_configured.thread_id,
-        Arc::clone(&test.codex),
+        Arc::clone(&test.motyga),
         Arc::new(config),
         &config_snapshot.session_source,
     );
 }
 
 async fn memory_startup_context_with_provider(
-    test: &TestCodex,
+    test: &TestMotyga,
     provider: SharedModelProvider,
-) -> (Arc<MemoryStartupContext>, Arc<codex_core::config::Config>) {
-    let config_snapshot = test.codex.config_snapshot().await;
+) -> (Arc<MemoryStartupContext>, Arc<motyga_core::config::Config>) {
+    let config_snapshot = test.motyga.config_snapshot().await;
     let mut config = test.config.clone();
     config
         .features
@@ -573,7 +573,7 @@ async fn memory_startup_context_with_provider(
         Arc::clone(&test.thread_manager),
         test.thread_manager.auth_manager(),
         test.session_configured.thread_id,
-        Arc::clone(&test.codex),
+        Arc::clone(&test.motyga),
         config.as_ref(),
         config_snapshot.session_source,
         provider,
@@ -615,7 +615,7 @@ impl ModelProvider for MockMemoryModelProvider {
         self.delegate.auth_manager()
     }
 
-    fn auth(&self) -> ModelProviderFuture<'_, Option<CodexAuth>> {
+    fn auth(&self) -> ModelProviderFuture<'_, Option<MotygaAuth>> {
         let delegate = Arc::clone(&self.delegate);
         Box::pin(async move { delegate.auth().await })
     }
@@ -626,30 +626,30 @@ impl ModelProvider for MockMemoryModelProvider {
 
     fn models_manager(
         &self,
-        codex_home: PathBuf,
+        motyga_home: PathBuf,
         config_model_catalog: Option<ModelsResponse>,
-    ) -> codex_models_manager::manager::SharedModelsManager {
+    ) -> motyga_models_manager::manager::SharedModelsManager {
         self.delegate
-            .models_manager(codex_home, config_model_catalog)
+            .models_manager(motyga_home, config_model_catalog)
     }
 }
 
 async fn seed_stage1_output(
-    db: &codex_state::StateRuntime,
-    codex_home: &Path,
+    db: &motyga_state::StateRuntime,
+    motyga_home: &Path,
     updated_at: chrono::DateTime<chrono::Utc>,
     raw_memory: &str,
     rollout_summary: &str,
     rollout_slug: &str,
 ) -> anyhow::Result<ThreadId> {
     let thread_id = ThreadId::new();
-    let mut metadata_builder = codex_state::ThreadMetadataBuilder::new(
+    let mut metadata_builder = motyga_state::ThreadMetadataBuilder::new(
         thread_id,
-        codex_home.join(format!("rollout-{thread_id}.jsonl")),
+        motyga_home.join(format!("rollout-{thread_id}.jsonl")),
         updated_at,
         SessionSource::Cli,
     );
-    metadata_builder.cwd = codex_home.join(format!("workspace-{rollout_slug}"));
+    metadata_builder.cwd = motyga_home.join(format!("workspace-{rollout_slug}"));
     metadata_builder.model_provider = Some("test-provider".to_string());
     metadata_builder.git_branch = Some(format!("branch-{rollout_slug}"));
     let metadata = metadata_builder.build("test-provider");
@@ -669,13 +669,13 @@ async fn seed_stage1_output(
 }
 
 async fn seed_stage1_candidate(
-    db: &codex_state::StateRuntime,
-    codex_home: &Path,
+    db: &motyga_state::StateRuntime,
+    motyga_home: &Path,
     updated_at: chrono::DateTime<chrono::Utc>,
     rollout_slug: &str,
 ) -> anyhow::Result<ThreadId> {
     let thread_id = ThreadId::new();
-    let rollout_path = codex_home.join(format!("rollout-{thread_id}.jsonl"));
+    let rollout_path = motyga_home.join(format!("rollout-{thread_id}.jsonl"));
     let line = RolloutLine {
         timestamp: updated_at.to_rfc3339(),
         item: RolloutItem::ResponseItem(ResponseItem::Message {
@@ -691,13 +691,13 @@ async fn seed_stage1_candidate(
     let jsonl = serde_json::to_string(&line)?;
     tokio::fs::write(&rollout_path, format!("{jsonl}\n")).await?;
 
-    let mut metadata_builder = codex_state::ThreadMetadataBuilder::new(
+    let mut metadata_builder = motyga_state::ThreadMetadataBuilder::new(
         thread_id,
         rollout_path,
         updated_at,
         SessionSource::Cli,
     );
-    metadata_builder.cwd = codex_home.join(format!("workspace-{rollout_slug}"));
+    metadata_builder.cwd = motyga_home.join(format!("workspace-{rollout_slug}"));
     metadata_builder.model_provider = Some("test-provider".to_string());
     metadata_builder.git_branch = Some(format!("branch-{rollout_slug}"));
     let mut metadata = metadata_builder.build("test-provider");
@@ -760,12 +760,12 @@ async fn wait_for_request(mock: &ResponseMock, expected_count: usize) -> Vec<Res
 }
 
 async fn wait_for_service_tier(
-    test: &TestCodex,
+    test: &TestMotyga,
     expected_service_tier: Option<String>,
-) -> anyhow::Result<codex_core::ThreadConfigSnapshot> {
+) -> anyhow::Result<motyga_core::ThreadConfigSnapshot> {
     let deadline = Instant::now() + Duration::from_secs(10);
     loop {
-        let config_snapshot = test.codex.config_snapshot().await;
+        let config_snapshot = test.motyga.config_snapshot().await;
         if config_snapshot.service_tier == expected_service_tier {
             return Ok(config_snapshot);
         }
@@ -804,7 +804,7 @@ async fn wait_for_phase2_workspace_reset(memory_root: &Path) -> anyhow::Result<(
 }
 
 async fn seed_stage1_output_for_existing_thread(
-    db: &codex_state::StateRuntime,
+    db: &motyga_state::StateRuntime,
     thread_id: ThreadId,
     updated_at: i64,
     raw_memory: &str,
@@ -820,7 +820,7 @@ async fn seed_stage1_output_for_existing_thread(
         )
         .await?;
     let ownership_token = match claim {
-        codex_state::Stage1JobClaimOutcome::Claimed { ownership_token } => ownership_token,
+        motyga_state::Stage1JobClaimOutcome::Claimed { ownership_token } => ownership_token,
         other => panic!("unexpected stage-1 claim outcome: {other:?}"),
     };
 
@@ -851,8 +851,8 @@ async fn read_rollout_summary_bodies(memory_root: &Path) -> anyhow::Result<Vec<S
     Ok(summaries)
 }
 
-async fn shutdown_test_codex(test: &TestCodex) -> anyhow::Result<()> {
-    test.codex.submit(Op::Shutdown {}).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+async fn shutdown_test_motyga(test: &TestMotyga) -> anyhow::Result<()> {
+    test.motyga.submit(Op::Shutdown {}).await?;
+    wait_for_event(&test.motyga, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
     Ok(())
 }

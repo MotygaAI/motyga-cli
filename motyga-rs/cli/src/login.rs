@@ -1,29 +1,29 @@
 //! CLI login commands and their direct-user observability surfaces.
 //!
 //! The TUI path already installs a broader tracing stack with feedback, OpenTelemetry, and other
-//! interactive-session layers. Direct `codex login` intentionally does less: it preserves the
+//! interactive-session layers. Direct `motyga login` intentionally does less: it preserves the
 //! existing stderr/browser UX and adds only a small file-backed tracing layer for login-specific
 //! targets. Keeping that setup local avoids pulling the TUI's session-oriented logging machinery
 //! into a one-shot CLI command while still producing a durable `motyga-login.log` artifact that
 //! support can request from users.
 
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_core::config::Config;
-use codex_login::AuthKeyringBackendKind;
-use codex_login::AuthRouteConfig;
-use codex_login::CLIENT_ID;
-use codex_login::CodexAuth;
-use codex_login::MotygaDeviceLoginOptions;
-use codex_login::ServerOptions;
-use codex_login::login_with_access_token;
-use codex_login::login_with_api_key;
-use codex_login::logout_with_revoke;
-use codex_login::run_device_code_login;
-use codex_login::run_login_server;
-use codex_login::run_motyga_device_login;
-use codex_protocol::auth::AuthMode;
-use codex_protocol::config_types::ForcedLoginMethod;
-use codex_utils_cli::CliConfigOverrides;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_core::config::Config;
+use motyga_login::AuthKeyringBackendKind;
+use motyga_login::AuthRouteConfig;
+use motyga_login::CLIENT_ID;
+use motyga_login::MotygaAuth;
+use motyga_login::MotygaDeviceLoginOptions;
+use motyga_login::ServerOptions;
+use motyga_login::login_with_access_token;
+use motyga_login::login_with_api_key;
+use motyga_login::logout_with_revoke;
+use motyga_login::run_device_code_login;
+use motyga_login::run_login_server;
+use motyga_login::run_motyga_device_login;
+use motyga_protocol::auth::AuthMode;
+use motyga_protocol::config_types::ForcedLoginMethod;
+use motyga_utils_cli::CliConfigOverrides;
 use std::fs::OpenOptions;
 use std::io::IsTerminal;
 use std::io::Read;
@@ -45,7 +45,7 @@ const LOGIN_SUCCESS_MESSAGE: &str = "Successfully logged in";
 const MOTYGA_PROVIDER_ID: &str = "motyga";
 const DEFAULT_MOTYGA_API_BASE_URL: &str = "https://api.motyga.com/v1";
 
-/// Installs a small file-backed tracing layer for direct `codex login` flows.
+/// Installs a small file-backed tracing layer for direct `motyga login` flows.
 ///
 /// This deliberately duplicates a narrow slice of the TUI logging setup instead of reusing it
 /// wholesale. The TUI stack includes session-oriented layers that are valuable for interactive
@@ -53,7 +53,7 @@ const DEFAULT_MOTYGA_API_BASE_URL: &str = "https://api.motyga.com/v1";
 /// command produce a durable `motyga-login.log` artifact without coupling it to the TUI's broader
 /// telemetry and feedback initialization.
 fn init_login_file_logging(config: &Config) -> Option<WorkerGuard> {
-    let log_dir = match codex_core::config::log_dir(config) {
+    let log_dir = match motyga_core::config::log_dir(config) {
         Ok(log_dir) => log_dir,
         Err(err) => {
             eprintln!("Warning: failed to resolve login log directory: {err}");
@@ -92,14 +92,14 @@ fn init_login_file_logging(config: &Config) -> Option<WorkerGuard> {
 
     let (non_blocking, guard) = non_blocking(log_file);
     let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("codex_cli=info,codex_core=info,codex_login=info"));
+        .unwrap_or_else(|_| EnvFilter::new("motyga_cli=info,motyga_core=info,motyga_login=info"));
     let file_layer = tracing_subscriber::fmt::layer()
         .with_writer(non_blocking)
         .with_target(true)
         .with_ansi(false)
         .with_filter(env_filter);
 
-    // Direct `codex login` otherwise relies on ephemeral stderr and browser output.
+    // Direct `motyga login` otherwise relies on ephemeral stderr and browser output.
     // Persist the same login targets to a file so support can inspect auth failures
     // without reproducing them through TUI or app-server.
     if let Err(err) = tracing_subscriber::registry().with(file_layer).try_init() {
@@ -120,13 +120,13 @@ fn print_login_server_start(actual_port: u16, auth_url: &str) {
 }
 
 async fn clear_existing_auth_before_login(
-    codex_home: &Path,
+    motyga_home: &Path,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     auth_keyring_backend_kind: AuthKeyringBackendKind,
     auth_route_config: Option<&AuthRouteConfig>,
 ) {
     if let Err(err) = logout_with_revoke(
-        codex_home,
+        motyga_home,
         auth_credentials_store_mode,
         auth_keyring_backend_kind,
         auth_route_config,
@@ -138,14 +138,14 @@ async fn clear_existing_auth_before_login(
 }
 
 pub async fn login_with_chatgpt(
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     forced_chatgpt_workspace_id: Option<Vec<String>>,
     cli_auth_credentials_store_mode: AuthCredentialsStoreMode,
     auth_keyring_backend_kind: AuthKeyringBackendKind,
     auth_route_config: Option<AuthRouteConfig>,
 ) -> std::io::Result<()> {
     clear_existing_auth_before_login(
-        &codex_home,
+        &motyga_home,
         cli_auth_credentials_store_mode,
         auth_keyring_backend_kind,
         auth_route_config.as_ref(),
@@ -153,7 +153,7 @@ pub async fn login_with_chatgpt(
     .await;
 
     let opts = ServerOptions::new(
-        codex_home,
+        motyga_home,
         CLIENT_ID.to_string(),
         forced_chatgpt_workspace_id,
         cli_auth_credentials_store_mode,
@@ -179,7 +179,7 @@ pub async fn run_login_with_chatgpt(cli_config_overrides: CliConfigOverrides) ->
 
     let forced_chatgpt_workspace_id = config.forced_chatgpt_workspace_id.clone();
     match login_with_chatgpt(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
         forced_chatgpt_workspace_id,
         config.cli_auth_credentials_store_mode,
         config.auth_keyring_backend_kind(),
@@ -212,7 +212,7 @@ pub async fn run_login_with_api_key(
     }
 
     match login_with_api_key(
-        &config.codex_home,
+        &config.motyga_home,
         &api_key,
         config.cli_auth_credentials_store_mode,
         config.auth_keyring_backend_kind(),
@@ -248,7 +248,7 @@ pub async fn run_login_with_motyga_device(cli_config_overrides: CliConfigOverrid
 
     let auth_route_config = config.auth_route_config();
     clear_existing_auth_before_login(
-        &config.codex_home,
+        &config.motyga_home,
         config.cli_auth_credentials_store_mode,
         config.auth_keyring_backend_kind(),
         auth_route_config.as_ref(),
@@ -257,7 +257,7 @@ pub async fn run_login_with_motyga_device(cli_config_overrides: CliConfigOverrid
 
     let opts = MotygaDeviceLoginOptions {
         base_url: motyga_device_auth_base_url(&config),
-        codex_home: config.codex_home.to_path_buf(),
+        motyga_home: config.motyga_home.to_path_buf(),
         cli_auth_credentials_store_mode: config.cli_auth_credentials_store_mode,
         auth_keyring_backend_kind: config.auth_keyring_backend_kind(),
         auth_route_config,
@@ -291,7 +291,7 @@ pub async fn run_login_with_access_token(
 
     let auth_route_config = config.auth_route_config();
     match login_with_access_token(
-        &config.codex_home,
+        &config.motyga_home,
         &access_token,
         config.cli_auth_credentials_store_mode,
         config.forced_chatgpt_workspace_id.as_deref(),
@@ -368,7 +368,7 @@ pub async fn run_login_with_device_code(
     }
     let auth_route_config = config.auth_route_config();
     clear_existing_auth_before_login(
-        &config.codex_home,
+        &config.motyga_home,
         config.cli_auth_credentials_store_mode,
         config.auth_keyring_backend_kind(),
         auth_route_config.as_ref(),
@@ -376,7 +376,7 @@ pub async fn run_login_with_device_code(
     .await;
     let forced_chatgpt_workspace_id = config.forced_chatgpt_workspace_id.clone();
     let mut opts = ServerOptions::new(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
         client_id.unwrap_or(CLIENT_ID.to_string()),
         forced_chatgpt_workspace_id,
         config.cli_auth_credentials_store_mode,
@@ -399,7 +399,7 @@ pub async fn run_login_with_device_code(
 }
 
 /// Prefers device-code login (with `open_browser = false`) when headless environment is detected, but keeps
-/// `codex login` working in environments where device-code may be disabled/feature-gated.
+/// `motyga login` working in environments where device-code may be disabled/feature-gated.
 /// If `run_device_code_login` returns `ErrorKind::NotFound` ("device-code unsupported"), this
 /// falls back to starting the local browser login server.
 pub async fn run_login_with_device_code_fallback_to_browser(
@@ -416,7 +416,7 @@ pub async fn run_login_with_device_code_fallback_to_browser(
     }
     let auth_route_config = config.auth_route_config();
     clear_existing_auth_before_login(
-        &config.codex_home,
+        &config.motyga_home,
         config.cli_auth_credentials_store_mode,
         config.auth_keyring_backend_kind(),
         auth_route_config.as_ref(),
@@ -425,7 +425,7 @@ pub async fn run_login_with_device_code_fallback_to_browser(
 
     let forced_chatgpt_workspace_id = config.forced_chatgpt_workspace_id.clone();
     let mut opts = ServerOptions::new(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
         client_id.unwrap_or(CLIENT_ID.to_string()),
         forced_chatgpt_workspace_id,
         config.cli_auth_credentials_store_mode,
@@ -476,8 +476,8 @@ pub async fn run_login_status(cli_config_overrides: CliConfigOverrides) -> ! {
     let config = load_config_or_exit(cli_config_overrides).await;
     let auth_route_config = config.auth_route_config();
 
-    match CodexAuth::from_auth_storage(
-        &config.codex_home,
+    match MotygaAuth::from_auth_storage(
+        &config.motyga_home,
         config.cli_auth_credentials_store_mode,
         Some(&config.chatgpt_base_url),
         config.auth_keyring_backend_kind(),
@@ -529,7 +529,7 @@ pub async fn run_logout(cli_config_overrides: CliConfigOverrides) -> ! {
     let auth_route_config = config.auth_route_config();
 
     match logout_with_revoke(
-        &config.codex_home,
+        &config.motyga_home,
         config.cli_auth_credentials_store_mode,
         config.auth_keyring_backend_kind(),
         auth_route_config.as_ref(),
@@ -580,10 +580,10 @@ fn safe_format_key(key: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use codex_config::types::AuthCredentialsStoreMode;
-    use codex_login::AuthKeyringBackendKind;
-    use codex_login::load_auth_dot_json;
-    use codex_login::login_with_api_key;
+    use motyga_config::types::AuthCredentialsStoreMode;
+    use motyga_login::AuthKeyringBackendKind;
+    use motyga_login::load_auth_dot_json;
+    use motyga_login::login_with_api_key;
     use pretty_assertions::assert_eq;
     use tempfile::tempdir;
 
@@ -592,9 +592,9 @@ mod tests {
 
     #[tokio::test]
     async fn clears_existing_auth_before_login() {
-        let codex_home = tempdir().expect("create temporary Motyga home");
+        let motyga_home = tempdir().expect("create temporary Motyga home");
         login_with_api_key(
-            codex_home.path(),
+            motyga_home.path(),
             "sk-existing",
             AuthCredentialsStoreMode::File,
             AuthKeyringBackendKind::default(),
@@ -602,7 +602,7 @@ mod tests {
         .expect("save existing auth");
 
         clear_existing_auth_before_login(
-            codex_home.path(),
+            motyga_home.path(),
             AuthCredentialsStoreMode::File,
             AuthKeyringBackendKind::default(),
             /*auth_route_config*/ None,
@@ -610,7 +610,7 @@ mod tests {
         .await;
 
         let auth = load_auth_dot_json(
-            codex_home.path(),
+            motyga_home.path(),
             AuthCredentialsStoreMode::File,
             AuthKeyringBackendKind::default(),
         )

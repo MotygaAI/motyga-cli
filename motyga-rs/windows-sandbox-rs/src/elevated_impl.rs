@@ -1,5 +1,5 @@
-use codex_protocol::models::PermissionProfile;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::models::PermissionProfile;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
@@ -7,7 +7,7 @@ use std::path::PathBuf;
 pub struct ElevatedSandboxProfileCaptureRequest<'a> {
     pub permission_profile: &'a PermissionProfile,
     pub workspace_roots: &'a [AbsolutePathBuf],
-    pub codex_home: &'a Path,
+    pub motyga_home: &'a Path,
     pub command: Vec<String>,
     pub cwd: &'a Path,
     pub env_map: HashMap<String, String>,
@@ -46,12 +46,12 @@ mod windows_impl {
     use crate::resolved_permissions::ResolvedWindowsSandboxPermissions;
     use crate::runner_client::retry_runner_spawn_once;
     use crate::runner_client::spawn_runner_transport;
-    use crate::sandbox_utils::ensure_codex_home_exists;
+    use crate::sandbox_utils::ensure_motyga_home_exists;
     use crate::sandbox_utils::inject_git_safe_directory;
     use crate::setup::effective_write_roots_for_permissions;
     use crate::token::LocalSid;
     use anyhow::Result;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use std::fs::File;
     use std::path::Path;
     use std::sync::Arc;
@@ -102,7 +102,7 @@ mod windows_impl {
         let ElevatedSandboxProfileCaptureRequest {
             permission_profile,
             workspace_roots,
-            codex_home,
+            motyga_home,
             command,
             cwd,
             mut env_map,
@@ -134,8 +134,8 @@ mod windows_impl {
         inherit_path_env(&mut env_map);
         inject_git_safe_directory(&mut env_map, cwd);
         // Use a temp-based log dir that the sandbox user can write.
-        let sandbox_base = codex_home.join(".sandbox");
-        ensure_codex_home_exists(&sandbox_base)?;
+        let sandbox_base = motyga_home.join(".sandbox");
+        ensure_motyga_home_exists(&sandbox_base)?;
 
         let logs_base_dir: Option<&Path> = Some(sandbox_base.as_path());
         log_start(&command, logs_base_dir);
@@ -143,7 +143,7 @@ mod windows_impl {
             &permissions,
             cwd,
             &env_map,
-            codex_home,
+            motyga_home,
             read_roots_override,
             read_roots_include_platform_defaults,
             write_roots_override,
@@ -153,19 +153,19 @@ mod windows_impl {
             crate::WindowsSandboxProxySettingsMode::Reconcile,
         )?;
         // Build capability SID for ACL grants.
-        let caps = load_or_create_cap_sids(codex_home)?;
+        let caps = load_or_create_cap_sids(motyga_home)?;
         let (sid_for_null, cap_sids) = if permissions.uses_write_capabilities_for_cwd(cwd, &env_map)
         {
             let write_roots = effective_write_roots_for_permissions(
                 &permissions,
                 cwd,
                 &env_map,
-                codex_home,
+                motyga_home,
                 write_roots_override,
             );
             let cap_sids = write_roots
                 .iter()
-                .map(|root| workspace_write_cap_sid_for_root(codex_home, cwd, root))
+                .map(|root| workspace_write_cap_sid_for_root(motyga_home, cwd, root))
                 .collect::<Result<Vec<_>>>()?;
             if cap_sids.is_empty() {
                 anyhow::bail!("workspace-write sandbox has no writable root capability SIDs");
@@ -187,8 +187,8 @@ mod windows_impl {
                 env: env_map.clone(),
                 permission_profile: permission_profile.clone(),
                 workspace_roots: workspace_roots.to_vec(),
-                codex_home: sandbox_base.clone(),
-                real_codex_home: codex_home.to_path_buf(),
+                motyga_home: sandbox_base.clone(),
+                real_motyga_home: motyga_home.to_path_buf(),
                 cap_sids,
                 timeout_ms,
                 tty: false,
@@ -200,7 +200,7 @@ mod windows_impl {
                 &spawn_request.command,
                 |sandbox_creds| {
                     spawn_runner_transport(
-                        codex_home,
+                        motyga_home,
                         cwd,
                         &sandbox_creds,
                         logs_base_dir,
@@ -212,7 +212,7 @@ mod windows_impl {
                         &permissions,
                         cwd,
                         &env_map,
-                        codex_home,
+                        motyga_home,
                         read_roots_override,
                         read_roots_include_platform_defaults,
                         write_roots_override,

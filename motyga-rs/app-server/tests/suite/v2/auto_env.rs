@@ -3,12 +3,12 @@ use anyhow::Result;
 use app_test_support::TestAppServer;
 use app_test_support::to_response;
 use app_test_support::write_mock_responses_config_toml;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::UserInput as V2UserInput;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::UserInput as V2UserInput;
 use core_test_support::responses;
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
@@ -30,9 +30,9 @@ async fn thread_start_with_auto_env_exposes_fixture_cwd_to_model() -> Result<()>
         ]),
     )
     .await;
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_mock_responses_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &server.uri(),
         &BTreeMap::new(),
         /*auto_compact_limit*/ 100_000,
@@ -41,7 +41,7 @@ async fn thread_start_with_auto_env_exposes_fixture_cwd_to_model() -> Result<()>
         "compact",
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
     let expected_environment = mcp.auto_env_params()?;
 
@@ -107,10 +107,10 @@ async fn thread_start_with_auto_env_exposes_fixture_cwd_to_model() -> Result<()>
 
 #[tokio::test]
 async fn auto_env_rejects_explicit_environment_config() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    std::fs::write(codex_home.path().join("environments.toml"), "")?;
+    let motyga_home = TempDir::new()?;
+    std::fs::write(motyga_home.path().join("environments.toml"), "")?;
 
-    let result = TestAppServer::new_with_auto_env(codex_home.path()).await;
+    let result = TestAppServer::new_with_auto_env(motyga_home.path()).await;
     let Err(err) = result else {
         anyhow::bail!("auto-env construction unexpectedly succeeded");
     };
@@ -118,7 +118,7 @@ async fn auto_env_rejects_explicit_environment_config() -> Result<()> {
         err.to_string(),
         format!(
             "new_with_auto_env cannot be used when {} exists",
-            codex_home.path().join("environments.toml").display()
+            motyga_home.path().join("environments.toml").display()
         )
     );
 

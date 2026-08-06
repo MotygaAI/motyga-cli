@@ -4,17 +4,17 @@ use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-use codex_config::types::AuthKeyringBackendKind;
-use codex_config::types::OAuthCredentialsStoreMode;
-use codex_exec_server::Environment;
-use codex_rmcp_client::McpAuthState;
-use codex_rmcp_client::McpLoginRequirement;
-use codex_rmcp_client::RmcpClient;
-use codex_rmcp_client::StoredOAuthTokens;
-use codex_rmcp_client::WrappedOAuthTokenResponse;
-use codex_rmcp_client::determine_streamable_http_auth_status;
-use codex_rmcp_client::is_authentication_required_error;
-use codex_rmcp_client::save_oauth_tokens;
+use motyga_config::types::AuthKeyringBackendKind;
+use motyga_config::types::OAuthCredentialsStoreMode;
+use motyga_exec_server::Environment;
+use motyga_rmcp_client::McpAuthState;
+use motyga_rmcp_client::McpLoginRequirement;
+use motyga_rmcp_client::RmcpClient;
+use motyga_rmcp_client::StoredOAuthTokens;
+use motyga_rmcp_client::WrappedOAuthTokenResponse;
+use motyga_rmcp_client::determine_streamable_http_auth_status;
+use motyga_rmcp_client::is_authentication_required_error;
+use motyga_rmcp_client::save_oauth_tokens;
 use oauth2::AccessToken;
 use oauth2::RefreshToken;
 use oauth2::basic::BasicTokenType;
@@ -106,7 +106,7 @@ async fn refreshes_expired_persisted_token_before_initialize() -> anyhow::Result
         .mount(&server)
         .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server_url = format!("{}/mcp", server.uri());
 
     // Credential storage resolves MOTYGA_HOME from the process environment.
@@ -114,7 +114,7 @@ async fn refreshes_expired_persisted_token_before_initialize() -> anyhow::Result
     // an isolated home without mutating the parent test runner's environment.
     let status = Command::new(std::env::current_exe()?)
         .args(["oauth_startup_child", "--exact", "--ignored", "--nocapture"])
-        .env("MOTYGA_HOME", codex_home.path())
+        .env("MOTYGA_HOME", motyga_home.path())
         .env(CHILD_SERVER_URL_ENV, server_url)
         .status()
         .await?;
@@ -125,7 +125,7 @@ async fn refreshes_expired_persisted_token_before_initialize() -> anyhow::Result
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn reports_auth_status_for_persisted_credentials() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let status = Command::new(std::env::current_exe()?)
         .args([
@@ -134,7 +134,7 @@ async fn reports_auth_status_for_persisted_credentials() -> anyhow::Result<()> {
             "--ignored",
             "--nocapture",
         ])
-        .env("MOTYGA_HOME", codex_home.path())
+        .env("MOTYGA_HOME", motyga_home.path())
         .status()
         .await?;
 
@@ -158,7 +158,7 @@ async fn identifies_expired_unrefreshable_token_startup_error() -> anyhow::Resul
         .mount(&server)
         .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let status = Command::new(std::env::current_exe()?)
         .args([
             "expired_unrefreshable_startup_child",
@@ -166,7 +166,7 @@ async fn identifies_expired_unrefreshable_token_startup_error() -> anyhow::Resul
             "--ignored",
             "--nocapture",
         ])
-        .env("MOTYGA_HOME", codex_home.path())
+        .env("MOTYGA_HOME", motyga_home.path())
         .env(CHILD_SERVER_URL_ENV, format!("{}/mcp", server.uri()))
         .status()
         .await?;

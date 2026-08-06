@@ -2,31 +2,31 @@
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_config::types::ApprovalsReviewer;
-use codex_core::CodexThread;
-use codex_core::config::Constrained;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_features::Feature;
-use codex_protocol::approvals::NetworkApprovalProtocol;
-use codex_protocol::approvals::NetworkPolicyAmendment;
-use codex_protocol::approvals::NetworkPolicyRuleAction;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::ApplyPatchApprovalRequestEvent;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExecApprovalRequestEvent;
-use codex_protocol::protocol::ExecPolicyAmendment;
-use codex_protocol::protocol::GranularApprovalConfig;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::user_input::UserInput;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_core::MotygaThread;
+use motyga_core::config::Constrained;
+use motyga_core::sandboxing::SandboxPermissions;
+use motyga_features::Feature;
+use motyga_protocol::approvals::NetworkApprovalProtocol;
+use motyga_protocol::approvals::NetworkPolicyAmendment;
+use motyga_protocol::approvals::NetworkPolicyRuleAction;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::ApplyPatchApprovalRequestEvent;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExecApprovalRequestEvent;
+use motyga_protocol::protocol::ExecPolicyAmendment;
+use motyga_protocol::protocol::GranularApprovalConfig;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::managed_network_requirements_loader;
 use core_test_support::responses::ev_apply_patch_custom_tool_call;
 use core_test_support::responses::ev_assistant_message;
@@ -39,10 +39,10 @@ use core_test_support::responses::mount_sse_once_match;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_with_timeout;
 use core_test_support::zsh_fork::build_zsh_fork_test;
@@ -76,7 +76,7 @@ enum TargetPath {
 }
 
 impl TargetPath {
-    fn resolve_for_patch(self, test: &TestCodex) -> (PathBuf, String) {
+    fn resolve_for_patch(self, test: &TestMotyga) -> (PathBuf, String) {
         match self {
             TargetPath::Workspace(name) => {
                 let path = test.cwd.path().join(name);
@@ -153,7 +153,7 @@ impl ActionKind {
 
     async fn prepare(
         &self,
-        test: &TestCodex,
+        test: &TestMotyga,
         server: &MockServer,
         call_id: &str,
         sandbox_permissions: SandboxPermissions,
@@ -290,7 +290,7 @@ impl ActionKind {
                 let _ = fs::remove_file(&path);
                 let patch = build_add_file_patch(&patch_path, content);
                 let command = shell_apply_patch_command(&patch);
-                // Bazel may need to launch the configured Codex helper binary
+                // Bazel may need to launch the configured Motyga helper binary
                 // to apply the verified patch, which can exceed the normal
                 // short command timeout on slower CI runners.
                 let timeout_ms = 30_000;
@@ -412,7 +412,7 @@ enum Expectation {
 }
 
 impl Expectation {
-    fn verify(&self, test: &TestCodex, result: &CommandResult) -> Result<()> {
+    fn verify(&self, test: &TestMotyga, result: &CommandResult) -> Result<()> {
         match self {
             Expectation::FileCreated { target, content } => {
                 let (path, _) = target.resolve_for_patch(test);
@@ -651,14 +651,14 @@ struct CommandResult {
 }
 
 async fn submit_turn(
-    test: &TestCodex,
+    test: &TestMotyga,
     prompt: &str,
     approval_policy: AskForApproval,
     sandbox_policy: SandboxPolicy,
 ) -> Result<()> {
     let session_model = test.session_configured.model.clone();
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -667,14 +667,14 @@ async fn submit_turn(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(approval_policy),
                 approvals_reviewer: Some(ApprovalsReviewer::User),
                 sandbox_policy: Some(sandbox_policy),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: session_model,
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -689,13 +689,13 @@ async fn submit_turn(
 }
 
 async fn submit_turn_preserving_active_permission_profile(
-    test: &TestCodex,
+    test: &TestMotyga,
     prompt: &str,
     approval_policy: AskForApproval,
 ) -> Result<()> {
     let session_model = test.session_configured.model.clone();
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -704,13 +704,13 @@ async fn submit_turn_preserving_active_permission_profile(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(approval_policy),
                 approvals_reviewer: Some(ApprovalsReviewer::User),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: session_model,
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -724,7 +724,7 @@ async fn submit_turn_preserving_active_permission_profile(
     Ok(())
 }
 
-fn assert_active_workspace_permission_profile(test: &TestCodex) {
+fn assert_active_workspace_permission_profile(test: &TestMotyga) {
     assert_eq!(
         test.session_configured
             .active_permission_profile
@@ -775,10 +775,10 @@ fn parse_result(item: &Value) -> CommandResult {
 }
 
 async fn expect_exec_approval(
-    test: &TestCodex,
+    test: &TestMotyga,
     expected_command: &str,
 ) -> ExecApprovalRequestEvent {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -802,10 +802,10 @@ async fn expect_exec_approval(
 }
 
 async fn expect_patch_approval(
-    test: &TestCodex,
+    test: &TestMotyga,
     expected_call_id: &str,
 ) -> ApplyPatchApprovalRequestEvent {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ApplyPatchApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -823,8 +823,8 @@ async fn expect_patch_approval(
     }
 }
 
-async fn wait_for_completion_without_approval(test: &TestCodex) {
-    let event = wait_for_event(&test.codex, |event| {
+async fn wait_for_completion_without_approval(test: &TestMotyga) {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -841,8 +841,8 @@ async fn wait_for_completion_without_approval(test: &TestCodex) {
     }
 }
 
-async fn wait_for_completion(test: &TestCodex) {
-    wait_for_event(&test.codex, |event| {
+async fn wait_for_completion(test: &TestMotyga) {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -868,7 +868,7 @@ fn body_contains(req: &Request, text: &str) -> bool {
         .is_some_and(|body| body.contains(text))
 }
 
-async fn wait_for_spawned_thread(test: &TestCodex) -> Result<Arc<CodexThread>> {
+async fn wait_for_spawned_thread(test: &TestMotyga) -> Result<Arc<MotygaThread>> {
     let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
     loop {
         let ids = test.thread_manager.list_thread_ids().await;
@@ -1850,7 +1850,7 @@ async fn run_scenario(scenario: &ScenarioSpec) -> Result<()> {
     let model = model_override.unwrap_or("gpt-5.4");
     let policy_src = scenario.action.policy_src();
 
-    let mut builder = test_codex().with_model(model).with_config(move |config| {
+    let mut builder = test_motyga().with_model(model).with_config(move |config| {
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
         config
             .set_legacy_sandbox_policy(sandbox_policy.clone())
@@ -1926,7 +1926,7 @@ async fn run_scenario(scenario: &ScenarioSpec) -> Result<()> {
                     scenario.name
                 );
             }
-            test.codex
+            test.motyga
                 .submit(Op::ExecApproval {
                     id: approval.effective_approval_id(),
                     turn_id: None,
@@ -1960,7 +1960,7 @@ async fn run_scenario(scenario: &ScenarioSpec) -> Result<()> {
                 "unexpected execpolicy amendment for {}",
                 scenario.name
             );
-            test.codex
+            test.motyga
                 .submit(Op::ExecApproval {
                     id: approval.effective_approval_id(),
                     turn_id: None,
@@ -1982,7 +1982,7 @@ async fn run_scenario(scenario: &ScenarioSpec) -> Result<()> {
                     scenario.name
                 );
             }
-            test.codex
+            test.motyga
                 .submit(Op::PatchApproval {
                     id: approval.call_id,
                     decision: decision.clone(),
@@ -2018,7 +2018,7 @@ async fn approving_apply_patch_for_session_skips_future_prompts_for_same_file() 
     let sandbox_policy = SandboxPolicy::DangerFullAccess;
     let sandbox_policy_for_config = sandbox_policy.clone();
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model("gpt-5.4")
         .with_config(move |config| {
             config.permissions.approval_policy = Constrained::allow_any(approval_policy);
@@ -2068,7 +2068,7 @@ async fn approving_apply_patch_for_session_skips_future_prompts_for_same_file() 
     )
     .await?;
     let approval = expect_patch_approval(&test, call_id_1).await;
-    test.codex
+    test.motyga
         .submit(Op::PatchApproval {
             id: approval.call_id,
             decision: ReviewDecision::ApprovedForSession,
@@ -2103,7 +2103,7 @@ async fn approving_apply_patch_for_session_skips_future_prompts_for_same_file() 
     )
     .await?;
 
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ApplyPatchApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -2131,7 +2131,7 @@ async fn approving_execpolicy_amendment_persists_policy_and_skips_future_prompts
     let approval_policy = AskForApproval::UnlessTrusted;
     let sandbox_policy = SandboxPolicy::new_read_only_policy();
     let sandbox_policy_for_config = sandbox_policy.clone();
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
         config
             .set_legacy_sandbox_policy(sandbox_policy_for_config)
@@ -2189,7 +2189,7 @@ async fn approving_execpolicy_amendment_persists_policy_and_skips_future_prompts
         Some(expected_execpolicy_amendment.clone())
     );
 
-    test.codex
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
@@ -2304,7 +2304,7 @@ async fn spawned_subagent_execpolicy_amendment_propagates_to_parent_session() ->
     let approval_policy = AskForApproval::UnlessTrusted;
     let sandbox_policy = SandboxPolicy::new_read_only_policy();
     let sandbox_policy_for_config = sandbox_policy.clone();
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
         config
             .set_legacy_sandbox_policy(sandbox_policy_for_config)
@@ -2562,7 +2562,7 @@ async fn env_zsh_script_spawned_by_python_can_request_escalation_under_zsh_fork(
     let session_model = test.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.cwd.path());
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run nested env zsh script through python".into(),
@@ -2571,15 +2571,15 @@ async fn env_zsh_script_spawned_by_python_can_request_escalation_under_zsh_fork(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(approval_policy),
                 approvals_reviewer: Some(ApprovalsReviewer::User),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: session_model,
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -2591,7 +2591,7 @@ async fn env_zsh_script_spawned_by_python_can_request_escalation_under_zsh_fork(
         .await?;
 
     let approval_event = wait_for_event_with_timeout(
-        &test.codex,
+        &test.motyga,
         |event| {
             matches!(
                 event,
@@ -2614,7 +2614,7 @@ async fn env_zsh_script_spawned_by_python_can_request_escalation_under_zsh_fork(
         approval.command
     );
 
-    test.codex
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
@@ -2706,7 +2706,7 @@ async fn matched_prefix_rule_runs_unsandboxed_under_zsh_fork() -> Result<()> {
     let session_model = test.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.cwd.path());
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run allowed touch under zsh fork".into(),
@@ -2715,15 +2715,15 @@ async fn matched_prefix_rule_runs_unsandboxed_under_zsh_fork() -> Result<()> {
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(approval_policy),
                 approvals_reviewer: Some(ApprovalsReviewer::User),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: session_model,
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -2752,7 +2752,7 @@ async fn matched_prefix_rule_runs_unsandboxed_under_zsh_fork() -> Result<()> {
 ///
 /// Tool owners use this pattern when a trusted wrapper must run outside the
 /// current sandbox, but then needs to launch child commands back inside the
-/// same sandbox with `codex sandbox -P`. The nested invocation must also pass
+/// same sandbox with `motyga sandbox -P`. The nested invocation must also pass
 /// `--include-managed-config` so it continues to honor enterprise requirements.
 /// The test proves both halves of that contract: the wrapper writes outside the
 /// `:workspace` sandbox, while its inherited profile name remains `:workspace`.
@@ -2776,7 +2776,7 @@ async fn allowed_escalated_shell_command_inherits_active_permission_profile() ->
         format!(
             r#"#!/bin/sh
 # Print the inherited profile so the test can verify that it reached this script.
-printenv CODEX_PERMISSION_PROFILE
+printenv MOTYGA_PERMISSION_PROFILE
 touch {outside_path:?}
 "#
         ),
@@ -2791,7 +2791,7 @@ touch {outside_path:?}
     )?;
 
     let approval_policy = AskForApproval::OnRequest;
-    let mut builder = test_codex().with_home(home).with_config(move |config| {
+    let mut builder = test_motyga().with_home(home).with_config(move |config| {
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
     });
     let test = builder.build(&server).await?;
@@ -2840,7 +2840,7 @@ touch {outside_path:?}
             exit_code: Some(0),
             stdout: format!("{BUILT_IN_PERMISSION_PROFILE_WORKSPACE}\n"),
         },
-        "the unsandboxed script should inherit CODEX_PERMISSION_PROFILE from the shell command"
+        "the unsandboxed script should inherit MOTYGA_PERMISSION_PROFILE from the shell command"
     );
     assert!(
         outside_path.exists(),
@@ -2855,7 +2855,7 @@ touch {outside_path:?}
 /// named profile needed to reconstruct the original sandbox remotely without
 /// dropping managed enterprise requirements. The script treats the inherited
 /// environment value as untrusted and accepts only explicitly allowlisted
-/// profile names before passing one to `codex sandbox -P`.
+/// profile names before passing one to `motyga sandbox -P`.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[cfg(unix)]
 async fn zsh_fork_inner_allowed_script_inherits_active_permission_profile() -> Result<()> {
@@ -2889,7 +2889,7 @@ ALLOWED_PROFILES = (":workspace",)
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Print an ssh command that recreates the current Codex sandbox remotely."
+        description="Print an ssh command that recreates the current Motyga sandbox remotely."
     )
     parser.add_argument("--host", required=True)
     try:
@@ -2907,16 +2907,16 @@ def parse_args():
 
 def main():
     args = parse_args()
-    profile_name = os.environ.get("CODEX_PERMISSION_PROFILE")
+    profile_name = os.environ.get("MOTYGA_PERMISSION_PROFILE")
     if not profile_name:
-        raise SystemExit("CODEX_PERMISSION_PROFILE must not be empty")
+        raise SystemExit("MOTYGA_PERMISSION_PROFILE must not be empty")
     if profile_name not in ALLOWED_PROFILES:
-        raise SystemExit("CODEX_PERMISSION_PROFILE is not allowlisted")
+        raise SystemExit("MOTYGA_PERMISSION_PROFILE is not allowlisted")
 
     shell_command = shlex.join(args.command)
     sandbox_command = shlex.join(
         [
-            "codex",
+            "motyga",
             "sandbox",
             "-P",
             profile_name,
@@ -3036,12 +3036,12 @@ exec {remote_bash_exec} "$@"
     assert_eq!(
         sandbox_argv.len(),
         9,
-        "expected codex sandbox ... bash -lc CMD"
+        "expected motyga sandbox ... bash -lc CMD"
     );
     assert_eq!(
         sandbox_argv[..8],
         [
-            "codex",
+            "motyga",
             "sandbox",
             "-P",
             BUILT_IN_PERMISSION_PROFILE_WORKSPACE,
@@ -3050,7 +3050,7 @@ exec {remote_bash_exec} "$@"
             "bash",
             "-lc",
         ],
-        "remote_bash.py should use the allowlisted inherited profile and managed configuration to reconstruct the Codex sandbox"
+        "remote_bash.py should use the allowlisted inherited profile and managed configuration to reconstruct the Motyga sandbox"
     );
     let command_argv = shlex::split(&sandbox_argv[8]).context("parse remote bash command")?;
     assert_eq!(
@@ -3073,7 +3073,7 @@ async fn invalid_requested_prefix_rule_falls_back_for_compound_command() -> Resu
     let approval_policy = AskForApproval::OnRequest;
     let sandbox_policy = SandboxPolicy::new_read_only_policy();
     let sandbox_policy_for_config = sandbox_policy.clone();
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
         config
             .set_legacy_sandbox_policy(sandbox_policy_for_config)
@@ -3083,7 +3083,7 @@ async fn invalid_requested_prefix_rule_falls_back_for_compound_command() -> Resu
 
     let call_id = "invalid-prefix-rule";
     let command =
-        "touch /tmp/codex-fallback-rule-test.txt && echo hello > /tmp/codex-fallback-rule-test.txt";
+        "touch /tmp/motyga-fallback-rule-test.txt && echo hello > /tmp/motyga-fallback-rule-test.txt";
     let event = shell_event_with_prefix_rule(
         call_id,
         command,
@@ -3126,7 +3126,7 @@ async fn approving_fallback_rule_for_compound_command_works() -> Result<()> {
     let approval_policy = AskForApproval::OnRequest;
     let sandbox_policy = SandboxPolicy::new_read_only_policy();
     let sandbox_policy_for_config = sandbox_policy.clone();
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
         config
             .set_legacy_sandbox_policy(sandbox_policy_for_config)
@@ -3136,7 +3136,7 @@ async fn approving_fallback_rule_for_compound_command_works() -> Result<()> {
 
     let call_id = "invalid-prefix-rule";
     let command =
-        "touch /tmp/codex-fallback-rule-test.txt && echo hello > /tmp/codex-fallback-rule-test.txt";
+        "touch /tmp/motyga-fallback-rule-test.txt && echo hello > /tmp/motyga-fallback-rule-test.txt";
     let event = shell_event_with_prefix_rule(
         call_id,
         command,
@@ -3170,7 +3170,7 @@ async fn approving_fallback_rule_for_compound_command_works() -> Result<()> {
         .expect("should have a proposed execpolicy amendment");
     assert!(amendment.command.contains(&command.to_string()));
 
-    test.codex
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval_id,
             turn_id: None,
@@ -3183,7 +3183,7 @@ async fn approving_fallback_rule_for_compound_command_works() -> Result<()> {
 
     let call_id = "invalid-prefix-rule-again";
     let command =
-        "touch /tmp/codex-fallback-rule-test.txt && echo hello > /tmp/codex-fallback-rule-test.txt";
+        "touch /tmp/motyga-fallback-rule-test.txt && echo hello > /tmp/motyga-fallback-rule-test.txt";
     let event = shell_event_with_prefix_rule(
         call_id,
         command,
@@ -3263,7 +3263,7 @@ allow_local_binding = true
         exclude_slash_tmp: true,
     };
     let sandbox_policy_for_config = sandbox_policy.clone();
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(home)
         .with_cloud_config_bundle(managed_network_requirements_loader())
         .with_config(move |config| {
@@ -3289,7 +3289,7 @@ allow_local_binding = true
     let call_id_first = "allow-network-first";
     // Use urllib without overriding proxy settings so managed-network sessions
     // continue to exercise the env-based proxy routing path under bubblewrap.
-    let fetch_command = r#"python3 -c "import urllib.request; opener = urllib.request.build_opener(urllib.request.ProxyHandler()); print('OK:' + opener.open('http://codex-network-test.invalid', timeout=30).read().decode(errors='replace'))""#
+    let fetch_command = r#"python3 -c "import urllib.request; opener = urllib.request.build_opener(urllib.request.ProxyHandler()); print('OK:' + opener.open('http://motyga-network-test.invalid', timeout=30).read().decode(errors='replace'))""#
         .to_string();
     let first_event = shell_event(
         call_id_first,
@@ -3330,7 +3330,7 @@ allow_local_binding = true
             .checked_duration_since(std::time::Instant::now())
             .expect("timed out waiting for network approval request");
         let event = wait_for_event_with_timeout(
-            &test.codex,
+            &test.motyga,
             |event| {
                 matches!(
                     event,
@@ -3347,7 +3347,7 @@ allow_local_binding = true
                 {
                     break approval;
                 }
-                test.codex
+                test.motyga
                     .submit(Op::ExecApproval {
                         id: approval.effective_approval_id(),
                         turn_id: None,
@@ -3385,7 +3385,7 @@ allow_local_binding = true
         .find(|amendment| amendment.action == NetworkPolicyRuleAction::Deny)
         .expect("expected deny network policy amendment");
 
-    test.codex
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
@@ -3470,7 +3470,7 @@ allow_local_binding = true
             .checked_duration_since(std::time::Instant::now())
             .expect("timed out waiting for second turn completion");
         let event = wait_for_event_with_timeout(
-            &test.codex,
+            &test.motyga,
             |event| {
                 matches!(
                     event,
@@ -3490,7 +3490,7 @@ allow_local_binding = true
                         approval.command
                     );
                 }
-                test.codex
+                test.motyga
                     .submit(Op::ExecApproval {
                         id: approval.effective_approval_id(),
                         turn_id: None,
@@ -3543,7 +3543,7 @@ allow_local_binding = true
         exclude_tmpdir_env_var: true,
         exclude_slash_tmp: true,
     };
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(home)
         .with_cloud_config_bundle(managed_network_requirements_loader())
         .with_config(move |config| {
@@ -3586,7 +3586,7 @@ allow_local_binding = true
     );
 
     let call_id = "deny-read-network-retry";
-    let fetch_command = r#"python3 -c "import urllib.request; opener = urllib.request.build_opener(urllib.request.ProxyHandler()); print('OK:' + opener.open('http://codex-network-test.invalid', timeout=30).read().decode(errors='replace'))""#
+    let fetch_command = r#"python3 -c "import urllib.request; opener = urllib.request.build_opener(urllib.request.ProxyHandler()); print('OK:' + opener.open('http://motyga-network-test.invalid', timeout=30).read().decode(errors='replace'))""#
         .to_string();
     let event = shell_event(
         call_id,
@@ -3616,7 +3616,7 @@ allow_local_binding = true
     let (turn_sandbox_policy, turn_permission_profile) =
         turn_permission_fields(permission_profile, test.config.cwd.as_path());
     let session_model = test.session_configured.model.clone();
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "deny-read network retry".into(),
@@ -3625,15 +3625,15 @@ allow_local_binding = true
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(approval_policy),
                 approvals_reviewer: Some(ApprovalsReviewer::User),
                 sandbox_policy: Some(turn_sandbox_policy),
                 permission_profile: turn_permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: session_model,
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -3651,7 +3651,7 @@ allow_local_binding = true
             .checked_duration_since(std::time::Instant::now())
             .expect("timed out waiting for network approval request");
         let event = wait_for_event_with_timeout(
-            &test.codex,
+            &test.motyga,
             |event| {
                 matches!(
                     event,
@@ -3673,7 +3673,7 @@ allow_local_binding = true
                     command_approval_count, 1,
                     "expected only the outer explicit escalation approval"
                 );
-                test.codex
+                test.motyga
                     .submit(Op::ExecApproval {
                         id: approval.effective_approval_id(),
                         turn_id: None,
@@ -3701,7 +3701,7 @@ allow_local_binding = true
         .find(|amendment| amendment.action == NetworkPolicyRuleAction::Allow)
         .expect("expected allow network policy amendment");
 
-    test.codex
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
@@ -3747,7 +3747,7 @@ allow_local_binding = true
         exclude_tmpdir_env_var: true,
         exclude_slash_tmp: true,
     };
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(home)
         .with_cloud_config_bundle(managed_network_requirements_loader())
         .with_config(move |config| {
@@ -3773,7 +3773,7 @@ allow_local_binding = true
     );
 
     let call_id = "allow-network-after-yolo";
-    let fetch_command = r#"python3 -c "import urllib.request; opener = urllib.request.build_opener(urllib.request.ProxyHandler()); print('OK:' + opener.open('http://codex-network-test.invalid', timeout=30).read().decode(errors='replace'))""#
+    let fetch_command = r#"python3 -c "import urllib.request; opener = urllib.request.build_opener(urllib.request.ProxyHandler()); print('OK:' + opener.open('http://motyga-network-test.invalid', timeout=30).read().decode(errors='replace'))""#
         .to_string();
     let event = shell_event(
         call_id,
@@ -3814,7 +3814,7 @@ allow_local_binding = true
             .checked_duration_since(std::time::Instant::now())
             .expect("timed out waiting for network approval request");
         let event = wait_for_event_with_timeout(
-            &test.codex,
+            &test.motyga,
             |event| {
                 matches!(
                     event,
@@ -3831,7 +3831,7 @@ allow_local_binding = true
                 {
                     break approval;
                 }
-                test.codex
+                test.motyga
                     .submit(Op::ExecApproval {
                         id: approval.effective_approval_id(),
                         turn_id: None,
@@ -3852,7 +3852,7 @@ allow_local_binding = true
         .expect("expected network approval context");
     assert_eq!(network_context.protocol, NetworkApprovalProtocol::Http);
 
-    test.codex
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
@@ -3874,7 +3874,7 @@ async fn compound_command_with_one_safe_command_still_requires_approval() -> Res
     let approval_policy = AskForApproval::UnlessTrusted;
     let sandbox_policy = SandboxPolicy::new_workspace_write_policy();
     let sandbox_policy_for_config = sandbox_policy.clone();
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
         config
             .set_legacy_sandbox_policy(sandbox_policy_for_config)
@@ -3924,7 +3924,7 @@ async fn compound_command_with_one_safe_command_still_requires_approval() -> Res
     .await?;
 
     let approval = expect_exec_approval(&test, expected_command.as_str()).await;
-    test.codex
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { codexExecSpy } from "./codexExecSpy";
+import { motygaExecSpy } from "./motygaExecSpy";
 import { describe, expect, it } from "@jest/globals";
 
 import {
@@ -14,9 +14,9 @@ import {
   startResponsesTestProxy,
   SseResponseBody,
 } from "./responsesProxy";
-import { createMockClient, createTestClient } from "./testCodex";
+import { createMockClient, createTestClient } from "./testMotyga";
 
-describe("Codex", () => {
+describe("Motyga", () => {
   it("returns thread events", async () => {
     const { url, close } = await startResponsesTestProxy({
       statusCode: 200,
@@ -195,7 +195,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createMockClient(url);
 
     try {
@@ -234,7 +234,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createMockClient(url);
 
     try {
@@ -265,7 +265,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createMockClient(url);
 
     try {
@@ -296,7 +296,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createMockClient(url);
 
     try {
@@ -327,7 +327,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createMockClient(url);
 
     try {
@@ -358,7 +358,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createMockClient(url);
 
     try {
@@ -389,7 +389,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createMockClient(url);
 
     try {
@@ -408,7 +408,7 @@ describe("Codex", () => {
     }
   });
 
-  it("passes CodexOptions config overrides as TOML --config flags", async () => {
+  it("passes MotygaOptions config overrides as TOML --config flags", async () => {
     const { url, close } = await startResponsesTestProxy({
       statusCode: 200,
       responseBodies: [
@@ -420,7 +420,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createTestClient({
       baseUrl: url,
       apiKey: "test",
@@ -449,7 +449,7 @@ describe("Codex", () => {
     }
   });
 
-  it("lets thread options override CodexOptions config overrides", async () => {
+  it("lets thread options override MotygaOptions config overrides", async () => {
     const { url, close } = await startResponsesTestProxy({
       statusCode: 200,
       responseBodies: [
@@ -461,7 +461,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createTestClient({
       baseUrl: url,
       apiKey: "test",
@@ -498,7 +498,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
     const { client, cleanup } = createMockClient(url);
 
     try {
@@ -540,7 +540,7 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
+    const { args: spawnArgs, restore } = motygaExecSpy();
 
     const schema = {
       type: "object",
@@ -563,7 +563,7 @@ describe("Codex", () => {
       const text = payload!.json.text;
       expect(text).toBeDefined();
       expect(text?.format).toEqual({
-        name: "codex_output_schema",
+        name: "motyga_output_schema",
         type: "json_schema",
         strict: true,
         schema,
@@ -626,8 +626,8 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "codex-images-"));
+    const { args: spawnArgs, restore } = motygaExecSpy();
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "motyga-images-"));
     const imagesDirectoryEntries: [string, string] = [
       path.join(tempDir, "first.png"),
       path.join(tempDir, "second.jpg"),
@@ -673,8 +673,8 @@ describe("Codex", () => {
       ],
     });
 
-    const { args: spawnArgs, restore } = codexExecSpy();
-    const workingDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "codex-working-dir-"));
+    const { args: spawnArgs, restore } = motygaExecSpy();
+    const workingDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "motyga-working-dir-"));
     const { client, cleanup } = createTestClient({
       baseUrl: url,
       apiKey: "test",
@@ -708,7 +708,7 @@ describe("Codex", () => {
         ),
       ],
     });
-    const workingDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "codex-working-dir-"));
+    const workingDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "motyga-working-dir-"));
     const { client, cleanup } = createTestClient({
       baseUrl: url,
       apiKey: "test",
@@ -728,7 +728,7 @@ describe("Codex", () => {
     }
   });
 
-  it("sets the codex sdk originator header", async () => {
+  it("sets the motyga sdk originator header", async () => {
     const { url, close, requests } = await startResponsesTestProxy({
       statusCode: 200,
       responseBodies: [sse(responseStarted(), assistantMessage("Hi!"), responseCompleted())],
@@ -742,9 +742,9 @@ describe("Codex", () => {
       expect(requests.length).toBeGreaterThan(0);
       const originatorHeader = requests[0]!.headers["originator"];
       if (Array.isArray(originatorHeader)) {
-        expect(originatorHeader).toContain("codex_sdk_ts");
+        expect(originatorHeader).toContain("motyga_sdk_ts");
       } else {
-        expect(originatorHeader).toBe("codex_sdk_ts");
+        expect(originatorHeader).toBe("motyga_sdk_ts");
       }
     } finally {
       cleanup();
@@ -774,7 +774,7 @@ describe("Codex", () => {
 });
 
 /**
- * Given a list of args to `codex` and a `key`, collects all `--config`
+ * Given a list of args to `motyga` and a `key`, collects all `--config`
  * overrides for that key.
  */
 function collectConfigValues(args: string[] | undefined, key: string): string[] {

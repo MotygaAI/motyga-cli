@@ -1,3 +1,3 @@
-# Codex CLI
+# Motyga CLI
 
-[**Codex CLI Documentation**](https://developers.openai.com/codex/cli)
+[**Motyga CLI Documentation**](https://developers.openai.com/codex/cli)

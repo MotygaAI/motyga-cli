@@ -1,10 +1,10 @@
 use super::*;
-use codex_config::NetworkDomainPermissionToml;
-use codex_config::NetworkDomainPermissionsToml;
-use codex_network_proxy::NetworkDomainPermission;
-use codex_protocol::models::ManagedFileSystemPermissions;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::NetworkSandboxPolicy;
+use motyga_config::NetworkDomainPermissionToml;
+use motyga_config::NetworkDomainPermissionsToml;
+use motyga_network_proxy::NetworkDomainPermission;
+use motyga_protocol::models::ManagedFileSystemPermissions;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
 use pretty_assertions::assert_eq;
 
 fn domain_permissions(

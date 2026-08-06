@@ -1,8 +1,8 @@
 import path from "node:path";
 
-export function codexPathOverride() {
+export function motygaPathOverride() {
   return (
-    process.env.CODEX_EXECUTABLE ??
-    path.join(process.cwd(), "..", "..", "motyga-rs", "target", "debug", "codex")
+    process.env.MOTYGA_EXECUTABLE ??
+    path.join(process.cwd(), "..", "..", "motyga-rs", "target", "debug", "motyga")
   );
 }

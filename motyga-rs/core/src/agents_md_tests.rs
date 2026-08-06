@@ -3,24 +3,24 @@ use crate::config::ConfigBuilder;
 use crate::context::ContextualUserFragment;
 use crate::environment_selection::TurnEnvironmentSnapshot;
 use crate::session::turn_context::TurnEnvironment;
-use codex_config::ConfigLayerEntry;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigRequirements;
-use codex_config::ConfigRequirementsToml;
-use codex_exec_server::CopyOptions;
-use codex_exec_server::CreateDirectoryOptions;
-use codex_exec_server::Environment;
-use codex_exec_server::ExecutorFileSystemFuture;
-use codex_exec_server::FileMetadata;
-use codex_exec_server::FileSystemReadStream;
-use codex_exec_server::FileSystemSandboxContext;
-use codex_exec_server::LOCAL_FS;
-use codex_exec_server::ReadDirectoryEntry;
-use codex_exec_server::RemoveOptions;
-use codex_extension_api::UserInstructions;
-use codex_features::Feature;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_config::ConfigLayerEntry;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigRequirements;
+use motyga_config::ConfigRequirementsToml;
+use motyga_exec_server::CopyOptions;
+use motyga_exec_server::CreateDirectoryOptions;
+use motyga_exec_server::Environment;
+use motyga_exec_server::ExecutorFileSystemFuture;
+use motyga_exec_server::FileMetadata;
+use motyga_exec_server::FileSystemReadStream;
+use motyga_exec_server::FileSystemSandboxContext;
+use motyga_exec_server::LOCAL_FS;
+use motyga_exec_server::ReadDirectoryEntry;
+use motyga_exec_server::RemoveOptions;
+use motyga_extension_api::UserInstructions;
+use motyga_features::Feature;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathBufExt;
 use core_test_support::TempDirExt;
 use core_test_support::create_directory_symlink;
@@ -323,13 +323,13 @@ fn project_provenance(path: AbsolutePathBuf, cwd: AbsolutePathBuf) -> Instructio
 fn foreign_agents_md_uses_environment_native_paths() {
     let (cwd, rendered_cwd) = if cfg!(windows) {
         (
-            PathUri::parse("file:///codex%20runtime").expect("POSIX cwd URI"),
-            "/codex runtime",
+            PathUri::parse("file:///motyga%20runtime").expect("POSIX cwd URI"),
+            "/motyga runtime",
         )
     } else {
         (
-            PathUri::parse("file:///C:/codex%20runtime").expect("Windows cwd URI"),
-            r"C:\codex runtime",
+            PathUri::parse("file:///C:/motyga%20runtime").expect("Windows cwd URI"),
+            r"C:\motyga runtime",
         )
     };
     let source_path = cwd.join("AGENTS.md").expect("AGENTS.md URI");
@@ -414,9 +414,9 @@ Windows instructions
 /// value is cleared to mimic a scenario where no system instructions have
 /// been configured.
 async fn make_config(root: &TempDir, limit: usize, instructions: Option<&str>) -> TestConfig {
-    let codex_home = TempDir::new().unwrap();
+    let motyga_home = TempDir::new().unwrap();
     let mut config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .build()
         .await
         .expect("defaults for test should always succeed");
@@ -426,7 +426,7 @@ async fn make_config(root: &TempDir, limit: usize, instructions: Option<&str>) -
 
     let user_instructions = instructions.map(|text| UserInstructions {
         text: text.to_owned(),
-        source: config.codex_home.join(DEFAULT_AGENTS_MD_FILENAME),
+        source: config.motyga_home.join(DEFAULT_AGENTS_MD_FILENAME),
     });
     TestConfig {
         config,
@@ -454,7 +454,7 @@ async fn make_config_with_project_root_markers(
     instructions: Option<&str>,
     markers: &[&str],
 ) -> TestConfig {
-    let codex_home = TempDir::new().unwrap();
+    let motyga_home = TempDir::new().unwrap();
     let cli_overrides = vec![(
         "project_root_markers".to_string(),
         TomlValue::Array(
@@ -465,7 +465,7 @@ async fn make_config_with_project_root_markers(
         ),
     )];
     let mut config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cli_overrides(cli_overrides)
         .build()
         .await
@@ -475,7 +475,7 @@ async fn make_config_with_project_root_markers(
     config.project_doc_max_bytes = limit;
     let user_instructions = instructions.map(|text| UserInstructions {
         text: text.to_owned(),
-        source: config.codex_home.join(DEFAULT_AGENTS_MD_FILENAME),
+        source: config.motyga_home.join(DEFAULT_AGENTS_MD_FILENAME),
     });
     TestConfig {
         config,
@@ -1167,7 +1167,7 @@ async fn concatenates_root_and_cwd_docs() {
 #[tokio::test]
 async fn project_root_markers_are_honored_for_agents_discovery() {
     let root = tempfile::tempdir().expect("tempdir");
-    fs::write(root.path().join(".codex-root"), "").unwrap();
+    fs::write(root.path().join(".motyga-root"), "").unwrap();
     fs::write(root.path().join("AGENTS.md"), "parent doc").unwrap();
 
     let nested = root.path().join("dir1");
@@ -1178,7 +1178,7 @@ async fn project_root_markers_are_honored_for_agents_discovery() {
         &root,
         /*limit*/ 4096,
         /*instructions*/ None,
-        &[".codex-root"],
+        &[".motyga-root"],
     )
     .await;
     cfg.cwd = nested.abs();
@@ -1205,9 +1205,9 @@ async fn project_layers_do_not_override_project_root_markers() {
 
     let mut config = make_config(&root, /*limit*/ 4096, /*instructions*/ None).await;
     config.cwd = nested.abs();
-    let project_layer = |dot_codex_folder: AbsolutePathBuf, marker: &str| {
+    let project_layer = |dot_motyga_folder: AbsolutePathBuf, marker: &str| {
         ConfigLayerEntry::new(
-            ConfigLayerSource::Project { dot_codex_folder },
+            ConfigLayerSource::Project { dot_motyga_folder },
             TomlValue::Table(
                 [(
                     "project_root_markers".to_string(),
@@ -1268,8 +1268,8 @@ async fn instruction_sources_include_global_before_agents_md_docs() {
     fs::write(tmp.path().join("AGENTS.md"), "project doc").unwrap();
 
     let cfg = make_config(&tmp, /*limit*/ 4096, Some("global doc")).await;
-    let global_agents = cfg.codex_home.join(DEFAULT_AGENTS_MD_FILENAME);
-    fs::create_dir_all(&cfg.codex_home).unwrap();
+    let global_agents = cfg.motyga_home.join(DEFAULT_AGENTS_MD_FILENAME);
+    fs::create_dir_all(&cfg.motyga_home).unwrap();
     fs::write(&global_agents, "global doc").unwrap();
 
     let loaded = load_agents_md(&cfg).await.expect("instructions expected");
@@ -1437,7 +1437,7 @@ async fn skills_are_not_appended_to_agents_md() {
 
     let cfg = make_config(&tmp, /*limit*/ 4096, /*instructions*/ None).await;
     create_skill(
-        cfg.codex_home.to_path_buf(),
+        cfg.motyga_home.to_path_buf(),
         "pdf-processing",
         "extract from pdfs",
     );
@@ -1476,8 +1476,8 @@ async fn apps_feature_does_not_append_to_agents_md_user_instructions() {
     assert_eq!(res, "base doc");
 }
 
-fn create_skill(codex_home: PathBuf, name: &str, description: &str) {
-    let skill_dir = codex_home.join(format!("skills/{name}"));
+fn create_skill(motyga_home: PathBuf, name: &str, description: &str) {
+    let skill_dir = motyga_home.join(format!("skills/{name}"));
     fs::create_dir_all(&skill_dir).unwrap();
     let content = format!("---\nname: {name}\ndescription: {description}\n---\n\n# Body\n");
     fs::write(skill_dir.join("SKILL.md"), content).unwrap();

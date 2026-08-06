@@ -1,9 +1,9 @@
 use crate::config::Config;
-use codex_config::types::ToolSuggestDiscoverableType;
-use codex_core_plugins::PluginsManager;
-use codex_core_plugins::ToolSuggestPluginDiscoveryInput;
-use codex_login::CodexAuth;
-use codex_tools::DiscoverablePluginInfo;
+use motyga_config::types::ToolSuggestDiscoverableType;
+use motyga_core_plugins::PluginsManager;
+use motyga_core_plugins::ToolSuggestPluginDiscoveryInput;
+use motyga_login::MotygaAuth;
+use motyga_tools::DiscoverablePluginInfo;
 use std::collections::HashSet;
 use tracing::instrument;
 
@@ -11,7 +11,7 @@ use tracing::instrument;
 pub(crate) async fn list_tool_suggest_discoverable_plugins(
     config: &Config,
     plugins_manager: &PluginsManager,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     loaded_plugin_app_connector_ids: &[String],
 ) -> anyhow::Result<Vec<DiscoverablePluginInfo>> {
     let input = ToolSuggestPluginDiscoveryInput {

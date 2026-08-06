@@ -1,4 +1,4 @@
-use codex_client::OutboundProxyConfig;
+use motyga_client::OutboundProxyConfig;
 
 /// Auth-layer adapter around client-owned proxy policy.
 ///

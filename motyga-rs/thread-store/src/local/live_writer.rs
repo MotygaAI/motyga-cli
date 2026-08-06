@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::ThreadMemoryMode;
-use codex_rollout::RolloutConfig;
-use codex_rollout::RolloutRecorder;
-use codex_rollout::RolloutRecorderParams;
-use codex_rollout::persisted_rollout_items;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::ThreadMemoryMode;
+use motyga_rollout::RolloutConfig;
+use motyga_rollout::RolloutRecorder;
+use motyga_rollout::RolloutRecorderParams;
+use motyga_rollout::persisted_rollout_items;
 use tracing::warn;
 
 use super::LocalThreadStore;
@@ -19,7 +19,7 @@ use crate::ThreadStoreResult;
 use crate::error::reject_paginated_history_mode;
 use crate::types::canonical_history_mode_from_rollout_items;
 
-const ROLLOUT_SIZE_BYTES_METRIC: &str = "codex.rollout.size_bytes";
+const ROLLOUT_SIZE_BYTES_METRIC: &str = "motyga.rollout.size_bytes";
 
 pub(super) async fn create_thread(
     store: &LocalThreadStore,
@@ -90,7 +90,7 @@ pub(super) async fn resume_thread(
             message: "local thread store requires a cwd".to_string(),
         })?;
     let config = RolloutConfig {
-        codex_home: store.config.codex_home.clone(),
+        motyga_home: store.config.motyga_home.clone(),
         sqlite_home: store.config.sqlite_home.clone(),
         cwd,
         model_provider_id: params.metadata.model_provider.clone(),
@@ -163,7 +163,7 @@ pub(super) async fn shutdown_thread(
     let rollout_path = recorder.rollout_path().to_path_buf();
     recorder.shutdown().await.map_err(thread_store_io_error)?;
     sync_materialized_rollout_path(store, thread_id).await?;
-    if let Some(metrics) = codex_otel::global()
+    if let Some(metrics) = motyga_otel::global()
         && let Ok(metadata) = tokio::fs::metadata(rollout_path).await
     {
         let size_bytes = i64::try_from(metadata.len()).unwrap_or(i64::MAX);
@@ -206,7 +206,7 @@ async fn sync_materialized_rollout_path(
     thread_id: ThreadId,
 ) -> ThreadStoreResult<()> {
     let rollout_path = rollout_path(store, thread_id).await?;
-    if codex_rollout::existing_rollout_path(rollout_path.as_path())
+    if motyga_rollout::existing_rollout_path(rollout_path.as_path())
         .await
         .is_none()
     {

@@ -32,7 +32,7 @@ use serde::Serialize;
 /// Identifies the handshake pattern and algorithms used by this channel.
 pub(crate) const NOISE_CHANNEL_SUITE: &str = "Noise_hybridIK_X25519+MLKEM768_AESGCM_SHA256";
 
-const PROLOGUE_DOMAIN: &[u8] = b"codex-exec-server-relay-noise/v1";
+const PROLOGUE_DOMAIN: &[u8] = b"motyga-exec-server-relay-noise/v1";
 
 type Handshake = HybridHandshake<X25519, MlKem768, MlKem768, AesGcm, Sha256>;
 type Transport = TransportState<AesGcm, Sha256>;

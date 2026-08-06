@@ -7,38 +7,38 @@ use tokio::process::Command;
 
 // Placeholder Motyga Desktop download URLs. This path is not invoked yet (see
 // app_cmd::run_app); wire these to the real Motyga Desktop installers when it ships.
-const CODEX_DMG_URL_ARM64: &str = "https://motyga.com/desktop/Motyga.dmg";
-const CODEX_DMG_URL_X64: &str = "https://motyga.com/desktop/Motyga-latest-x64.dmg";
+const MOTYGA_DMG_URL_ARM64: &str = "https://motyga.com/desktop/Motyga.dmg";
+const MOTYGA_DMG_URL_X64: &str = "https://motyga.com/desktop/Motyga-latest-x64.dmg";
 
 pub async fn run_mac_app_open_or_install(
     workspace: PathBuf,
     download_url_override: Option<String>,
 ) -> anyhow::Result<()> {
-    if let Some(app_path) = find_existing_codex_app_path() {
+    if let Some(app_path) = find_existing_motyga_app_path() {
         eprintln!(
             "Opening Motyga Desktop at {app_path}...",
             app_path = app_path.display()
         );
-        open_codex_app(&app_path, &workspace).await?;
+        open_motyga_app(&app_path, &workspace).await?;
         return Ok(());
     }
     eprintln!("Motyga Desktop not found; downloading installer...");
     let download_url = download_url_override.unwrap_or_else(|| {
         let default_url = if is_apple_silicon_mac() {
-            CODEX_DMG_URL_ARM64
+            MOTYGA_DMG_URL_ARM64
         } else {
-            CODEX_DMG_URL_X64
+            MOTYGA_DMG_URL_X64
         };
         default_url.to_string()
     });
-    let installed_app = download_and_install_codex_to_user_applications(&download_url)
+    let installed_app = download_and_install_motyga_to_user_applications(&download_url)
         .await
         .context("failed to download/install Motyga Desktop")?;
     eprintln!(
         "Launching Motyga Desktop from {installed_app}...",
         installed_app = installed_app.display()
     );
-    open_codex_app(&installed_app, &workspace).await?;
+    open_motyga_app(&installed_app, &workspace).await?;
     Ok(())
 }
 
@@ -64,26 +64,26 @@ fn is_apple_silicon_mac() -> bool {
         || macos_sysctl_flag("hw.optional.arm64").unwrap_or(false)
 }
 
-fn find_existing_codex_app_path() -> Option<PathBuf> {
-    candidate_codex_app_paths()
+fn find_existing_motyga_app_path() -> Option<PathBuf> {
+    candidate_motyga_app_paths()
         .into_iter()
         .find(|candidate| candidate.is_dir())
 }
 
-fn candidate_codex_app_paths() -> Vec<PathBuf> {
-    let mut paths = vec![PathBuf::from("/Applications/Codex.app")];
+fn candidate_motyga_app_paths() -> Vec<PathBuf> {
+    let mut paths = vec![PathBuf::from("/Applications/Motyga.app")];
     if let Some(home) = std::env::var_os("HOME") {
-        paths.push(PathBuf::from(home).join("Applications").join("Codex.app"));
+        paths.push(PathBuf::from(home).join("Applications").join("Motyga.app"));
     }
     paths
 }
 
-async fn open_codex_app(app_path: &Path, workspace: &Path) -> anyhow::Result<()> {
+async fn open_motyga_app(app_path: &Path, workspace: &Path) -> anyhow::Result<()> {
     eprintln!(
         "Opening workspace {workspace}...",
         workspace = workspace.display()
     );
-    let url = codex_new_thread_url(workspace);
+    let url = motyga_new_thread_url(workspace);
     let status = Command::new("open")
         .arg("-a")
         .arg(app_path)
@@ -103,23 +103,23 @@ async fn open_codex_app(app_path: &Path, workspace: &Path) -> anyhow::Result<()>
     );
 }
 
-fn codex_new_thread_url(workspace: &Path) -> String {
+fn motyga_new_thread_url(workspace: &Path) -> String {
     let workspace = workspace.as_os_str().to_string_lossy();
     let mut serializer = url::form_urlencoded::Serializer::new(String::new());
     serializer.append_pair("path", workspace.as_ref());
     let query = serializer.finish();
-    format!("codex://threads/new?{query}")
+    format!("motyga://threads/new?{query}")
 }
 
-async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyhow::Result<PathBuf> {
+async fn download_and_install_motyga_to_user_applications(dmg_url: &str) -> anyhow::Result<PathBuf> {
     let temp_dir = Builder::new()
-        .prefix("codex-app-installer-")
+        .prefix("motyga-app-installer-")
         .tempdir()
         .context("failed to create temp dir")?;
     let tmp_root = temp_dir.path().to_path_buf();
     let _temp_dir = temp_dir;
 
-    let dmg_path = tmp_root.join("Codex.dmg");
+    let dmg_path = tmp_root.join("Motyga.dmg");
     download_dmg(dmg_url, &dmg_path).await?;
 
     eprintln!("Mounting Motyga Desktop installer...");
@@ -129,9 +129,9 @@ async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyho
         mount_point = mount_point.display()
     );
     let result = async {
-        let app_in_volume = find_codex_app_in_mount(&mount_point)
-            .context("failed to locate Codex.app in mounted dmg")?;
-        install_codex_app_bundle(&app_in_volume).await
+        let app_in_volume = find_motyga_app_in_mount(&mount_point)
+            .context("failed to locate Motyga.app in mounted dmg")?;
+        install_motyga_app_bundle(&app_in_volume).await
     }
     .await;
 
@@ -146,7 +146,7 @@ async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyho
     result
 }
 
-async fn install_codex_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBuf> {
+async fn install_motyga_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBuf> {
     for applications_dir in candidate_applications_dirs()? {
         eprintln!(
             "Installing Motyga Desktop into {applications_dir}...",
@@ -159,7 +159,7 @@ async fn install_codex_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBu
             )
         })?;
 
-        let dest_app = applications_dir.join("Codex.app");
+        let dest_app = applications_dir.join("Motyga.app");
         if dest_app.is_dir() {
             return Ok(dest_app);
         }
@@ -168,14 +168,14 @@ async fn install_codex_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBu
             Ok(()) => return Ok(dest_app),
             Err(err) => {
                 eprintln!(
-                    "warning: failed to install Codex.app to {applications_dir}: {err}",
+                    "warning: failed to install Motyga.app to {applications_dir}: {err}",
                     applications_dir = applications_dir.display()
                 );
             }
         }
     }
 
-    anyhow::bail!("failed to install Codex.app to any applications directory");
+    anyhow::bail!("failed to install Motyga.app to any applications directory");
 }
 
 fn candidate_applications_dirs() -> anyhow::Result<Vec<PathBuf>> {
@@ -243,8 +243,8 @@ async fn detach_dmg(mount_point: &Path) -> anyhow::Result<()> {
     anyhow::bail!("hdiutil detach failed with {status}");
 }
 
-fn find_codex_app_in_mount(mount_point: &Path) -> anyhow::Result<PathBuf> {
-    let direct = mount_point.join("Codex.app");
+fn find_motyga_app_in_mount(mount_point: &Path) -> anyhow::Result<PathBuf> {
+    let direct = mount_point.join("Motyga.app");
     if direct.is_dir() {
         return Ok(direct);
     }
@@ -303,32 +303,32 @@ fn parse_hdiutil_attach_mount_point(output: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::codex_new_thread_url;
+    use super::motyga_new_thread_url;
     use super::parse_hdiutil_attach_mount_point;
     use pretty_assertions::assert_eq;
     use std::path::Path;
 
     #[test]
     fn parses_mount_point_from_tab_separated_hdiutil_output() {
-        let output = "/dev/disk2s1\tApple_HFS\tCodex\t/Volumes/Codex\n";
+        let output = "/dev/disk2s1\tApple_HFS\tMotyga\t/Volumes/Motyga\n";
         assert_eq!(
             parse_hdiutil_attach_mount_point(output).as_deref(),
-            Some("/Volumes/Codex")
+            Some("/Volumes/Motyga")
         );
     }
 
     #[test]
     fn parses_mount_point_with_spaces() {
-        let output = "/dev/disk2s1\tApple_HFS\tCodex Installer\t/Volumes/Codex Installer\n";
+        let output = "/dev/disk2s1\tApple_HFS\tMotyga Installer\t/Volumes/Motyga Installer\n";
         assert_eq!(
             parse_hdiutil_attach_mount_point(output).as_deref(),
-            Some("/Volumes/Codex Installer")
+            Some("/Volumes/Motyga Installer")
         );
     }
 
     #[test]
-    fn codex_new_thread_url_encodes_workspace_path() {
-        let url = url::Url::parse(&codex_new_thread_url(Path::new("/tmp/codex workspace/#1")))
+    fn motyga_new_thread_url_encodes_workspace_path() {
+        let url = url::Url::parse(&motyga_new_thread_url(Path::new("/tmp/motyga workspace/#1")))
             .expect("deep link should parse");
 
         assert_eq!(
@@ -339,10 +339,10 @@ mod tests {
                 url.query_pairs().into_owned().collect::<Vec<_>>(),
             ),
             (
-                "codex".to_string(),
+                "motyga".to_string(),
                 Some("threads".to_string()),
                 "/new".to_string(),
-                vec![("path".to_string(), "/tmp/codex workspace/#1".to_string())],
+                vec![("path".to_string(), "/tmp/motyga workspace/#1".to_string())],
             )
         );
     }

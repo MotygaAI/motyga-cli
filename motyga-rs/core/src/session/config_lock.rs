@@ -1,17 +1,17 @@
 use anyhow::Context;
-use codex_config::config_toml::ConfigLockfileToml;
-use codex_config::config_toml::ConfigToml;
-use codex_config::config_toml::OrchestratorFeatureToml;
-use codex_config::config_toml::OrchestratorToml;
-use codex_config::types::MemoriesToml;
-use codex_features::CurrentTimeReminderConfigToml;
-use codex_features::Feature;
-use codex_features::FeatureToml;
-use codex_features::FeaturesToml;
-use codex_features::MultiAgentV2ConfigToml;
-use codex_features::RolloutBudgetConfigToml;
-use codex_features::TokenBudgetConfigToml;
-use codex_protocol::ThreadId;
+use motyga_config::config_toml::ConfigLockfileToml;
+use motyga_config::config_toml::ConfigToml;
+use motyga_config::config_toml::OrchestratorFeatureToml;
+use motyga_config::config_toml::OrchestratorToml;
+use motyga_config::types::MemoriesToml;
+use motyga_features::CurrentTimeReminderConfigToml;
+use motyga_features::Feature;
+use motyga_features::FeatureToml;
+use motyga_features::FeaturesToml;
+use motyga_features::MultiAgentV2ConfigToml;
+use motyga_features::RolloutBudgetConfigToml;
+use motyga_features::TokenBudgetConfigToml;
+use motyga_protocol::ThreadId;
 
 use crate::config::Config;
 use crate::config_lock::ConfigLockReplayOptions;
@@ -38,7 +38,7 @@ pub(crate) async fn validate_config_lock_if_configured(
     let actual = session_configuration.to_config_lockfile_toml()?;
     let config = session_configuration.original_config_do_not_use.as_ref();
     let options = ConfigLockReplayOptions {
-        allow_codex_version_mismatch: config.config_lock_allow_codex_version_mismatch,
+        allow_motyga_version_mismatch: config.config_lock_allow_motyga_version_mismatch,
     };
     validate_config_lock_replay(expected, &actual, options)
         .context("config lock replay validation failed")?;
@@ -126,7 +126,7 @@ fn save_session_resolved_fields(sc: &SessionConfiguration, lock_config: &mut Con
 /// normalization, defaulting, or feature materialization.
 ///
 /// Persist the resolved representation so replay compares against the behavior
-/// Codex actually ran with, not only the user-authored TOML inputs.
+/// Motyga actually ran with, not only the user-authored TOML inputs.
 fn save_config_resolved_fields(
     config: &Config,
     lock_config: &mut ConfigToml,
@@ -299,7 +299,7 @@ mod tests {
             .as_ref()
             .expect("lock should materialize feature states");
         let feature_entries = features.entries();
-        for spec in codex_features::FEATURES {
+        for spec in motyga_features::FEATURES {
             assert_eq!(
                 feature_entries.get(spec.key),
                 Some(&sc.original_config_do_not_use.features.enabled(spec.id)),
@@ -360,8 +360,8 @@ mod tests {
             Some(FeatureToml::Config(CurrentTimeReminderConfigToml {
                 enabled: Some(true),
                 reminder_interval_seconds: Some(1),
-                clock_source: Some(codex_features::CurrentTimeSource::System),
-                delivery_mode: Some(codex_features::CurrentTimeReminderDeliveryMode::AnyInference),
+                clock_source: Some(motyga_features::CurrentTimeSource::System),
+                delivery_mode: Some(motyga_features::CurrentTimeReminderDeliveryMode::AnyInference),
                 sleep_tool: Some(false),
             }))
         );
@@ -440,10 +440,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn lock_validation_rejects_codex_version_mismatch_by_default() {
+    async fn lock_validation_rejects_motyga_version_mismatch_by_default() {
         let sc = crate::session::tests::make_session_configuration_for_tests().await;
         let mut expected = sc.to_config_lockfile_toml().expect("lock should serialize");
-        expected.codex_version = "older-version".to_string();
+        expected.motyga_version = "older-version".to_string();
         let actual = sc.to_config_lockfile_toml().expect("lock should serialize");
 
         let error =
@@ -455,23 +455,23 @@ mod tests {
             "{message}"
         );
         assert!(
-            message.contains("debug.config_lockfile.allow_codex_version_mismatch=true"),
+            message.contains("debug.config_lockfile.allow_motyga_version_mismatch=true"),
             "{message}"
         );
     }
 
     #[tokio::test]
-    async fn lock_validation_can_ignore_codex_version_mismatch() {
+    async fn lock_validation_can_ignore_motyga_version_mismatch() {
         let sc = crate::session::tests::make_session_configuration_for_tests().await;
         let mut expected = sc.to_config_lockfile_toml().expect("lock should serialize");
-        expected.codex_version = "older-version".to_string();
+        expected.motyga_version = "older-version".to_string();
         let actual = sc.to_config_lockfile_toml().expect("lock should serialize");
 
         validate_config_lock_replay(
             &expected,
             &actual,
             ConfigLockReplayOptions {
-                allow_codex_version_mismatch: true,
+                allow_motyga_version_mismatch: true,
             },
         )
         .expect("version drift should be ignored");

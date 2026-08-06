@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use codex_core::CodexThread;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::FileChange;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ReviewDecision;
+use motyga_core::MotygaThread;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::FileChange;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ReviewDecision;
 use rmcp::model::ErrorData;
 use rmcp::model::RequestId;
 use serde::Deserialize;
@@ -24,15 +24,15 @@ pub struct PatchApprovalElicitRequestParams {
     pub requested_schema: Value,
     #[serde(rename = "threadId")]
     pub thread_id: ThreadId,
-    pub codex_elicitation: String,
-    pub codex_mcp_tool_call_id: String,
-    pub codex_event_id: String,
-    pub codex_call_id: String,
+    pub motyga_elicitation: String,
+    pub motyga_mcp_tool_call_id: String,
+    pub motyga_event_id: String,
+    pub motyga_call_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub codex_reason: Option<String>,
+    pub motyga_reason: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub codex_grant_root: Option<PathBuf>,
-    pub codex_changes: HashMap<PathBuf, FileChange>,
+    pub motyga_grant_root: Option<PathBuf>,
+    pub motyga_changes: HashMap<PathBuf, FileChange>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -47,7 +47,7 @@ pub(crate) async fn handle_patch_approval_request(
     grant_root: Option<PathBuf>,
     changes: HashMap<PathBuf, FileChange>,
     outgoing: Arc<OutgoingMessageSender>,
-    codex: Arc<CodexThread>,
+    motyga: Arc<MotygaThread>,
     request_id: RequestId,
     tool_call_id: String,
     event_id: String,
@@ -64,13 +64,13 @@ pub(crate) async fn handle_patch_approval_request(
         message: message_lines.join("\n"),
         requested_schema: json!({"type":"object","properties":{}}),
         thread_id,
-        codex_elicitation: "patch-approval".to_string(),
-        codex_mcp_tool_call_id: tool_call_id.clone(),
-        codex_event_id: event_id.clone(),
-        codex_call_id: call_id,
-        codex_reason: reason,
-        codex_grant_root: grant_root,
-        codex_changes: changes,
+        motyga_elicitation: "patch-approval".to_string(),
+        motyga_mcp_tool_call_id: tool_call_id.clone(),
+        motyga_event_id: event_id.clone(),
+        motyga_call_id: call_id,
+        motyga_reason: reason,
+        motyga_grant_root: grant_root,
+        motyga_changes: changes,
     };
     let params_json = match serde_json::to_value(&params) {
         Ok(value) => value,
@@ -92,10 +92,10 @@ pub(crate) async fn handle_patch_approval_request(
 
     // Listen for the response on a separate task so we don't block the main agent loop.
     {
-        let codex = codex.clone();
+        let motyga = motyga.clone();
         let approval_id = approval_id.clone();
         tokio::spawn(async move {
-            on_patch_approval_response(approval_id, on_response, codex).await;
+            on_patch_approval_response(approval_id, on_response, motyga).await;
         });
     }
 }
@@ -103,14 +103,14 @@ pub(crate) async fn handle_patch_approval_request(
 pub(crate) async fn on_patch_approval_response(
     approval_id: String,
     receiver: tokio::sync::oneshot::Receiver<serde_json::Value>,
-    codex: Arc<CodexThread>,
+    motyga: Arc<MotygaThread>,
 ) {
     let response = receiver.await;
     let value = match response {
         Ok(value) => value,
         Err(err) => {
             error!("request failed: {err:?}");
-            if let Err(submit_err) = codex
+            if let Err(submit_err) = motyga
                 .submit(Op::PatchApproval {
                     id: approval_id.clone(),
                     decision: ReviewDecision::Denied,
@@ -130,7 +130,7 @@ pub(crate) async fn on_patch_approval_response(
         }
     });
 
-    if let Err(err) = codex
+    if let Err(err) = motyga
         .submit(Op::PatchApproval {
             id: approval_id,
             decision: response.decision,

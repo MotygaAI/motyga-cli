@@ -1,6 +1,6 @@
 use crate::protocol::EventMsg;
 use crate::protocol::RolloutItem;
-use codex_protocol::models::ResponseItem;
+use motyga_protocol::models::ResponseItem;
 
 /// Whether a rollout `item` should be persisted in rollout files.
 pub fn is_persisted_rollout_item(item: &RolloutItem) -> bool {
@@ -9,7 +9,7 @@ pub fn is_persisted_rollout_item(item: &RolloutItem) -> bool {
         RolloutItem::InterAgentCommunication(_)
         | RolloutItem::InterAgentCommunicationMetadata { .. } => true,
         RolloutItem::EventMsg(ev) => should_persist_event_msg(ev),
-        // Persist Codex executive markers so we can analyze flows (e.g., compaction, API turns).
+        // Persist Motyga executive markers so we can analyze flows (e.g., compaction, API turns).
         RolloutItem::Compacted(_)
         | RolloutItem::TurnContext(_)
         | RolloutItem::WorldState(_)
@@ -104,8 +104,8 @@ pub fn should_persist_event_msg(ev: &EventMsg) -> bool {
             // item lifecycle event.
             matches!(
                 event.item,
-                codex_protocol::items::TurnItem::Plan(_)
-                    | codex_protocol::items::TurnItem::Sleep(_)
+                motyga_protocol::items::TurnItem::Plan(_)
+                    | motyga_protocol::items::TurnItem::Sleep(_)
             )
         }
         EventMsg::Error(_)

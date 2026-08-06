@@ -1,7 +1,7 @@
 //! Safety-buffering status and retry UI for active turns.
 
 use super::*;
-use codex_app_server_protocol::ModelSafetyBufferingUpdatedNotification;
+use motyga_app_server_protocol::ModelSafetyBufferingUpdatedNotification;
 
 const SAFETY_BUFFERING_PROMPT_VIEW_ID: &str = "safety-buffering-prompt";
 const SAFETY_BUFFERING_LEARN_MORE_URL: &str = "https://motyga.com/docs";

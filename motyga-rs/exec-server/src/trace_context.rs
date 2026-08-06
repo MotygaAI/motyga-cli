@@ -3,7 +3,7 @@ use reqwest::header::HeaderValue;
 
 pub(crate) fn current_trace_context_headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
-    let Some(trace) = codex_otel::current_span_w3c_trace_context() else {
+    let Some(trace) = motyga_otel::current_span_w3c_trace_context() else {
         return headers;
     };
     if let Some(traceparent) = trace.traceparent

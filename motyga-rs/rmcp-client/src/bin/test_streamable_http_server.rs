@@ -62,7 +62,7 @@ struct TestToolServer {
     resource_templates: Arc<Vec<ResourceTemplate>>,
 }
 
-const MEMO_URI: &str = "memo://codex/example-note";
+const MEMO_URI: &str = "memo://motyga/example-note";
 const MEMO_CONTENT: &str = "This is a sample MCP resource served by the rmcp test server.";
 const MCP_SESSION_ID_HEADER: &str = "mcp-session-id";
 const SESSION_POST_FAILURE_CONTROL_PATH: &str = "/test/control/session-post-failure";
@@ -385,11 +385,11 @@ impl TestToolServer {
 
     fn memo_template() -> ResourceTemplate {
         let raw = RawResourceTemplate {
-            uri_template: "memo://codex/{slug}".to_string(),
-            name: "codex-memo".to_string(),
+            uri_template: "memo://motyga/{slug}".to_string(),
+            name: "motyga-memo".to_string(),
             title: Some("Motyga Memo".to_string()),
             description: Some(
-                "Template for memo://codex/{slug} resources used in tests.".to_string(),
+                "Template for memo://motyga/{slug} resources used in tests.".to_string(),
             ),
             mime_type: Some("text/plain".to_string()),
             icons: None,

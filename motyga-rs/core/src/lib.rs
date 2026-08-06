@@ -1,4 +1,4 @@
-//! Root of the `codex-core` library.
+//! Root of the `motyga-core` library.
 
 // Prevent accidental direct writes to stdout/stderr in library code. All
 // user-visible output must go through the appropriate abstraction (e.g.,
@@ -15,25 +15,25 @@ mod realtime_prompt;
 mod responses_metadata;
 mod responses_retry;
 pub(crate) mod session;
-pub use responses_metadata::CodexResponsesMetadata;
+pub use responses_metadata::MotygaResponsesMetadata;
 pub use session::SteerInputError;
 pub use turn_metadata::detached_memory_responses_metadata;
-mod codex_thread;
+mod motyga_thread;
 mod compact_remote;
 mod compact_remote_v2;
 mod compact_token_budget;
 mod config_lock;
-pub use codex_thread::BackgroundTerminalInfo;
-pub use codex_thread::CodexThread;
-pub use codex_thread::CodexThreadSettingsOverrides;
-pub use codex_thread::ThreadConfigSnapshot;
-pub use codex_thread::TryStartTurnIfIdleError;
-pub use codex_thread::TryStartTurnIfIdleRejectionReason;
+pub use motyga_thread::BackgroundTerminalInfo;
+pub use motyga_thread::MotygaThread;
+pub use motyga_thread::MotygaThreadSettingsOverrides;
+pub use motyga_thread::ThreadConfigSnapshot;
+pub use motyga_thread::TryStartTurnIfIdleError;
+pub use motyga_thread::TryStartTurnIfIdleRejectionReason;
 pub use session::turn_context::TurnContext;
 mod agent;
 mod agent_communication;
 mod attestation;
-mod codex_delegate;
+mod motyga_delegate;
 mod command_canonicalization;
 pub mod config;
 pub mod connectors;
@@ -63,7 +63,7 @@ pub use network_proxy_loader::MtimeConfigReloader;
 pub use network_proxy_loader::build_network_proxy_state;
 pub use network_proxy_loader::build_network_proxy_state_and_reloader;
 mod original_image_detail;
-pub use codex_mcp::SandboxState;
+pub use motyga_mcp::SandboxState;
 mod mcp_openai_file;
 mod mcp_tool_call;
 pub(crate) mod mention_syntax;
@@ -106,10 +106,10 @@ pub mod test_support;
 mod unified_exec;
 pub mod windows_sandbox;
 pub use client::X_RESPONSESAPI_INCLUDE_TIMING_METRICS_HEADER;
-pub use codex_protocol::config_types::ModelProviderAuthInfo;
+pub use motyga_protocol::config_types::ModelProviderAuthInfo;
 mod event_mapping;
 pub mod review_format;
-pub use codex_prompts as review_prompts;
+pub use motyga_prompts as review_prompts;
 mod thread_manager;
 pub(crate) mod web_search;
 pub(crate) mod windows_sandbox_read_grants;
@@ -128,8 +128,8 @@ pub use windows_sandbox_read_grants::grant_read_root_non_elevated;
 pub type ConversationManager = ThreadManager;
 #[deprecated(note = "use NewThread")]
 pub type NewConversation = NewThread;
-#[deprecated(note = "use CodexThread")]
-pub type CodexConversation = CodexThread;
+#[deprecated(note = "use MotygaThread")]
+pub type MotygaConversation = MotygaThread;
 pub(crate) mod agents_md;
 mod agents_md_manager;
 pub use agents_md::DEFAULT_AGENTS_MD_FILENAME;
@@ -185,12 +185,12 @@ pub use attestation::AttestationProvider;
 pub use attestation::GenerateAttestationFuture;
 pub use client::ModelClient;
 pub use client::ModelClientSession;
-pub use client::X_CODEX_INSTALLATION_ID_HEADER;
-pub use client::X_CODEX_TURN_METADATA_HEADER;
+pub use client::X_MOTYGA_INSTALLATION_ID_HEADER;
+pub use client::X_MOTYGA_TURN_METADATA_HEADER;
 pub use client_common::Prompt;
 pub use client_common::ResponseEvent;
 pub use client_common::ResponseStream;
-pub use codex_prompts::REVIEW_PROMPT;
+pub use motyga_prompts::REVIEW_PROMPT;
 pub use compact::content_items_to_text;
 pub use current_time::SleepFuture;
 pub use current_time::TimeFuture;

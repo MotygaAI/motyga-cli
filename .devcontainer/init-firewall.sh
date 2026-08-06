@@ -2,8 +2,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-allowed_domains_file="/etc/codex/allowed_domains.txt"
-include_github_meta_ranges="${CODEX_INCLUDE_GITHUB_META_RANGES:-1}"
+allowed_domains_file="/etc/motyga/allowed_domains.txt"
+include_github_meta_ranges="${MOTYGA_INCLUDE_GITHUB_META_RANGES:-1}"
 
 if [ -f "$allowed_domains_file" ]; then
   mapfile -t allowed_domains < <(sed '/^\s*#/d;/^\s*$/d' "$allowed_domains_file")

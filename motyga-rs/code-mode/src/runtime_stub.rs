@@ -16,10 +16,10 @@
 use std::collections::HashMap;
 use std::sync::mpsc as std_mpsc;
 
-use codex_code_mode_protocol::CodeModeToolKind;
-use codex_code_mode_protocol::ExecuteRequest;
-use codex_code_mode_protocol::FunctionCallOutputContentItem;
-use codex_protocol::ToolName;
+use motyga_code_mode_protocol::CodeModeToolKind;
+use motyga_code_mode_protocol::ExecuteRequest;
+use motyga_code_mode_protocol::FunctionCallOutputContentItem;
+use motyga_protocol::ToolName;
 use serde_json::Value as JsonValue;
 use tokio::sync::mpsc;
 

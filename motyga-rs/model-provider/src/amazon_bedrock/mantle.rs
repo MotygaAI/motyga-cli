@@ -1,8 +1,8 @@
-use codex_aws_auth::AwsAuthConfig;
-use codex_login::auth::BedrockApiKeyAuth;
-use codex_model_provider_info::ModelProviderAwsAuthInfo;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result;
+use motyga_aws_auth::AwsAuthConfig;
+use motyga_login::auth::BedrockApiKeyAuth;
+use motyga_model_provider_info::ModelProviderAwsAuthInfo;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result;
 
 use super::auth::BedrockAuthMethod;
 use super::auth::resolve_auth_method;
@@ -43,7 +43,7 @@ pub(super) fn base_url(region: &str) -> Result<String> {
     if BEDROCK_MANTLE_SUPPORTED_REGIONS.contains(&region) {
         Ok(format!("https://bedrock-mantle.{region}.api.aws/openai/v1"))
     } else {
-        Err(CodexErr::Fatal(format!(
+        Err(MotygaErr::Fatal(format!(
             "Amazon Bedrock Mantle does not support region `{region}`"
         )))
     }
@@ -96,11 +96,11 @@ mod tests {
     fn aws_auth_config_uses_profile_and_mantle_service() {
         assert_eq!(
             aws_auth_config(&ModelProviderAwsAuthInfo {
-                profile: Some("codex-bedrock".to_string()),
+                profile: Some("motyga-bedrock".to_string()),
                 region: None,
             }),
             AwsAuthConfig {
-                profile: Some("codex-bedrock".to_string()),
+                profile: Some("motyga-bedrock".to_string()),
                 region: None,
                 service: "bedrock-mantle".to_string(),
             }

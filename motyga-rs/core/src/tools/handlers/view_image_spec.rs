@@ -1,7 +1,7 @@
-use codex_protocol::models::VIEW_IMAGE_TOOL_NAME;
-use codex_tools::JsonSchema;
-use codex_tools::ResponsesApiTool;
-use codex_tools::ToolSpec;
+use motyga_protocol::models::VIEW_IMAGE_TOOL_NAME;
+use motyga_tools::JsonSchema;
+use motyga_tools::ResponsesApiTool;
+use motyga_tools::ToolSpec;
 use serde_json::Value;
 use serde_json::json;
 use std::collections::BTreeMap;

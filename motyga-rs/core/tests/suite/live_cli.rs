@@ -1,6 +1,6 @@
 //! Optional smoke tests that hit the real OpenAI /v1/responses endpoint. They are `#[ignore]` by
 //! default so CI stays deterministic and free. Developers can run them locally with
-//! `just test -p codex-core --test all --run-ignored only live_cli` provided they set a valid
+//! `just test -p motyga-core --test all --run-ignored only live_cli` provided they set a valid
 //! `OPENAI_API_KEY`.
 
 use assert_cmd::prelude::*;
@@ -23,8 +23,8 @@ fn run_live(prompt: &str) -> (assert_cmd::assert::Assert, TempDir) {
 
     let dir = TempDir::new().unwrap();
     let home = TempDir::new().unwrap();
-    let codex_home = home.path().join(".motyga");
-    std::fs::create_dir_all(&codex_home).unwrap();
+    let motyga_home = home.path().join(".motyga");
+    std::fs::create_dir_all(&motyga_home).unwrap();
 
     // Build a plain `std::process::Command` so we have full control over the underlying stdio
     // handles. `assert_cmd`’s own `Command` wrapper always forces stdout/stderr to be piped
@@ -32,11 +32,11 @@ fn run_live(prompt: &str) -> (assert_cmd::assert::Assert, TempDir) {
     // implementation). Instead we configure the std `Command` ourselves, then later hand the
     // resulting `Output` to `assert_cmd` for the familiar assertions.
 
-    let mut cmd = Command::new(codex_utils_cargo_bin::cargo_bin("motyga-rs").unwrap());
+    let mut cmd = Command::new(motyga_utils_cargo_bin::cargo_bin("motyga-rs").unwrap());
     cmd.current_dir(dir.path());
     cmd.env("OPENAI_API_KEY", require_api_key());
     cmd.env("HOME", home.path());
-    cmd.env("MOTYGA_HOME", &codex_home);
+    cmd.env("MOTYGA_HOME", &motyga_home);
 
     // We want three things at once:
     //   1. live streaming of the child’s stdout/stderr while the test is running

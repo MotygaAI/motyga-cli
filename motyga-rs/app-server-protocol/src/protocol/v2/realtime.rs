@@ -1,9 +1,9 @@
-use codex_protocol::protocol::ConversationTextRole;
-use codex_protocol::protocol::RealtimeAudioFrame as CoreRealtimeAudioFrame;
-use codex_protocol::protocol::RealtimeConversationVersion;
-use codex_protocol::protocol::RealtimeOutputModality;
-use codex_protocol::protocol::RealtimeVoice;
-use codex_protocol::protocol::RealtimeVoicesList;
+use motyga_protocol::protocol::ConversationTextRole;
+use motyga_protocol::protocol::RealtimeAudioFrame as CoreRealtimeAudioFrame;
+use motyga_protocol::protocol::RealtimeConversationVersion;
+use motyga_protocol::protocol::RealtimeOutputModality;
+use motyga_protocol::protocol::RealtimeVoice;
+use motyga_protocol::protocol::RealtimeVoicesList;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -66,28 +66,28 @@ impl From<ThreadRealtimeAudioChunk> for CoreRealtimeAudioFrame {
 #[ts(export_to = "v2/")]
 pub struct ThreadRealtimeStartParams {
     pub thread_id: String,
-    /// Leaves Codex response handoffs to the client's explicit append calls instead of forwarding
+    /// Leaves Motyga response handoffs to the client's explicit append calls instead of forwarding
     /// them automatically. Defaults to false.
     #[ts(optional = nullable)]
     pub client_managed_handoffs: Option<bool>,
-    /// Sends automatic Codex responses as realtime conversation items instead of handoff appends.
+    /// Sends automatic Motyga responses as realtime conversation items instead of handoff appends.
     #[ts(optional = nullable)]
-    pub codex_responses_as_items: Option<bool>,
-    /// Optional prefix added to automatic Codex response items when `codexResponsesAsItems` is true.
+    pub motyga_responses_as_items: Option<bool>,
+    /// Optional prefix added to automatic Motyga response items when `motygaResponsesAsItems` is true.
     #[ts(optional = nullable)]
-    pub codex_response_item_prefix: Option<String>,
-    /// Optional prefix added to automatic V1 Codex commentary sent with
-    /// `conversation.handoff.append` when `codexResponsesAsItems` is not true. Final answers are
+    pub motyga_response_item_prefix: Option<String>,
+    /// Optional prefix added to automatic V1 Motyga commentary sent with
+    /// `conversation.handoff.append` when `motygaResponsesAsItems` is not true. Final answers are
     /// sent without the prefix.
     #[ts(optional = nullable)]
-    pub codex_response_handoff_prefix: Option<String>,
+    pub motyga_response_handoff_prefix: Option<String>,
     /// Overrides the configured realtime model for this session only.
     #[ts(optional = nullable)]
     pub model: Option<String>,
     /// Selects text or audio output for the realtime session. Transport and voice stay
     /// independent so clients can choose how they connect separately from what the model emits.
     pub output_modality: RealtimeOutputModality,
-    /// Set to false to start without Codex's startup context. Omitted or null includes it.
+    /// Set to false to start without Motyga's startup context. Omitted or null includes it.
     #[ts(optional = nullable)]
     pub include_startup_context: Option<bool>,
     #[serde(

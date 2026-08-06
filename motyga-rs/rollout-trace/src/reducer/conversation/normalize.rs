@@ -3,8 +3,8 @@
 use anyhow::Context;
 use anyhow::Result;
 use anyhow::bail;
-use codex_protocol::models::AgentMessageInputContent;
-use codex_protocol::models::ResponseItem;
+use motyga_protocol::models::AgentMessageInputContent;
+use motyga_protocol::models::ResponseItem;
 use serde_json::Value;
 
 use crate::model::AgentMessageMetadata;

@@ -1,12 +1,12 @@
-# codex-otel
+# motyga-otel
 
-`codex-otel` is the OpenTelemetry integration crate for Codex. It provides:
+`motyga-otel` is the OpenTelemetry integration crate for Motyga. It provides:
 
-- Provider wiring for log/trace/metric exporters (`codex_otel::OtelProvider`
-  and `codex_otel::provider`).
-- Session-scoped business event emission via `codex_otel::SessionTelemetry`.
-- Low-level metrics APIs via `codex_otel::metrics`.
-- Trace-context helpers via `codex_otel::trace_context` and crate-root re-exports.
+- Provider wiring for log/trace/metric exporters (`motyga_otel::OtelProvider`
+  and `motyga_otel::provider`).
+- Session-scoped business event emission via `motyga_otel::SessionTelemetry`.
+- Low-level metrics APIs via `motyga_otel::metrics`.
+- Trace-context helpers via `motyga_otel::trace_context` and crate-root re-exports.
 
 ## Tracing and logs
 
@@ -15,17 +15,17 @@ metrics (when enabled), then attach its layers to your `tracing_subscriber`
 registry:
 
 ```rust
-use codex_otel::config::OtelExporter;
-use codex_otel::config::OtelHttpProtocol;
-use codex_otel::config::OtelSettings;
-use codex_otel::OtelProvider;
+use motyga_otel::config::OtelExporter;
+use motyga_otel::config::OtelHttpProtocol;
+use motyga_otel::config::OtelSettings;
+use motyga_otel::OtelProvider;
 use tracing_subscriber::prelude::*;
 
 let settings = OtelSettings {
     environment: "dev".to_string(),
-    service_name: "codex-cli".to_string(),
+    service_name: "motyga-cli".to_string(),
     service_version: env!("CARGO_PKG_VERSION").to_string(),
-    codex_home: std::path::PathBuf::from("/tmp"),
+    motyga_home: std::path::PathBuf::from("/tmp"),
     exporter: OtelExporter::OtlpHttp {
         endpoint: "https://otlp.example.com".to_string(),
         headers: std::collections::HashMap::new(),
@@ -65,7 +65,7 @@ beta = "two"
 
 Configured tracestate members and encoded values must be valid W3C tracestate.
 Each nested table is encoded as semicolon-separated `key:value` fields inside
-that member. If propagated trace context already has the named member, Codex
+that member. If propagated trace context already has the named member, Motyga
 upserts configured fields and preserves other fields in that member. This
 config shape does not support setting opaque tracestate member values. Invalid
 trace metadata entries are ignored during config load and reported as startup
@@ -74,11 +74,11 @@ warnings.
 ## SessionTelemetry (events)
 
 `SessionTelemetry` adds consistent metadata to tracing events and helps record
-Codex-specific session events. Rich session/business events should go through
+Motyga-specific session events. Rich session/business events should go through
 `SessionTelemetry`; subsystem-owned audit events can stay with the owning subsystem.
 
 ```rust
-use codex_otel::SessionTelemetry;
+use motyga_otel::SessionTelemetry;
 
 let manager = SessionTelemetry::new(
     conversation_id,
@@ -103,17 +103,17 @@ Modes:
 - OTLP: exports metrics via the OpenTelemetry OTLP exporter (HTTP or gRPC).
 - In-memory: records via `opentelemetry_sdk::metrics::InMemoryMetricExporter` for tests/assertions; call `shutdown()` to flush.
 
-`codex-otel` also provides `OtelExporter::Statsig`, a shorthand for exporting OTLP/HTTP JSON metrics
-to Statsig using Codex-internal defaults.
+`motyga-otel` also provides `OtelExporter::Statsig`, a shorthand for exporting OTLP/HTTP JSON metrics
+to Statsig using Motyga-internal defaults.
 
 Statsig ingestion (OTLP/HTTP JSON) example:
 
 ```rust
-use codex_otel::config::{OtelExporter, OtelHttpProtocol};
+use motyga_otel::config::{OtelExporter, OtelHttpProtocol};
 
 let metrics = MetricsClient::new(MetricsConfig::otlp(
     "dev",
-    "codex-cli",
+    "motyga-cli",
     env!("CARGO_PKG_VERSION"),
     OtelExporter::OtlpHttp {
         endpoint: "https://api.statsig.com/otlp".to_string(),
@@ -126,8 +126,8 @@ let metrics = MetricsClient::new(MetricsConfig::otlp(
     },
 ))?;
 
-metrics.counter("codex.session_started", 1, &[("source", "tui")])?;
-metrics.histogram("codex.request_latency", 83, &[("route", "chat")])?;
+metrics.counter("motyga.session_started", 1, &[("source", "tui")])?;
+metrics.histogram("motyga.request_latency", 83, &[("route", "chat")])?;
 ```
 
 In-memory (tests):
@@ -136,11 +136,11 @@ In-memory (tests):
 let exporter = InMemoryMetricExporter::default();
 let metrics = MetricsClient::new(MetricsConfig::in_memory(
     "test",
-    "codex-cli",
+    "motyga-cli",
     env!("CARGO_PKG_VERSION"),
     exporter.clone(),
 ))?;
-metrics.counter("codex.turns", 1, &[("model", "gpt-5.1")])?;
+metrics.counter("motyga.turns", 1, &[("model", "gpt-5.1")])?;
 metrics.shutdown()?; // flushes in-memory exporter
 ```
 
@@ -149,8 +149,8 @@ metrics.shutdown()?; // flushes in-memory exporter
 Trace propagation helpers remain separate from the session event emitter:
 
 ```rust
-use codex_otel::current_span_w3c_trace_context;
-use codex_otel::set_parent_from_w3c_trace_context;
+use motyga_otel::current_span_w3c_trace_context;
+use motyga_otel::set_parent_from_w3c_trace_context;
 ```
 
 ## Shutdown

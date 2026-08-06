@@ -1,31 +1,31 @@
 use super::*;
 use crate::error_code::internal_error;
 use crate::error_code::invalid_request;
-use codex_app_server_protocol::PluginAvailability;
-use codex_app_server_protocol::PluginInstallPolicy;
-use codex_app_server_protocol::PluginSharePrincipalRole;
-use codex_app_server_protocol::PluginShareTargetRole;
-use codex_config::types::McpServerConfig;
-use codex_core_plugins::OPENAI_CURATED_MARKETPLACE_NAME;
-use codex_core_plugins::PluginListBackgroundTaskOptions;
-use codex_core_plugins::is_openai_curated_marketplace_name;
-use codex_core_plugins::remote::REMOTE_CREATED_BY_ME_MARKETPLACE_NAME;
-use codex_core_plugins::remote::REMOTE_GLOBAL_MARKETPLACE_NAME;
-use codex_core_plugins::remote::REMOTE_WORKSPACE_MARKETPLACE_NAME;
-use codex_core_plugins::remote::REMOTE_WORKSPACE_SHARED_WITH_ME_MARKETPLACE_NAME;
-use codex_core_plugins::remote::REMOTE_WORKSPACE_SHARED_WITH_ME_PRIVATE_MARKETPLACE_NAME;
-use codex_core_plugins::remote::REMOTE_WORKSPACE_SHARED_WITH_ME_UNLISTED_MARKETPLACE_NAME;
-use codex_core_plugins::remote::RemoteAppTemplateUnavailableReason;
-use codex_core_plugins::remote::is_valid_remote_plugin_id;
-use codex_core_plugins::remote::validate_remote_plugin_id;
-use codex_core_plugins::remote_bundle::RemotePluginBundleInstallError;
-use codex_mcp::McpOAuthLoginSupport;
-use codex_mcp::oauth_login_support;
-use codex_mcp::should_retry_without_scopes;
-use codex_plugin::PluginId;
-use codex_plugin::PluginTelemetryMetadata;
-use codex_protocol::auth::AuthMode as DomainAuthMode;
-use codex_rmcp_client::perform_oauth_login_silent;
+use motyga_app_server_protocol::PluginAvailability;
+use motyga_app_server_protocol::PluginInstallPolicy;
+use motyga_app_server_protocol::PluginSharePrincipalRole;
+use motyga_app_server_protocol::PluginShareTargetRole;
+use motyga_config::types::McpServerConfig;
+use motyga_core_plugins::OPENAI_CURATED_MARKETPLACE_NAME;
+use motyga_core_plugins::PluginListBackgroundTaskOptions;
+use motyga_core_plugins::is_openai_curated_marketplace_name;
+use motyga_core_plugins::remote::REMOTE_CREATED_BY_ME_MARKETPLACE_NAME;
+use motyga_core_plugins::remote::REMOTE_GLOBAL_MARKETPLACE_NAME;
+use motyga_core_plugins::remote::REMOTE_WORKSPACE_MARKETPLACE_NAME;
+use motyga_core_plugins::remote::REMOTE_WORKSPACE_SHARED_WITH_ME_MARKETPLACE_NAME;
+use motyga_core_plugins::remote::REMOTE_WORKSPACE_SHARED_WITH_ME_PRIVATE_MARKETPLACE_NAME;
+use motyga_core_plugins::remote::REMOTE_WORKSPACE_SHARED_WITH_ME_UNLISTED_MARKETPLACE_NAME;
+use motyga_core_plugins::remote::RemoteAppTemplateUnavailableReason;
+use motyga_core_plugins::remote::is_valid_remote_plugin_id;
+use motyga_core_plugins::remote::validate_remote_plugin_id;
+use motyga_core_plugins::remote_bundle::RemotePluginBundleInstallError;
+use motyga_mcp::McpOAuthLoginSupport;
+use motyga_mcp::oauth_login_support;
+use motyga_mcp::should_retry_without_scopes;
+use motyga_plugin::PluginId;
+use motyga_plugin::PluginTelemetryMetadata;
+use motyga_protocol::auth::AuthMode as DomainAuthMode;
+use motyga_rmcp_client::perform_oauth_login_silent;
 
 #[derive(Clone)]
 pub(crate) struct PluginRequestProcessor {
@@ -38,7 +38,7 @@ pub(crate) struct PluginRequestProcessor {
 }
 
 fn plugin_skills_to_info(
-    skills: &[codex_core::skills::SkillMetadata],
+    skills: &[motyga_core::skills::SkillMetadata],
     disabled_skill_paths: &HashSet<AbsolutePathBuf>,
 ) -> Vec<SkillSummary> {
     skills
@@ -48,7 +48,7 @@ fn plugin_skills_to_info(
             description: skill.description.clone(),
             short_description: skill.short_description.clone(),
             interface: skill.interface.clone().map(|interface| {
-                codex_app_server_protocol::SkillInterface {
+                motyga_app_server_protocol::SkillInterface {
                     display_name: interface.display_name,
                     short_description: interface.short_description,
                     icon_small: interface.icon_small,
@@ -116,8 +116,8 @@ fn marketplace_plugin_source_to_info(source: MarketplacePluginSource) -> PluginS
 fn load_shared_plugin_ids_by_local_path(
     config: &Config,
 ) -> Result<std::collections::BTreeMap<AbsolutePathBuf, String>, JSONRPCErrorError> {
-    codex_core_plugins::remote::load_plugin_share_remote_ids_by_local_path(
-        config.codex_home.as_path(),
+    motyga_core_plugins::remote::load_plugin_share_remote_ids_by_local_path(
+        config.motyga_home.as_path(),
     )
     .map_err(|err| {
         internal_error(format!(
@@ -148,7 +148,7 @@ fn share_context_for_source(
 }
 
 fn convert_configured_marketplace_plugin_to_plugin_summary(
-    plugin: codex_core_plugins::ConfiguredMarketplacePlugin,
+    plugin: motyga_core_plugins::ConfiguredMarketplacePlugin,
     shared_plugin_ids_by_local_path: &std::collections::BTreeMap<AbsolutePathBuf, String>,
 ) -> PluginSummary {
     let share_context = share_context_for_source(&plugin.source, shared_plugin_ids_by_local_path);
@@ -231,29 +231,29 @@ fn installed_plugin_names(plugins: &[PluginSummary]) -> HashSet<String> {
 
 fn remote_plugin_share_discoverability(
     discoverability: PluginShareDiscoverability,
-) -> codex_core_plugins::remote::RemotePluginShareDiscoverability {
+) -> motyga_core_plugins::remote::RemotePluginShareDiscoverability {
     match discoverability {
         PluginShareDiscoverability::Listed => {
-            codex_core_plugins::remote::RemotePluginShareDiscoverability::Listed
+            motyga_core_plugins::remote::RemotePluginShareDiscoverability::Listed
         }
         PluginShareDiscoverability::Unlisted => {
-            codex_core_plugins::remote::RemotePluginShareDiscoverability::Unlisted
+            motyga_core_plugins::remote::RemotePluginShareDiscoverability::Unlisted
         }
         PluginShareDiscoverability::Private => {
-            codex_core_plugins::remote::RemotePluginShareDiscoverability::Private
+            motyga_core_plugins::remote::RemotePluginShareDiscoverability::Private
         }
     }
 }
 
 fn remote_plugin_share_update_discoverability(
     discoverability: PluginShareUpdateDiscoverability,
-) -> codex_core_plugins::remote::RemotePluginShareUpdateDiscoverability {
+) -> motyga_core_plugins::remote::RemotePluginShareUpdateDiscoverability {
     match discoverability {
         PluginShareUpdateDiscoverability::Unlisted => {
-            codex_core_plugins::remote::RemotePluginShareUpdateDiscoverability::Unlisted
+            motyga_core_plugins::remote::RemotePluginShareUpdateDiscoverability::Unlisted
         }
         PluginShareUpdateDiscoverability::Private => {
-            codex_core_plugins::remote::RemotePluginShareUpdateDiscoverability::Private
+            motyga_core_plugins::remote::RemotePluginShareUpdateDiscoverability::Private
         }
     }
 }
@@ -274,28 +274,28 @@ fn validate_client_plugin_share_targets(
 
 fn remote_plugin_share_target_role(
     role: PluginShareTargetRole,
-) -> codex_core_plugins::remote::RemotePluginShareTargetRole {
+) -> motyga_core_plugins::remote::RemotePluginShareTargetRole {
     match role {
         PluginShareTargetRole::Reader => {
-            codex_core_plugins::remote::RemotePluginShareTargetRole::Reader
+            motyga_core_plugins::remote::RemotePluginShareTargetRole::Reader
         }
         PluginShareTargetRole::Editor => {
-            codex_core_plugins::remote::RemotePluginShareTargetRole::Editor
+            motyga_core_plugins::remote::RemotePluginShareTargetRole::Editor
         }
     }
 }
 
 fn plugin_share_principal_role_from_remote(
-    role: codex_core_plugins::remote::RemotePluginSharePrincipalRole,
+    role: motyga_core_plugins::remote::RemotePluginSharePrincipalRole,
 ) -> PluginSharePrincipalRole {
     match role {
-        codex_core_plugins::remote::RemotePluginSharePrincipalRole::Reader => {
+        motyga_core_plugins::remote::RemotePluginSharePrincipalRole::Reader => {
             PluginSharePrincipalRole::Reader
         }
-        codex_core_plugins::remote::RemotePluginSharePrincipalRole::Editor => {
+        motyga_core_plugins::remote::RemotePluginSharePrincipalRole::Editor => {
             PluginSharePrincipalRole::Editor
         }
-        codex_core_plugins::remote::RemotePluginSharePrincipalRole::Owner => {
+        motyga_core_plugins::remote::RemotePluginSharePrincipalRole::Owner => {
             PluginSharePrincipalRole::Owner
         }
     }
@@ -303,20 +303,20 @@ fn plugin_share_principal_role_from_remote(
 
 fn remote_plugin_share_targets(
     targets: Vec<PluginShareTarget>,
-) -> Vec<codex_core_plugins::remote::RemotePluginShareTarget> {
+) -> Vec<motyga_core_plugins::remote::RemotePluginShareTarget> {
     targets
         .into_iter()
         .map(
-            |target| codex_core_plugins::remote::RemotePluginShareTarget {
+            |target| motyga_core_plugins::remote::RemotePluginShareTarget {
                 principal_type: match target.principal_type {
                     PluginSharePrincipalType::User => {
-                        codex_core_plugins::remote::RemotePluginSharePrincipalType::User
+                        motyga_core_plugins::remote::RemotePluginSharePrincipalType::User
                     }
                     PluginSharePrincipalType::Group => {
-                        codex_core_plugins::remote::RemotePluginSharePrincipalType::Group
+                        motyga_core_plugins::remote::RemotePluginSharePrincipalType::Group
                     }
                     PluginSharePrincipalType::Workspace => {
-                        codex_core_plugins::remote::RemotePluginSharePrincipalType::Workspace
+                        motyga_core_plugins::remote::RemotePluginSharePrincipalType::Workspace
                     }
                 },
                 principal_id: target.principal_id,
@@ -327,17 +327,17 @@ fn remote_plugin_share_targets(
 }
 
 fn plugin_share_principal_from_remote(
-    principal: codex_core_plugins::remote::RemotePluginSharePrincipal,
+    principal: motyga_core_plugins::remote::RemotePluginSharePrincipal,
 ) -> PluginSharePrincipal {
     PluginSharePrincipal {
         principal_type: match principal.principal_type {
-            codex_core_plugins::remote::RemotePluginSharePrincipalType::User => {
+            motyga_core_plugins::remote::RemotePluginSharePrincipalType::User => {
                 PluginSharePrincipalType::User
             }
-            codex_core_plugins::remote::RemotePluginSharePrincipalType::Group => {
+            motyga_core_plugins::remote::RemotePluginSharePrincipalType::Group => {
                 PluginSharePrincipalType::Group
             }
-            codex_core_plugins::remote::RemotePluginSharePrincipalType::Workspace => {
+            motyga_core_plugins::remote::RemotePluginSharePrincipalType::Workspace => {
                 PluginSharePrincipalType::Workspace
             }
         },
@@ -512,12 +512,12 @@ impl PluginRequestProcessor {
             .map_err(|err| internal_error(format!("failed to reload config: {err}")))
     }
 
-    async fn workspace_codex_plugins_enabled(
+    async fn workspace_motyga_plugins_enabled(
         &self,
         config: &Config,
-        auth: Option<&CodexAuth>,
+        auth: Option<&MotygaAuth>,
     ) -> bool {
-        match workspace_settings::codex_plugins_enabled_for_workspace(
+        match workspace_settings::motyga_plugins_enabled_for_workspace(
             config,
             auth,
             Some(&self.workspace_settings_cache),
@@ -561,12 +561,12 @@ impl PluginRequestProcessor {
         }
         let auth = self.auth_manager.auth().await;
         if !self
-            .workspace_codex_plugins_enabled(&config, auth.as_ref())
+            .workspace_motyga_plugins_enabled(&config, auth.as_ref())
             .await
         {
             return Ok(empty_response());
         }
-        let auth_mode = auth.as_ref().map(CodexAuth::api_auth_mode);
+        let auth_mode = auth.as_ref().map(MotygaAuth::api_auth_mode);
         plugins_manager.set_auth_mode(auth_mode);
         let plugins_input = config.plugins_config_input();
         let include_shared_with_me =
@@ -577,13 +577,13 @@ impl PluginRequestProcessor {
         let include_global_remote =
             !explicit_marketplace_kinds && config.features.enabled(Feature::RemotePlugin);
         let use_remote_global_catalog =
-            include_global_remote && auth_mode.is_some_and(DomainAuthMode::uses_codex_backend);
+            include_global_remote && auth_mode.is_some_and(DomainAuthMode::uses_motyga_backend);
         let remote_plugin_service_config = RemotePluginServiceConfig {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
         };
         let refresh_global_remote_catalog_cache = use_remote_global_catalog
-            && codex_core_plugins::remote::has_cached_global_remote_plugin_catalog(
-                config.codex_home.as_path(),
+            && motyga_core_plugins::remote::has_cached_global_remote_plugin_catalog(
+                config.motyga_home.as_path(),
                 &remote_plugin_service_config,
                 auth.as_ref(),
             );
@@ -602,7 +602,7 @@ impl PluginRequestProcessor {
                 Ok::<
                     (
                         Vec<PluginMarketplaceEntry>,
-                        Vec<codex_app_server_protocol::MarketplaceLoadErrorInfo>,
+                        Vec<motyga_app_server_protocol::MarketplaceLoadErrorInfo>,
                     ),
                     MarketplaceError,
                 >((
@@ -632,7 +632,7 @@ impl PluginRequestProcessor {
                     outcome
                         .errors
                         .into_iter()
-                        .map(|err| codex_app_server_protocol::MarketplaceLoadErrorInfo {
+                        .map(|err| motyga_app_server_protocol::MarketplaceLoadErrorInfo {
                             marketplace_path: err.path,
                             message: err.message,
                         })
@@ -658,7 +658,7 @@ impl PluginRequestProcessor {
         // TODO(remote plugins): Remove this once remote plugins are ready and vertical plugins are
         // served directly from the normal remote catalog.
         if include_vertical && !config.features.enabled(Feature::RemotePlugin) {
-            match codex_core_plugins::remote::fetch_openai_curated_remote_collection_marketplace(
+            match motyga_core_plugins::remote::fetch_openai_curated_remote_collection_marketplace(
                 &remote_plugin_service_config,
                 auth.as_ref(),
             )
@@ -699,11 +699,11 @@ impl PluginRequestProcessor {
             remote_sources.push(RemoteMarketplaceSource::SharedWithMe);
         }
         if !remote_sources.is_empty() {
-            match codex_core_plugins::remote::fetch_remote_marketplaces(
+            match motyga_core_plugins::remote::fetch_remote_marketplaces(
                 &remote_plugin_service_config,
                 auth.as_ref(),
                 &remote_sources,
-                /*global_catalog_cache_path*/ Some(config.codex_home.as_path()),
+                /*global_catalog_cache_path*/ Some(config.motyga_home.as_path()),
             )
             .await
             {
@@ -811,12 +811,12 @@ impl PluginRequestProcessor {
         }
         let auth = self.auth_manager.auth().await;
         if !self
-            .workspace_codex_plugins_enabled(&config, auth.as_ref())
+            .workspace_motyga_plugins_enabled(&config, auth.as_ref())
             .await
         {
             return Ok(empty_response());
         }
-        plugins_manager.set_auth_mode(auth.as_ref().map(CodexAuth::api_auth_mode));
+        plugins_manager.set_auth_mode(auth.as_ref().map(MotygaAuth::api_auth_mode));
 
         let plugins_input = config.plugins_config_input();
         let remote_installed_plugin_visible_marketplaces =
@@ -859,15 +859,15 @@ impl PluginRequestProcessor {
 
     async fn load_local_installed_and_suggested_plugins(
         &self,
-        plugins_manager: Arc<codex_core_plugins::PluginsManager>,
+        plugins_manager: Arc<motyga_core_plugins::PluginsManager>,
         config: &Config,
-        plugins_input: &codex_core_plugins::PluginsConfigInput,
+        plugins_input: &motyga_core_plugins::PluginsConfigInput,
         roots: Vec<AbsolutePathBuf>,
         install_suggestion_plugin_names: HashSet<String>,
     ) -> Result<
         (
             Vec<PluginMarketplaceEntry>,
-            Vec<codex_app_server_protocol::MarketplaceLoadErrorInfo>,
+            Vec<motyga_app_server_protocol::MarketplaceLoadErrorInfo>,
         ),
         JSONRPCErrorError,
     > {
@@ -882,7 +882,7 @@ impl PluginRequestProcessor {
             Ok::<
                 (
                     Vec<PluginMarketplaceEntry>,
-                    Vec<codex_app_server_protocol::MarketplaceLoadErrorInfo>,
+                    Vec<motyga_app_server_protocol::MarketplaceLoadErrorInfo>,
                 ),
                 MarketplaceError,
             >((
@@ -920,7 +920,7 @@ impl PluginRequestProcessor {
                 outcome
                     .errors
                     .into_iter()
-                    .map(|err| codex_app_server_protocol::MarketplaceLoadErrorInfo {
+                    .map(|err| motyga_app_server_protocol::MarketplaceLoadErrorInfo {
                         marketplace_path: err.path,
                         message: err.message,
                     })
@@ -942,10 +942,10 @@ impl PluginRequestProcessor {
 
     async fn load_remote_installed_plugins(
         &self,
-        plugins_manager: Arc<codex_core_plugins::PluginsManager>,
-        plugins_input: &codex_core_plugins::PluginsConfigInput,
+        plugins_manager: Arc<motyga_core_plugins::PluginsManager>,
+        plugins_input: &motyga_core_plugins::PluginsConfigInput,
         visible_marketplaces: &[&str],
-        auth: Option<&CodexAuth>,
+        auth: Option<&MotygaAuth>,
     ) -> Vec<PluginMarketplaceEntry> {
         let remote_marketplaces = if let Some(remote_marketplaces) = plugins_manager
             .build_remote_installed_plugin_marketplaces_from_cache(visible_marketplaces)
@@ -1007,7 +1007,7 @@ impl PluginRequestProcessor {
         let config = self.load_latest_config(config_cwd).await?;
         let plugins_input = config.plugins_config_input();
         let auth = self.auth_manager.auth().await;
-        plugins_manager.set_auth_mode(auth.as_ref().map(CodexAuth::api_auth_mode));
+        plugins_manager.set_auth_mode(auth.as_ref().map(MotygaAuth::api_auth_mode));
 
         let plugin = match read_source {
             Ok(marketplace_path) => {
@@ -1030,7 +1030,7 @@ impl PluginRequestProcessor {
                         let remote_plugin_service_config = RemotePluginServiceConfig {
                             chatgpt_base_url: config.chatgpt_base_url.clone(),
                         };
-                        match codex_core_plugins::remote::fetch_remote_plugin_share_context(
+                        match motyga_core_plugins::remote::fetch_remote_plugin_share_context(
                             &remote_plugin_service_config,
                             auth.as_ref(),
                             &context.remote_plugin_id,
@@ -1117,7 +1117,7 @@ impl PluginRequestProcessor {
                         .plugin
                         .hooks
                         .into_iter()
-                        .map(|hook| codex_app_server_protocol::PluginHookSummary {
+                        .map(|hook| motyga_app_server_protocol::PluginHookSummary {
                             key: hook.key,
                             event_name: hook.event_name.into(),
                         })
@@ -1137,7 +1137,7 @@ impl PluginRequestProcessor {
                     chatgpt_base_url: config.chatgpt_base_url.clone(),
                 };
                 validate_remote_plugin_id(&plugin_name)?;
-                let remote_detail = codex_core_plugins::remote::fetch_remote_plugin_detail(
+                let remote_detail = motyga_core_plugins::remote::fetch_remote_plugin_detail(
                     &remote_plugin_service_config,
                     auth.as_ref(),
                     &remote_marketplace_name,
@@ -1151,7 +1151,7 @@ impl PluginRequestProcessor {
                     .app_ids
                     .iter()
                     .cloned()
-                    .map(codex_plugin::AppConnectorId)
+                    .map(motyga_plugin::AppConnectorId)
                     .collect::<Vec<_>>();
                 let app_category_by_id = remote_detail
                     .app_manifest
@@ -1194,7 +1194,7 @@ impl PluginRequestProcessor {
         let remote_plugin_service_config = RemotePluginServiceConfig {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
         };
-        let remote_skill_detail = codex_core_plugins::remote::fetch_remote_plugin_skill_detail(
+        let remote_skill_detail = motyga_core_plugins::remote::fetch_remote_plugin_skill_detail(
             &remote_plugin_service_config,
             auth.as_ref(),
             &remote_marketplace_name,
@@ -1247,14 +1247,14 @@ impl PluginRequestProcessor {
         let remote_plugin_service_config = RemotePluginServiceConfig {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
         };
-        let access_policy = codex_core_plugins::remote::RemotePluginShareAccessPolicy {
+        let access_policy = motyga_core_plugins::remote::RemotePluginShareAccessPolicy {
             discoverability: discoverability.map(remote_plugin_share_discoverability),
             share_targets: share_targets.map(remote_plugin_share_targets),
         };
-        let result = codex_core_plugins::remote::save_remote_plugin_share(
+        let result = motyga_core_plugins::remote::save_remote_plugin_share(
             &remote_plugin_service_config,
             auth.as_ref(),
-            config.codex_home.as_path(),
+            config.motyga_home.as_path(),
             &plugin_path,
             remote_plugin_id.as_deref(),
             access_policy,
@@ -1290,7 +1290,7 @@ impl PluginRequestProcessor {
         let remote_plugin_service_config = RemotePluginServiceConfig {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
         };
-        let result = codex_core_plugins::remote::update_remote_plugin_share_targets(
+        let result = motyga_core_plugins::remote::update_remote_plugin_share_targets(
             &remote_plugin_service_config,
             auth.as_ref(),
             &remote_plugin_id,
@@ -1320,10 +1320,10 @@ impl PluginRequestProcessor {
         let remote_plugin_service_config = RemotePluginServiceConfig {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
         };
-        let data = codex_core_plugins::remote::list_remote_plugin_shares(
+        let data = motyga_core_plugins::remote::list_remote_plugin_shares(
             &remote_plugin_service_config,
             auth.as_ref(),
-            config.codex_home.as_path(),
+            config.motyga_home.as_path(),
         )
         .await
         .map_err(|err| remote_plugin_catalog_error_to_jsonrpc(err, "list remote plugin shares"))?
@@ -1359,10 +1359,10 @@ impl PluginRequestProcessor {
         let remote_plugin_service_config = RemotePluginServiceConfig {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
         };
-        let result = codex_core_plugins::remote::checkout_remote_plugin_share(
+        let result = motyga_core_plugins::remote::checkout_remote_plugin_share(
             &remote_plugin_service_config,
             auth.as_ref(),
-            config.codex_home.as_path(),
+            config.motyga_home.as_path(),
             &remote_plugin_id,
         )
         .await
@@ -1392,10 +1392,10 @@ impl PluginRequestProcessor {
         let remote_plugin_service_config = RemotePluginServiceConfig {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
         };
-        codex_core_plugins::remote::delete_remote_plugin_share(
+        motyga_core_plugins::remote::delete_remote_plugin_share(
             &remote_plugin_service_config,
             auth.as_ref(),
-            config.codex_home.as_path(),
+            config.motyga_home.as_path(),
             &remote_plugin_id,
         )
         .await
@@ -1406,7 +1406,7 @@ impl PluginRequestProcessor {
 
     async fn load_plugin_share_config_and_auth(
         &self,
-    ) -> Result<(Config, Option<CodexAuth>), JSONRPCErrorError> {
+    ) -> Result<(Config, Option<MotygaAuth>), JSONRPCErrorError> {
         let config = self.load_latest_config(/*fallback_cwd*/ None).await?;
         if !config.features.enabled(Feature::Plugins) {
             return Err(invalid_request("plugin sharing is not enabled"));
@@ -1442,7 +1442,7 @@ impl PluginRequestProcessor {
         let auth = self.auth_manager.auth().await;
 
         if !self
-            .workspace_codex_plugins_enabled(&config, auth.as_ref())
+            .workspace_motyga_plugins_enabled(&config, auth.as_ref())
             .await
         {
             return Err(invalid_request(
@@ -1486,7 +1486,7 @@ impl PluginRequestProcessor {
 
         let plugin_mcp_servers = load_plugin_mcp_servers(
             result.installed_path.as_path(),
-            auth.as_ref().map(CodexAuth::auth_mode),
+            auth.as_ref().map(MotygaAuth::auth_mode),
         )
         .await;
         if !plugin_mcp_servers.is_empty() {
@@ -1496,11 +1496,11 @@ impl PluginRequestProcessor {
 
         let plugin_app_declarations = load_plugin_apps(result.installed_path.as_path()).await;
         let plugin_apps =
-            codex_plugin::app_connector_ids_from_declarations(&plugin_app_declarations);
+            motyga_plugin::app_connector_ids_from_declarations(&plugin_app_declarations);
         let apps_needing_auth = self
             .plugin_apps_needing_auth_for_install(
                 &config,
-                auth.as_ref().is_some_and(CodexAuth::is_chatgpt_auth),
+                auth.as_ref().is_some_and(MotygaAuth::is_chatgpt_auth),
                 &result.plugin_id.as_key(),
                 &plugin_apps,
             )
@@ -1530,7 +1530,7 @@ impl PluginRequestProcessor {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
         };
         let remote_detail =
-            codex_core_plugins::remote::fetch_remote_plugin_detail_with_download_urls(
+            motyga_core_plugins::remote::fetch_remote_plugin_detail_with_download_urls(
                 &remote_plugin_service_config,
                 auth.as_ref(),
                 &remote_marketplace_name,
@@ -1572,12 +1572,12 @@ impl PluginRequestProcessor {
         // Direct install writes the same cache tree that installed-plugin sync
         // prunes before the backend installed snapshot can include this plugin.
         let _remote_plugin_cache_mutation =
-            codex_core_plugins::remote::mark_remote_plugin_cache_mutation_in_flight(
-                config.codex_home.as_path(),
+            motyga_core_plugins::remote::mark_remote_plugin_cache_mutation_in_flight(
+                config.motyga_home.as_path(),
                 &actual_remote_marketplace_name,
                 &remote_plugin_name,
             );
-        let validated_bundle = codex_core_plugins::remote_bundle::validate_remote_plugin_bundle(
+        let validated_bundle = motyga_core_plugins::remote_bundle::validate_remote_plugin_bundle(
             &remote_plugin_id,
             &actual_remote_marketplace_name,
             &remote_plugin_name,
@@ -1597,8 +1597,8 @@ impl PluginRequestProcessor {
             remote_plugin_bundle_install_error_to_jsonrpc(err)
         })?;
 
-        let result = codex_core_plugins::remote_bundle::download_and_install_remote_plugin_bundle(
-            config.codex_home.to_path_buf(),
+        let result = motyga_core_plugins::remote_bundle::download_and_install_remote_plugin_bundle(
+            config.motyga_home.to_path_buf(),
             validated_bundle,
         )
         .await
@@ -1617,7 +1617,7 @@ impl PluginRequestProcessor {
         // Cache first so a backend install cannot succeed when local materialization fails.
         // If this backend call fails, the cache entry is harmless because remote installed state
         // is still backend-gated.
-        let install_result = codex_core_plugins::remote::install_remote_plugin(
+        let install_result = motyga_core_plugins::remote::install_remote_plugin(
             &remote_plugin_service_config,
             auth.as_ref(),
             &actual_remote_marketplace_name,
@@ -1657,7 +1657,7 @@ impl PluginRequestProcessor {
 
         let plugin_mcp_servers = load_plugin_mcp_servers(
             result.installed_path.as_path(),
-            auth.as_ref().map(CodexAuth::auth_mode),
+            auth.as_ref().map(MotygaAuth::auth_mode),
         )
         .await;
         if !plugin_mcp_servers.is_empty() {
@@ -1665,7 +1665,7 @@ impl PluginRequestProcessor {
                 .await;
         }
 
-        let is_chatgpt_auth = auth.as_ref().is_some_and(CodexAuth::is_chatgpt_auth);
+        let is_chatgpt_auth = auth.as_ref().is_some_and(MotygaAuth::is_chatgpt_auth);
         let apps_needing_auth = if let Some(app_ids_needing_auth) =
             install_result.app_ids_needing_auth
         {
@@ -1676,7 +1676,7 @@ impl PluginRequestProcessor {
             } else {
                 let plugin_apps = app_ids_needing_auth
                     .into_iter()
-                    .map(codex_plugin::AppConnectorId)
+                    .map(motyga_plugin::AppConnectorId)
                     .collect::<Vec<_>>();
                 let app_category_by_id = remote_detail
                     .app_manifest
@@ -1706,7 +1706,7 @@ impl PluginRequestProcessor {
         } else {
             let plugin_app_declarations = load_plugin_apps(result.installed_path.as_path()).await;
             let plugin_apps =
-                codex_plugin::app_connector_ids_from_declarations(&plugin_app_declarations);
+                motyga_plugin::app_connector_ids_from_declarations(&plugin_app_declarations);
             self.plugin_apps_needing_auth_for_install(
                 &config,
                 is_chatgpt_auth,
@@ -1757,7 +1757,7 @@ impl PluginRequestProcessor {
         config: &Config,
         is_chatgpt_auth: bool,
         plugin_id: &str,
-        plugin_apps: &[codex_plugin::AppConnectorId],
+        plugin_apps: &[motyga_plugin::AppConnectorId],
     ) -> Vec<AppSummary> {
         if plugin_apps.is_empty() || !config.features.apps_enabled_for_auth(is_chatgpt_auth) {
             return Vec::new();
@@ -1787,8 +1787,8 @@ impl PluginRequestProcessor {
             }
         };
         let all_connectors = connectors::connectors_for_plugin_apps(all_connectors, plugin_apps);
-        let (accessible_connectors, codex_apps_ready) = match accessible_connectors_result {
-            Ok(status) => (status.connectors, status.codex_apps_ready),
+        let (accessible_connectors, motyga_apps_ready) = match accessible_connectors_result {
+            Ok(status) => (status.connectors, status.motyga_apps_ready),
             Err(err) => {
                 warn!(
                     plugin = plugin_id,
@@ -1802,10 +1802,10 @@ impl PluginRequestProcessor {
                 )
             }
         };
-        if !codex_apps_ready {
+        if !motyga_apps_ready {
             warn!(
                 plugin = plugin_id,
-                "codex_apps MCP not ready after plugin install; skipping appsNeedingAuth check"
+                "motyga_apps MCP not ready after plugin install; skipping appsNeedingAuth check"
             );
         }
 
@@ -1813,7 +1813,7 @@ impl PluginRequestProcessor {
             &all_connectors,
             &accessible_connectors,
             plugin_apps,
-            codex_apps_ready,
+            motyga_apps_ready,
         )
     }
 
@@ -1907,7 +1907,7 @@ impl PluginRequestProcessor {
         params: PluginUninstallParams,
     ) -> Result<PluginUninstallResponse, JSONRPCErrorError> {
         let PluginUninstallParams { plugin_id } = params;
-        if codex_plugin::PluginId::parse(&plugin_id).is_err()
+        if motyga_plugin::PluginId::parse(&plugin_id).is_err()
             && !is_valid_remote_plugin_id(&plugin_id)
         {
             return Err(invalid_request("invalid remote plugin id"));
@@ -2007,7 +2007,7 @@ impl PluginRequestProcessor {
         let remote_plugin_service_config = RemotePluginServiceConfig {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
         };
-        let uninstall_target = codex_core_plugins::remote::resolve_remote_plugin_uninstall_target(
+        let uninstall_target = motyga_core_plugins::remote::resolve_remote_plugin_uninstall_target(
             &remote_plugin_service_config,
             auth.as_ref(),
             &plugin_id,
@@ -2027,10 +2027,10 @@ impl PluginRequestProcessor {
             plugin_telemetry.capability_summary =
                 Some(uninstall_target.fallback_capability_summary.clone());
         }
-        let uninstall_result = codex_core_plugins::remote::uninstall_remote_plugin(
+        let uninstall_result = motyga_core_plugins::remote::uninstall_remote_plugin(
             &remote_plugin_service_config,
             auth.as_ref(),
-            config.codex_home.to_path_buf(),
+            config.motyga_home.to_path_buf(),
             uninstall_target,
         )
         .await;
@@ -2060,7 +2060,7 @@ impl PluginRequestProcessor {
 
 async fn load_plugin_app_summaries(
     config: &Config,
-    plugin_apps: &[codex_plugin::AppConnectorId],
+    plugin_apps: &[motyga_plugin::AppConnectorId],
     app_category_by_id: &HashMap<String, String>,
 ) -> Vec<AppSummary> {
     if plugin_apps.is_empty() {
@@ -2104,7 +2104,7 @@ async fn load_plugin_app_summaries(
 }
 
 fn plugin_app_category_by_id_from_value(value: &serde_json::Value) -> HashMap<String, String> {
-    codex_core_plugins::loader::plugin_app_declarations_from_value(value)
+    motyga_core_plugins::loader::plugin_app_declarations_from_value(value)
         .into_iter()
         .filter_map(|app| app.category.map(|category| (app.connector_id.0, category)))
         .collect()
@@ -2113,10 +2113,10 @@ fn plugin_app_category_by_id_from_value(value: &serde_json::Value) -> HashMap<St
 fn plugin_apps_needing_auth(
     all_connectors: &[AppInfo],
     accessible_connectors: &[AppInfo],
-    plugin_apps: &[codex_plugin::AppConnectorId],
-    codex_apps_ready: bool,
+    plugin_apps: &[motyga_plugin::AppConnectorId],
+    motyga_apps_ready: bool,
 ) -> Vec<AppSummary> {
-    if !codex_apps_ready {
+    if !motyga_apps_ready {
         return Vec::new();
     }
 
@@ -2206,16 +2206,16 @@ fn remote_plugin_share_context_to_info(
 }
 
 fn remote_plugin_share_discoverability_to_info(
-    discoverability: codex_core_plugins::remote::RemotePluginShareDiscoverability,
+    discoverability: motyga_core_plugins::remote::RemotePluginShareDiscoverability,
 ) -> PluginShareDiscoverability {
     match discoverability {
-        codex_core_plugins::remote::RemotePluginShareDiscoverability::Listed => {
+        motyga_core_plugins::remote::RemotePluginShareDiscoverability::Listed => {
             PluginShareDiscoverability::Listed
         }
-        codex_core_plugins::remote::RemotePluginShareDiscoverability::Unlisted => {
+        motyga_core_plugins::remote::RemotePluginShareDiscoverability::Unlisted => {
             PluginShareDiscoverability::Unlisted
         }
-        codex_core_plugins::remote::RemotePluginShareDiscoverability::Private => {
+        motyga_core_plugins::remote::RemotePluginShareDiscoverability::Private => {
             PluginShareDiscoverability::Private
         }
     }
@@ -2376,7 +2376,7 @@ fn remote_plugin_catalog_error_to_jsonrpc(
 }
 
 fn remote_plugin_bundle_install_error_to_jsonrpc(
-    err: codex_core_plugins::remote_bundle::RemotePluginBundleInstallError,
+    err: motyga_core_plugins::remote_bundle::RemotePluginBundleInstallError,
 ) -> JSONRPCErrorError {
     internal_error(format!("install remote plugin bundle: {err}"))
 }

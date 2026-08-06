@@ -1,11 +1,11 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-extension-api"
+name = "motyga-extension-api"
 version.workspace = true
 
 [lib]
-name = "codex_extension_api"
+name = "motyga_extension_api"
 path = "src/lib.rs"
 test = false
 doctest = false
@@ -14,11 +14,11 @@ doctest = false
 workspace = true
 
 [dependencies]
-codex-config = { workspace = true }
-codex-context-fragments = { workspace = true }
-codex-protocol = { workspace = true }
-codex-tools = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
+motyga-config = { workspace = true }
+motyga-context-fragments = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-tools = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
 serde_json = { workspace = true }
 
 [dev-dependencies]

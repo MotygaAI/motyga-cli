@@ -5,36 +5,36 @@ use app_test_support::create_mock_responses_server_sequence;
 use app_test_support::create_shell_command_sse_response;
 use app_test_support::format_with_current_shell_display;
 use app_test_support::to_response;
-use codex_app_server_protocol::CommandExecutionApprovalDecision;
-use codex_app_server_protocol::CommandExecutionOutputDeltaNotification;
-use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
-use codex_app_server_protocol::CommandExecutionSource;
-use codex_app_server_protocol::CommandExecutionStatus;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::ItemStartedNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::SortDirection;
-use codex_app_server_protocol::ThreadForkParams;
-use codex_app_server_protocol::ThreadForkResponse;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadReadParams;
-use codex_app_server_protocol::ThreadReadResponse;
-use codex_app_server_protocol::ThreadShellCommandParams;
-use codex_app_server_protocol::ThreadShellCommandResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::ThreadTurnsListParams;
-use codex_app_server_protocol::ThreadTurnsListResponse;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_core::shell::default_user_shell;
-use codex_exec_server::CODEX_EXEC_SERVER_URL_ENV_VAR;
-use codex_features::FEATURES;
-use codex_features::Feature;
+use motyga_app_server_protocol::CommandExecutionApprovalDecision;
+use motyga_app_server_protocol::CommandExecutionOutputDeltaNotification;
+use motyga_app_server_protocol::CommandExecutionRequestApprovalResponse;
+use motyga_app_server_protocol::CommandExecutionSource;
+use motyga_app_server_protocol::CommandExecutionStatus;
+use motyga_app_server_protocol::ItemCompletedNotification;
+use motyga_app_server_protocol::ItemStartedNotification;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::SortDirection;
+use motyga_app_server_protocol::ThreadForkParams;
+use motyga_app_server_protocol::ThreadForkResponse;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadReadParams;
+use motyga_app_server_protocol::ThreadReadResponse;
+use motyga_app_server_protocol::ThreadShellCommandParams;
+use motyga_app_server_protocol::ThreadShellCommandResponse;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::ThreadTurnsListParams;
+use motyga_app_server_protocol::ThreadTurnsListResponse;
+use motyga_app_server_protocol::TurnCompletedNotification;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_core::shell::default_user_shell;
+use motyga_exec_server::MOTYGA_EXEC_SERVER_URL_ENV_VAR;
+use motyga_features::FEATURES;
+use motyga_features::Feature;
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -47,20 +47,20 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 async fn thread_shell_command_history_responses_exclude_persisted_command_executions() -> Result<()>
 {
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let motyga_home = tmp.path().join("motyga_home");
+    std::fs::create_dir(&motyga_home)?;
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
 
     let server = create_mock_responses_server_sequence(vec![]).await;
     create_config_toml(
-        codex_home.as_path(),
+        motyga_home.as_path(),
         &server.uri(),
         "never",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.as_path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.as_path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -183,19 +183,19 @@ async fn thread_shell_command_history_responses_exclude_persisted_command_execut
 #[tokio::test]
 async fn thread_shell_command_returns_error_when_local_environment_is_disabled() -> Result<()> {
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let motyga_home = tmp.path().join("motyga_home");
+    std::fs::create_dir(&motyga_home)?;
     let server = create_mock_responses_server_sequence(vec![]).await;
     create_config_toml(
-        codex_home.as_path(),
+        motyga_home.as_path(),
         &server.uri(),
         "never",
         &BTreeMap::default(),
     )?;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.as_path(),
-        &[(CODEX_EXEC_SERVER_URL_ENV_VAR, Some("none"))],
+        motyga_home.as_path(),
+        &[(MOTYGA_EXEC_SERVER_URL_ENV_VAR, Some("none"))],
     )
     .await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
@@ -226,8 +226,8 @@ async fn thread_shell_command_returns_error_when_local_environment_is_disabled()
 #[tokio::test]
 async fn thread_shell_command_uses_existing_active_turn() -> Result<()> {
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let motyga_home = tmp.path().join("motyga_home");
+    std::fs::create_dir(&motyga_home)?;
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
 
@@ -246,13 +246,13 @@ async fn thread_shell_command_uses_existing_active_turn() -> Result<()> {
     ];
     let server = create_mock_responses_server_sequence(responses).await;
     create_config_toml(
-        codex_home.as_path(),
+        motyga_home.as_path(),
         &server.uri(),
         "untrusted",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.as_path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.as_path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -482,7 +482,7 @@ async fn wait_for_command_execution_output_delta(
 }
 
 fn create_config_toml(
-    codex_home: &Path,
+    motyga_home: &Path,
     server_uri: &str,
     approval_policy: &str,
     feature_flags: &BTreeMap<Feature, bool>,
@@ -500,7 +500,7 @@ fn create_config_toml(
         .collect::<Vec<_>>()
         .join("\n");
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 model = "mock-model"

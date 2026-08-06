@@ -1,7 +1,7 @@
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::NetworkAccess;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::NetworkAccess;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 pub fn summarize_sandbox_policy(sandbox_policy: &SandboxPolicy) -> String {
     match sandbox_policy {
@@ -98,8 +98,8 @@ pub fn summarize_permission_profile(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::permissions::NetworkSandboxPolicy;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_protocol::permissions::NetworkSandboxPolicy;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -156,7 +156,7 @@ mod tests {
         })
         .unwrap();
         let hidden_root = AbsolutePathBuf::try_from(if cfg!(windows) {
-            "C:\\Users\\test\\.codex\\memories"
+            "C:\\Users\\test\\.motyga\\memories"
         } else {
             "/Users/test/.motyga/memories"
         })

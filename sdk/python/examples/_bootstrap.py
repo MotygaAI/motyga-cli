@@ -35,7 +35,7 @@ def ensure_local_sdk_src() -> Path:
     """Add sdk/python/src to sys.path so examples run without installing the package."""
     sdk_python_dir = _SDK_PYTHON_DIR
     src_dir = sdk_python_dir / "src"
-    package_dir = src_dir / "openai_codex"
+    package_dir = src_dir / "motyga_sdk"
     if not package_dir.exists():
         raise RuntimeError(f"Could not locate local SDK package at {package_dir}")
 
@@ -48,11 +48,11 @@ def ensure_local_sdk_src() -> Path:
 
 
 def runtime_config():
-    """Return an example-friendly CodexConfig for repo-source SDK usage."""
-    from openai_codex import CodexConfig
+    """Return an example-friendly MotygaConfig for repo-source SDK usage."""
+    from motyga_sdk import MotygaConfig
 
     ensure_runtime_package_installed(sys.executable, _SDK_PYTHON_DIR)
-    return CodexConfig()
+    return MotygaConfig()
 
 
 def _png_chunk(chunk_type: bytes, data: bytes) -> bytes:
@@ -103,7 +103,7 @@ def generated_sample_image_data_url() -> str:
 
 @contextlib.contextmanager
 def temporary_sample_image_path() -> Iterator[Path]:
-    with tempfile.TemporaryDirectory(prefix="codex-python-example-image-") as temp_root:
+    with tempfile.TemporaryDirectory(prefix="motyga-python-example-image-") as temp_root:
         image_path = Path(temp_root) / "generated_sample.png"
         image_path.write_bytes(_generated_sample_png_bytes())
         yield image_path

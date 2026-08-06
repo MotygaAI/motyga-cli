@@ -1,8 +1,8 @@
 use std::io::Cursor;
 use std::path::Path;
 
-use codex_utils_image::PromptImageMode;
-use codex_utils_image::load_for_prompt_bytes;
+use motyga_utils_image::PromptImageMode;
+use motyga_utils_image::load_for_prompt_bytes;
 use divan::Bencher;
 use image::DynamicImage;
 use image::ImageFormat;

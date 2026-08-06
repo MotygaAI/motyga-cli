@@ -1,3 +1,3 @@
 # Authentication
 
-For information about Codex CLI authentication, see [this documentation](https://motyga.com/docs).
+For information about Motyga CLI authentication, see [this documentation](https://motyga.com/docs).

@@ -3,15 +3,15 @@ use super::AskForApproval;
 use super::SandboxMode;
 use super::WindowsSandboxSetupMode;
 use super::shared::default_enabled;
-use codex_experimental_api_macros::ExperimentalApi;
-use codex_protocol::config_types::AutoCompactTokenLimitScope;
-use codex_protocol::config_types::ForcedLoginMethod;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::config_types::WebSearchToolConfig;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_experimental_api_macros::ExperimentalApi;
+use motyga_protocol::config_types::AutoCompactTokenLimitScope;
+use motyga_protocol::config_types::ForcedLoginMethod;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::config_types::Verbosity;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::config_types::WebSearchToolConfig;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -77,7 +77,7 @@ pub enum ConfigLayerSource {
     #[serde(rename_all = "camelCase")]
     #[ts(rename_all = "camelCase")]
     Project {
-        dot_codex_folder: AbsolutePathBuf,
+        dot_motyga_folder: AbsolutePathBuf,
     },
 
     /// Session-layer overrides supplied via `-c`/`--config`.

@@ -5,7 +5,7 @@ pub use crate::auth::RefreshTokenFailedError;
 pub use crate::auth::RefreshTokenFailedReason;
 use crate::exec_output::ExecToolCallOutput;
 use crate::network_policy::NetworkPolicyDecisionPayload;
-use crate::protocol::CodexErrorInfo;
+use crate::protocol::MotygaErrorInfo;
 use crate::protocol::ErrorEvent;
 use crate::protocol::RateLimitReachedType;
 use crate::protocol::RateLimitSnapshot;
@@ -14,9 +14,9 @@ use chrono::DateTime;
 use chrono::Datelike;
 use chrono::Local;
 use chrono::Utc;
-use codex_async_utils::CancelErr;
-use codex_utils_string::truncate_middle_chars;
-use codex_utils_string::truncate_middle_with_token_budget;
+use motyga_async_utils::CancelErr;
+use motyga_utils_string::truncate_middle_chars;
+use motyga_utils_string::truncate_middle_with_token_budget;
 use reqwest::StatusCode;
 use serde_json;
 use std::io;
@@ -24,7 +24,7 @@ use std::time::Duration;
 use thiserror::Error;
 use tokio::task::JoinError;
 
-pub type Result<T> = std::result::Result<T, CodexErr>;
+pub type Result<T> = std::result::Result<T, MotygaErr>;
 
 /// Limit UI error messages to a reasonable size while keeping useful context.
 const ERROR_MESSAGE_UI_MAX_BYTES: usize = 2 * 1024;
@@ -65,7 +65,7 @@ pub enum SandboxErr {
 }
 
 #[derive(Error, Debug)]
-pub enum CodexErr {
+pub enum MotygaErr {
     #[error("turn aborted. Something went wrong? Hit `/feedback` to report the issue.")]
     TurnAborted,
 
@@ -96,7 +96,7 @@ pub enum CodexErr {
     #[error("request timed out")]
     RequestTimeout,
     /// Returned by run_command_stream when the child could not be spawned (its stdout/stderr pipes
-    /// could not be captured). Analogous to the previous `CodexError::Spawn` variant.
+    /// could not be captured). Analogous to the previous `MotygaError::Spawn` variant.
     #[error("spawn failed: child stdout/stderr not captured")]
     Spawn,
     /// Returned by run_command_stream when the user pressed Ctrl-C (SIGINT). Session uses this to
@@ -145,7 +145,7 @@ pub enum CodexErr {
     /// Sandbox error
     #[error("sandbox error: {0}")]
     Sandbox(#[from] SandboxErr),
-    #[error("codex-linux-sandbox was required but not provided")]
+    #[error("motyga-linux-sandbox was required but not provided")]
     LandlockSandboxExecutableNotProvided,
     #[error("unsupported operation: {0}")]
     UnsupportedOperation(String),
@@ -172,55 +172,55 @@ pub enum CodexErr {
     EnvVar(EnvVarError),
 }
 
-impl From<CancelErr> for CodexErr {
+impl From<CancelErr> for MotygaErr {
     fn from(_: CancelErr) -> Self {
-        CodexErr::TurnAborted
+        MotygaErr::TurnAborted
     }
 }
 
-impl CodexErr {
+impl MotygaErr {
     pub fn is_retryable(&self) -> bool {
         match self {
-            CodexErr::TurnAborted
-            | CodexErr::SessionBudgetExceeded
-            | CodexErr::Interrupted
-            | CodexErr::EnvVar(_)
-            | CodexErr::Fatal(_)
-            | CodexErr::UsageNotIncluded
-            | CodexErr::QuotaExceeded
-            | CodexErr::InvalidImageRequest()
-            | CodexErr::Gateway(_)
-            | CodexErr::InvalidRequest(_)
-            | CodexErr::RefreshTokenFailed(_)
-            | CodexErr::UnsupportedOperation(_)
-            | CodexErr::Sandbox(_)
-            | CodexErr::LandlockSandboxExecutableNotProvided
-            | CodexErr::RetryLimit(_)
-            | CodexErr::ContextWindowExceeded
-            | CodexErr::ThreadNotFound(_)
-            | CodexErr::AgentLimitReached { .. }
-            | CodexErr::Spawn
-            | CodexErr::SessionConfiguredNotFirstEvent
-            | CodexErr::UsageLimitReached(_)
-            | CodexErr::ServerOverloaded
-            | CodexErr::CyberPolicy { .. } => false,
-            CodexErr::Stream(..)
-            | CodexErr::Timeout
-            | CodexErr::RequestTimeout
-            | CodexErr::UnexpectedStatus(_)
-            | CodexErr::ResponseStreamFailed(_)
-            | CodexErr::ConnectionFailed(_)
-            | CodexErr::InternalServerError
-            | CodexErr::InternalAgentDied
-            | CodexErr::Io(_)
-            | CodexErr::Json(_)
-            | CodexErr::TokioJoin(_) => true,
+            MotygaErr::TurnAborted
+            | MotygaErr::SessionBudgetExceeded
+            | MotygaErr::Interrupted
+            | MotygaErr::EnvVar(_)
+            | MotygaErr::Fatal(_)
+            | MotygaErr::UsageNotIncluded
+            | MotygaErr::QuotaExceeded
+            | MotygaErr::InvalidImageRequest()
+            | MotygaErr::Gateway(_)
+            | MotygaErr::InvalidRequest(_)
+            | MotygaErr::RefreshTokenFailed(_)
+            | MotygaErr::UnsupportedOperation(_)
+            | MotygaErr::Sandbox(_)
+            | MotygaErr::LandlockSandboxExecutableNotProvided
+            | MotygaErr::RetryLimit(_)
+            | MotygaErr::ContextWindowExceeded
+            | MotygaErr::ThreadNotFound(_)
+            | MotygaErr::AgentLimitReached { .. }
+            | MotygaErr::Spawn
+            | MotygaErr::SessionConfiguredNotFirstEvent
+            | MotygaErr::UsageLimitReached(_)
+            | MotygaErr::ServerOverloaded
+            | MotygaErr::CyberPolicy { .. } => false,
+            MotygaErr::Stream(..)
+            | MotygaErr::Timeout
+            | MotygaErr::RequestTimeout
+            | MotygaErr::UnexpectedStatus(_)
+            | MotygaErr::ResponseStreamFailed(_)
+            | MotygaErr::ConnectionFailed(_)
+            | MotygaErr::InternalServerError
+            | MotygaErr::InternalAgentDied
+            | MotygaErr::Io(_)
+            | MotygaErr::Json(_)
+            | MotygaErr::TokioJoin(_) => true,
             #[cfg(target_os = "linux")]
-            CodexErr::LandlockRuleset(_) | CodexErr::LandlockPathFd(_) => false,
+            MotygaErr::LandlockRuleset(_) | MotygaErr::LandlockPathFd(_) => false,
         }
     }
 
-    /// Minimal shim so that existing `e.downcast_ref::<CodexErr>()` checks continue to compile
+    /// Minimal shim so that existing `e.downcast_ref::<MotygaErr>()` checks continue to compile
     /// after replacing `anyhow::Error` in the return signature. This mirrors the behavior of
     /// `anyhow::Error::downcast_ref` but works directly on our concrete enum.
     pub fn downcast_ref<T: std::any::Any>(&self) -> Option<&T> {
@@ -228,33 +228,33 @@ impl CodexErr {
     }
 
     /// Translate core error to client-facing protocol error.
-    pub fn to_codex_protocol_error(&self) -> CodexErrorInfo {
+    pub fn to_motyga_protocol_error(&self) -> MotygaErrorInfo {
         match self {
-            CodexErr::ContextWindowExceeded => CodexErrorInfo::ContextWindowExceeded,
-            CodexErr::SessionBudgetExceeded => CodexErrorInfo::SessionBudgetExceeded,
-            CodexErr::UsageLimitReached(_)
-            | CodexErr::QuotaExceeded
-            | CodexErr::UsageNotIncluded => CodexErrorInfo::UsageLimitExceeded,
-            CodexErr::ServerOverloaded => CodexErrorInfo::ServerOverloaded,
-            CodexErr::CyberPolicy { .. } => CodexErrorInfo::CyberPolicy,
-            CodexErr::RetryLimit(_) => CodexErrorInfo::ResponseTooManyFailedAttempts {
+            MotygaErr::ContextWindowExceeded => MotygaErrorInfo::ContextWindowExceeded,
+            MotygaErr::SessionBudgetExceeded => MotygaErrorInfo::SessionBudgetExceeded,
+            MotygaErr::UsageLimitReached(_)
+            | MotygaErr::QuotaExceeded
+            | MotygaErr::UsageNotIncluded => MotygaErrorInfo::UsageLimitExceeded,
+            MotygaErr::ServerOverloaded => MotygaErrorInfo::ServerOverloaded,
+            MotygaErr::CyberPolicy { .. } => MotygaErrorInfo::CyberPolicy,
+            MotygaErr::RetryLimit(_) => MotygaErrorInfo::ResponseTooManyFailedAttempts {
                 http_status_code: self.http_status_code_value(),
             },
-            CodexErr::ConnectionFailed(_) => CodexErrorInfo::HttpConnectionFailed {
+            MotygaErr::ConnectionFailed(_) => MotygaErrorInfo::HttpConnectionFailed {
                 http_status_code: self.http_status_code_value(),
             },
-            CodexErr::ResponseStreamFailed(_) => CodexErrorInfo::ResponseStreamConnectionFailed {
+            MotygaErr::ResponseStreamFailed(_) => MotygaErrorInfo::ResponseStreamConnectionFailed {
                 http_status_code: self.http_status_code_value(),
             },
-            CodexErr::RefreshTokenFailed(_) => CodexErrorInfo::Unauthorized,
-            CodexErr::SessionConfiguredNotFirstEvent
-            | CodexErr::InternalServerError
-            | CodexErr::InternalAgentDied => CodexErrorInfo::InternalServerError,
-            CodexErr::UnsupportedOperation(_)
-            | CodexErr::ThreadNotFound(_)
-            | CodexErr::AgentLimitReached { .. } => CodexErrorInfo::BadRequest,
-            CodexErr::Sandbox(_) => CodexErrorInfo::SandboxError,
-            _ => CodexErrorInfo::Other,
+            MotygaErr::RefreshTokenFailed(_) => MotygaErrorInfo::Unauthorized,
+            MotygaErr::SessionConfiguredNotFirstEvent
+            | MotygaErr::InternalServerError
+            | MotygaErr::InternalAgentDied => MotygaErrorInfo::InternalServerError,
+            MotygaErr::UnsupportedOperation(_)
+            | MotygaErr::ThreadNotFound(_)
+            | MotygaErr::AgentLimitReached { .. } => MotygaErrorInfo::BadRequest,
+            MotygaErr::Sandbox(_) => MotygaErrorInfo::SandboxError,
+            _ => MotygaErrorInfo::Other,
         }
     }
 
@@ -266,16 +266,16 @@ impl CodexErr {
         };
         ErrorEvent {
             message,
-            codex_error_info: Some(self.to_codex_protocol_error()),
+            motyga_error_info: Some(self.to_motyga_protocol_error()),
         }
     }
 
     pub fn http_status_code_value(&self) -> Option<u16> {
         let http_status_code = match self {
-            CodexErr::RetryLimit(err) => Some(err.status),
-            CodexErr::UnexpectedStatus(err) => Some(err.status),
-            CodexErr::ConnectionFailed(err) => err.source.status(),
-            CodexErr::ResponseStreamFailed(err) => err.source.status(),
+            MotygaErr::RetryLimit(err) => Some(err.status),
+            MotygaErr::UnexpectedStatus(err) => Some(err.status),
+            MotygaErr::ConnectionFailed(err) => err.source.status(),
+            MotygaErr::ResponseStreamFailed(err) => err.source.status(),
             _ => None,
         };
         http_status_code.as_ref().map(StatusCode::as_u16)
@@ -468,7 +468,7 @@ impl std::fmt::Display for UsageLimitReachedError {
             .and_then(|snapshot| snapshot.limit_name.as_deref())
             .map(str::trim)
             .filter(|name| !name.is_empty())
-            && !limit_name.eq_ignore_ascii_case("codex")
+            && !limit_name.eq_ignore_ascii_case("motyga")
         {
             return write!(
                 f,
@@ -639,9 +639,9 @@ impl std::fmt::Display for EnvVarError {
     }
 }
 
-pub fn get_error_message_ui(e: &CodexErr) -> String {
+pub fn get_error_message_ui(e: &MotygaErr) -> String {
     let message = match e {
-        CodexErr::Sandbox(SandboxErr::Denied { output, .. }) => {
+        MotygaErr::Sandbox(SandboxErr::Denied { output, .. }) => {
             let aggregated = output.aggregated_output.text.trim();
             if !aggregated.is_empty() {
                 output.aggregated_output.text.clone()
@@ -660,7 +660,7 @@ pub fn get_error_message_ui(e: &CodexErr) -> String {
             }
         }
         // Timeouts are not sandbox errors from a UX perspective; present them plainly.
-        CodexErr::Sandbox(SandboxErr::Timeout { output }) => {
+        MotygaErr::Sandbox(SandboxErr::Timeout { output }) => {
             format!(
                 "error: command timed out after {} ms",
                 output.duration.as_millis()

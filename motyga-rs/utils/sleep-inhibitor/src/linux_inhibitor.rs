@@ -5,7 +5,7 @@ use std::process::Stdio;
 use tracing::warn;
 
 const ASSERTION_REASON: &str = "Motyga is running an active turn";
-const APP_ID: &str = "codex";
+const APP_ID: &str = "motyga";
 // Keep the blocker process alive "long enough" without needing restarts.
 // This is `i32::MAX` seconds, which is accepted by common `sleep` implementations.
 const BLOCKER_SLEEP_SECONDS: &str = "2147483647";

@@ -2,8 +2,8 @@ use clap::Args;
 use clap::FromArgMatches;
 use clap::Parser;
 use clap::ValueEnum;
-use codex_utils_cli::CliConfigOverrides;
-use codex_utils_cli::SharedCliOptions;
+use motyga_utils_cli::CliConfigOverrides;
+use motyga_utils_cli::SharedCliOptions;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]

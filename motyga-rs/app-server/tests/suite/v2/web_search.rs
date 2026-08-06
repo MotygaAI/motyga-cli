@@ -7,20 +7,20 @@ use app_test_support::ChatGptAuthFixture;
 use app_test_support::TestAppServer;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::ItemStartedNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadReadParams;
-use codex_app_server_protocol::ThreadReadResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_app_server_protocol::WebSearchAction;
-use codex_config::types::AuthCredentialsStoreMode;
+use motyga_app_server_protocol::ItemCompletedNotification;
+use motyga_app_server_protocol::ItemStartedNotification;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadReadParams;
+use motyga_app_server_protocol::ThreadReadResponse;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_app_server_protocol::WebSearchAction;
+use motyga_config::types::AuthCredentialsStoreMode;
 use core_test_support::responses;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -70,16 +70,16 @@ async fn standalone_web_search_round_trips_output() -> Result<()> {
     )
     .await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("access-chatgpt"),
         AuthCredentialsStoreMode::File,
     )?;
 
     let mut mcp =
-        TestAppServer::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+        TestAppServer::new_with_env(motyga_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_req = mcp
@@ -197,7 +197,7 @@ async fn standalone_web_search_round_trips_output() -> Result<()> {
 
     drop(mcp);
     let mut reloaded_mcp =
-        TestAppServer::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+        TestAppServer::new_with_env(motyga_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, reloaded_mcp.initialize()).await??;
     let read_req = reloaded_mcp
         .send_thread_read_request(ThreadReadParams {
@@ -258,7 +258,7 @@ async fn wait_for_web_search_completed(
 
 async fn mount_search_response(server: &MockServer) {
     Mock::given(method("POST"))
-        .and(path("/api/codex/alpha/search"))
+        .and(path("/api/motyga/alpha/search"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "encrypted_output": "ciphertext",
             "output": "Search result",
@@ -284,15 +284,15 @@ async fn search_request_body(server: &MockServer) -> Result<Value> {
         .await
         .context("failed to fetch received requests")?
         .into_iter()
-        .find(|request| request.url.path() == "/api/codex/alpha/search")
+        .find(|request| request.url.path() == "/api/motyga/alpha/search")
         .context("expected standalone search request")?
         .body_json()
         .context("search request body should be JSON")
 }
 
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
+fn create_config_toml(motyga_home: &Path, server_uri: &str) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 model = "mock-model"
@@ -306,7 +306,7 @@ standalone_web_search = true
 
 [model_providers.openai-custom]
 name = "OpenAI"
-base_url = "{server_uri}/api/codex"
+base_url = "{server_uri}/api/motyga"
 wire_api = "responses"
 request_max_retries = 0
 stream_max_retries = 0

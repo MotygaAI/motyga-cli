@@ -19,24 +19,24 @@ use crate::tools::handlers::multi_agents_spec::MULTI_AGENT_V1_NAMESPACE;
 use crate::tools::handlers::parse_arguments;
 use crate::tools::registry::CoreToolRuntime;
 use crate::tools::registry::ToolExecutor;
-use codex_protocol::ThreadId;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::CollabAgentInteractionBeginEvent;
-use codex_protocol::protocol::CollabAgentInteractionEndEvent;
-use codex_protocol::protocol::CollabAgentRef;
-use codex_protocol::protocol::CollabAgentSpawnBeginEvent;
-use codex_protocol::protocol::CollabAgentSpawnEndEvent;
-use codex_protocol::protocol::CollabCloseBeginEvent;
-use codex_protocol::protocol::CollabCloseEndEvent;
-use codex_protocol::protocol::CollabResumeBeginEvent;
-use codex_protocol::protocol::CollabResumeEndEvent;
-use codex_protocol::protocol::CollabWaitingBeginEvent;
-use codex_protocol::protocol::CollabWaitingEndEvent;
-use codex_protocol::user_input::UserInput;
-use codex_tools::ToolName;
-use codex_tools::ToolSearchInfo;
-use codex_tools::ToolSearchSourceInfo;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::CollabAgentInteractionBeginEvent;
+use motyga_protocol::protocol::CollabAgentInteractionEndEvent;
+use motyga_protocol::protocol::CollabAgentRef;
+use motyga_protocol::protocol::CollabAgentSpawnBeginEvent;
+use motyga_protocol::protocol::CollabAgentSpawnEndEvent;
+use motyga_protocol::protocol::CollabCloseBeginEvent;
+use motyga_protocol::protocol::CollabCloseEndEvent;
+use motyga_protocol::protocol::CollabResumeBeginEvent;
+use motyga_protocol::protocol::CollabResumeEndEvent;
+use motyga_protocol::protocol::CollabWaitingBeginEvent;
+use motyga_protocol::protocol::CollabWaitingEndEvent;
+use motyga_protocol::user_input::UserInput;
+use motyga_tools::ToolName;
+use motyga_tools::ToolSearchInfo;
+use motyga_tools::ToolSearchSourceInfo;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value as JsonValue;
@@ -67,7 +67,7 @@ pub(crate) fn parse_agent_id_targets(
 
 fn multi_agent_tool_search_info(
     search_text: &str,
-    spec: codex_tools::ToolSpec,
+    spec: motyga_tools::ToolSpec,
 ) -> Option<ToolSearchInfo> {
     ToolSearchInfo::from_spec(
         search_text.to_string(),

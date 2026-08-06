@@ -13,8 +13,8 @@ use super::remote_plugin_canonical_marketplace_name;
 use crate::store::PLUGINS_CACHE_DIR;
 use crate::store::PluginStore;
 use crate::store::PluginStoreError;
-use codex_login::CodexAuth;
-use codex_plugin::PluginId;
+use motyga_login::MotygaAuth;
+use motyga_plugin::PluginId;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
@@ -80,16 +80,16 @@ pub struct RemotePluginCacheMutationGuard {
 }
 
 pub(crate) fn maybe_start_remote_installed_plugin_bundle_sync(
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     config: RemotePluginServiceConfig,
-    auth: Option<CodexAuth>,
+    auth: Option<MotygaAuth>,
     on_local_cache_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
 ) {
     let Some(auth) = auth else {
         return;
     };
     let key = RemoteInstalledPluginBundleSyncKey {
-        plugin_cache_root: remote_plugin_cache_root(&codex_home),
+        plugin_cache_root: remote_plugin_cache_root(&motyga_home),
     };
     if !mark_remote_installed_plugin_bundle_sync_in_flight(key.clone()) {
         return;
@@ -97,7 +97,7 @@ pub(crate) fn maybe_start_remote_installed_plugin_bundle_sync(
 
     tokio::spawn(async move {
         let result =
-            sync_remote_installed_plugin_bundles_once(codex_home, &config, Some(&auth)).await;
+            sync_remote_installed_plugin_bundles_once(motyga_home, &config, Some(&auth)).await;
         match result {
             Ok(outcome) => {
                 if outcome.changed_local_cache()
@@ -124,9 +124,9 @@ pub(crate) fn maybe_start_remote_installed_plugin_bundle_sync(
 }
 
 pub async fn sync_remote_installed_plugin_bundles_once(
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
 ) -> Result<RemoteInstalledPluginBundleSyncOutcome, RemoteInstalledPluginBundleSyncError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let global = async {
@@ -155,7 +155,7 @@ pub async fn sync_remote_installed_plugin_bundles_once(
     };
 
     let (global, workspace, user) = tokio::try_join!(global, workspace, user)?;
-    let store = PluginStore::try_new(codex_home.clone())?;
+    let store = PluginStore::try_new(motyga_home.clone())?;
     let mut installed_plugin_names_by_marketplace =
         BTreeMap::<String, BTreeSet<String>>::from_iter([
             (REMOTE_GLOBAL_MARKETPLACE_NAME.to_string(), BTreeSet::new()),
@@ -248,7 +248,7 @@ pub async fn sync_remote_installed_plugin_bundles_once(
             };
 
             match crate::remote_bundle::download_and_install_remote_plugin_bundle(
-                codex_home.clone(),
+                motyga_home.clone(),
                 bundle,
             )
             .await
@@ -272,7 +272,7 @@ pub async fn sync_remote_installed_plugin_bundles_once(
 
     let removed_cache_plugin_ids = tokio::task::spawn_blocking(move || {
         remove_stale_remote_plugin_caches(
-            codex_home.as_path(),
+            motyga_home.as_path(),
             &installed_plugin_names_by_marketplace,
         )
     })
@@ -287,12 +287,12 @@ pub async fn sync_remote_installed_plugin_bundles_once(
 }
 
 pub fn mark_remote_plugin_cache_mutation_in_flight(
-    codex_home: &Path,
+    motyga_home: &Path,
     marketplace_name: &str,
     plugin_name: &str,
 ) -> RemotePluginCacheMutationGuard {
     let key = RemotePluginCacheMutationKey {
-        plugin_cache_root: remote_plugin_cache_root(codex_home),
+        plugin_cache_root: remote_plugin_cache_root(motyga_home),
         marketplace_name: marketplace_name.to_string(),
         plugin_name: plugin_name.to_string(),
     };
@@ -325,7 +325,7 @@ impl Drop for RemotePluginCacheMutationGuard {
 }
 
 fn remove_stale_remote_plugin_caches(
-    codex_home: &Path,
+    motyga_home: &Path,
     installed_plugin_names_by_marketplace: &BTreeMap<String, BTreeSet<String>>,
 ) -> Result<Vec<String>, String> {
     let mut removed_cache_plugin_ids = Vec::new();
@@ -337,7 +337,7 @@ fn remove_stale_remote_plugin_caches(
         REMOTE_WORKSPACE_SHARED_WITH_ME_PRIVATE_MARKETPLACE_NAME,
         REMOTE_WORKSPACE_SHARED_WITH_ME_UNLISTED_MARKETPLACE_NAME,
     ] {
-        let marketplace_root = codex_home.join(PLUGINS_CACHE_DIR).join(marketplace_name);
+        let marketplace_root = motyga_home.join(PLUGINS_CACHE_DIR).join(marketplace_name);
         if !marketplace_root.exists() {
             continue;
         }
@@ -367,7 +367,7 @@ fn remove_stale_remote_plugin_caches(
             if installed_plugin_names.contains(&plugin_name) {
                 continue;
             }
-            if is_remote_plugin_cache_mutation_in_flight(codex_home, marketplace_name, &plugin_name)
+            if is_remote_plugin_cache_mutation_in_flight(motyga_home, marketplace_name, &plugin_name)
             {
                 continue;
             }
@@ -399,12 +399,12 @@ fn remove_stale_remote_plugin_caches(
     Ok(removed_cache_plugin_ids)
 }
 
-fn remote_plugin_cache_root(codex_home: &Path) -> PathBuf {
-    codex_home.join(PLUGINS_CACHE_DIR)
+fn remote_plugin_cache_root(motyga_home: &Path) -> PathBuf {
+    motyga_home.join(PLUGINS_CACHE_DIR)
 }
 
 fn is_remote_plugin_cache_mutation_in_flight(
-    codex_home: &Path,
+    motyga_home: &Path,
     marketplace_name: &str,
     plugin_name: &str,
 ) -> bool {
@@ -416,7 +416,7 @@ fn is_remote_plugin_cache_mutation_in_flight(
         Err(err) => err.into_inner(),
     };
     mutations.contains_key(&RemotePluginCacheMutationKey {
-        plugin_cache_root: remote_plugin_cache_root(codex_home),
+        plugin_cache_root: remote_plugin_cache_root(motyga_home),
         marketplace_name: marketplace_name.to_string(),
         plugin_name: plugin_name.to_string(),
     })
@@ -459,9 +459,9 @@ mod tests {
 
     #[test]
     fn remote_installed_plugin_sync_in_flight_dedupes_by_cache_root() {
-        let codex_home = tempfile::tempdir().expect("create motyga home");
+        let motyga_home = tempfile::tempdir().expect("create motyga home");
         let key = RemoteInstalledPluginBundleSyncKey {
-            plugin_cache_root: remote_plugin_cache_root(codex_home.path()),
+            plugin_cache_root: remote_plugin_cache_root(motyga_home.path()),
         };
 
         assert!(mark_remote_installed_plugin_bundle_sync_in_flight(
@@ -481,8 +481,8 @@ mod tests {
     #[tokio::test]
     async fn sync_backfills_remote_plugin_install_metadata_for_current_bundle() {
         let server = MockServer::start().await;
-        let codex_home = tempfile::tempdir().expect("create motyga home");
-        let cached_manifest = codex_home
+        let motyga_home = tempfile::tempdir().expect("create motyga home");
+        let cached_manifest = motyga_home
             .path()
             .join(PLUGINS_CACHE_DIR)
             .join(REMOTE_GLOBAL_MARKETPLACE_NAME)
@@ -545,10 +545,10 @@ mod tests {
         let config = RemotePluginServiceConfig {
             chatgpt_base_url: format!("{}/backend-api", server.uri()),
         };
-        let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+        let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
 
         let outcome = sync_remote_installed_plugin_bundles_once(
-            codex_home.path().to_path_buf(),
+            motyga_home.path().to_path_buf(),
             &config,
             Some(&auth),
         )
@@ -561,9 +561,9 @@ mod tests {
             REMOTE_GLOBAL_MARKETPLACE_NAME.to_string(),
         )
         .expect("valid plugin id");
-        let metadata_path = PluginStore::new(codex_home.path().to_path_buf())
+        let metadata_path = PluginStore::new(motyga_home.path().to_path_buf())
             .plugin_base_root(&plugin_id)
-            .join(".codex-remote-plugin-install.json");
+            .join(".motyga-remote-plugin-install.json");
         assert_eq!(
             serde_json::from_str::<serde_json::Value>(
                 &std::fs::read_to_string(metadata_path.as_path())
@@ -579,8 +579,8 @@ mod tests {
 
     #[test]
     fn stale_remote_plugin_cleanup_skips_cache_mutations_in_progress() {
-        let codex_home = tempfile::tempdir().expect("create motyga home");
-        let cached_manifest = codex_home
+        let motyga_home = tempfile::tempdir().expect("create motyga home");
+        let cached_manifest = motyga_home
             .path()
             .join(PLUGINS_CACHE_DIR)
             .join(REMOTE_GLOBAL_MARKETPLACE_NAME)
@@ -610,17 +610,17 @@ mod tests {
             ]);
 
         let guard = mark_remote_plugin_cache_mutation_in_flight(
-            codex_home.path(),
+            motyga_home.path(),
             REMOTE_GLOBAL_MARKETPLACE_NAME,
             "linear",
         );
         let second_guard = mark_remote_plugin_cache_mutation_in_flight(
-            codex_home.path(),
+            motyga_home.path(),
             REMOTE_GLOBAL_MARKETPLACE_NAME,
             "linear",
         );
         let removed = remove_stale_remote_plugin_caches(
-            codex_home.path(),
+            motyga_home.path(),
             &installed_plugin_names_by_marketplace,
         )
         .expect("cleanup while install is guarded");
@@ -629,7 +629,7 @@ mod tests {
 
         drop(guard);
         let removed = remove_stale_remote_plugin_caches(
-            codex_home.path(),
+            motyga_home.path(),
             &installed_plugin_names_by_marketplace,
         )
         .expect("cleanup while second install guard is still active");
@@ -638,7 +638,7 @@ mod tests {
 
         drop(second_guard);
         let removed = remove_stale_remote_plugin_caches(
-            codex_home.path(),
+            motyga_home.path(),
             &installed_plugin_names_by_marketplace,
         )
         .expect("cleanup after install guard is dropped");
@@ -648,8 +648,8 @@ mod tests {
 
     #[test]
     fn stale_remote_plugin_cleanup_removes_stale_marketplace_caches_and_keeps_canonical_cache() {
-        let codex_home = tempfile::tempdir().expect("create motyga home");
-        let created_by_me_cached_manifest = codex_home
+        let motyga_home = tempfile::tempdir().expect("create motyga home");
+        let created_by_me_cached_manifest = motyga_home
             .path()
             .join(PLUGINS_CACHE_DIR)
             .join(REMOTE_CREATED_BY_ME_MARKETPLACE_NAME)
@@ -668,7 +668,7 @@ mod tests {
             r#"{"name":"created-by-me-plugin"}"#,
         )
         .expect("write cached plugin manifest");
-        let cached_manifest = codex_home
+        let cached_manifest = motyga_home
             .path()
             .join(PLUGINS_CACHE_DIR)
             .join(REMOTE_WORKSPACE_SHARED_WITH_ME_PRIVATE_MARKETPLACE_NAME)
@@ -680,7 +680,7 @@ mod tests {
             .expect("create cached plugin manifest parent");
         std::fs::write(&cached_manifest, r#"{"name":"private-plugin"}"#)
             .expect("write cached plugin manifest");
-        let canonical_cached_manifest = codex_home
+        let canonical_cached_manifest = motyga_home
             .path()
             .join(PLUGINS_CACHE_DIR)
             .join(REMOTE_WORKSPACE_SHARED_WITH_ME_MARKETPLACE_NAME)
@@ -718,7 +718,7 @@ mod tests {
             ]);
 
         let removed = remove_stale_remote_plugin_caches(
-            codex_home.path(),
+            motyga_home.path(),
             &installed_plugin_names_by_marketplace,
         )
         .expect("cleanup private shared-with-me cache");

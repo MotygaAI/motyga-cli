@@ -1,26 +1,26 @@
-use codex_protocol::items::AgentMessageContent;
-use codex_protocol::items::AgentMessageItem;
-use codex_protocol::items::ReasoningItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::items::UserMessageItem;
-use codex_protocol::items::WebSearchItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::models::ReasoningItemContent;
-use codex_protocol::models::ReasoningItemReasoningSummary;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::models::is_image_close_tag_text;
-use codex_protocol::models::is_image_open_tag_text;
-use codex_protocol::models::is_local_image_close_tag_text;
-use codex_protocol::models::is_local_image_open_tag_text;
-use codex_protocol::protocol::COLLABORATION_MODE_OPEN_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_OPEN_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_OPEN_TAG;
-use codex_protocol::protocol::MULTI_AGENT_MODE_OPEN_TAG;
-use codex_protocol::protocol::REALTIME_CONVERSATION_OPEN_TAG;
-use codex_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
-use codex_protocol::user_input::UserInput;
+use motyga_protocol::items::AgentMessageContent;
+use motyga_protocol::items::AgentMessageItem;
+use motyga_protocol::items::ReasoningItem;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::items::UserMessageItem;
+use motyga_protocol::items::WebSearchItem;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::MessagePhase;
+use motyga_protocol::models::ReasoningItemContent;
+use motyga_protocol::models::ReasoningItemReasoningSummary;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::models::WebSearchAction;
+use motyga_protocol::models::is_image_close_tag_text;
+use motyga_protocol::models::is_image_open_tag_text;
+use motyga_protocol::models::is_local_image_close_tag_text;
+use motyga_protocol::models::is_local_image_open_tag_text;
+use motyga_protocol::protocol::COLLABORATION_MODE_OPEN_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_OPEN_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_OPEN_TAG;
+use motyga_protocol::protocol::MULTI_AGENT_MODE_OPEN_TAG;
+use motyga_protocol::protocol::REALTIME_CONVERSATION_OPEN_TAG;
+use motyga_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
+use motyga_protocol::user_input::UserInput;
 use tracing::warn;
 use uuid::Uuid;
 
@@ -209,7 +209,7 @@ pub fn parse_turn_item(item: &ResponseItem) -> Option<TurnItem> {
             result,
             ..
         } => Some(TurnItem::ImageGeneration(
-            codex_protocol::items::ImageGenerationItem {
+            motyga_protocol::items::ImageGenerationItem {
                 id: id.clone()?,
                 status: status.clone(),
                 revised_prompt: revised_prompt.clone(),

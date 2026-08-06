@@ -17,10 +17,10 @@ pub(super) struct BuiltinPet {
 
 pub(super) const BUILTIN_PETS: &[BuiltinPet] = &[
     BuiltinPet {
-        id: "codex",
+        id: "motyga",
         display_name: "Motyga",
         description: "The original Motyga companion",
-        spritesheet_file: "codex-spritesheet-v4.webp",
+        spritesheet_file: "motyga-spritesheet-v4.webp",
     },
     BuiltinPet {
         id: "dewey",

@@ -4,10 +4,10 @@ mod osc9;
 use std::io;
 
 use bel::BelBackend;
-use codex_config::types::NotificationMethod;
-use codex_terminal_detection::TerminalInfo;
-use codex_terminal_detection::TerminalName;
-use codex_terminal_detection::terminal_info;
+use motyga_config::types::NotificationMethod;
+use motyga_terminal_detection::TerminalInfo;
+use motyga_terminal_detection::TerminalName;
+use motyga_terminal_detection::terminal_info;
 use osc9::Osc9Backend;
 
 #[derive(Debug)]
@@ -65,9 +65,9 @@ fn supports_osc9(terminal: &TerminalInfo) -> bool {
 mod tests {
     use super::detect_backend;
     use super::supports_osc9;
-    use codex_config::types::NotificationMethod;
-    use codex_terminal_detection::TerminalInfo;
-    use codex_terminal_detection::TerminalName;
+    use motyga_config::types::NotificationMethod;
+    use motyga_terminal_detection::TerminalInfo;
+    use motyga_terminal_detection::TerminalName;
     use pretty_assertions::assert_eq;
 
     fn test_terminal(name: TerminalName) -> TerminalInfo {

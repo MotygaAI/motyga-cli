@@ -1,13 +1,13 @@
 #![cfg(not(target_os = "windows"))]
 
 use anyhow::Ok;
-use codex_features::Feature;
-use codex_protocol::protocol::DeprecationNoticeEvent;
-use codex_protocol::protocol::EventMsg;
+use motyga_features::Feature;
+use motyga_protocol::protocol::DeprecationNoticeEvent;
+use motyga_protocol::protocol::EventMsg;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
@@ -18,7 +18,7 @@ async fn emits_deprecation_notice_for_legacy_feature_flag() -> anyhow::Result<()
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         let mut features = config.features.get().clone();
         features.enable(Feature::UnifiedExec);
         features
@@ -30,9 +30,9 @@ async fn emits_deprecation_notice_for_legacy_feature_flag() -> anyhow::Result<()
         config.use_experimental_unified_exec_tool = true;
     });
 
-    let TestCodex { codex, .. } = builder.build(&server).await?;
+    let TestMotyga { motyga, .. } = builder.build(&server).await?;
 
-    let notice = wait_for_event_match(&codex, |event| match event {
+    let notice = wait_for_event_match(&motyga, |event| match event {
         EventMsg::DeprecationNotice(ev) => Some(ev.clone()),
         _ => None,
     })
@@ -60,7 +60,7 @@ async fn emits_deprecation_notice_for_web_search_feature_flag_values() -> anyhow
     for enabled in [true, false] {
         let server = start_mock_server().await;
 
-        let mut builder = test_codex().with_config(move |config| {
+        let mut builder = test_motyga().with_config(move |config| {
             let mut entries = BTreeMap::new();
             entries.insert("web_search_request".to_string(), enabled);
             let mut features = config.features.get().clone();
@@ -71,9 +71,9 @@ async fn emits_deprecation_notice_for_web_search_feature_flag_values() -> anyhow
                 .expect("test config should allow managed feature map updates");
         });
 
-        let TestCodex { codex, .. } = builder.build(&server).await?;
+        let TestMotyga { motyga, .. } = builder.build(&server).await?;
 
-        let notice = wait_for_event_match(&codex, |event| match event {
+        let notice = wait_for_event_match(&motyga, |event| match event {
             EventMsg::DeprecationNotice(ev)
                 if ev.summary.contains("[features].web_search_request") =>
             {
@@ -106,7 +106,7 @@ async fn emits_deprecation_notice_for_use_legacy_landlock() -> anyhow::Result<()
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         let mut entries = BTreeMap::new();
         entries.insert("use_legacy_landlock".to_string(), true);
         let mut features = config.features.get().clone();
@@ -117,9 +117,9 @@ async fn emits_deprecation_notice_for_use_legacy_landlock() -> anyhow::Result<()
             .expect("test config should allow managed feature map updates");
     });
 
-    let TestCodex { codex, .. } = builder.build(&server).await?;
+    let TestMotyga { motyga, .. } = builder.build(&server).await?;
 
-    let notice = wait_for_event_match(&codex, |event| match event {
+    let notice = wait_for_event_match(&motyga, |event| match event {
         EventMsg::DeprecationNotice(ev)
             if ev.summary.contains("[features].use_legacy_landlock") =>
         {

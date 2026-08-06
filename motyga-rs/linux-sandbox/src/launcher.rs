@@ -11,8 +11,8 @@ use crate::bundled_bwrap;
 use crate::bundled_bwrap::BundledBwrapLauncher;
 use crate::exec_util::argv_to_cstrings;
 use crate::exec_util::make_files_inheritable;
-use codex_sandboxing::find_system_bwrap_in_path;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_sandboxing::find_system_bwrap_in_path;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum BubblewrapLauncher {
@@ -42,7 +42,7 @@ pub(crate) fn exec_bwrap(argv: Vec<String>, preserved_files: Vec<File>) -> ! {
         BubblewrapLauncher::Unavailable => {
             panic!(
                 "bubblewrap is unavailable: no system bwrap was found on PATH and no bundled \
-                 codex-resources/bwrap binary was found next to the Codex executable"
+                 motyga-resources/bwrap binary was found next to the Motyga executable"
             )
         }
     }

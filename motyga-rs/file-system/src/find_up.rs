@@ -1,8 +1,8 @@
 use crate::ExecutorFileSystem;
 use crate::FileSystemResult;
 use crate::FileSystemSandboxContext;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use futures::StreamExt;
 use std::io;
 

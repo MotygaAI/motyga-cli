@@ -1,9 +1,9 @@
 #![cfg(unix)]
-use codex_core::spawn::StdioPolicy;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_absolute_path::test_support::PathBufExt;
+use motyga_core::spawn::StdioPolicy;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::test_support::PathBufExt;
 use std::collections::HashMap;
 use std::future::Future;
 use std::io;
@@ -20,14 +20,14 @@ async fn spawn_command_under_sandbox(
     stdio_policy: StdioPolicy,
     env: HashMap<String, String>,
 ) -> std::io::Result<Child> {
-    use codex_core::exec::ExecCapturePolicy;
-    use codex_core::exec::ExecParams;
-    use codex_core::exec::build_exec_request;
-    use codex_core::sandboxing::SandboxPermissions;
-    use codex_protocol::config_types::WindowsSandboxLevel;
+    use motyga_core::exec::ExecCapturePolicy;
+    use motyga_core::exec::ExecParams;
+    use motyga_core::exec::build_exec_request;
+    use motyga_core::sandboxing::SandboxPermissions;
+    use motyga_protocol::config_types::WindowsSandboxLevel;
     use std::process::Stdio;
 
-    let codex_linux_sandbox_exe = None;
+    let motyga_linux_sandbox_exe = None;
     let exec_request = build_exec_request(
         ExecParams {
             command,
@@ -46,7 +46,7 @@ async fn spawn_command_under_sandbox(
         permission_profile,
         sandbox_cwd,
         std::slice::from_ref(sandbox_cwd),
-        &codex_linux_sandbox_exe,
+        &motyga_linux_sandbox_exe,
         /*use_legacy_landlock*/ false,
     )
     .map_err(|err| io::Error::other(err.to_string()))?;
@@ -95,12 +95,12 @@ async fn spawn_command_under_sandbox(
     stdio_policy: StdioPolicy,
     env: HashMap<String, String>,
 ) -> std::io::Result<Child> {
-    use codex_core::spawn_command_under_linux_sandbox;
+    use motyga_core::spawn_command_under_linux_sandbox;
 
-    let codex_linux_sandbox_exe = core_test_support::find_codex_linux_sandbox_exe()
+    let motyga_linux_sandbox_exe = core_test_support::find_motyga_linux_sandbox_exe()
         .map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
     spawn_command_under_linux_sandbox(
-        codex_linux_sandbox_exe,
+        motyga_linux_sandbox_exe,
         command,
         command_cwd,
         permission_profile,
@@ -372,7 +372,7 @@ async fn sandbox_distinguishes_command_and_policy_cwds() {
 }
 
 #[tokio::test]
-async fn sandbox_blocks_first_time_dot_codex_creation() {
+async fn sandbox_blocks_first_time_dot_motyga_creation() {
     core_test_support::skip_if_sandbox!();
     #[cfg(target_os = "linux")]
     let sandbox_env = match linux_sandbox_test_env().await {
@@ -385,8 +385,8 @@ async fn sandbox_blocks_first_time_dot_codex_creation() {
     let temp = tempfile::tempdir().expect("should be able to create temp dir");
     let repo_root = temp.path().join("repo").abs();
     create_dir_all(&repo_root).await.expect("mkdir repo");
-    let dot_codex = repo_root.join(".motyga");
-    let config_toml = dot_codex.join("config.toml");
+    let dot_motyga = repo_root.join(".motyga");
+    let config_toml = dot_motyga.join("config.toml");
     let permission_profile = PermissionProfile::workspace_write_with(
         &[],
         NetworkSandboxPolicy::Restricted,
@@ -398,7 +398,7 @@ async fn sandbox_blocks_first_time_dot_codex_creation() {
         vec![
             "bash".to_string(),
             "-lc".to_string(),
-            "mkdir -p .codex && echo 'sandbox_mode = \"danger-full-access\"' > .motyga/config.toml"
+            "mkdir -p .motyga && echo 'sandbox_mode = \"danger-full-access\"' > .motyga/config.toml"
                 .to_string(),
         ],
         repo_root.clone(),
@@ -408,26 +408,26 @@ async fn sandbox_blocks_first_time_dot_codex_creation() {
         sandbox_env,
     )
     .await
-    .expect("should spawn command creating .codex");
+    .expect("should spawn command creating .motyga");
 
-    let status = child.wait().await.expect("should wait for .codex command");
+    let status = child.wait().await.expect("should wait for .motyga command");
     assert!(
         !status.success(),
-        "sandbox unexpectedly allowed first-time .codex creation: {status:?}"
+        "sandbox unexpectedly allowed first-time .motyga creation: {status:?}"
     );
-    let dot_codex_metadata = tokio::fs::symlink_metadata(&dot_codex).await;
-    if let Ok(metadata) = dot_codex_metadata {
+    let dot_motyga_metadata = tokio::fs::symlink_metadata(&dot_motyga).await;
+    if let Ok(metadata) = dot_motyga_metadata {
         assert!(
             !metadata.is_dir(),
             "{} should not be creatable as a directory",
-            dot_codex.display()
+            dot_motyga.display()
         );
-    } else if let Err(err) = &dot_codex_metadata {
+    } else if let Err(err) = &dot_motyga_metadata {
         assert_eq!(
             err.kind(),
             io::ErrorKind::NotFound,
             "unexpected metadata error for {}: {err}",
-            dot_codex.display()
+            dot_motyga.display()
         );
     }
     let config_toml_exists = match tokio::fs::try_exists(&config_toml).await {

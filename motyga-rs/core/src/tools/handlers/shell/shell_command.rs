@@ -1,7 +1,7 @@
-use codex_protocol::models::ShellCommandToolCallParams;
-use codex_tools::ShellCommandBackendConfig;
-use codex_tools::ToolName;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::models::ShellCommandToolCallParams;
+use motyga_tools::ShellCommandBackendConfig;
+use motyga_tools::ToolName;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 use crate::exec::ExecCapturePolicy;
 use crate::exec::ExecParams;
@@ -25,7 +25,7 @@ use crate::tools::registry::PostToolUsePayload;
 use crate::tools::registry::PreToolUsePayload;
 use crate::tools::registry::ToolExecutor;
 use crate::tools::runtimes::shell::ShellRuntimeBackend;
-use codex_tools::ToolSpec;
+use motyga_tools::ToolSpec;
 
 use super::super::shell_spec::CommandToolOptions;
 use super::super::shell_spec::create_shell_command_tool;
@@ -153,7 +153,7 @@ impl ToolExecutor<ToolInvocation> for ShellCommandHandler {
         true
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(invocation))
     }
 }

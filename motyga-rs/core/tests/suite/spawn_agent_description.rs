@@ -2,20 +2,20 @@
 #![allow(clippy::unwrap_used)]
 
 use anyhow::Result;
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_models_manager::manager::SharedModelsManager;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelServiceTier;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::openai_models::default_input_modalities;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_models_manager::manager::SharedModelsManager;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::openai_models::ConfigShellToolType;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelServiceTier;
+use motyga_protocol::openai_models::ModelVisibility;
+use motyga_protocol::openai_models::ModelsResponse;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::openai_models::ReasoningEffortPreset;
+use motyga_protocol::openai_models::TruncationPolicyConfig;
+use motyga_protocol::openai_models::default_input_modalities;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_models_once;
@@ -23,7 +23,7 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::namespace_child_tool;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use serde_json::Value;
 use std::time::Duration;
 use std::time::Instant;
@@ -160,8 +160,8 @@ async fn spawn_agent_description_lists_visible_models_and_reasoning_efforts() ->
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model("visible-model")
         .with_config(|config| {
             config

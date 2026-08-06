@@ -246,7 +246,7 @@ impl ChatWidget {
         approvals_reviewer: ApprovalsReviewer,
     ) -> Vec<SelectionAction> {
         vec![Box::new(move |tx| {
-            tx.send(AppEvent::CodexOp(AppCommand::override_turn_context(
+            tx.send(AppEvent::MotygaOp(AppCommand::override_turn_context(
                 /*cwd*/ None,
                 Some(approval),
                 Some(approvals_reviewer),
@@ -329,7 +329,7 @@ impl ChatWidget {
                 {
                     let preset = preset.clone();
                     if crate::windows_sandbox::sandbox_setup_is_complete(
-                        self.config.codex_home.as_path(),
+                        self.config.motyga_home.as_path(),
                     ) {
                         return vec![Box::new(move |tx| {
                             tx.send(AppEvent::EnableWindowsSandboxForAgentMode {

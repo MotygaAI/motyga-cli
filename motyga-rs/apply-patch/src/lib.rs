@@ -10,12 +10,12 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_exec_server::CreateDirectoryOptions;
-use codex_exec_server::ExecutorFileSystem;
-use codex_exec_server::FileSystemSandboxContext;
-use codex_exec_server::RemoveOptions;
-use codex_utils_path_uri::PathUri;
-use codex_utils_path_uri::PathUriParseError;
+use motyga_exec_server::CreateDirectoryOptions;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_exec_server::FileSystemSandboxContext;
+use motyga_exec_server::RemoveOptions;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_path_uri::PathUriParseError;
 pub use parser::Hunk;
 pub use parser::ParseError;
 use parser::ParseError::*;
@@ -31,14 +31,14 @@ pub use standalone_executable::main;
 
 use crate::invocation::ExtractHeredocError;
 
-/// Special argv[1] flag used when the Codex executable self-invokes to run the
+/// Special argv[1] flag used when the Motyga executable self-invokes to run the
 /// internal `apply_patch` path.
 ///
-/// Although this constant lives in `codex-apply-patch` (to avoid forcing
-/// `codex-arg0` to depend on `codex-core`), it remains part of the "codex core"
+/// Although this constant lives in `motyga-apply-patch` (to avoid forcing
+/// `motyga-arg0` to depend on `motyga-core`), it remains part of the "motyga core"
 /// process-invocation contract for the standalone `apply_patch` command
 /// surface.
-pub const CODEX_CORE_APPLY_PATCH_ARG1: &str = "--codex-run-as-apply-patch";
+pub const MOTYGA_CORE_APPLY_PATCH_ARG1: &str = "--motyga-run-as-apply-patch";
 
 #[derive(Debug, Error, PartialEq)]
 pub enum ApplyPatchError {
@@ -888,7 +888,7 @@ pub fn print_summary(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_exec_server::LOCAL_FS;
+    use motyga_exec_server::LOCAL_FS;
     use pretty_assertions::assert_eq;
     use std::fs;
     use std::string::ToString;

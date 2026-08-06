@@ -205,7 +205,7 @@ def test_run_watch_keeps_polling_open_ready_to_merge_pr(monkeypatch):
     monkeypatch.setattr(
         gh_pr_watch,
         "collect_snapshot",
-        lambda args: (snapshot, Path("/tmp/codex-babysit-pr-state.json")),
+        lambda args: (snapshot, Path("/tmp/motyga-babysit-pr-state.json")),
     )
     monkeypatch.setattr(
         gh_pr_watch,

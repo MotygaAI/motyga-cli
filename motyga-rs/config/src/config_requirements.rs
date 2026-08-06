@@ -1,10 +1,10 @@
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::AskForApproval;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::SandboxMode;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use serde::Deserialize;
 use serde::Serialize;
 use serde::de::Error as _;
@@ -1612,12 +1612,12 @@ mod tests {
     use crate::McpServerIdentity;
     use crate::McpServerValueMatcher;
     use anyhow::Result;
-    use codex_execpolicy::Decision;
-    use codex_execpolicy::Evaluation;
-    use codex_execpolicy::RuleMatch;
-    use codex_protocol::permissions::NetworkSandboxPolicy;
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use codex_utils_absolute_path::AbsolutePathBufGuard;
+    use motyga_execpolicy::Decision;
+    use motyga_execpolicy::Evaluation;
+    use motyga_execpolicy::RuleMatch;
+    use motyga_protocol::permissions::NetworkSandboxPolicy;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_absolute_path::AbsolutePathBufGuard;
     use pretty_assertions::assert_eq;
     use toml::from_str;
 
@@ -2012,7 +2012,7 @@ mod tests {
         )?;
 
         let source_location = RequirementSource::MdmManagedPreferences {
-            domain: "com.codex".to_string(),
+            domain: "com.motyga".to_string(),
             key: "allowed_approval_policies".to_string(),
         };
 
@@ -2069,7 +2069,7 @@ mod tests {
             "#,
         )?;
         let source_location = RequirementSource::MdmManagedPreferences {
-            domain: "com.codex".to_string(),
+            domain: "com.motyga".to_string(),
             key: "allowed_approval_policies".to_string(),
         };
         populated_target.merge_unset_fields(source_location, source);
@@ -3565,7 +3565,7 @@ command = "python3 /enterprise/hooks/pre.py"
             description = "ignored legacy field"
 
             [mcp_servers.docs.identity]
-            command = "codex-mcp"
+            command = "motyga-mcp"
 
             [mcp_servers.remote.identity]
             url = "https://example.com/mcp"
@@ -3581,7 +3581,7 @@ command = "python3 /enterprise/hooks/pre.py"
                         "docs".to_string(),
                         McpServerRequirement::Identity {
                             identity: McpServerIdentity::Command {
-                                command: "codex-mcp".to_string(),
+                                command: "motyga-mcp".to_string(),
                             },
                         },
                     ),

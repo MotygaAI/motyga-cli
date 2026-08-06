@@ -5,13 +5,13 @@ use crate::metrics::MEMORY_STARTUP;
 use crate::phase1;
 use crate::phase2;
 use crate::runtime::MemoryStartupContext;
-use codex_core::CodexThread;
-use codex_core::ThreadManager;
-use codex_core::config::Config;
-use codex_features::Feature;
-use codex_login::AuthManager;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::SessionSource;
+use motyga_core::MotygaThread;
+use motyga_core::ThreadManager;
+use motyga_core::config::Config;
+use motyga_features::Feature;
+use motyga_login::AuthManager;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::SessionSource;
 use std::sync::Arc;
 use tracing::warn;
 
@@ -23,7 +23,7 @@ pub fn start_memories_startup_task(
     thread_manager: Arc<ThreadManager>,
     auth_manager: Arc<AuthManager>,
     thread_id: ThreadId,
-    thread: Arc<CodexThread>,
+    thread: Arc<MotygaThread>,
     config: Arc<Config>,
     source: &SessionSource,
 ) {
@@ -49,7 +49,7 @@ pub fn start_memories_startup_task(
     }
 
     tokio::spawn(async move {
-        let root = memory_root(&config.codex_home);
+        let root = memory_root(&config.motyga_home);
         if let Err(err) = tokio::fs::create_dir_all(&root).await {
             warn!("failed creating memories root: {err}");
             return;

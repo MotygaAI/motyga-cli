@@ -1,5 +1,5 @@
 use super::*;
-use codex_protocol::config_types::MultiAgentMode;
+use motyga_protocol::config_types::MultiAgentMode;
 
 pub(super) const THREAD_UNLOADING_DELAY: Duration = Duration::from_secs(30 * 60);
 
@@ -12,7 +12,7 @@ pub(super) struct ListenerTaskContext {
     pub(super) thread_watch_manager: ThreadWatchManager,
     pub(super) thread_list_state_permit: Arc<Semaphore>,
     pub(super) fallback_model_provider: String,
-    pub(super) codex_home: PathBuf,
+    pub(super) motyga_home: PathBuf,
     pub(super) skills_watcher: Arc<SkillsWatcher>,
 }
 
@@ -213,7 +213,7 @@ pub(super) fn log_listener_attach_result(
 pub(super) async fn ensure_listener_task_running(
     listener_task_context: ListenerTaskContext,
     conversation_id: ThreadId,
-    conversation: Arc<CodexThread>,
+    conversation: Arc<MotygaThread>,
     thread_state: Arc<Mutex<ThreadState>>,
 ) -> Result<(), JSONRPCErrorError> {
     let (cancel_tx, mut cancel_rx) = oneshot::channel();
@@ -270,7 +270,7 @@ pub(super) async fn ensure_listener_task_running(
         thread_watch_manager,
         thread_list_state_permit,
         fallback_model_provider,
-        codex_home,
+        motyga_home,
         ..
     } = listener_task_context;
     let outgoing_for_task = Arc::clone(&outgoing);
@@ -289,7 +289,7 @@ pub(super) async fn ensure_listener_task_running(
                     handle_thread_listener_command(
                         conversation_id,
                         &conversation,
-                        codex_home.as_path(),
+                        motyga_home.as_path(),
                         &thread_state_manager,
                         &thread_state,
                         &thread_watch_manager,
@@ -396,7 +396,7 @@ pub(super) async fn ensure_listener_task_running(
     Ok(())
 }
 
-pub(super) async fn wait_for_thread_shutdown(thread: &Arc<CodexThread>) -> ThreadShutdownResult {
+pub(super) async fn wait_for_thread_shutdown(thread: &Arc<MotygaThread>) -> ThreadShutdownResult {
     match tokio::time::timeout(Duration::from_secs(10), thread.shutdown_and_wait()).await {
         Ok(Ok(())) => ThreadShutdownResult::Complete,
         Ok(Err(_)) => ThreadShutdownResult::SubmitFailed,
@@ -411,7 +411,7 @@ pub(super) async fn unload_thread_without_subscribers(
     thread_state_manager: ThreadStateManager,
     thread_watch_manager: ThreadWatchManager,
     thread_id: ThreadId,
-    thread: Arc<CodexThread>,
+    thread: Arc<MotygaThread>,
 ) {
     info!("thread {thread_id} has no subscribers and is idle; shutting down");
 
@@ -459,8 +459,8 @@ pub(super) async fn unload_thread_without_subscribers(
 #[allow(clippy::too_many_arguments)]
 pub(super) async fn handle_thread_listener_command(
     conversation_id: ThreadId,
-    conversation: &Arc<CodexThread>,
-    codex_home: &Path,
+    conversation: &Arc<MotygaThread>,
+    motyga_home: &Path,
     thread_state_manager: &ThreadStateManager,
     thread_state: &Arc<Mutex<ThreadState>>,
     thread_watch_manager: &ThreadWatchManager,
@@ -473,7 +473,7 @@ pub(super) async fn handle_thread_listener_command(
             handle_pending_thread_resume_request(
                 conversation_id,
                 conversation,
-                codex_home,
+                motyga_home,
                 thread_state_manager,
                 thread_state,
                 thread_watch_manager,
@@ -529,8 +529,8 @@ pub(super) async fn handle_thread_listener_command(
 )]
 pub(super) async fn handle_pending_thread_resume_request(
     conversation_id: ThreadId,
-    conversation: &Arc<CodexThread>,
-    _codex_home: &Path,
+    conversation: &Arc<MotygaThread>,
+    _motyga_home: &Path,
     thread_state_manager: &ThreadStateManager,
     thread_state: &Arc<Mutex<ThreadState>>,
     thread_watch_manager: &ThreadWatchManager,

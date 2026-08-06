@@ -21,10 +21,10 @@ if root_str not in sys.path:
 
 from _runtime_setup import ensure_runtime_package_installed, pinned_runtime_version
 
-RUN_REAL_CODEX_TESTS = os.environ.get("RUN_REAL_CODEX_TESTS") == "1"
+RUN_REAL_MOTYGA_TESTS = os.environ.get("RUN_REAL_MOTYGA_TESTS") == "1"
 pytestmark = pytest.mark.skipif(
-    not RUN_REAL_CODEX_TESTS,
-    reason="set RUN_REAL_CODEX_TESTS=1 to run real Codex integration coverage",
+    not RUN_REAL_MOTYGA_TESTS,
+    reason="set RUN_REAL_MOTYGA_TESTS=1 to run real Motyga integration coverage",
 )
 
 # 11_cli_mini_app is interactive; we still run it by feeding one prompt, then '/exit'.
@@ -96,7 +96,7 @@ def runtime_env(tmp_path_factory: pytest.TempPathFactory) -> PreparedRuntimeEnv:
 
     env = os.environ.copy()
     env["PYTHONPATH"] = os.pathsep.join([str(isolated_site), str(ROOT / "src")])
-    env["CODEX_PYTHON_SDK_DIR"] = str(ROOT)
+    env["MOTYGA_PYTHON_SDK_DIR"] = str(ROOT)
     return PreparedRuntimeEnv(python=python, env=env, runtime_version=runtime_version)
 
 
@@ -205,13 +205,13 @@ def test_real_initialize_and_model_list(runtime_env: PreparedRuntimeEnv) -> None
         textwrap.dedent(
             """
             import json
-            from openai_codex import Codex
+            from motyga_sdk import Motyga
 
-            with Codex() as codex:
-                models = codex.models(include_hidden=True)
-                server = codex.metadata.serverInfo
+            with Motyga() as motyga:
+                models = motyga.models(include_hidden=True)
+                server = motyga.metadata.serverInfo
                 print(json.dumps({
-                    "user_agent": codex.metadata.userAgent,
+                    "user_agent": motyga.metadata.userAgent,
                     "server_name": None if server is None else server.name,
                     "server_version": None if server is None else server.version,
                     "model_count": len(models.data),
@@ -234,10 +234,10 @@ def test_real_thread_and_turn_start_smoke(runtime_env: PreparedRuntimeEnv) -> No
         textwrap.dedent(
             """
             import json
-            from openai_codex import Codex
+            from motyga_sdk import Motyga
 
-            with Codex() as codex:
-                thread = codex.thread_start(
+            with Motyga() as motyga:
+                thread = motyga.thread_start(
                     model="gpt-5.4",
                     config={"model_reasoning_effort": "high"},
                 )
@@ -266,10 +266,10 @@ def test_real_thread_run_convenience_smoke(runtime_env: PreparedRuntimeEnv) -> N
         textwrap.dedent(
             """
             import json
-            from openai_codex import Codex
+            from motyga_sdk import Motyga
 
-            with Codex() as codex:
-                thread = codex.thread_start(
+            with Motyga() as motyga:
+                thread = motyga.thread_start(
                     model="gpt-5.4",
                     config={"model_reasoning_effort": "high"},
                 )
@@ -296,10 +296,10 @@ def test_real_quickstart_style_flow_smoke(runtime_env: PreparedRuntimeEnv) -> No
         textwrap.dedent(
             """
             import json
-            from openai_codex import Codex
+            from motyga_sdk import Motyga
 
-            with Codex() as codex:
-                thread = codex.thread_start()
+            with Motyga() as motyga:
+                thread = motyga.thread_start()
                 result = thread.run("Say hello in one sentence.")
                 print(json.dumps({
                     "thread_id": thread.id,
@@ -331,11 +331,11 @@ def test_real_async_thread_turn_usage_and_ids_smoke(
             """
             import asyncio
             import json
-            from openai_codex import AsyncCodex
+            from motyga_sdk import AsyncMotyga
 
             async def main():
-                async with AsyncCodex() as codex:
-                    thread = await codex.thread_start(
+                async with AsyncMotyga() as motyga:
+                    thread = await motyga.thread_start(
                         model="gpt-5.4",
                         config={"model_reasoning_effort": "high"},
                     )
@@ -369,11 +369,11 @@ def test_real_async_thread_run_convenience_smoke(
             """
             import asyncio
             import json
-            from openai_codex import AsyncCodex
+            from motyga_sdk import AsyncMotyga
 
             async def main():
-                async with AsyncCodex() as codex:
-                    thread = await codex.thread_start(
+                async with AsyncMotyga() as motyga:
+                    thread = await motyga.thread_start(
                         model="gpt-5.4",
                         config={"model_reasoning_effort": "high"},
                     )
@@ -458,10 +458,10 @@ def test_real_streaming_smoke_turn_completed(runtime_env: PreparedRuntimeEnv) ->
         textwrap.dedent(
             """
             import json
-            from openai_codex import Codex
+            from motyga_sdk import Motyga
 
-            with Codex() as codex:
-                thread = codex.thread_start(
+            with Motyga() as motyga:
+                thread = motyga.thread_start(
                     model="gpt-5.4",
                     config={"model_reasoning_effort": "high"},
                 )
@@ -491,10 +491,10 @@ def test_real_turn_interrupt_smoke(runtime_env: PreparedRuntimeEnv) -> None:
         textwrap.dedent(
             """
             import json
-            from openai_codex import Codex
+            from motyga_sdk import Motyga
 
-            with Codex() as codex:
-                thread = codex.thread_start(
+            with Motyga() as motyga:
+                thread = motyga.thread_start(
                     model="gpt-5.4",
                     config={"model_reasoning_effort": "high"},
                 )

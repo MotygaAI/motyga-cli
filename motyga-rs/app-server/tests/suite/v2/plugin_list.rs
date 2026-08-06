@@ -6,25 +6,25 @@ use app_test_support::ChatGptAuthFixture;
 use app_test_support::TestAppServer;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::PluginAuthPolicy;
-use codex_app_server_protocol::PluginInstallPolicy;
-use codex_app_server_protocol::PluginInstalledParams;
-use codex_app_server_protocol::PluginInstalledResponse;
-use codex_app_server_protocol::PluginListMarketplaceKind;
-use codex_app_server_protocol::PluginListParams;
-use codex_app_server_protocol::PluginListResponse;
-use codex_app_server_protocol::PluginMarketplaceEntry;
-use codex_app_server_protocol::PluginShareDiscoverability;
-use codex_app_server_protocol::PluginSource;
-use codex_app_server_protocol::PluginSummary;
-use codex_app_server_protocol::RequestId;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_core::config::set_project_trust_level;
-use codex_login::AuthKeyringBackendKind;
-use codex_login::login_with_api_key;
-use codex_protocol::config_types::TrustLevel;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::PluginAuthPolicy;
+use motyga_app_server_protocol::PluginInstallPolicy;
+use motyga_app_server_protocol::PluginInstalledParams;
+use motyga_app_server_protocol::PluginInstalledResponse;
+use motyga_app_server_protocol::PluginListMarketplaceKind;
+use motyga_app_server_protocol::PluginListParams;
+use motyga_app_server_protocol::PluginListResponse;
+use motyga_app_server_protocol::PluginMarketplaceEntry;
+use motyga_app_server_protocol::PluginShareDiscoverability;
+use motyga_app_server_protocol::PluginSource;
+use motyga_app_server_protocol::PluginSummary;
+use motyga_app_server_protocol::RequestId;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_core::config::set_project_trust_level;
+use motyga_login::AuthKeyringBackendKind;
+use motyga_login::login_with_api_key;
+use motyga_protocol::config_types::TrustLevel;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use flate2::Compression;
 use flate2::write::GzEncoder;
 use pretty_assertions::assert_eq;
@@ -42,13 +42,13 @@ use wiremock::matchers::query_param_is_missing;
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 const TEST_CURATED_PLUGIN_SHA: &str = "0123456789abcdef0123456789abcdef01234567";
 const TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS: &str =
-    "CODEX_TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS";
+    "MOTYGA_TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS";
 const ALTERNATE_MARKETPLACE_RELATIVE_PATH: &str = ".claude-plugin/marketplace.json";
 const ALTERNATE_PLUGIN_MANIFEST_RELATIVE_PATH: &str = ".claude-plugin/plugin.json";
 
-fn write_plugins_enabled_config(codex_home: &std::path::Path) -> std::io::Result<()> {
+fn write_plugins_enabled_config(motyga_home: &std::path::Path) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         r#"[features]
 plugins = true
 "#,
@@ -56,11 +56,11 @@ plugins = true
 }
 
 fn write_plugins_enabled_config_with_base_url(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     base_url: &str,
 ) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{base_url}"
 
@@ -72,11 +72,11 @@ plugins = true
 }
 
 fn write_remote_plugins_disabled_config_with_base_url(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     base_url: &str,
 ) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{base_url}"
 
@@ -90,18 +90,18 @@ remote_plugin = false
 
 #[tokio::test]
 async fn plugin_list_skips_invalid_marketplace_file_and_reports_error() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
-    write_plugins_enabled_config(codex_home.path())?;
+    write_plugins_enabled_config(motyga_home.path())?;
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
     std::fs::write(marketplace_path.as_path(), "{not json")?;
 
-    let home = codex_home.path().to_string_lossy().into_owned();
+    let home = motyga_home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home.as_str())),
             ("USERPROFILE", Some(home.as_str())),
@@ -149,14 +149,14 @@ async fn plugin_list_skips_invalid_marketplace_file_and_reports_error() -> Resul
 #[tokio::test]
 async fn plugin_installed_includes_installed_plugins_and_explicit_install_suggestions() -> Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_openai_curated_marketplace(
-        codex_home.path(),
+        motyga_home.path(),
         &["linear", "computer-use", "not-mentioned"],
     )?;
-    write_installed_plugin(&codex_home, "openai-curated", "linear")?;
+    write_installed_plugin(&motyga_home, "openai-curated", "linear")?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"[features]
 plugins = true
 
@@ -165,7 +165,7 @@ enabled = true
 "#,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -202,13 +202,13 @@ enabled = true
 #[tokio::test]
 async fn plugin_installed_prefers_remote_curated_conflicts_when_remote_plugin_enabled() -> Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    write_openai_curated_marketplace(codex_home.path(), &["linear", "calendar"])?;
-    write_installed_plugin(&codex_home, "openai-curated", "linear")?;
-    write_installed_plugin(&codex_home, "openai-curated", "calendar")?;
+    write_openai_curated_marketplace(motyga_home.path(), &["linear", "calendar"])?;
+    write_installed_plugin(&motyga_home, "openai-curated", "linear")?;
+    write_installed_plugin(&motyga_home, "openai-curated", "calendar")?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{}/backend-api/"
 
@@ -226,7 +226,7 @@ enabled = true
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -250,7 +250,7 @@ enabled = true
         .await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let mut app_server = TestAppServer::new(codex_home.path()).await?;
+    let mut app_server = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, app_server.initialize()).await??;
 
     let request_id = app_server
@@ -302,10 +302,10 @@ enabled = true
 
 #[tokio::test]
 async fn plugin_installed_ignores_local_cache_without_catalog() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    write_installed_plugin(&codex_home, "openai-curated", "linear")?;
+    let motyga_home = TempDir::new()?;
+    write_installed_plugin(&motyga_home, "openai-curated", "linear")?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"[features]
 plugins = true
 
@@ -314,7 +314,7 @@ enabled = true
 "#,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -338,8 +338,8 @@ enabled = true
 
 #[tokio::test]
 async fn plugin_list_rejects_relative_cwds() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -365,7 +365,7 @@ async fn plugin_list_rejects_relative_cwds() -> Result<()> {
 #[tokio::test]
 async fn plugin_list_keeps_valid_marketplaces_when_another_marketplace_fails_to_load() -> Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let valid_repo_root = TempDir::new()?;
     let invalid_repo_root = TempDir::new()?;
     std::fs::create_dir_all(valid_repo_root.path().join(".git"))?;
@@ -377,7 +377,7 @@ async fn plugin_list_keeps_valid_marketplaces_when_another_marketplace_fails_to_
     )?;
     std::fs::create_dir_all(invalid_repo_root.path().join(".git"))?;
     std::fs::create_dir_all(invalid_repo_root.path().join(".agents/plugins"))?;
-    write_plugins_enabled_config(codex_home.path())?;
+    write_plugins_enabled_config(motyga_home.path())?;
 
     let valid_marketplace_path = AbsolutePathBuf::try_from(
         valid_repo_root
@@ -415,9 +415,9 @@ async fn plugin_list_keeps_valid_marketplaces_when_another_marketplace_fails_to_
     )?;
     std::fs::write(invalid_marketplace_path.as_path(), "{not json")?;
 
-    let home = codex_home.path().to_string_lossy().into_owned();
+    let home = motyga_home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home.as_str())),
             ("USERPROFILE", Some(home.as_str())),
@@ -462,7 +462,7 @@ async fn plugin_list_keeps_valid_marketplaces_when_another_marketplace_fails_to_
                 enabled: false,
                 install_policy: PluginInstallPolicy::Available,
                 auth_policy: PluginAuthPolicy::OnInstall,
-                availability: codex_app_server_protocol::PluginAvailability::Available,
+                availability: motyga_app_server_protocol::PluginAvailability::Available,
                 interface: None,
                 keywords: vec!["api-key".to_string(), "developer tools".to_string()],
             }],
@@ -485,18 +485,18 @@ async fn plugin_list_keeps_valid_marketplaces_when_another_marketplace_fails_to_
 }
 
 #[tokio::test]
-async fn plugin_list_returns_empty_when_workspace_codex_plugins_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+async fn plugin_list_returns_empty_when_workspace_motyga_plugins_disabled() -> Result<()> {
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
     write_plugins_enabled_config_with_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -508,7 +508,7 @@ async fn plugin_list_returns_empty_when_workspace_codex_plugins_disabled() -> Re
     std::fs::write(
         repo_root.path().join(".agents/plugins/marketplace.json"),
         r#"{
-  "name": "codex-curated",
+  "name": "motyga-curated",
   "plugins": [
     {
       "name": "demo-plugin",
@@ -532,9 +532,9 @@ async fn plugin_list_returns_empty_when_workspace_codex_plugins_disabled() -> Re
         .mount(&server)
         .await;
 
-    let home = codex_home.path().to_string_lossy().into_owned();
+    let home = motyga_home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_without_managed_config_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home.as_str())),
             ("USERPROFILE", Some(home.as_str())),
@@ -569,19 +569,19 @@ async fn plugin_list_returns_empty_when_workspace_codex_plugins_disabled() -> Re
 }
 
 #[tokio::test]
-async fn plugin_list_reuses_cached_workspace_codex_plugins_setting() -> Result<()> {
-    let codex_home = TempDir::new()?;
+async fn plugin_list_reuses_cached_workspace_motyga_plugins_setting() -> Result<()> {
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
     std::fs::create_dir_all(repo_root.path().join("demo-plugin/.codex-plugin"))?;
     write_plugins_enabled_config_with_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -623,9 +623,9 @@ async fn plugin_list_reuses_cached_workspace_codex_plugins_setting() -> Result<(
         .mount(&server)
         .await;
 
-    let home = codex_home.path().to_string_lossy().into_owned();
+    let home = motyga_home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_without_managed_config_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home.as_str())),
             ("USERPROFILE", Some(home.as_str())),
@@ -659,7 +659,7 @@ async fn plugin_list_reuses_cached_workspace_codex_plugins_setting() -> Result<(
 #[tokio::test]
 async fn plugin_list_uses_alternate_discoverable_manifest_and_keeps_undiscoverable_plugins()
 -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let valid_plugin_root = repo_root.path().join("plugins/valid-plugin");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
@@ -676,7 +676,7 @@ async fn plugin_list_uses_alternate_discoverable_manifest_and_keeps_undiscoverab
             .parent()
             .unwrap(),
     )?;
-    write_plugins_enabled_config(codex_home.path())?;
+    write_plugins_enabled_config(motyga_home.path())?;
 
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(ALTERNATE_MARKETPLACE_RELATIVE_PATH))?;
@@ -708,9 +708,9 @@ async fn plugin_list_uses_alternate_discoverable_manifest_and_keeps_undiscoverab
 }"#,
     )?;
 
-    let home = codex_home.path().to_string_lossy().into_owned();
+    let home = motyga_home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home.as_str())),
             ("USERPROFILE", Some(home.as_str())),
@@ -753,8 +753,8 @@ async fn plugin_list_uses_alternate_discoverable_manifest_and_keeps_undiscoverab
                     enabled: false,
                     install_policy: PluginInstallPolicy::Available,
                     auth_policy: PluginAuthPolicy::OnInstall,
-                    availability: codex_app_server_protocol::PluginAvailability::Available,
-                    interface: Some(codex_app_server_protocol::PluginInterface {
+                    availability: motyga_app_server_protocol::PluginAvailability::Available,
+                    interface: Some(motyga_app_server_protocol::PluginInterface {
                         display_name: Some("Valid Plugin".to_string()),
                         short_description: None,
                         long_description: None,
@@ -792,7 +792,7 @@ async fn plugin_list_uses_alternate_discoverable_manifest_and_keeps_undiscoverab
                     enabled: false,
                     install_policy: PluginInstallPolicy::Available,
                     auth_policy: PluginAuthPolicy::OnInstall,
-                    availability: codex_app_server_protocol::PluginAvailability::Available,
+                    availability: motyga_app_server_protocol::PluginAvailability::Available,
                     interface: None,
                     keywords: Vec::new(),
                 },
@@ -805,13 +805,13 @@ async fn plugin_list_uses_alternate_discoverable_manifest_and_keeps_undiscoverab
 
 #[tokio::test]
 async fn plugin_list_accepts_omitted_cwds() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    std::fs::create_dir_all(codex_home.path().join(".agents/plugins"))?;
-    write_plugins_enabled_config(codex_home.path())?;
+    let motyga_home = TempDir::new()?;
+    std::fs::create_dir_all(motyga_home.path().join(".agents/plugins"))?;
+    write_plugins_enabled_config(motyga_home.path())?;
     std::fs::write(
-        codex_home.path().join(".agents/plugins/marketplace.json"),
+        motyga_home.path().join(".agents/plugins/marketplace.json"),
         r#"{
-  "name": "codex-curated",
+  "name": "motyga-curated",
   "plugins": [
     {
       "name": "home-plugin",
@@ -823,9 +823,9 @@ async fn plugin_list_accepts_omitted_cwds() -> Result<()> {
   ]
 }"#,
     )?;
-    let home = codex_home.path().to_string_lossy().into_owned();
+    let home = motyga_home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home.as_str())),
             ("USERPROFILE", Some(home.as_str())),
@@ -852,17 +852,17 @@ async fn plugin_list_accepts_omitted_cwds() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_list_returns_share_context_for_shared_local_plugin() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let plugin_root = repo_root.path().join("plugins/demo-plugin");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
     std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
-    write_plugins_enabled_config(codex_home.path())?;
+    write_plugins_enabled_config(motyga_home.path())?;
     std::fs::write(
         repo_root.path().join(".agents/plugins/marketplace.json"),
         r#"{
-  "name": "codex-curated",
+  "name": "motyga-curated",
   "plugins": [
     {
       "name": "demo-plugin",
@@ -879,12 +879,12 @@ async fn plugin_list_returns_share_context_for_shared_local_plugin() -> Result<(
         r#"{"name":"demo-plugin","version":"1.2.3"}"#,
     )?;
     write_plugin_share_local_path_mapping(
-        codex_home.path(),
+        motyga_home.path(),
         "plugins_123",
         &AbsolutePathBuf::try_from(plugin_root)?,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -925,16 +925,16 @@ async fn plugin_list_returns_share_context_for_shared_local_plugin() -> Result<(
 
 #[tokio::test]
 async fn plugin_list_includes_install_and_enabled_state_from_config() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
-    write_installed_plugin(&codex_home, "codex-curated", "enabled-plugin")?;
-    write_installed_plugin(&codex_home, "codex-curated", "disabled-plugin")?;
+    write_installed_plugin(&motyga_home, "motyga-curated", "enabled-plugin")?;
+    write_installed_plugin(&motyga_home, "motyga-curated", "disabled-plugin")?;
     std::fs::write(
         repo_root.path().join(".agents/plugins/marketplace.json"),
         r#"{
-  "name": "codex-curated",
+  "name": "motyga-curated",
   "interface": {
     "displayName": "ChatGPT Official"
   },
@@ -964,19 +964,19 @@ async fn plugin_list_includes_install_and_enabled_state_from_config() -> Result<
 }"#,
     )?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"[features]
 plugins = true
 
-[plugins."enabled-plugin@codex-curated"]
+[plugins."enabled-plugin@motyga-curated"]
 enabled = true
 
-[plugins."disabled-plugin@codex-curated"]
+[plugins."disabled-plugin@motyga-curated"]
 enabled = false
 "#,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1007,7 +1007,7 @@ enabled = false
         })
         .expect("expected repo marketplace entry");
 
-    assert_eq!(marketplace.name, "codex-curated");
+    assert_eq!(marketplace.name, "motyga-curated");
     assert_eq!(
         marketplace
             .interface
@@ -1016,7 +1016,7 @@ enabled = false
         Some("ChatGPT Official")
     );
     assert_eq!(marketplace.plugins.len(), 3);
-    assert_eq!(marketplace.plugins[0].id, "enabled-plugin@codex-curated");
+    assert_eq!(marketplace.plugins[0].id, "enabled-plugin@motyga-curated");
     assert_eq!(marketplace.plugins[0].name, "enabled-plugin");
     assert_eq!(marketplace.plugins[0].installed, true);
     assert_eq!(marketplace.plugins[0].enabled, true);
@@ -1028,7 +1028,7 @@ enabled = false
         marketplace.plugins[0].auth_policy,
         PluginAuthPolicy::OnInstall
     );
-    assert_eq!(marketplace.plugins[1].id, "disabled-plugin@codex-curated");
+    assert_eq!(marketplace.plugins[1].id, "disabled-plugin@motyga-curated");
     assert_eq!(marketplace.plugins[1].name, "disabled-plugin");
     assert_eq!(marketplace.plugins[1].installed, true);
     assert_eq!(marketplace.plugins[1].enabled, false);
@@ -1042,7 +1042,7 @@ enabled = false
     );
     assert_eq!(
         marketplace.plugins[2].id,
-        "uninstalled-plugin@codex-curated"
+        "uninstalled-plugin@motyga-curated"
     );
     assert_eq!(marketplace.plugins[2].name, "uninstalled-plugin");
     assert_eq!(marketplace.plugins[2].installed, false);
@@ -1060,13 +1060,13 @@ enabled = false
 
 #[tokio::test]
 async fn plugin_list_uses_home_config_for_enabled_state() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    std::fs::create_dir_all(codex_home.path().join(".agents/plugins"))?;
-    write_installed_plugin(&codex_home, "codex-curated", "shared-plugin")?;
+    let motyga_home = TempDir::new()?;
+    std::fs::create_dir_all(motyga_home.path().join(".agents/plugins"))?;
+    write_installed_plugin(&motyga_home, "motyga-curated", "shared-plugin")?;
     std::fs::write(
-        codex_home.path().join(".agents/plugins/marketplace.json"),
+        motyga_home.path().join(".agents/plugins/marketplace.json"),
         r#"{
-  "name": "codex-curated",
+  "name": "motyga-curated",
   "plugins": [
     {
       "name": "shared-plugin",
@@ -1079,11 +1079,11 @@ async fn plugin_list_uses_home_config_for_enabled_state() -> Result<()> {
 }"#,
     )?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"[features]
 plugins = true
 
-[plugins."shared-plugin@codex-curated"]
+[plugins."shared-plugin@motyga-curated"]
 enabled = true
 "#,
     )?;
@@ -1096,7 +1096,7 @@ enabled = true
             .path()
             .join(".agents/plugins/marketplace.json"),
         r#"{
-  "name": "codex-curated",
+  "name": "motyga-curated",
   "plugins": [
     {
       "name": "shared-plugin",
@@ -1111,20 +1111,20 @@ enabled = true
     std::fs::create_dir_all(workspace_enabled.path().join(".motyga"))?;
     std::fs::write(
         workspace_enabled.path().join(".motyga/config.toml"),
-        r#"[plugins."shared-plugin@codex-curated"]
+        r#"[plugins."shared-plugin@motyga-curated"]
 enabled = false
 "#,
     )?;
     set_project_trust_level(
-        codex_home.path(),
+        motyga_home.path(),
         workspace_enabled.path(),
         TrustLevel::Trusted,
     )?;
 
     let workspace_default = TempDir::new()?;
-    let home = codex_home.path().to_string_lossy().into_owned();
+    let home = motyga_home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home.as_str())),
             ("USERPROFILE", Some(home.as_str())),
@@ -1156,7 +1156,7 @@ enabled = false
         .flat_map(|marketplace| marketplace.plugins.iter())
         .find(|plugin| plugin.name == "shared-plugin")
         .expect("expected shared-plugin entry");
-    assert_eq!(shared_plugin.id, "shared-plugin@codex-curated");
+    assert_eq!(shared_plugin.id, "shared-plugin@motyga-curated");
     assert_eq!(shared_plugin.installed, true);
     assert_eq!(shared_plugin.enabled, true);
     Ok(())
@@ -1164,17 +1164,17 @@ enabled = false
 
 #[tokio::test]
 async fn plugin_list_returns_plugin_interface_with_absolute_asset_paths() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let plugin_root = repo_root.path().join("plugins/demo-plugin");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
     std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
-    write_plugins_enabled_config(codex_home.path())?;
+    write_plugins_enabled_config(motyga_home.path())?;
     std::fs::write(
         repo_root.path().join(".agents/plugins/marketplace.json"),
         r#"{
-  "name": "codex-curated",
+  "name": "motyga-curated",
   "plugins": [
     {
       "name": "demo-plugin",
@@ -1217,7 +1217,7 @@ async fn plugin_list_returns_plugin_interface_with_absolute_asset_paths() -> Res
 }"##,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1241,7 +1241,7 @@ async fn plugin_list_returns_plugin_interface_with_absolute_asset_paths() -> Res
         .find(|plugin| plugin.name == "demo-plugin")
         .expect("expected demo-plugin entry");
 
-    assert_eq!(plugin.id, "demo-plugin@codex-curated");
+    assert_eq!(plugin.id, "demo-plugin@motyga-curated");
     assert_eq!(plugin.installed, false);
     assert_eq!(plugin.enabled, false);
     assert_eq!(plugin.install_policy, PluginInstallPolicy::Available);
@@ -1298,17 +1298,17 @@ async fn plugin_list_returns_plugin_interface_with_absolute_asset_paths() -> Res
 
 #[tokio::test]
 async fn plugin_list_accepts_legacy_string_default_prompt() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let plugin_root = repo_root.path().join("plugins/demo-plugin");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
     std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
-    write_plugins_enabled_config(codex_home.path())?;
+    write_plugins_enabled_config(motyga_home.path())?;
     std::fs::write(
         repo_root.path().join(".agents/plugins/marketplace.json"),
         r#"{
-  "name": "codex-curated",
+  "name": "motyga-curated",
   "plugins": [
     {
       "name": "demo-plugin",
@@ -1330,7 +1330,7 @@ async fn plugin_list_accepts_legacy_string_default_prompt() -> Result<()> {
 }"##,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1365,7 +1365,7 @@ async fn plugin_list_accepts_legacy_string_default_prompt() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_list_returns_installed_git_source_interface_from_cache() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let missing_remote_repo = repo_root.path().join("missing-remote-plugin-repo");
     let missing_remote_repo_url = url::Url::from_directory_path(&missing_remote_repo)
@@ -1392,7 +1392,7 @@ async fn plugin_list_returns_installed_git_source_interface_from_cache() -> Resu
 }}"#
         ),
     )?;
-    let cached_plugin_root = codex_home.path().join("plugins/cache/debug/toolkit/local");
+    let cached_plugin_root = motyga_home.path().join("plugins/cache/debug/toolkit/local");
     std::fs::create_dir_all(cached_plugin_root.join(".codex-plugin"))?;
     std::fs::write(
         cached_plugin_root.join(".codex-plugin/plugin.json"),
@@ -1409,7 +1409,7 @@ async fn plugin_list_returns_installed_git_source_interface_from_cache() -> Resu
 }"##,
     )?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"[features]
 plugins = true
 
@@ -1418,7 +1418,7 @@ enabled = true
 "#,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1483,14 +1483,14 @@ enabled = true
 
 #[tokio::test]
 async fn app_server_startup_sync_downloads_remote_installed_plugin_bundles() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1522,11 +1522,11 @@ async fn app_server_startup_sync_downloads_remote_installed_plugin_bundles() -> 
         .await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let installed_path = codex_home
+    let installed_path = motyga_home
         .path()
         .join("plugins/cache/openai-curated-remote/linear/1.2.3");
     let mut mcp = TestAppServer::new_with_env_and_plugin_startup_tasks(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -1544,29 +1544,29 @@ async fn app_server_startup_sync_downloads_remote_installed_plugin_bundles() -> 
         serde_json::from_str(&std::fs::read_to_string(installed_path.join(".app.json"))?)?;
     assert_eq!(installed_app_manifest, remote_app_manifest);
     assert!(installed_path.join("skills/plan-work/SKILL.md").is_file());
-    let config = std::fs::read_to_string(codex_home.path().join("config.toml"))?;
+    let config = std::fs::read_to_string(motyga_home.path().join("config.toml"))?;
     assert!(!config.contains("linear@openai-curated-remote"));
     Ok(())
 }
 
 #[tokio::test]
 async fn plugin_list_sync_upgrades_and_removes_remote_installed_plugin_bundles() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
             .chatgpt_account_id("account-123"),
         AuthCredentialsStoreMode::File,
     )?;
-    write_installed_plugin_with_version(&codex_home, "openai-curated-remote", "linear", "1.0.0")?;
-    write_installed_plugin_with_version(&codex_home, "openai-curated-remote", "stale", "1.0.0")?;
+    write_installed_plugin_with_version(&motyga_home, "openai-curated-remote", "linear", "1.0.0")?;
+    write_installed_plugin_with_version(&motyga_home, "openai-curated-remote", "stale", "1.0.0")?;
 
     let bundle_url = mount_remote_plugin_bundle(
         &server,
@@ -1594,18 +1594,18 @@ async fn plugin_list_sync_upgrades_and_removes_remote_installed_plugin_bundles()
         .await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let old_path = codex_home
+    let old_path = motyga_home
         .path()
         .join("plugins/cache/openai-curated-remote/linear/1.0.0");
-    let new_path = codex_home
+    let new_path = motyga_home
         .path()
         .join("plugins/cache/openai-curated-remote/linear/1.2.3");
-    let stale_path = codex_home
+    let stale_path = motyga_home
         .path()
         .join("plugins/cache/openai-curated-remote/stale");
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -1650,28 +1650,28 @@ async fn plugin_list_sync_upgrades_and_removes_remote_installed_plugin_bundles()
     assert_eq!(installed_app_manifest, remote_app_manifest);
     wait_for_path_missing(&old_path).await?;
     wait_for_path_missing(&stale_path).await?;
-    let config = std::fs::read_to_string(codex_home.path().join("config.toml"))?;
+    let config = std::fs::read_to_string(motyga_home.path().join("config.toml"))?;
     assert!(!config.contains("linear@openai-curated-remote"));
     Ok(())
 }
 
 #[tokio::test]
 async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
             .chatgpt_account_id("account-123"),
         AuthCredentialsStoreMode::File,
     )?;
-    write_installed_plugin_with_version(&codex_home, "openai-curated-remote", "linear", "1.2.3")?;
+    write_installed_plugin_with_version(&motyga_home, "openai-curated-remote", "linear", "1.2.3")?;
 
     let global_directory_body = r#"{
   "plugins": [
@@ -1749,7 +1749,7 @@ async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -
         .and(query_param("limit", "200"))
         .and(header("authorization", "Bearer chatgpt-token"))
         .and(header("chatgpt-account-id", "account-123"))
-        .and(header("oai-product-sku", "codex"))
+        .and(header("oai-product-sku", "motyga"))
         .respond_with(ResponseTemplate::new(200).set_body_string(global_directory_body))
         .mount(&server)
         .await;
@@ -1759,7 +1759,7 @@ async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -
         .and(query_param("limit", "200"))
         .and(header("authorization", "Bearer chatgpt-token"))
         .and(header("chatgpt-account-id", "account-123"))
-        .and(header("oai-product-sku", "codex"))
+        .and(header("oai-product-sku", "motyga"))
         .respond_with(ResponseTemplate::new(200).set_body_string(empty_page_body))
         .mount(&server)
         .await;
@@ -1768,7 +1768,7 @@ async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -
         .and(query_param("scope", "GLOBAL"))
         .and(header("authorization", "Bearer chatgpt-token"))
         .and(header("chatgpt-account-id", "account-123"))
-        .and(header("oai-product-sku", "codex"))
+        .and(header("oai-product-sku", "motyga"))
         .respond_with(ResponseTemplate::new(200).set_body_string(global_installed_body))
         .mount(&server)
         .await;
@@ -1777,20 +1777,20 @@ async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -
         .and(query_param("scope", "WORKSPACE"))
         .and(header("authorization", "Bearer chatgpt-token"))
         .and(header("chatgpt-account-id", "account-123"))
-        .and(header("oai-product-sku", "codex"))
+        .and(header("oai-product-sku", "motyga"))
         .respond_with(ResponseTemplate::new(200).set_body_string(empty_page_body))
         .mount(&server)
         .await;
     Mock::given(method("GET"))
         .and(path("/backend-api/plugins/featured"))
-        .and(query_param("platform", "codex"))
+        .and(query_param("platform", "motyga"))
         .respond_with(
             ResponseTemplate::new(200).set_body_string(r#"["linear@openai-curated-remote"]"#),
         )
         .mount(&server)
         .await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1839,7 +1839,7 @@ async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -
     assert_eq!(remote_marketplace.plugins[0].enabled, true);
     assert_eq!(
         remote_marketplace.plugins[0].availability,
-        codex_app_server_protocol::PluginAvailability::Available
+        motyga_app_server_protocol::PluginAvailability::Available
     );
     assert_eq!(
         remote_marketplace.plugins[0]
@@ -1865,7 +1865,7 @@ async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -
             "project management".to_string()
         ]
     );
-    let cache_files = std::fs::read_dir(codex_home.path().join("cache/remote_plugin_catalog"))?
+    let cache_files = std::fs::read_dir(motyga_home.path().join("cache/remote_plugin_catalog"))?
         .map(|entry| entry.map(|entry| entry.path()))
         .collect::<Result<Vec<_>, _>>()?;
     assert_eq!(cache_files.len(), 1);
@@ -1906,14 +1906,14 @@ async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -
 
 #[tokio::test]
 async fn plugin_list_uses_cached_global_remote_catalog_and_refreshes_it() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1937,7 +1937,7 @@ async fn plugin_list_uses_cached_global_remote_catalog_and_refreshes_it() -> Res
         .await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1963,7 +1963,7 @@ async fn plugin_list_uses_cached_global_remote_catalog_and_refreshes_it() -> Res
         "linear@openai-curated-remote"
     );
     wait_for_remote_plugin_request_count(&server, "/ps/plugins/list", /*expected_count*/ 1).await?;
-    wait_for_cached_remote_catalog_plugin_ids(codex_home.path(), &[cached_remote_plugin_id])
+    wait_for_cached_remote_catalog_plugin_ids(motyga_home.path(), &[cached_remote_plugin_id])
         .await?;
 
     server.reset().await;
@@ -1996,7 +1996,7 @@ async fn plugin_list_uses_cached_global_remote_catalog_and_refreshes_it() -> Res
         "linear@openai-curated-remote"
     );
     wait_for_remote_plugin_request_count(&server, "/ps/plugins/list", /*expected_count*/ 1).await?;
-    wait_for_cached_remote_catalog_plugin_ids(codex_home.path(), &[refreshed_remote_plugin_id])
+    wait_for_cached_remote_catalog_plugin_ids(motyga_home.path(), &[refreshed_remote_plugin_id])
         .await?;
 
     Ok(())
@@ -2005,14 +2005,14 @@ async fn plugin_list_uses_cached_global_remote_catalog_and_refreshes_it() -> Res
 #[tokio::test]
 async fn plugin_list_includes_openai_curated_remote_collection_when_remote_plugin_disabled_and_requested()
 -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugins_disabled_config_with_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2052,7 +2052,7 @@ async fn plugin_list_includes_openai_curated_remote_collection_when_remote_plugi
         .await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2111,14 +2111,14 @@ async fn plugin_list_includes_openai_curated_remote_collection_when_remote_plugi
 #[tokio::test]
 async fn plugin_list_propagates_openai_curated_remote_collection_errors_when_remote_plugin_disabled()
 -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugins_disabled_config_with_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2141,7 +2141,7 @@ async fn plugin_list_propagates_openai_curated_remote_collection_errors_when_rem
         .await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2168,20 +2168,20 @@ async fn plugin_list_propagates_openai_curated_remote_collection_errors_when_rem
 #[tokio::test]
 async fn plugin_list_skips_openai_curated_remote_collection_for_api_auth_when_remote_plugin_disabled()
 -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugins_disabled_config_with_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     login_with_api_key(
-        codex_home.path(),
+        motyga_home.path(),
         "sk-test-key",
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2206,21 +2206,21 @@ async fn plugin_list_skips_openai_curated_remote_collection_for_api_auth_when_re
 #[tokio::test]
 async fn plugin_list_includes_api_curated_marketplace_for_api_auth_when_remote_plugin_enabled()
 -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
-    write_openai_api_curated_marketplace(codex_home.path(), &["api-plugin"])?;
+    write_openai_api_curated_marketplace(motyga_home.path(), &["api-plugin"])?;
     login_with_api_key(
-        codex_home.path(),
+        motyga_home.path(),
         "sk-test-key",
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2260,14 +2260,14 @@ async fn plugin_list_includes_api_curated_marketplace_for_api_auth_when_remote_p
 
 #[tokio::test]
 async fn plugin_list_does_not_query_openai_curated_remote_collection_by_default() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_plugins_enabled_config_with_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2275,7 +2275,7 @@ async fn plugin_list_does_not_query_openai_curated_remote_collection_by_default(
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2313,14 +2313,14 @@ async fn plugin_list_does_not_query_openai_curated_remote_collection_by_default(
 
 #[tokio::test]
 async fn plugin_list_vertical_kind_noops_when_remote_plugin_enabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2328,7 +2328,7 @@ async fn plugin_list_vertical_kind_noops_when_remote_plugin_enabled() -> Result<
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2367,14 +2367,14 @@ async fn plugin_list_vertical_kind_noops_when_remote_plugin_enabled() -> Result<
 #[tokio::test]
 async fn plugin_list_does_not_append_global_remote_when_marketplace_kinds_are_explicit()
 -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2382,7 +2382,7 @@ async fn plugin_list_does_not_append_global_remote_when_marketplace_kinds_are_ex
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2412,10 +2412,10 @@ async fn plugin_list_does_not_append_global_remote_when_marketplace_kinds_are_ex
 #[tokio::test]
 async fn plugin_installed_includes_remote_shared_with_me_plugins_when_remote_plugin_disabled()
 -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{}/backend-api/"
 
@@ -2428,7 +2428,7 @@ plugin_sharing = true
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2461,7 +2461,7 @@ plugin_sharing = true
     mount_remote_installed_plugins(&server, "WORKSPACE", &workspace_installed_body).await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2515,10 +2515,10 @@ plugin_sharing = true
 #[tokio::test]
 async fn plugin_installed_includes_workspace_directory_without_plugin_sharing_when_remote_plugin_disabled()
 -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{}/backend-api/"
 
@@ -2531,7 +2531,7 @@ plugin_sharing = false
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2563,7 +2563,7 @@ plugin_sharing = false
     mount_remote_installed_plugins(&server, "WORKSPACE", &workspace_installed_body).await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2602,10 +2602,10 @@ plugin_sharing = false
 
 #[tokio::test]
 async fn plugin_installed_includes_created_by_me_when_remote_plugins_enabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{}/backend-api/"
 
@@ -2617,7 +2617,7 @@ plugin_sharing = false
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2651,7 +2651,7 @@ plugin_sharing = false
     .await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -2681,7 +2681,7 @@ plugin_sharing = false
         vec![("private-linear@created-by-me-remote", true, true)]
     );
     wait_for_path_exists(
-        &codex_home.path().join(
+        &motyga_home.path().join(
             "plugins/cache/created-by-me-remote/private-linear/1.2.3/.codex-plugin/plugin.json",
         ),
     )
@@ -2692,10 +2692,10 @@ plugin_sharing = false
 
 #[tokio::test]
 async fn plugin_installed_starts_remote_installed_bundle_sync() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{}/backend-api/"
 
@@ -2707,7 +2707,7 @@ plugin_sharing = false
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2729,7 +2729,7 @@ plugin_sharing = false
     mount_empty_user_installed_plugins(&server).await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -2759,7 +2759,7 @@ plugin_sharing = false
             .collect::<Vec<_>>(),
         vec![("linear@openai-curated-remote".to_string(), true, true)]
     );
-    let installed_path = codex_home
+    let installed_path = motyga_home
         .path()
         .join("plugins/cache/openai-curated-remote/linear/1.2.3/.codex-plugin/plugin.json");
     wait_for_path_exists(&installed_path).await?;
@@ -2770,14 +2770,14 @@ plugin_sharing = false
 
 #[tokio::test]
 async fn plugin_list_fetches_workspace_directory_kind_when_remote_plugin_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugins_disabled_config_with_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2803,7 +2803,7 @@ async fn plugin_list_fetches_workspace_directory_kind_when_remote_plugin_disable
     mount_remote_installed_plugins(&server, "WORKSPACE", &workspace_installed_body).await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2858,10 +2858,10 @@ async fn plugin_list_fetches_workspace_directory_kind_when_remote_plugin_disable
 
 #[tokio::test]
 async fn plugin_list_fetches_user_plugins_in_created_by_me_remote_marketplace() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{}/backend-api/"
 
@@ -2873,7 +2873,7 @@ plugin_sharing = false
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2929,7 +2929,7 @@ plugin_sharing = false
     mount_remote_installed_plugins(&server, "WORKSPACE", empty_remote_installed_plugins_body())
         .await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2993,14 +2993,14 @@ plugin_sharing = false
 
 #[tokio::test]
 async fn plugin_list_fetches_shared_with_me_kind() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_plugins_enabled_config_with_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -3056,7 +3056,7 @@ async fn plugin_list_fetches_shared_with_me_kind() -> Result<()> {
     mount_remote_installed_plugins(&server, "WORKSPACE", &workspace_installed_body).await;
     mount_empty_user_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -3190,10 +3190,10 @@ async fn plugin_list_fetches_shared_with_me_kind() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_list_omits_shared_with_me_kind_when_plugin_sharing_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{}/backend-api/"
 
@@ -3205,7 +3205,7 @@ plugin_sharing = false
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -3213,7 +3213,7 @@ plugin_sharing = false
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -3249,10 +3249,10 @@ plugin_sharing = false
 
 #[tokio::test]
 async fn plugin_list_omits_created_by_me_when_remote_plugins_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{}/backend-api/"
 
@@ -3265,7 +3265,7 @@ plugin_sharing = true
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -3273,7 +3273,7 @@ plugin_sharing = true
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -3304,14 +3304,14 @@ plugin_sharing = true
 
 #[tokio::test]
 async fn plugin_list_marks_remote_plugin_disabled_by_admin() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -3403,7 +3403,7 @@ async fn plugin_list_marks_remote_plugin_disabled_by_admin() -> Result<()> {
             .await;
     }
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -3432,17 +3432,17 @@ async fn plugin_list_marks_remote_plugin_disabled_by_admin() -> Result<()> {
     assert_eq!(plugin.enabled, true);
     assert_eq!(
         plugin.availability,
-        codex_app_server_protocol::PluginAvailability::DisabledByAdmin
+        motyga_app_server_protocol::PluginAvailability::DisabledByAdmin
     );
     Ok(())
 }
 
 #[tokio::test]
 async fn plugin_list_does_not_fetch_remote_marketplaces_when_plugins_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{}/backend-api/"
@@ -3455,7 +3455,7 @@ remote_plugin = true
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -3463,7 +3463,7 @@ remote_plugin = true
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -3487,19 +3487,19 @@ remote_plugin = true
 
 #[tokio::test]
 async fn plugin_list_fetches_featured_plugin_ids_without_chatgpt_auth() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    write_plugin_sync_config(codex_home.path(), &format!("{}/backend-api/", server.uri()))?;
-    write_openai_curated_marketplace(codex_home.path(), &["linear", "gmail"])?;
+    write_plugin_sync_config(motyga_home.path(), &format!("{}/backend-api/", server.uri()))?;
+    write_openai_curated_marketplace(motyga_home.path(), &["linear", "gmail"])?;
 
     Mock::given(method("GET"))
         .and(path("/backend-api/plugins/featured"))
-        .and(query_param("platform", "codex"))
+        .and(query_param("platform", "motyga"))
         .respond_with(ResponseTemplate::new(200).set_body_string(r#"["linear@openai-curated"]"#))
         .mount(&server)
         .await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -3525,20 +3525,20 @@ async fn plugin_list_fetches_featured_plugin_ids_without_chatgpt_auth() -> Resul
 
 #[tokio::test]
 async fn plugin_list_uses_warmed_featured_plugin_ids_cache_on_first_request() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    write_plugin_sync_config(codex_home.path(), &format!("{}/backend-api/", server.uri()))?;
-    write_openai_curated_marketplace(codex_home.path(), &["linear", "gmail"])?;
+    write_plugin_sync_config(motyga_home.path(), &format!("{}/backend-api/", server.uri()))?;
+    write_openai_curated_marketplace(motyga_home.path(), &["linear", "gmail"])?;
 
     Mock::given(method("GET"))
         .and(path("/backend-api/plugins/featured"))
-        .and(query_param("platform", "codex"))
+        .and(query_param("platform", "motyga"))
         .respond_with(ResponseTemplate::new(200).set_body_string(r#"["linear@openai-curated"]"#))
         .expect(1)
         .mount(&server)
         .await;
 
-    let mut mcp = TestAppServer::new_with_plugin_startup_tasks(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_plugin_startup_tasks(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     wait_for_featured_plugin_request_count(&server, /*expected_count*/ 1).await?;
 
@@ -3633,7 +3633,7 @@ async fn wait_for_remote_installed_scope_request(server: &MockServer, scope: &st
 }
 
 async fn wait_for_cached_remote_catalog_plugin_ids(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     expected_plugin_ids: &[&str],
 ) -> Result<()> {
     let mut expected_plugin_ids = expected_plugin_ids
@@ -3644,7 +3644,7 @@ async fn wait_for_cached_remote_catalog_plugin_ids(
     expected_plugin_ids.sort();
     timeout(DEFAULT_TIMEOUT, async {
         loop {
-            let plugin_ids = cached_remote_catalog_plugin_ids(codex_home)?;
+            let plugin_ids = cached_remote_catalog_plugin_ids(motyga_home)?;
             if plugin_ids == expected_plugin_ids {
                 return Ok::<(), anyhow::Error>(());
             }
@@ -3655,8 +3655,8 @@ async fn wait_for_cached_remote_catalog_plugin_ids(
     Ok(())
 }
 
-fn cached_remote_catalog_plugin_ids(codex_home: &std::path::Path) -> Result<Vec<String>> {
-    let cache_dir = codex_home.join("cache/remote_plugin_catalog");
+fn cached_remote_catalog_plugin_ids(motyga_home: &std::path::Path) -> Result<Vec<String>> {
+    let cache_dir = motyga_home.join("cache/remote_plugin_catalog");
     if !cache_dir.exists() {
         return Ok(Vec::new());
     }
@@ -3987,20 +3987,20 @@ fn remote_plugin_bundle_tar_gz_bytes(plugin_name: &str) -> Result<Vec<u8>> {
 }
 
 fn write_installed_plugin(
-    codex_home: &TempDir,
+    motyga_home: &TempDir,
     marketplace_name: &str,
     plugin_name: &str,
 ) -> Result<()> {
-    write_installed_plugin_with_version(codex_home, marketplace_name, plugin_name, "local")
+    write_installed_plugin_with_version(motyga_home, marketplace_name, plugin_name, "local")
 }
 
 fn write_installed_plugin_with_version(
-    codex_home: &TempDir,
+    motyga_home: &TempDir,
     marketplace_name: &str,
     plugin_name: &str,
     plugin_version: &str,
 ) -> Result<()> {
-    let plugin_root = codex_home
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join(marketplace_name)
@@ -4015,9 +4015,9 @@ fn write_installed_plugin_with_version(
     Ok(())
 }
 
-fn write_plugin_sync_config(codex_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
+fn write_plugin_sync_config(motyga_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{base_url}"
@@ -4039,11 +4039,11 @@ enabled = true
 }
 
 fn write_remote_plugin_catalog_config(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     base_url: &str,
 ) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{base_url}"
@@ -4056,11 +4056,11 @@ plugins = true
 }
 
 fn write_openai_curated_marketplace(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     plugin_names: &[&str],
 ) -> std::io::Result<()> {
     write_curated_marketplace(
-        codex_home,
+        motyga_home,
         "marketplace.json",
         "openai-curated",
         /*display_name*/ None,
@@ -4069,11 +4069,11 @@ fn write_openai_curated_marketplace(
 }
 
 fn write_openai_api_curated_marketplace(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     plugin_names: &[&str],
 ) -> std::io::Result<()> {
     write_curated_marketplace(
-        codex_home,
+        motyga_home,
         "api_marketplace.json",
         "openai-api-curated",
         Some("OpenAI Curated"),
@@ -4082,13 +4082,13 @@ fn write_openai_api_curated_marketplace(
 }
 
 fn write_curated_marketplace(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     manifest_name: &str,
     marketplace_name: &str,
     display_name: Option<&str>,
     plugin_names: &[&str],
 ) -> std::io::Result<()> {
-    let curated_root = codex_home.join(".tmp/plugins");
+    let curated_root = motyga_home.join(".tmp/plugins");
     std::fs::create_dir_all(curated_root.join(".git"))?;
     std::fs::create_dir_all(curated_root.join(".agents/plugins"))?;
     let plugins = plugin_names
@@ -4136,16 +4136,16 @@ fn write_curated_marketplace(
             format!(r#"{{"name":"{plugin_name}"}}"#),
         )?;
     }
-    std::fs::create_dir_all(codex_home.join(".tmp"))?;
+    std::fs::create_dir_all(motyga_home.join(".tmp"))?;
     std::fs::write(
-        codex_home.join(".tmp/plugins.sha"),
+        motyga_home.join(".tmp/plugins.sha"),
         format!("{TEST_CURATED_PLUGIN_SHA}\n"),
     )?;
     Ok(())
 }
 
 fn write_plugin_share_local_path_mapping(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     remote_plugin_id: &str,
     plugin_path: &AbsolutePathBuf,
 ) -> std::io::Result<()> {
@@ -4158,9 +4158,9 @@ fn write_plugin_share_local_path_mapping(
         "localPluginPathsByRemotePluginId": local_plugin_paths_by_remote_plugin_id,
     }))
     .map_err(std::io::Error::other)?;
-    std::fs::create_dir_all(codex_home.join(".tmp"))?;
+    std::fs::create_dir_all(motyga_home.join(".tmp"))?;
     std::fs::write(
-        codex_home.join(".tmp/plugin-share-local-paths-v1.json"),
+        motyga_home.join(".tmp/plugin-share-local-paths-v1.json"),
         format!("{contents}\n"),
     )
 }

@@ -2,21 +2,21 @@
 #![cfg(target_os = "macos")]
 
 use anyhow::Result;
-use codex_core::config::Constrained;
-use codex_features::Feature;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::models::FileSystemPermissions;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::request_permissions::PermissionGrantScope;
-use codex_protocol::request_permissions::RequestPermissionProfile;
-use codex_protocol::request_permissions::RequestPermissionsResponse;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_core::config::Constrained;
+use motyga_features::Feature;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::models::FileSystemPermissions;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::request_permissions::PermissionGrantScope;
+use motyga_protocol::request_permissions::RequestPermissionProfile;
+use motyga_protocol::request_permissions::RequestPermissionsResponse;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use core_test_support::responses::ev_apply_patch_custom_tool_call;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -27,10 +27,10 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_sandbox;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use regex_lite::Regex;
@@ -133,7 +133,7 @@ fn parse_result(item: &Value) -> (Option<i64>, String) {
 }
 
 async fn submit_turn(
-    test: &TestCodex,
+    test: &TestMotyga,
     prompt: &str,
     approval_policy: AskForApproval,
     permission_profile: PermissionProfile,
@@ -142,7 +142,7 @@ async fn submit_turn(
     let session_model = test.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.config.cwd.as_path());
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -151,15 +151,15 @@ async fn submit_turn(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(approval_policy),
                 approvals_reviewer,
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: session_model,
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -172,18 +172,18 @@ async fn submit_turn(
     Ok(())
 }
 
-async fn wait_for_completion(test: &TestCodex) {
-    wait_for_event(&test.codex, |event| {
+async fn wait_for_completion(test: &TestMotyga) {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 }
 
 async fn expect_request_permissions_event(
-    test: &TestCodex,
+    test: &TestMotyga,
     expected_call_id: &str,
 ) -> RequestPermissionProfile {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::RequestPermissions(_) | EventMsg::TurnComplete(_)
@@ -213,7 +213,7 @@ async fn approved_folder_write_request_permissions_unblocks_later_exec_without_s
     let permission_profile = workspace_write_excluding_tmp();
     let permission_profile_for_config = permission_profile.clone();
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
         config
             .permissions
@@ -280,7 +280,7 @@ async fn approved_folder_write_request_permissions_unblocks_later_exec_without_s
         granted_permissions,
         normalized_requested_permissions.clone()
     );
-    test.codex
+    test.motyga
         .submit(Op::RequestPermissionsResponse {
             id: "permissions-call".to_string(),
             response: RequestPermissionsResponse {
@@ -291,7 +291,7 @@ async fn approved_folder_write_request_permissions_unblocks_later_exec_without_s
         })
         .await?;
 
-    let completion_event = wait_for_event(&test.codex, |event| {
+    let completion_event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -299,14 +299,14 @@ async fn approved_folder_write_request_permissions_unblocks_later_exec_without_s
     })
     .await;
     if let EventMsg::ExecApprovalRequest(approval) = completion_event {
-        test.codex
+        test.motyga
             .submit(Op::ExecApproval {
                 id: approval.effective_approval_id(),
                 turn_id: None,
                 decision: ReviewDecision::Approved,
             })
             .await?;
-        wait_for_event(&test.codex, |event| {
+        wait_for_event(&test.motyga, |event| {
             matches!(event, EventMsg::TurnComplete(_))
         })
         .await;
@@ -346,7 +346,7 @@ async fn apply_patch_after_request_permissions(strict_auto_review: bool) -> Resu
     let permission_profile = workspace_write_excluding_tmp();
     let permission_profile_for_config = permission_profile.clone();
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
         config
             .permissions
@@ -441,7 +441,7 @@ async fn apply_patch_after_request_permissions(strict_auto_review: bool) -> Resu
         granted_permissions,
         normalized_requested_permissions.clone()
     );
-    test.codex
+    test.motyga
         .submit(Op::RequestPermissionsResponse {
             id: "permissions-call".to_string(),
             response: RequestPermissionsResponse {
@@ -462,7 +462,7 @@ async fn apply_patch_after_request_permissions(strict_auto_review: bool) -> Resu
         assert!(guardian_request.body_contains_text(requested_file_name));
         assert!(guardian_request.body_contains_text(patch_content));
     } else {
-        let event = wait_for_event(&test.codex, |event| {
+        let event = wait_for_event(&test.motyga, |event| {
             matches!(
                 event,
                 EventMsg::ApplyPatchApprovalRequest(_) | EventMsg::TurnComplete(_)

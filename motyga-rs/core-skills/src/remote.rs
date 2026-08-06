@@ -6,8 +6,8 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use codex_login::CodexAuth;
-use codex_login::default_client::build_reqwest_client;
+use motyga_login::MotygaAuth;
+use motyga_login::default_client::build_reqwest_client;
 
 const REMOTE_SKILLS_API_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -25,7 +25,7 @@ pub enum RemoteSkillScope {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RemoteSkillProductSurface {
     Chatgpt,
-    Codex,
+    Motyga,
     Api,
     Atlas,
 }
@@ -42,17 +42,17 @@ fn as_query_scope(scope: RemoteSkillScope) -> Option<&'static str> {
 fn as_query_product_surface(product_surface: RemoteSkillProductSurface) -> &'static str {
     match product_surface {
         RemoteSkillProductSurface::Chatgpt => "chatgpt",
-        RemoteSkillProductSurface::Codex => "codex",
+        RemoteSkillProductSurface::Motyga => "motyga",
         RemoteSkillProductSurface::Api => "api",
         RemoteSkillProductSurface::Atlas => "atlas",
     }
 }
 
-fn ensure_codex_backend_auth(auth: Option<&CodexAuth>) -> Result<&CodexAuth> {
+fn ensure_motyga_backend_auth(auth: Option<&MotygaAuth>) -> Result<&MotygaAuth> {
     let Some(auth) = auth else {
         anyhow::bail!("chatgpt authentication required for remote skill scopes");
     };
-    if !auth.uses_codex_backend() {
+    if !auth.uses_motyga_backend() {
         anyhow::bail!(
             "chatgpt authentication required for remote skill scopes; api key auth is not supported"
         );
@@ -88,13 +88,13 @@ struct RemoteSkill {
 
 pub async fn list_remote_skills(
     chatgpt_base_url: String,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     scope: RemoteSkillScope,
     product_surface: RemoteSkillProductSurface,
     enabled: Option<bool>,
 ) -> Result<Vec<RemoteSkillSummary>> {
     let base_url = chatgpt_base_url.trim_end_matches('/');
-    let auth = ensure_codex_backend_auth(auth)?;
+    let auth = ensure_motyga_backend_auth(auth)?;
 
     let url = format!("{base_url}/hazelnuts");
     let product_surface = as_query_product_surface(product_surface);
@@ -112,7 +112,7 @@ pub async fn list_remote_skills(
         .get(&url)
         .timeout(REMOTE_SKILLS_API_TIMEOUT)
         .query(&query_params)
-        .headers(codex_model_provider::auth_provider_from_auth(auth).to_auth_headers());
+        .headers(motyga_model_provider::auth_provider_from_auth(auth).to_auth_headers());
     let response = request
         .send()
         .await
@@ -140,11 +140,11 @@ pub async fn list_remote_skills(
 
 pub async fn export_remote_skill(
     chatgpt_base_url: String,
-    codex_home: PathBuf,
-    auth: Option<&CodexAuth>,
+    motyga_home: PathBuf,
+    auth: Option<&MotygaAuth>,
     skill_id: &str,
 ) -> Result<RemoteSkillDownloadResult> {
-    let auth = ensure_codex_backend_auth(auth)?;
+    let auth = ensure_motyga_backend_auth(auth)?;
 
     let client = build_reqwest_client();
     let base_url = chatgpt_base_url.trim_end_matches('/');
@@ -152,7 +152,7 @@ pub async fn export_remote_skill(
     let request = client
         .get(&url)
         .timeout(REMOTE_SKILLS_API_TIMEOUT)
-        .headers(codex_model_provider::auth_provider_from_auth(auth).to_auth_headers());
+        .headers(motyga_model_provider::auth_provider_from_auth(auth).to_auth_headers());
 
     let response = request
         .send()
@@ -170,7 +170,7 @@ pub async fn export_remote_skill(
         anyhow::bail!("Downloaded remote skill payload is not a zip archive");
     }
 
-    let output_dir = codex_home.join("skills").join(skill_id);
+    let output_dir = motyga_home.join("skills").join(skill_id);
     tokio::fs::create_dir_all(&output_dir)
         .await
         .context("Failed to create downloaded skills directory")?;

@@ -8,10 +8,10 @@
 //! ## Usage
 //!
 //! ```no_run
-//! use codex_state::log_db;
+//! use motyga_state::log_db;
 //! use tracing_subscriber::prelude::*;
 //!
-//! # async fn example(state_db: std::sync::Arc<codex_state::StateRuntime>) {
+//! # async fn example(state_db: std::sync::Arc<motyga_state::StateRuntime>) {
 //! let layer = log_db::start(state_db);
 //! let _ = tracing_subscriber::registry()
 //!     .with(layer)
@@ -54,8 +54,8 @@ pub fn default_filter() -> Targets {
     Targets::new()
         .with_default(LevelFilter::TRACE)
         .with_target("log", LevelFilter::OFF)
-        .with_target("codex_otel.log_only", LevelFilter::OFF)
-        .with_target("codex_otel.trace_safe", LevelFilter::OFF)
+        .with_target("motyga_otel.log_only", LevelFilter::OFF)
+        .with_target("motyga_otel.trace_safe", LevelFilter::OFF)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -207,7 +207,7 @@ where
         }
 
         // The SDK emits DEBUG timer meta-events every second per process; these
-        // were over 30% of retained logs in measured high-fanout Codex environments.
+        // were over 30% of retained logs in measured high-fanout Motyga environments.
         if metadata.target() == "opentelemetry_sdk"
             && matches!(
                 *metadata.level(),
@@ -497,8 +497,8 @@ mod tests {
 
     use super::*;
 
-    fn temp_codex_home() -> std::path::PathBuf {
-        std::env::temp_dir().join(format!("codex-state-log-db-{}", Uuid::new_v4()))
+    fn temp_motyga_home() -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("motyga-state-log-db-{}", Uuid::new_v4()))
     }
 
     async fn wait_for_log_count(runtime: &StateRuntime, expected: usize) -> Vec<crate::LogRow> {
@@ -578,8 +578,8 @@ mod tests {
 
     #[tokio::test]
     async fn sqlite_feedback_logs_match_feedback_formatter_shape() {
-        let codex_home = temp_codex_home();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string())
+        let motyga_home = temp_motyga_home();
+        let runtime = StateRuntime::init(motyga_home.clone(), "test-provider".to_string())
             .await
             .expect("initialize runtime");
         let writer = SharedWriter::default();
@@ -631,13 +631,13 @@ mod tests {
             without_timestamps(&feedback_logs)
         );
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(motyga_home).await;
     }
 
     #[tokio::test]
     async fn flush_persists_logs_for_query() {
-        let codex_home = temp_codex_home();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string())
+        let motyga_home = temp_motyga_home();
+        let runtime = StateRuntime::init(motyga_home.clone(), "test-provider".to_string())
             .await
             .expect("initialize runtime");
         let layer = start(runtime.clone());
@@ -662,13 +662,13 @@ mod tests {
         assert_eq!(after_flush.len(), 1);
         assert_eq!(after_flush[0].message.as_deref(), Some("buffered-log"));
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(motyga_home).await;
     }
 
     #[tokio::test]
     async fn configured_batch_size_flushes_without_explicit_flush() {
-        let codex_home = temp_codex_home();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string())
+        let motyga_home = temp_motyga_home();
+        let runtime = StateRuntime::init(motyga_home.clone(), "test-provider".to_string())
             .await
             .expect("initialize runtime");
         let layer = LogDbLayer::start_with_config(
@@ -711,13 +711,13 @@ mod tests {
             vec![Some("first-batch-log"), Some("second-batch-log")]
         );
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(motyga_home).await;
     }
 
     #[tokio::test]
     async fn configured_flush_interval_persists_buffered_logs() {
-        let codex_home = temp_codex_home();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string())
+        let motyga_home = temp_motyga_home();
+        let runtime = StateRuntime::init(motyga_home.clone(), "test-provider".to_string())
             .await
             .expect("initialize runtime");
         let layer = LogDbLayer::start_with_config(
@@ -744,7 +744,7 @@ mod tests {
 
         assert_eq!(after_interval[0].message.as_deref(), Some("interval-log"));
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(motyga_home).await;
     }
 
     #[tokio::test]

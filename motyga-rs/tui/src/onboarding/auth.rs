@@ -7,16 +7,16 @@
 
 #![allow(clippy::unwrap_used)]
 
-use codex_app_server_client::AppServerRequestHandle;
-use codex_app_server_protocol::AccountLoginCompletedNotification;
-use codex_app_server_protocol::AccountUpdatedNotification;
-use codex_app_server_protocol::AuthMode as ApiAuthMode;
-use codex_app_server_protocol::CancelLoginAccountParams;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::LoginAccountParams;
-use codex_app_server_protocol::LoginAccountResponse;
-use codex_login::read_codex_api_key_from_env;
-use codex_protocol::auth::AuthMode;
+use motyga_app_server_client::AppServerRequestHandle;
+use motyga_app_server_protocol::AccountLoginCompletedNotification;
+use motyga_app_server_protocol::AccountUpdatedNotification;
+use motyga_app_server_protocol::AuthMode as ApiAuthMode;
+use motyga_app_server_protocol::CancelLoginAccountParams;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::LoginAccountParams;
+use motyga_app_server_protocol::LoginAccountResponse;
+use motyga_login::read_motyga_api_key_from_env;
+use motyga_protocol::auth::AuthMode;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -38,7 +38,7 @@ use ratatui::widgets::Paragraph;
 use ratatui::widgets::WidgetRef;
 use ratatui::widgets::Wrap;
 
-use codex_protocol::config_types::ForcedLoginMethod;
+use motyga_protocol::config_types::ForcedLoginMethod;
 use std::cell::Cell;
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -96,8 +96,8 @@ pub(crate) enum SignInOption {
 const API_KEY_DISABLED_MESSAGE: &str = "API key login is disabled.";
 // Where a keyless user signs up and creates a Motyga API key.
 const MOTYGA_SIGNUP_URL: &str = "https://motyga.com/platform/keys";
-fn onboarding_request_id() -> codex_app_server_protocol::RequestId {
-    codex_app_server_protocol::RequestId::String(Uuid::new_v4().to_string())
+fn onboarding_request_id() -> motyga_app_server_protocol::RequestId {
+    motyga_app_server_protocol::RequestId::String(Uuid::new_v4().to_string())
 }
 
 pub(super) async fn cancel_login_attempt(
@@ -105,7 +105,7 @@ pub(super) async fn cancel_login_attempt(
     login_id: String,
 ) {
     let _ = request_handle
-        .request_typed::<codex_app_server_protocol::CancelLoginAccountResponse>(
+        .request_typed::<motyga_app_server_protocol::CancelLoginAccountResponse>(
             ClientRequest::CancelLoginAccount {
                 request_id: onboarding_request_id(),
                 params: CancelLoginAccountParams { login_id },
@@ -793,7 +793,7 @@ impl AuthModeWidget {
             return;
         }
         self.set_error(/*message*/ None);
-        let prefill_from_env = read_codex_api_key_from_env();
+        let prefill_from_env = read_motyga_api_key_from_env();
         let had_env_key = prefill_from_env.is_some();
         let mut guard = self.sign_in_state.write().unwrap();
         match &mut *guard {
@@ -900,7 +900,7 @@ impl AuthModeWidget {
                 .request_typed::<LoginAccountResponse>(ClientRequest::LoginAccount {
                     request_id: onboarding_request_id(),
                     params: LoginAccountParams::Chatgpt {
-                        codex_streamlined_login: false,
+                        motyga_streamlined_login: false,
                     },
                 })
                 .await
@@ -1042,24 +1042,24 @@ pub(super) fn maybe_open_auth_url_in_browser(request_handle: &AppServerRequestHa
 mod tests {
     use super::*;
     use crate::legacy_core::config::ConfigBuilder;
-    use codex_app_server_client::AppServerRequestHandle;
-    use codex_app_server_client::DEFAULT_IN_PROCESS_CHANNEL_CAPACITY;
-    use codex_app_server_client::InProcessAppServerClient;
-    use codex_app_server_client::InProcessClientStartArgs;
-    use codex_arg0::Arg0DispatchPaths;
-    use codex_cloud_config::cloud_config_bundle_loader_for_storage;
-    use codex_config::types::AuthCredentialsStoreMode;
-    use codex_login::AuthKeyringBackendKind;
+    use motyga_app_server_client::AppServerRequestHandle;
+    use motyga_app_server_client::DEFAULT_IN_PROCESS_CHANNEL_CAPACITY;
+    use motyga_app_server_client::InProcessAppServerClient;
+    use motyga_app_server_client::InProcessClientStartArgs;
+    use motyga_arg0::Arg0DispatchPaths;
+    use motyga_cloud_config::cloud_config_bundle_loader_for_storage;
+    use motyga_config::types::AuthCredentialsStoreMode;
+    use motyga_login::AuthKeyringBackendKind;
 
     use pretty_assertions::assert_eq;
     use std::sync::Arc;
     use tempfile::TempDir;
 
     async fn widget_forced_chatgpt() -> (AuthModeWidget, TempDir) {
-        let codex_home = TempDir::new().unwrap();
-        let codex_home_path = codex_home.path().to_path_buf();
+        let motyga_home = TempDir::new().unwrap();
+        let motyga_home_path = motyga_home.path().to_path_buf();
         let config = ConfigBuilder::default()
-            .codex_home(codex_home_path.clone())
+            .motyga_home(motyga_home_path.clone())
             .build()
             .await
             .unwrap();
@@ -1070,24 +1070,24 @@ mod tests {
             loader_overrides: Default::default(),
             strict_config: false,
             cloud_config_bundle: cloud_config_bundle_loader_for_storage(
-                codex_home_path.clone(),
-                /*enable_codex_api_key_env*/ false,
+                motyga_home_path.clone(),
+                /*enable_motyga_api_key_env*/ false,
                 AuthCredentialsStoreMode::File,
                 AuthKeyringBackendKind::default(),
                 "https://chatgpt.com/backend-api/".to_string(),
                 /*auth_route_config*/ None,
             )
             .await,
-            feedback: codex_feedback::CodexFeedback::new(),
+            feedback: motyga_feedback::MotygaFeedback::new(),
             log_db: None,
             state_db: None,
             environment_manager: Arc::new(
-                codex_app_server_client::EnvironmentManager::default_for_tests(),
+                motyga_app_server_client::EnvironmentManager::default_for_tests(),
             ),
             config_warnings: Vec::new(),
             session_source: serde_json::from_value(serde_json::json!("cli"))
                 .expect("cli session source should deserialize"),
-            enable_codex_api_key_env: false,
+            enable_motyga_api_key_env: false,
             client_name: "test".to_string(),
             client_version: "test".to_string(),
             experimental_api: true,
@@ -1108,7 +1108,7 @@ mod tests {
             animations_enabled: true,
             animations_suppressed: std::cell::Cell::new(false),
         };
-        (widget, codex_home)
+        (widget, motyga_home)
     }
 
     #[tokio::test]

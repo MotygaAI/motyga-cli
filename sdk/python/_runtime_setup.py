@@ -13,9 +13,9 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-PACKAGE_NAME = "openai-codex-cli-bin"
-SDK_PACKAGE_NAME = "openai-codex"
-REPO_SLUG = "openai/codex"
+PACKAGE_NAME = "motyga-cli-bin"
+SDK_PACKAGE_NAME = "motyga-sdk"
+REPO_SLUG = "MotygaAI/motyga-cli"
 
 
 class RuntimeSetupError(RuntimeError):
@@ -58,7 +58,7 @@ def ensure_runtime_package_installed(
     ):
         return requested_version
 
-    with tempfile.TemporaryDirectory(prefix="codex-python-runtime-") as temp_root_str:
+    with tempfile.TemporaryDirectory(prefix="motyga-python-runtime-") as temp_root_str:
         temp_root = Path(temp_root_str)
         archive_path = _download_release_archive(requested_version, temp_root)
         staged_runtime_dir = _stage_runtime_package(
@@ -93,19 +93,19 @@ def platform_asset_name() -> str:
 
     if system == "darwin":
         if machine in {"arm64", "aarch64"}:
-            return "codex-package-aarch64-apple-darwin.tar.gz"
+            return "motyga-package-aarch64-apple-darwin.tar.gz"
         if machine in {"x86_64", "amd64"}:
-            return "codex-package-x86_64-apple-darwin.tar.gz"
+            return "motyga-package-x86_64-apple-darwin.tar.gz"
     elif system == "linux":
         if machine in {"aarch64", "arm64"}:
-            return "codex-package-aarch64-unknown-linux-musl.tar.gz"
+            return "motyga-package-aarch64-unknown-linux-musl.tar.gz"
         if machine in {"x86_64", "amd64"}:
-            return "codex-package-x86_64-unknown-linux-musl.tar.gz"
+            return "motyga-package-x86_64-unknown-linux-musl.tar.gz"
     elif system == "windows":
         if machine in {"aarch64", "arm64"}:
-            return "codex-package-aarch64-pc-windows-msvc.tar.gz"
+            return "motyga-package-aarch64-pc-windows-msvc.tar.gz"
         if machine in {"x86_64", "amd64"}:
-            return "codex-package-x86_64-pc-windows-msvc.tar.gz"
+            return "motyga-package-x86_64-pc-windows-msvc.tar.gz"
 
     raise RuntimeSetupError(
         f"Unsupported runtime artifact platform: system={platform.system()!r}, "
@@ -117,8 +117,8 @@ def _installed_runtime_version(python_executable: str | Path) -> str | None:
     snippet = (
         "import importlib.metadata, json, sys\n"
         "try:\n"
-        "    from codex_cli_bin import bundled_codex_path\n"
-        "    bundled_codex_path()\n"
+        "    from motyga_cli_bin import bundled_motyga_path\n"
+        "    bundled_motyga_path()\n"
         f"    print(json.dumps({{'version': importlib.metadata.version({PACKAGE_NAME!r})}}))\n"
         "except Exception:\n"
         "    sys.exit(1)\n"
@@ -144,7 +144,7 @@ def _release_metadata(version: str) -> dict[str, object]:
     for include_auth in attempts:
         headers = {
             "Accept": "application/vnd.github+json",
-            "User-Agent": "codex-python-runtime-setup",
+            "User-Agent": "motyga-python-runtime-setup",
         }
         if include_auth and token is not None:
             headers["Authorization"] = f"Bearer {token}"
@@ -176,7 +176,7 @@ def _download_release_archive(version: str, temp_root: Path) -> Path:
     )
     request = urllib.request.Request(
         browser_download_url,
-        headers={"User-Agent": "codex-python-runtime-setup"},
+        headers={"User-Agent": "motyga-python-runtime-setup"},
     )
     try:
         with urllib.request.urlopen(request) as response, archive_path.open("wb") as fh:
@@ -310,7 +310,7 @@ def _load_update_script_module(sdk_python_dir: Path):
 def _github_api_headers(accept: str) -> dict[str, str]:
     headers = {
         "Accept": accept,
-        "User-Agent": "codex-python-runtime-setup",
+        "User-Agent": "motyga-python-runtime-setup",
     }
     token = _github_token()
     if token is not None:
@@ -339,7 +339,7 @@ def _normalized_package_version(version: str) -> str:
     return normalized
 
 
-def _codex_release_version(version: str) -> str:
+def _motyga_release_version(version: str) -> str:
     normalized = _normalized_package_version(version)
     match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)*)(a|b|rc)([0-9]+)", normalized)
     if match is None:
@@ -351,7 +351,7 @@ def _codex_release_version(version: str) -> str:
 
 
 def _release_tag(version: str) -> str:
-    return f"rust-v{_codex_release_version(version)}"
+    return f"rust-v{_motyga_release_version(version)}"
 
 
 def _source_tree_runtime_dependency_version() -> str | None:

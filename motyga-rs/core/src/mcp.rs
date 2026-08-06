@@ -2,28 +2,28 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::config::Config;
-use codex_config::McpServerConfig;
-use codex_connectors::ConnectorSnapshot;
-use codex_connectors::PluginConnectorSource;
-use codex_core_plugins::PluginsManager;
-use codex_extension_api::ExtensionData;
-use codex_extension_api::ExtensionDataInit;
-use codex_extension_api::ExtensionRegistry;
-use codex_extension_api::McpServerContribution;
-use codex_extension_api::McpServerContributionContext;
-use codex_login::CodexAuth;
-use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
-use codex_mcp::CodexAppsToolsCache;
-use codex_mcp::EffectiveMcpServer;
-use codex_mcp::McpConfig;
-use codex_mcp::McpPluginAttribution;
-use codex_mcp::McpServerRegistration;
-use codex_mcp::codex_apps_mcp_server_config;
-use codex_mcp::configured_mcp_servers;
-use codex_mcp::effective_mcp_servers;
-use codex_plugin::AppConnectorId;
+use motyga_config::McpServerConfig;
+use motyga_connectors::ConnectorSnapshot;
+use motyga_connectors::PluginConnectorSource;
+use motyga_core_plugins::PluginsManager;
+use motyga_extension_api::ExtensionData;
+use motyga_extension_api::ExtensionDataInit;
+use motyga_extension_api::ExtensionRegistry;
+use motyga_extension_api::McpServerContribution;
+use motyga_extension_api::McpServerContributionContext;
+use motyga_login::MotygaAuth;
+use motyga_mcp::MOTYGA_APPS_MCP_SERVER_NAME;
+use motyga_mcp::MotygaAppsToolsCache;
+use motyga_mcp::EffectiveMcpServer;
+use motyga_mcp::McpConfig;
+use motyga_mcp::McpPluginAttribution;
+use motyga_mcp::McpServerRegistration;
+use motyga_mcp::motyga_apps_mcp_server_config;
+use motyga_mcp::configured_mcp_servers;
+use motyga_mcp::effective_mcp_servers;
+use motyga_plugin::AppConnectorId;
 
-const LEGACY_CODEX_APPS_REGISTRATION_ID: &str = "legacy_codex_apps";
+const LEGACY_MOTYGA_APPS_REGISTRATION_ID: &str = "legacy_motyga_apps";
 
 enum OrderedMcpOverlay {
     Set {
@@ -43,14 +43,14 @@ enum OrderedMcpOverlay {
 pub struct McpManager {
     plugins_manager: Arc<PluginsManager>,
     extensions: Arc<ExtensionRegistry<Config>>,
-    codex_apps_tools_cache: CodexAppsToolsCache,
+    motyga_apps_tools_cache: MotygaAppsToolsCache,
 }
 
 impl McpManager {
     pub fn new(plugins_manager: Arc<PluginsManager>) -> Self {
         Self::new_with_extensions(
             plugins_manager,
-            codex_extension_api::empty_extension_registry(),
+            motyga_extension_api::empty_extension_registry(),
         )
     }
 
@@ -62,12 +62,12 @@ impl McpManager {
         Self {
             plugins_manager,
             extensions,
-            codex_apps_tools_cache: CodexAppsToolsCache::default(),
+            motyga_apps_tools_cache: MotygaAppsToolsCache::default(),
         }
     }
 
-    pub fn codex_apps_tools_cache(&self) -> CodexAppsToolsCache {
-        self.codex_apps_tools_cache.clone()
+    pub fn motyga_apps_tools_cache(&self) -> MotygaAppsToolsCache {
+        self.motyga_apps_tools_cache.clone()
     }
 
     /// Returns the MCP config after applying compatibility built-ins and
@@ -161,17 +161,17 @@ impl McpManager {
         let mut catalog = mcp_config.mcp_server_catalog.to_builder();
         if mcp_config.apps_enabled {
             catalog.register(McpServerRegistration::from_compatibility(
-                CODEX_APPS_MCP_SERVER_NAME.to_string(),
-                LEGACY_CODEX_APPS_REGISTRATION_ID,
-                codex_apps_mcp_server_config(
+                MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
+                LEGACY_MOTYGA_APPS_REGISTRATION_ID,
+                motyga_apps_mcp_server_config(
                     &mcp_config.chatgpt_base_url,
                     mcp_config.apps_mcp_product_sku.as_deref(),
                 ),
             ));
         } else {
             catalog.remove_compatibility(
-                CODEX_APPS_MCP_SERVER_NAME.to_string(),
-                LEGACY_CODEX_APPS_REGISTRATION_ID,
+                MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
+                LEGACY_MOTYGA_APPS_REGISTRATION_ID,
             );
         }
 
@@ -230,7 +230,7 @@ impl McpManager {
     pub async fn effective_servers(
         &self,
         config: &Config,
-        auth: Option<&CodexAuth>,
+        auth: Option<&MotygaAuth>,
     ) -> HashMap<String, EffectiveMcpServer> {
         let mcp_config = self.runtime_config(config).await;
         effective_mcp_servers(&mcp_config, auth)

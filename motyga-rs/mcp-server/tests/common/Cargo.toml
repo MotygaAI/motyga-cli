@@ -14,10 +14,10 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-codex-login = { workspace = true }
-codex-mcp-server = { workspace = true }
-codex-terminal-detection = { workspace = true }
-codex-utils-cargo-bin = { workspace = true }
+motyga-login = { workspace = true }
+motyga-mcp-server = { workspace = true }
+motyga-terminal-detection = { workspace = true }
+motyga-utils-cargo-bin = { workspace = true }
 rmcp = { workspace = true }
 os_info = { workspace = true }
 pretty_assertions = { workspace = true }

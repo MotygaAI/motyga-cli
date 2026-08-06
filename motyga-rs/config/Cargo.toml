@@ -1,5 +1,5 @@
 [package]
-name = "codex-config"
+name = "motyga-config"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -14,16 +14,16 @@ workspace = true
 [dependencies]
 anyhow = { workspace = true }
 base64 = { workspace = true }
-codex-execpolicy = { workspace = true }
-codex-features = { workspace = true }
-codex-file-system = { workspace = true }
-codex-git-utils = { workspace = true }
-codex-model-provider-info = { workspace = true }
-codex-network-proxy = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-path = { workspace = true }
-codex-utils-path-uri = { workspace = true }
+motyga-execpolicy = { workspace = true }
+motyga-features = { workspace = true }
+motyga-file-system = { workspace = true }
+motyga-git-utils = { workspace = true }
+motyga-model-provider-info = { workspace = true }
+motyga-network-proxy = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-path = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
 dunce = { workspace = true }
 futures = { workspace = true, features = ["alloc", "std"] }
 gethostname = { workspace = true }

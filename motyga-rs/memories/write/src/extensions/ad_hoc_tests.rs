@@ -5,8 +5,8 @@ use tempfile::TempDir;
 
 #[tokio::test]
 async fn seeds_instructions_without_overwriting_existing_file() {
-    let codex_home = TempDir::new().expect("create temp codex home");
-    let memory_root = codex_home.path().join("memories");
+    let motyga_home = TempDir::new().expect("create temp motyga home");
+    let memory_root = motyga_home.path().join("memories");
     let instructions_path = memory_extensions_root(&memory_root).join("ad_hoc/instructions.md");
 
     seed_instructions(&memory_root)

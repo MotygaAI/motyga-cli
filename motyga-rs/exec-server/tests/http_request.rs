@@ -6,17 +6,17 @@ use std::collections::BTreeMap;
 use std::io::ErrorKind;
 use std::time::Duration;
 
-use codex_exec_server::HttpHeader;
-use codex_exec_server::HttpRedirectPolicy;
-use codex_exec_server::HttpRequestBodyDeltaNotification;
-use codex_exec_server::HttpRequestParams;
-use codex_exec_server::HttpRequestResponse;
-use codex_exec_server::InitializeParams;
-use codex_exec_server_protocol::JSONRPCError;
-use codex_exec_server_protocol::JSONRPCMessage;
-use codex_exec_server_protocol::JSONRPCNotification;
-use codex_exec_server_protocol::JSONRPCResponse;
-use codex_exec_server_protocol::RequestId;
+use motyga_exec_server::HttpHeader;
+use motyga_exec_server::HttpRedirectPolicy;
+use motyga_exec_server::HttpRequestBodyDeltaNotification;
+use motyga_exec_server::HttpRequestParams;
+use motyga_exec_server::HttpRequestResponse;
+use motyga_exec_server::InitializeParams;
+use motyga_exec_server_protocol::JSONRPCError;
+use motyga_exec_server_protocol::JSONRPCMessage;
+use motyga_exec_server_protocol::JSONRPCNotification;
+use motyga_exec_server_protocol::JSONRPCResponse;
+use motyga_exec_server_protocol::RequestId;
 use common::exec_server::ExecServerHarness;
 use common::exec_server::exec_server;
 use pretty_assertions::assert_eq;
@@ -454,7 +454,7 @@ where
 async fn wait_for_error_response(
     server: &mut ExecServerHarness,
     request_id: RequestId,
-) -> anyhow::Result<codex_exec_server_protocol::JSONRPCErrorError> {
+) -> anyhow::Result<motyga_exec_server_protocol::JSONRPCErrorError> {
     let response = server
         .wait_for_event(|event| {
             matches!(

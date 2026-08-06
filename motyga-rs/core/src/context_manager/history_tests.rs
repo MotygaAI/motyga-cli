@@ -4,29 +4,29 @@ use crate::context::world_state::WorldState;
 use crate::context::world_state::WorldStateSection;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
-use codex_protocol::AgentPath;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::DEFAULT_IMAGE_DETAIL;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputContentItem;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ImageDetail;
-use codex_protocol::models::InternalChatMessageMetadataPassthrough;
-use codex_protocol::models::LocalShellAction;
-use codex_protocol::models::LocalShellExecAction;
-use codex_protocol::models::LocalShellStatus;
-use codex_protocol::models::ReasoningItemContent;
-use codex_protocol::models::ReasoningItemReasoningSummary;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::default_input_modalities;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::InterAgentCommunication;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::TurnContextItem;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_output_truncation::TruncationPolicy;
-use codex_utils_output_truncation::truncate_text;
+use motyga_protocol::AgentPath;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::DEFAULT_IMAGE_DETAIL;
+use motyga_protocol::models::FunctionCallOutputBody;
+use motyga_protocol::models::FunctionCallOutputContentItem;
+use motyga_protocol::models::FunctionCallOutputPayload;
+use motyga_protocol::models::ImageDetail;
+use motyga_protocol::models::InternalChatMessageMetadataPassthrough;
+use motyga_protocol::models::LocalShellAction;
+use motyga_protocol::models::LocalShellExecAction;
+use motyga_protocol::models::LocalShellStatus;
+use motyga_protocol::models::ReasoningItemContent;
+use motyga_protocol::models::ReasoningItemReasoningSummary;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::openai_models::default_input_modalities;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::InterAgentCommunication;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::TurnContextItem;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_output_truncation::TruncationPolicy;
+use motyga_utils_output_truncation::truncate_text;
 use image::ImageBuffer;
 use image::ImageFormat;
 use image::Luma;
@@ -233,7 +233,7 @@ fn reference_context_item() -> TurnContextItem {
         multi_agent_mode: None,
         realtime_active: Some(false),
         effort: None,
-        summary: codex_protocol::config_types::ReasoningSummary::Auto,
+        summary: motyga_protocol::config_types::ReasoningSummary::Auto,
     }
 }
 

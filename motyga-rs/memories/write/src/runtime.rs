@@ -1,47 +1,47 @@
-use codex_core::CodexThread;
-use codex_core::ModelClient;
-use codex_core::NewThread;
-use codex_core::Prompt;
-use codex_core::ResponseEvent;
-use codex_core::StartThreadOptions;
-use codex_core::ThreadManager;
-use codex_core::config::Config;
-use codex_core::content_items_to_text;
-use codex_core::detached_memory_responses_metadata;
-use codex_core::resolve_installation_id;
-use codex_features::Feature;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::auth::AgentIdentityAuthPolicy;
-use codex_login::auth_env_telemetry::collect_auth_env_telemetry;
-use codex_login::default_client::originator;
-use codex_model_provider::ModelProvider;
-use codex_model_provider::SharedModelProvider;
-use codex_model_provider::create_model_provider;
-use codex_otel::SessionTelemetry;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::SessionId;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::InternalSessionSource;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::ThreadSource;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::user_input::UserInput;
-use codex_rollout_trace::InferenceTraceContext;
-use codex_state::StateRuntime;
-use codex_terminal_detection::user_agent;
+use motyga_core::MotygaThread;
+use motyga_core::ModelClient;
+use motyga_core::NewThread;
+use motyga_core::Prompt;
+use motyga_core::ResponseEvent;
+use motyga_core::StartThreadOptions;
+use motyga_core::ThreadManager;
+use motyga_core::config::Config;
+use motyga_core::content_items_to_text;
+use motyga_core::detached_memory_responses_metadata;
+use motyga_core::resolve_installation_id;
+use motyga_features::Feature;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::auth::AgentIdentityAuthPolicy;
+use motyga_login::auth_env_telemetry::collect_auth_env_telemetry;
+use motyga_login::default_client::originator;
+use motyga_model_provider::ModelProvider;
+use motyga_model_provider::SharedModelProvider;
+use motyga_model_provider::create_model_provider;
+use motyga_otel::SessionTelemetry;
+use motyga_otel::TelemetryAuthMode;
+use motyga_protocol::SessionId;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::InternalSessionSource;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::user_input::UserInput;
+use motyga_rollout_trace::InferenceTraceContext;
+use motyga_state::StateRuntime;
+use motyga_terminal_detection::user_agent;
 use futures::StreamExt;
 use std::sync::Arc;
 use std::time::Duration;
 
 pub(crate) struct SpawnedConsolidationAgent {
     pub(crate) thread_id: ThreadId,
-    pub(crate) thread: Arc<CodexThread>,
+    pub(crate) thread: Arc<MotygaThread>,
 }
 
 #[derive(Clone, Debug)]
@@ -54,7 +54,7 @@ pub(crate) struct StageOneRequestContext {
 }
 
 impl StageOneRequestContext {
-    pub(crate) fn start_timer(&self, name: &str) -> Option<codex_otel::Timer> {
+    pub(crate) fn start_timer(&self, name: &str) -> Option<motyga_otel::Timer> {
         self.session_telemetry.start_timer(name, &[]).ok()
     }
 
@@ -69,7 +69,7 @@ impl StageOneRequestContext {
 
 pub(crate) struct MemoryStartupContext {
     thread_id: ThreadId,
-    thread: Arc<CodexThread>,
+    thread: Arc<MotygaThread>,
     thread_manager: Arc<ThreadManager>,
     auth_manager: Arc<AuthManager>,
     provider: SharedModelProvider,
@@ -86,12 +86,12 @@ fn build_session_telemetry(
 ) -> SessionTelemetry {
     let auth = auth_manager.auth_cached();
     let auth = auth.as_ref();
-    let auth_mode = auth.map(CodexAuth::auth_mode).map(TelemetryAuthMode::from);
-    let account_id = auth.and_then(CodexAuth::get_account_id);
-    let account_email = auth.and_then(CodexAuth::get_account_email);
+    let auth_mode = auth.map(MotygaAuth::auth_mode).map(TelemetryAuthMode::from);
+    let account_id = auth.and_then(MotygaAuth::get_account_id);
+    let account_email = auth.and_then(MotygaAuth::get_account_email);
     let auth_env_telemetry = collect_auth_env_telemetry(
         &config.model_provider,
-        auth_manager.codex_api_key_env_enabled(),
+        auth_manager.motyga_api_key_env_enabled(),
     );
     SessionTelemetry::new(
         thread_id,
@@ -113,7 +113,7 @@ impl MemoryStartupContext {
         thread_manager: Arc<ThreadManager>,
         auth_manager: Arc<AuthManager>,
         thread_id: ThreadId,
-        thread: Arc<CodexThread>,
+        thread: Arc<MotygaThread>,
         config: &Config,
         source: SessionSource,
     ) -> Self {
@@ -137,7 +137,7 @@ impl MemoryStartupContext {
         thread_manager: Arc<ThreadManager>,
         auth_manager: Arc<AuthManager>,
         thread_id: ThreadId,
-        thread: Arc<CodexThread>,
+        thread: Arc<MotygaThread>,
         config: &Config,
         source: SessionSource,
         provider: SharedModelProvider,
@@ -157,7 +157,7 @@ impl MemoryStartupContext {
         thread_manager: Arc<ThreadManager>,
         auth_manager: Arc<AuthManager>,
         thread_id: ThreadId,
-        thread: Arc<CodexThread>,
+        thread: Arc<MotygaThread>,
         config: &Config,
         source: SessionSource,
         provider: SharedModelProvider,
@@ -202,7 +202,7 @@ impl MemoryStartupContext {
         self.session_telemetry.histogram(name, value, tags);
     }
 
-    pub(crate) fn start_timer(&self, name: &str) -> Option<codex_otel::Timer> {
+    pub(crate) fn start_timer(&self, name: &str) -> Option<motyga_otel::Timer> {
         self.session_telemetry.start_timer(name, &[]).ok()
     }
 
@@ -244,7 +244,7 @@ impl MemoryStartupContext {
         prompt: &Prompt,
         context: &StageOneRequestContext,
     ) -> anyhow::Result<(String, Option<TokenUsage>)> {
-        let installation_id = resolve_installation_id(&config.codex_home).await?;
+        let installation_id = resolve_installation_id(&config.motyga_home).await?;
         let config_snapshot = self.thread.config_snapshot().await;
         let session_source = config_snapshot.session_source;
         let session_id = SessionId::from(self.thread_id);
@@ -297,7 +297,7 @@ impl MemoryStartupContext {
                 ResponseEvent::OutputTextDelta(delta) => result.push_str(&delta),
                 ResponseEvent::OutputItemDone(item) => {
                     if result.is_empty()
-                        && let codex_protocol::models::ResponseItem::Message { content, .. } = item
+                        && let motyga_protocol::models::ResponseItem::Message { content, .. } = item
                         && let Some(text) = content_items_to_text(&content)
                     {
                         result.push_str(&text);

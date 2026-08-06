@@ -1,4 +1,4 @@
-use codex_api::AuthProvider;
+use motyga_api::AuthProvider;
 use http::HeaderMap;
 use http::HeaderValue;
 
@@ -60,8 +60,8 @@ mod tests {
         };
 
         assert_eq!(
-            codex_api::auth_header_telemetry(&auth),
-            codex_api::AuthHeaderTelemetry {
+            motyga_api::auth_header_telemetry(&auth),
+            motyga_api::AuthHeaderTelemetry {
                 attached: true,
                 name: Some("authorization"),
             }

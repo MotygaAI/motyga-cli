@@ -1,4 +1,4 @@
-use codex_config::McpServerConfig;
+use motyga_config::McpServerConfig;
 
 use crate::ExtensionData;
 use crate::ExtensionDataInit;

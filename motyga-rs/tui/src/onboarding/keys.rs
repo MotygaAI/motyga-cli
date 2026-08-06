@@ -1,4 +1,4 @@
-//! Fixed shortcuts used before users have had a chance to configure Codex.
+//! Fixed shortcuts used before users have had a chance to configure Motyga.
 
 use crossterm::event::KeyCode;
 use crossterm::event::KeyModifiers;

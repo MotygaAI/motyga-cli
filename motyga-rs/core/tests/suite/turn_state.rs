@@ -13,7 +13,7 @@ use core_test_support::responses::sse_response;
 use core_test_support::responses::start_mock_server;
 use core_test_support::responses::start_websocket_server_with_headers;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serde_json::json;
@@ -52,7 +52,7 @@ async fn responses_turn_state_persists_within_turn_and_resets_after() -> Result<
     ];
     let request_log = mount_response_sequence(&server, responses).await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_motyga().build(&server).await?;
     test.submit_turn("run a shell command").await?;
     test.submit_turn("second turn").await?;
 
@@ -121,7 +121,7 @@ async fn websocket_turn_state_persists_within_turn_and_resets_after() -> Result<
     }])
     .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_websocket_server(&server).await?;
     // Phase 1: the first response mints state for its same-turn tool follow-up.
     test.submit_turn("run the echo command").await?;
@@ -179,7 +179,7 @@ async fn websocket_turn_state_is_stable_within_turn() -> Result<()> {
         close_after_requests: false,
     }])
     .await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_websocket_server(&server).await?;
 
     // Phase 1: the initial request starts empty and receives the first metadata value.

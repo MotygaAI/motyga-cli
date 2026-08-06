@@ -1,6 +1,6 @@
 use super::*;
 #[cfg(target_os = "windows")]
-use codex_feedback::WINDOWS_SANDBOX_LOG_ATTACHMENT_FILENAME;
+use motyga_feedback::WINDOWS_SANDBOX_LOG_ATTACHMENT_FILENAME;
 
 const MAX_FEEDBACK_TREE_THREADS: usize = 8;
 
@@ -9,7 +9,7 @@ pub(crate) struct FeedbackRequestProcessor {
     auth_manager: Arc<AuthManager>,
     thread_manager: Arc<ThreadManager>,
     config: Arc<Config>,
-    feedback: CodexFeedback,
+    feedback: MotygaFeedback,
     log_db: Option<LogDbLayer>,
     state_db: Option<StateDbHandle>,
 }
@@ -19,7 +19,7 @@ impl FeedbackRequestProcessor {
         auth_manager: Arc<AuthManager>,
         thread_manager: Arc<ThreadManager>,
         config: Arc<Config>,
-        feedback: CodexFeedback,
+        feedback: MotygaFeedback,
         log_db: Option<LogDbLayer>,
         state_db: Option<StateDbHandle>,
     ) -> Self {
@@ -192,7 +192,7 @@ impl FeedbackRequestProcessor {
                 });
             }
             if let Some(sandbox_log_attachment) =
-                windows_sandbox_log_attachment(&self.config.codex_home)
+                windows_sandbox_log_attachment(&self.config.motyga_home)
                 && seen_attachment_paths.insert(sandbox_log_attachment.path.clone())
             {
                 attachment_paths.push(sandbox_log_attachment);
@@ -277,8 +277,8 @@ fn auto_review_rollout_filename(thread_id: ThreadId) -> String {
 }
 
 #[cfg(target_os = "windows")]
-fn windows_sandbox_log_attachment(codex_home: &Path) -> Option<FeedbackAttachmentPath> {
-    let sandbox_log_path = codex_windows_sandbox::current_log_file_path_for_codex_home(codex_home);
+fn windows_sandbox_log_attachment(motyga_home: &Path) -> Option<FeedbackAttachmentPath> {
+    let sandbox_log_path = motyga_windows_sandbox::current_log_file_path_for_motyga_home(motyga_home);
     sandbox_log_path
         .is_file()
         .then_some(FeedbackAttachmentPath {
@@ -288,7 +288,7 @@ fn windows_sandbox_log_attachment(codex_home: &Path) -> Option<FeedbackAttachmen
 }
 
 #[cfg(not(target_os = "windows"))]
-fn windows_sandbox_log_attachment(_codex_home: &Path) -> Option<FeedbackAttachmentPath> {
+fn windows_sandbox_log_attachment(_motyga_home: &Path) -> Option<FeedbackAttachmentPath> {
     None
 }
 
@@ -299,14 +299,14 @@ mod tests {
 
     #[test]
     fn windows_sandbox_log_attachment_uses_current_log() {
-        let codex_home = tempfile::tempdir().expect("create tempdir");
-        let sandbox_dir = codex_windows_sandbox::sandbox_dir(codex_home.path());
+        let motyga_home = tempfile::tempdir().expect("create tempdir");
+        let sandbox_dir = motyga_windows_sandbox::sandbox_dir(motyga_home.path());
         std::fs::create_dir_all(&sandbox_dir).expect("create sandbox dir");
         let sandbox_log_path =
-            codex_windows_sandbox::current_log_file_path_for_codex_home(codex_home.path());
+            motyga_windows_sandbox::current_log_file_path_for_motyga_home(motyga_home.path());
         std::fs::write(&sandbox_log_path, "sandbox log").expect("write sandbox log");
 
-        let attachment = windows_sandbox_log_attachment(codex_home.path())
+        let attachment = windows_sandbox_log_attachment(motyga_home.path())
             .map(|attachment| (attachment.path, attachment.attachment_filename_override));
 
         assert_eq!(

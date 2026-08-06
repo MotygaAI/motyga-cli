@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::SkillConfig;
-use codex_config::SkillsConfig;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::SkillConfig;
+use motyga_config::SkillsConfig;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use tracing::warn;
 
 use crate::SkillMetadata;

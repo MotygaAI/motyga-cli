@@ -10,30 +10,30 @@
 
 use std::path::PathBuf;
 
-use codex_app_server_protocol::AddCreditsNudgeCreditType;
-use codex_app_server_protocol::AddCreditsNudgeEmailStatus;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
-use codex_app_server_protocol::GetAccountRateLimitsResponse;
-use codex_app_server_protocol::GetAccountTokenUsageResponse;
-use codex_app_server_protocol::MarketplaceAddResponse;
-use codex_app_server_protocol::MarketplaceRemoveResponse;
-use codex_app_server_protocol::MarketplaceUpgradeResponse;
-use codex_app_server_protocol::McpServerStatus;
-use codex_app_server_protocol::McpServerStatusDetail;
-use codex_app_server_protocol::PluginInstallResponse;
-use codex_app_server_protocol::PluginListResponse;
-use codex_app_server_protocol::PluginMarketplaceEntry;
-use codex_app_server_protocol::PluginReadParams;
-use codex_app_server_protocol::PluginReadResponse;
-use codex_app_server_protocol::PluginUninstallResponse;
-use codex_app_server_protocol::SkillsListResponse;
-use codex_app_server_protocol::ThreadGoalStatus;
-use codex_connectors::AppInfo;
-use codex_file_search::FileMatch;
-use codex_protocol::ThreadId;
-use codex_protocol::openai_models::ModelPreset;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_approval_presets::ApprovalPreset;
+use motyga_app_server_protocol::AddCreditsNudgeCreditType;
+use motyga_app_server_protocol::AddCreditsNudgeEmailStatus;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
+use motyga_app_server_protocol::GetAccountRateLimitsResponse;
+use motyga_app_server_protocol::GetAccountTokenUsageResponse;
+use motyga_app_server_protocol::MarketplaceAddResponse;
+use motyga_app_server_protocol::MarketplaceRemoveResponse;
+use motyga_app_server_protocol::MarketplaceUpgradeResponse;
+use motyga_app_server_protocol::McpServerStatus;
+use motyga_app_server_protocol::McpServerStatusDetail;
+use motyga_app_server_protocol::PluginInstallResponse;
+use motyga_app_server_protocol::PluginListResponse;
+use motyga_app_server_protocol::PluginMarketplaceEntry;
+use motyga_app_server_protocol::PluginReadParams;
+use motyga_app_server_protocol::PluginReadResponse;
+use motyga_app_server_protocol::PluginUninstallResponse;
+use motyga_app_server_protocol::SkillsListResponse;
+use motyga_app_server_protocol::ThreadGoalStatus;
+use motyga_connectors::AppInfo;
+use motyga_file_search::FileMatch;
+use motyga_protocol::ThreadId;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_approval_presets::ApprovalPreset;
 
 use crate::app_command::AppCommand;
 use crate::app_server_session::AppServerStartedThread;
@@ -42,14 +42,14 @@ use crate::bottom_pane::StatusLineItem;
 use crate::bottom_pane::TerminalTitleItem;
 use crate::chatwidget::UserMessage;
 use crate::goal_files::GoalDraft;
-use codex_app_server_protocol::AskForApproval;
-use codex_config::types::ApprovalsReviewer;
-use codex_features::Feature;
-use codex_plugin::PluginCapabilitySummary;
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::config_types::Personality;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::openai_models::ReasoningEffort;
+use motyga_app_server_protocol::AskForApproval;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_features::Feature;
+use motyga_plugin::PluginCapabilitySummary;
+use motyga_protocol::config_types::CollaborationModeMask;
+use motyga_protocol::config_types::Personality;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::openai_models::ReasoningEffort;
 
 use crate::history_cell::HistoryCell;
 
@@ -254,7 +254,7 @@ pub(crate) enum AppEvent {
 
     /// Forward a command to the Agent. Using an `AppEvent` for this avoids
     /// bubbling channels through layers of widgets.
-    CodexOp(AppCommand),
+    MotygaOp(AppCommand),
 
     /// Restore an output-free interrupted turn into the composer and roll it back.
     RestoreCancelledTurn(UserMessage),
@@ -477,7 +477,7 @@ pub(crate) enum AppEvent {
     /// Result of fetching lifecycle hook inventory.
     HooksLoaded {
         cwd: PathBuf,
-        result: Result<codex_app_server_protocol::HooksListResponse, String>,
+        result: Result<motyga_app_server_protocol::HooksListResponse, String>,
     },
 
     /// Open the prompt for adding a marketplace source.

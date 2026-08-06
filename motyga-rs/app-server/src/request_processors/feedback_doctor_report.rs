@@ -1,8 +1,8 @@
 //! Builds a redacted doctor report attachment for feedback uploads.
 //!
 //! Feedback upload should never depend on doctor succeeding. This module runs
-//! the configured Codex executable as a subprocess, accepts only valid JSON from
-//! `codex doctor --json`, derives a small set of Sentry tags, and otherwise
+//! the configured Motyga executable as a subprocess, accepts only valid JSON from
+//! `motyga doctor --json`, derives a small set of Sentry tags, and otherwise
 //! skips the attachment with a warning. Keeping the report generation out of the
 //! app-server process avoids sharing doctor internals across crates while still
 //! attaching exactly the same JSON a user could copy from the CLI.
@@ -10,9 +10,9 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
-use codex_core::config::Config;
-use codex_feedback::DOCTOR_REPORT_ATTACHMENT_FILENAME;
-use codex_feedback::FeedbackAttachment;
+use motyga_core::config::Config;
+use motyga_feedback::DOCTOR_REPORT_ATTACHMENT_FILENAME;
+use motyga_feedback::FeedbackAttachment;
 use serde_json::Value;
 use tokio::process::Command;
 use tokio::time::timeout;
@@ -23,20 +23,20 @@ const MAX_DOCTOR_TAG_VALUE_LEN: usize = 256;
 
 /// Redacted doctor report data that can be merged into a feedback upload.
 pub(crate) struct DoctorFeedbackReport {
-    /// JSON support report to upload as `codex-doctor-report.json`.
+    /// JSON support report to upload as `motyga-doctor-report.json`.
     pub(crate) attachment: FeedbackAttachment,
     /// Low-cardinality Sentry tags derived from the report status and check ids.
     pub(crate) tags: BTreeMap<String, String>,
 }
 
-/// Runs `codex doctor --json` and returns a best-effort feedback attachment.
+/// Runs `motyga doctor --json` and returns a best-effort feedback attachment.
 ///
-/// Failure to spawn Codex, finish before the timeout, or parse JSON means the
+/// Failure to spawn Motyga, finish before the timeout, or parse JSON means the
 /// feedback upload proceeds without the doctor report. Callers should merge the
 /// returned tags without overriding explicit client-provided tags.
 pub(crate) async fn doctor_feedback_report(config: &Config) -> Option<DoctorFeedbackReport> {
     let executable = config
-        .codex_self_exe
+        .motyga_self_exe
         .clone()
         .or_else(|| std::env::current_exe().ok())?;
 

@@ -1,6 +1,6 @@
 ---
 name: "imagegen"
-description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Motyga should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
 ---
 
 # Image Generation Skill
@@ -32,7 +32,7 @@ Rules:
 - Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
 
 Built-in save-path policy:
-- In built-in tool mode, Codex saves generated images under `$MOTYGA_HOME/*` by default.
+- In built-in tool mode, Motyga saves generated images under `$MOTYGA_HOME/*` by default.
 - Do not describe or rely on OS temp as the default built-in destination.
 - Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific location is needed, generate first and then move or copy the selected output from `$MOTYGA_HOME/generated_images/...`.
 - Save-path precedence in built-in mode:
@@ -47,7 +47,7 @@ Shared prompt guidance for both modes lives in `references/prompting.md` and `re
 Fallback-only docs/resources for CLI mode:
 - `references/cli.md`
 - `references/image-api.md`
-- `references/codex-network.md`
+- `references/motyga-network.md`
 - `scripts/image_gen.py`
 
 Local post-processing helper:
@@ -344,13 +344,13 @@ If installation is not possible in this environment, tell the user which depende
 ### Script-mode notes
 - CLI commands + examples: `references/cli.md`
 - API parameter quick reference: `references/image-api.md`
-- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+- Network approvals / sandbox settings for CLI mode: `references/motyga-network.md`
 
 ## Reference map
 - `references/prompting.md`: shared prompting principles for both modes.
 - `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
 - `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
 - `references/image-api.md`: fallback-only API/CLI parameter reference.
-- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `references/motyga-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
 - `scripts/image_gen.py`: fallback-only CLI implementation. Do not load or use it unless the user explicitly chooses CLI mode or explicitly confirms a transparent request's true CLI transparency fallback.
 - `$MOTYGA_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: local post-processing helper for built-in transparent-image requests.

@@ -1,0 +1,22 @@
+{
+  "name": "@motyga/cli",
+  "version": "0.1.8",
+  "description": "Motyga CLI — a coding agent that runs locally, backed by Motyga (or your own API key). Fork of OpenAI Codex CLI (Apache-2.0).",
+  "license": "Apache-2.0",
+  "bin": {
+    "motyga": "bin/motyga.js"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=16"
+  },
+  "files": [
+    "bin/motyga.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MotygaAI/motyga-cli.git",
+    "directory": "npm"
+  },
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319"
+}

@@ -17,34 +17,34 @@ use crate::remote::RemoteInstalledPlugin;
 use crate::store::PluginStore;
 use crate::store::plugin_version_for_source;
 use crate::store::plugin_version_for_source_with_fallback_manifest;
-use codex_config::ConfigLayerStack;
-use codex_config::HooksFile;
-use codex_config::types::McpServerConfig;
-use codex_config::types::PluginConfig;
-use codex_config::types::PluginMcpServerConfig;
-use codex_connectors::parse_plugin_app_config;
-use codex_connectors::parse_plugin_app_config_value;
-use codex_core_skills::PluginSkillSnapshots;
-use codex_core_skills::SkillMetadata;
-use codex_core_skills::config_rules::SkillConfigRules;
-use codex_core_skills::config_rules::resolve_disabled_skill_paths;
-use codex_core_skills::config_rules::skill_config_rules_from_stack;
-use codex_core_skills::loader::SkillRoot;
-use codex_core_skills::loader::load_skills_from_roots;
-use codex_exec_server::LOCAL_FS;
-use codex_mcp::parse_plugin_mcp_config;
-use codex_plugin::AppDeclaration;
-use codex_plugin::LoadedPlugin;
-use codex_plugin::PluginCapabilitySummary;
-use codex_plugin::PluginHookSource;
-use codex_plugin::PluginId;
-use codex_plugin::PluginIdError;
-use codex_plugin::app_connector_ids_from_declarations;
-use codex_protocol::auth::AuthMode;
-use codex_protocol::protocol::Product;
-use codex_protocol::protocol::SkillScope;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_plugins::find_plugin_manifest_path;
+use motyga_config::ConfigLayerStack;
+use motyga_config::HooksFile;
+use motyga_config::types::McpServerConfig;
+use motyga_config::types::PluginConfig;
+use motyga_config::types::PluginMcpServerConfig;
+use motyga_connectors::parse_plugin_app_config;
+use motyga_connectors::parse_plugin_app_config_value;
+use motyga_core_skills::PluginSkillSnapshots;
+use motyga_core_skills::SkillMetadata;
+use motyga_core_skills::config_rules::SkillConfigRules;
+use motyga_core_skills::config_rules::resolve_disabled_skill_paths;
+use motyga_core_skills::config_rules::skill_config_rules_from_stack;
+use motyga_core_skills::loader::SkillRoot;
+use motyga_core_skills::loader::load_skills_from_roots;
+use motyga_exec_server::LOCAL_FS;
+use motyga_mcp::parse_plugin_mcp_config;
+use motyga_plugin::AppDeclaration;
+use motyga_plugin::LoadedPlugin;
+use motyga_plugin::PluginCapabilitySummary;
+use motyga_plugin::PluginHookSource;
+use motyga_plugin::PluginId;
+use motyga_plugin::PluginIdError;
+use motyga_plugin::app_connector_ids_from_declarations;
+use motyga_protocol::auth::AuthMode;
+use motyga_protocol::protocol::Product;
+use motyga_protocol::protocol::SkillScope;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_plugins::find_plugin_manifest_path;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -142,7 +142,7 @@ async fn load_plugins_from_layer_stack_with_scope(
     scope: PluginLoadScope<'_>,
 ) -> Vec<LoadedPlugin<McpServerConfig>> {
     let configured_plugins = merge_configured_plugins_with_remote_installed(
-        configured_plugins_from_stack(config_layer_stack, store.codex_home().as_path()),
+        configured_plugins_from_stack(config_layer_stack, store.motyga_home().as_path()),
         extra_plugins,
         store,
         remote_global_catalog_active,
@@ -301,13 +301,13 @@ pub fn remote_installed_plugins_to_config(
 }
 
 pub fn refresh_curated_plugin_cache(
-    codex_home: &Path,
+    motyga_home: &Path,
     plugin_version: &str,
     configured_curated_plugin_ids: &[PluginId],
 ) -> Result<bool, String> {
     let cache_plugin_version = curated_plugin_cache_version(plugin_version);
-    let store = PluginStore::try_new(codex_home.to_path_buf()).map_err(|err| err.to_string())?;
-    let curated_marketplace_paths = curated_marketplace_paths_for_cache_refresh(codex_home)?;
+    let store = PluginStore::try_new(motyga_home.to_path_buf()).map_err(|err| err.to_string())?;
+    let curated_marketplace_paths = curated_marketplace_paths_for_cache_refresh(motyga_home)?;
     let mut loaded_marketplace_names = HashSet::<String>::new();
     let mut marketplace_plugin_keys = HashSet::<String>::new();
     let mut plugin_sources = HashMap::<String, AbsolutePathBuf>::new();
@@ -392,17 +392,17 @@ pub fn refresh_curated_plugin_cache(
 }
 
 fn curated_marketplace_paths_for_cache_refresh(
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> Result<Vec<AbsolutePathBuf>, String> {
     let curated_marketplace_path = AbsolutePathBuf::try_from(
-        codex_home
+        motyga_home
             .join(".tmp/plugins")
             .join(".agents/plugins/marketplace.json"),
     )
     .map_err(|_| "local curated marketplace is not available".to_string())?;
     let mut paths = vec![curated_marketplace_path];
 
-    let api_marketplace_path = codex_home
+    let api_marketplace_path = motyga_home
         .join(".tmp/plugins")
         .join(".agents/plugins/api_marketplace.json");
     if api_marketplace_path.is_file() {
@@ -425,24 +425,24 @@ pub fn curated_plugin_cache_version(plugin_version: &str) -> String {
 
 #[cfg(test)]
 pub(crate) fn refresh_non_curated_plugin_cache(
-    codex_home: &Path,
+    motyga_home: &Path,
     additional_roots: &[AbsolutePathBuf],
     configured_plugin_keys: &[String],
 ) -> Result<bool, String> {
     collapse_non_curated_cache_refresh(refresh_non_curated_plugin_cache_detailed(
-        codex_home,
+        motyga_home,
         additional_roots,
         configured_plugin_keys,
     ))
 }
 
 pub(crate) fn refresh_non_curated_plugin_cache_detailed(
-    codex_home: &Path,
+    motyga_home: &Path,
     additional_roots: &[AbsolutePathBuf],
     configured_plugin_keys: &[String],
 ) -> Result<NonCuratedCacheRefreshOutcome, String> {
     refresh_non_curated_plugin_cache_with_mode(
-        codex_home,
+        motyga_home,
         additional_roots,
         configured_plugin_keys,
         NonCuratedCacheRefreshMode::IfVersionChanged,
@@ -451,24 +451,24 @@ pub(crate) fn refresh_non_curated_plugin_cache_detailed(
 
 #[cfg(test)]
 pub(crate) fn refresh_non_curated_plugin_cache_force_reinstall(
-    codex_home: &Path,
+    motyga_home: &Path,
     additional_roots: &[AbsolutePathBuf],
     configured_plugin_keys: &[String],
 ) -> Result<bool, String> {
     collapse_non_curated_cache_refresh(refresh_non_curated_plugin_cache_force_reinstall_detailed(
-        codex_home,
+        motyga_home,
         additional_roots,
         configured_plugin_keys,
     ))
 }
 
 pub(crate) fn refresh_non_curated_plugin_cache_force_reinstall_detailed(
-    codex_home: &Path,
+    motyga_home: &Path,
     additional_roots: &[AbsolutePathBuf],
     configured_plugin_keys: &[String],
 ) -> Result<NonCuratedCacheRefreshOutcome, String> {
     refresh_non_curated_plugin_cache_with_mode(
-        codex_home,
+        motyga_home,
         additional_roots,
         configured_plugin_keys,
         NonCuratedCacheRefreshMode::ForceReinstall,
@@ -476,7 +476,7 @@ pub(crate) fn refresh_non_curated_plugin_cache_force_reinstall_detailed(
 }
 
 fn refresh_non_curated_plugin_cache_with_mode(
-    codex_home: &Path,
+    motyga_home: &Path,
     additional_roots: &[AbsolutePathBuf],
     configured_plugin_keys: &[String],
     mode: NonCuratedCacheRefreshMode,
@@ -510,7 +510,7 @@ fn refresh_non_curated_plugin_cache_with_mode(
         .map(PluginId::as_key)
         .collect::<HashSet<_>>();
 
-    let store = PluginStore::try_new(codex_home.to_path_buf()).map_err(|err| err.to_string())?;
+    let store = PluginStore::try_new(motyga_home.to_path_buf()).map_err(|err| err.to_string())?;
     let marketplace_outcome = list_marketplaces_with_home(additional_roots, /*home_dir*/ None)
         .map_err(|err| format!("failed to discover marketplaces for cache refresh: {err}"))?;
     let mut plugin_sources = HashMap::<String, (MarketplacePluginSource, Option<String>)>::new();
@@ -581,7 +581,7 @@ fn refresh_non_curated_plugin_cache_with_mode(
         };
         let refresh_result = (|| -> Result<bool, String> {
             let materialized =
-                materialize_marketplace_plugin_source(codex_home, &source).map_err(|err| {
+                materialize_marketplace_plugin_source(motyga_home, &source).map_err(|err| {
                     format!("failed to materialize plugin source for {plugin_key}: {err}")
                 })?;
             let source_path = materialized.path;
@@ -664,12 +664,12 @@ fn configured_plugins_from_user_config_value(
     }
 }
 
-fn configured_plugins_from_codex_home(
-    codex_home: &Path,
+fn configured_plugins_from_motyga_home(
+    motyga_home: &Path,
     read_error_message: &str,
     parse_error_message: &str,
 ) -> HashMap<String, PluginConfig> {
-    let config_path = codex_home.join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.join(CONFIG_TOML_FILE);
     let user_config = match fs::read_to_string(&config_path) {
         Ok(user_config) => user_config,
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => return HashMap::new(),
@@ -732,9 +732,9 @@ fn curated_plugin_ids_from_config_keys(
     configured_curated_plugin_ids
 }
 
-pub fn configured_curated_plugin_ids_from_codex_home(codex_home: &Path) -> Vec<PluginId> {
-    curated_plugin_ids_from_config_keys(configured_plugins_from_codex_home(
-        codex_home,
+pub fn configured_curated_plugin_ids_from_motyga_home(motyga_home: &Path) -> Vec<PluginId> {
+    curated_plugin_ids_from_config_keys(configured_plugins_from_motyga_home(
+        motyga_home,
         "failed to read user config while refreshing curated plugin cache",
         "failed to parse user config while refreshing curated plugin cache",
     ))
@@ -1379,7 +1379,7 @@ pub struct MaterializedMarketplacePluginSource {
 }
 
 pub fn materialize_marketplace_plugin_source(
-    codex_home: &Path,
+    motyga_home: &Path,
     source: &MarketplacePluginSource,
 ) -> Result<MaterializedMarketplacePluginSource, String> {
     match source {
@@ -1393,7 +1393,7 @@ pub fn materialize_marketplace_plugin_source(
             ref_name,
             sha,
         } => {
-            let staging_root = codex_home.join("plugins/.marketplace-plugin-source-staging");
+            let staging_root = motyga_home.join("plugins/.marketplace-plugin-source-staging");
             fs::create_dir_all(&staging_root).map_err(|err| {
                 format!(
                     "failed to create marketplace plugin source staging directory {}: {err}",
@@ -1436,7 +1436,7 @@ pub fn materialize_marketplace_plugin_source(
             registry,
         } => {
             let (path, tempdir) = materialize_npm_plugin_source(
-                codex_home,
+                motyga_home,
                 package,
                 version.as_deref(),
                 registry.as_deref(),

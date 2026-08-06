@@ -33,7 +33,7 @@ importers:
         specifier: ^3.5.3
         version: 3.5.3
 
-  codex-cli: {}
+  npm: {}
 
   motyga-rs/responses-api-proxy/npm: {}
 

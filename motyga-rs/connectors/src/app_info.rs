@@ -2,7 +2,7 @@
 //!
 //! The Serde implementations decode connector-directory response metadata and persist normalized
 //! app information in the connector-directory disk cache. They do not define the app-server wire
-//! format; `codex-app-server-protocol` owns separate API types for that boundary.
+//! format; `motyga-app-server-protocol` owns separate API types for that boundary.
 
 use serde::Deserialize;
 use serde::Serialize;

@@ -5,12 +5,12 @@ use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
-use codex_app_server_protocol::FuzzyFileSearchMatchType;
-use codex_app_server_protocol::FuzzyFileSearchResult;
-use codex_app_server_protocol::FuzzyFileSearchSessionCompletedNotification;
-use codex_app_server_protocol::FuzzyFileSearchSessionUpdatedNotification;
-use codex_app_server_protocol::ServerNotification;
-use codex_file_search as file_search;
+use motyga_app_server_protocol::FuzzyFileSearchMatchType;
+use motyga_app_server_protocol::FuzzyFileSearchResult;
+use motyga_app_server_protocol::FuzzyFileSearchSessionCompletedNotification;
+use motyga_app_server_protocol::FuzzyFileSearchSessionUpdatedNotification;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_file_search as file_search;
 use tracing::warn;
 
 use crate::outgoing_message::OutgoingMessageSender;

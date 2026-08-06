@@ -1,11 +1,11 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-agent-graph-store"
+name = "motyga-agent-graph-store"
 version.workspace = true
 
 [lib]
-name = "codex_agent_graph_store"
+name = "motyga_agent_graph_store"
 path = "src/lib.rs"
 doctest = false
 
@@ -13,8 +13,8 @@ doctest = false
 workspace = true
 
 [dependencies]
-codex-protocol = { workspace = true }
-codex-state = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-state = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 

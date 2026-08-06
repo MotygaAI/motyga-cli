@@ -4,7 +4,7 @@ use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use core_test_support::responses::ev_apply_patch_custom_tool_call;
 use core_test_support::responses::ev_apply_patch_shell_command_call_via_heredoc;
 use core_test_support::responses::ev_shell_command_call;
-use core_test_support::test_codex::ApplyPatchModelOutput;
+use core_test_support::test_motyga::ApplyPatchModelOutput;
 use pretty_assertions::assert_eq;
 use std::fs;
 use std::path::PathBuf;
@@ -14,28 +14,28 @@ use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-use codex_exec_server::CreateDirectoryOptions;
-use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-use codex_exec_server::REMOTE_ENVIRONMENT_ID;
-use codex_exec_server::RemoveOptions;
-use codex_features::Feature;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_protocol::user_input::UserInput;
+use motyga_exec_server::CreateDirectoryOptions;
+use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+use motyga_exec_server::REMOTE_ENVIRONMENT_ID;
+use motyga_exec_server::RemoveOptions;
+use motyga_features::Feature;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::user_input::UserInput;
 #[cfg(target_os = "linux")]
-use codex_sandboxing::landlock::CODEX_LINUX_SANDBOX_ARG0;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_sandboxing::landlock::MOTYGA_LINUX_SANDBOX_ARG0;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathBufExt;
 use core_test_support::assert_regex_match;
 use core_test_support::responses::ev_assistant_message;
@@ -51,11 +51,11 @@ use core_test_support::skip_if_no_remote_env;
 use core_test_support::skip_if_remote;
 use core_test_support::skip_if_target_windows;
 use core_test_support::skip_if_wine_exec;
-use core_test_support::test_codex::TestCodexBuilder;
-use core_test_support::test_codex::TestCodexHarness;
-use core_test_support::test_codex::local;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotygaBuilder;
+use core_test_support::test_motyga::TestMotygaHarness;
+use core_test_support::test_motyga::local;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_with_timeout;
 use serde_json::json;
@@ -65,20 +65,20 @@ use wiremock::ResponseTemplate;
 use wiremock::matchers::method;
 use wiremock::matchers::path_regex;
 
-pub async fn apply_patch_harness() -> Result<TestCodexHarness> {
+pub async fn apply_patch_harness() -> Result<TestMotygaHarness> {
     apply_patch_harness_with(|builder| builder).await
 }
 
 async fn apply_patch_harness_with(
-    configure: impl FnOnce(TestCodexBuilder) -> TestCodexBuilder,
-) -> Result<TestCodexHarness> {
-    let builder = configure(test_codex());
+    configure: impl FnOnce(TestMotygaBuilder) -> TestMotygaBuilder,
+) -> Result<TestMotygaHarness> {
+    let builder = configure(test_motyga());
     // Box harness construction so apply_patch_cli tests do not inline the
     // full test-thread startup path into each test future.
-    Box::pin(TestCodexHarness::with_auto_env_builder(builder)).await
+    Box::pin(TestMotygaHarness::with_auto_env_builder(builder)).await
 }
 
-async fn submit_without_wait(harness: &TestCodexHarness, prompt: &str) -> Result<()> {
+async fn submit_without_wait(harness: &TestMotygaHarness, prompt: &str) -> Result<()> {
     submit_without_wait_with_turn_permissions(
         harness,
         prompt,
@@ -89,14 +89,14 @@ async fn submit_without_wait(harness: &TestCodexHarness, prompt: &str) -> Result
 }
 
 async fn submit_without_wait_with_turn_permissions(
-    harness: &TestCodexHarness,
+    harness: &TestMotygaHarness,
     prompt: &str,
     sandbox_policy: SandboxPolicy,
     permission_profile: Option<PermissionProfile>,
 ) -> Result<()> {
     let test = harness.test();
     let session_model = test.session_configured.model.clone();
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -105,13 +105,13 @@ async fn submit_without_wait_with_turn_permissions(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: session_model,
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -195,7 +195,7 @@ fn create_file_symlink(_source: &std::path::Path, _link: &std::path::Path) -> st
 }
 
 pub async fn mount_apply_patch(
-    harness: &TestCodexHarness,
+    harness: &TestMotygaHarness,
     call_id: &str,
     patch: &str,
     assistant_msg: &str,
@@ -213,7 +213,7 @@ pub async fn mount_apply_patch(
 }
 
 async fn mount_apply_patch_model_output(
-    harness: &TestCodexHarness,
+    harness: &TestMotygaHarness,
     call_id: &str,
     patch: &str,
     assistant_msg: &str,
@@ -253,21 +253,21 @@ fn apply_patch_responses(
 
 #[cfg(target_os = "linux")]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn apply_patch_cli_uses_codex_self_exe_with_linux_sandbox_helper_alias() -> Result<()> {
+async fn apply_patch_cli_uses_motyga_self_exe_with_linux_sandbox_helper_alias() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let harness = apply_patch_harness().await?;
-    let codex_linux_sandbox_exe = harness
+    let motyga_linux_sandbox_exe = harness
         .test()
         .config
-        .codex_linux_sandbox_exe
+        .motyga_linux_sandbox_exe
         .as_ref()
-        .expect("linux test config should include codex-linux-sandbox helper");
+        .expect("linux test config should include motyga-linux-sandbox helper");
     assert_eq!(
-        codex_linux_sandbox_exe
+        motyga_linux_sandbox_exe
             .file_name()
             .and_then(|name| name.to_str()),
-        Some(CODEX_LINUX_SANDBOX_ARG0),
+        Some(MOTYGA_LINUX_SANDBOX_ARG0),
     );
 
     let patch = "*** Begin Patch\n*** Add File: helper-alias.txt\n+hello\n*** End Patch";
@@ -446,7 +446,7 @@ async fn apply_patch_cli_move_without_content_change_has_no_turn_diff() -> Resul
 
     let harness = apply_patch_harness().await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
     harness.write_file("old/name.txt", "same\n").await?;
 
@@ -457,7 +457,7 @@ async fn apply_patch_cli_move_without_content_change_has_no_turn_diff() -> Resul
     submit_without_wait(&harness, "rename without content change").await?;
 
     let mut saw_turn_diff = false;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&motyga, |event| match event {
         EventMsg::TurnDiff(_) => {
             saw_turn_diff = true;
             false
@@ -1171,7 +1171,7 @@ async fn apply_patch_custom_tool_streaming_emits_updated_changes() -> Result<()>
     })
     .await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
     let call_id = "apply-patch-streaming";
     let patch = "*** Begin Patch\n*** Add File: streamed.txt\n+hello\n+world\n*** End Patch";
     mount_sse_sequence(
@@ -1217,7 +1217,7 @@ async fn apply_patch_custom_tool_streaming_emits_updated_changes() -> Result<()>
     submit_without_wait(&harness, "create streamed file").await?;
 
     let mut updates = Vec::new();
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&motyga, |event| match event {
         EventMsg::PatchApplyUpdated(update) => {
             updates.push(update.clone());
             false
@@ -1240,7 +1240,7 @@ async fn apply_patch_custom_tool_streaming_emits_updated_changes() -> Result<()>
             .expect("first update")
             .changes
             .get(&std::path::PathBuf::from("streamed.txt")),
-        Some(&codex_protocol::protocol::FileChange::Add {
+        Some(&motyga_protocol::protocol::FileChange::Add {
             content: String::new(),
         })
     );
@@ -1250,7 +1250,7 @@ async fn apply_patch_custom_tool_streaming_emits_updated_changes() -> Result<()>
             .expect("last update")
             .changes
             .get(&std::path::PathBuf::from("streamed.txt")),
-        Some(&codex_protocol::protocol::FileChange::Add {
+        Some(&motyga_protocol::protocol::FileChange::Add {
             content: "hello\nworld\n".to_string(),
         })
     );
@@ -1269,7 +1269,7 @@ async fn apply_patch_shell_command_heredoc_with_cd_emits_turn_diff() -> Result<(
 
     let harness = apply_patch_harness_with(|builder| builder.with_model("gpt-5.4")).await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
     // Prepare a file inside a subdir; update it via cd && apply_patch heredoc form.
     harness.write_file("sub/in_sub.txt", "before\n").await?;
@@ -1295,7 +1295,7 @@ async fn apply_patch_shell_command_heredoc_with_cd_emits_turn_diff() -> Result<(
     let mut saw_turn_diff = None;
     let mut saw_patch_begin = false;
     let mut patch_end_success = None;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&motyga, |event| match event {
         EventMsg::PatchApplyBegin(begin) => {
             saw_patch_begin = true;
             assert_eq!(begin.call_id, call_id);
@@ -1361,7 +1361,7 @@ async fn apply_patch_turn_diff_paths_stay_repo_relative_when_session_cwd_is_nest
     })
     .await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
     let repo_root = harness
         .test()
         .config
@@ -1376,7 +1376,7 @@ async fn apply_patch_turn_diff_paths_stay_repo_relative_when_session_cwd_is_nest
     submit_without_wait(&harness, "update file outside nested cwd but inside repo").await?;
 
     let mut last_diff: Option<String> = None;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&motyga, |event| match event {
         EventMsg::TurnDiff(ev) => {
             last_diff = Some(ev.unified_diff.clone());
             false
@@ -1406,7 +1406,7 @@ async fn apply_patch_shell_command_failure_propagates_error_and_skips_diff() -> 
 
     let harness = apply_patch_harness_with(|builder| builder.with_model("gpt-5.4")).await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
     harness.write_file("invalid.txt", "ok\n").await?;
 
@@ -1429,7 +1429,7 @@ async fn apply_patch_shell_command_failure_propagates_error_and_skips_diff() -> 
     submit_without_wait(&harness, "apply patch via shell").await?;
 
     let mut saw_turn_diff = false;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&motyga, |event| match event {
         EventMsg::TurnDiff(_) => {
             saw_turn_diff = true;
             false
@@ -1550,7 +1550,7 @@ async fn apply_patch_emits_turn_diff_event_with_unified_diff() -> Result<()> {
 
     let harness = apply_patch_harness().await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
     let call_id = "apply-diff-event";
     let file = "udiff.txt";
@@ -1560,7 +1560,7 @@ async fn apply_patch_emits_turn_diff_event_with_unified_diff() -> Result<()> {
     submit_without_wait(&harness, "emit diff").await?;
 
     let mut saw_turn_diff = None;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&motyga, |event| match event {
         EventMsg::TurnDiff(ev) => {
             saw_turn_diff = Some(ev.unified_diff.clone());
             false
@@ -1589,11 +1589,11 @@ async fn apply_patch_turn_diff_tracks_local_and_remote_environment_paths() -> Re
     skip_if_no_remote_env!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_remote_and_local_env(&server).await?;
     let file_name = "shared-turn-diff.txt";
     let shared_cwd = PathBuf::from(format!(
-        "/tmp/codex-remote-turn-diff-{}",
+        "/tmp/motyga-remote-turn-diff-{}",
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis()
     ))
     .abs();
@@ -1655,7 +1655,7 @@ async fn apply_patch_turn_diff_tracks_local_and_remote_environment_paths() -> Re
             cwd: PathUri::from_abs_path(&shared_cwd),
         },
     ];
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "apply matching patches to local and remote environments".into(),
@@ -1664,17 +1664,17 @@ async fn apply_patch_turn_diff_tracks_local_and_remote_environment_paths() -> Re
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
-                environments: Some(codex_protocol::protocol::TurnEnvironmentSelections::new(
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
+                environments: Some(motyga_protocol::protocol::TurnEnvironmentSelections::new(
                     test.config.cwd.clone(),
                     environments,
                 )),
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -1686,7 +1686,7 @@ async fn apply_patch_turn_diff_tracks_local_and_remote_environment_paths() -> Re
         .await?;
 
     let mut last_diff = None;
-    wait_for_event(&test.codex, |event| match event {
+    wait_for_event(&test.motyga, |event| match event {
         EventMsg::TurnDiff(ev) => {
             last_diff = Some(ev.unified_diff.clone());
             false
@@ -1747,7 +1747,7 @@ async fn apply_patch_aggregates_diff_across_multiple_tool_calls() -> Result<()> 
 
     let harness = apply_patch_harness().await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
     let call1 = "agg-1";
     let call2 = "agg-2";
@@ -1773,7 +1773,7 @@ async fn apply_patch_aggregates_diff_across_multiple_tool_calls() -> Result<()> 
     submit_without_wait(&harness, "aggregate diffs").await?;
 
     let mut last_diff: Option<String> = None;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&motyga, |event| match event {
         EventMsg::TurnDiff(ev) => {
             last_diff = Some(ev.unified_diff.clone());
             false
@@ -1797,7 +1797,7 @@ async fn apply_patch_aggregates_diff_preserves_success_after_failure() -> Result
 
     let harness = apply_patch_harness().await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
     let call_success = "agg-success";
     let call_failure = "agg-failure";
@@ -1827,7 +1827,7 @@ async fn apply_patch_aggregates_diff_preserves_success_after_failure() -> Result
 
     let mut last_diff: Option<String> = None;
     wait_for_event_with_timeout(
-        &codex,
+        &motyga,
         |event| match event {
             EventMsg::TurnDiff(ev) => {
                 last_diff = Some(ev.unified_diff.clone());
@@ -1882,7 +1882,7 @@ async fn apply_patch_clears_aggregated_diff_after_inexact_delta() -> Result<()> 
     })
     .await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
 
     let call_success = "agg-success";
     let call_inexact = "agg-inexact";
@@ -1911,7 +1911,7 @@ async fn apply_patch_clears_aggregated_diff_after_inexact_delta() -> Result<()> 
 
     let mut last_diff: Option<String> = None;
     wait_for_event_with_timeout(
-        &codex,
+        &motyga,
         |event| match event {
             EventMsg::TurnDiff(ev) => {
                 last_diff = Some(ev.unified_diff.clone());

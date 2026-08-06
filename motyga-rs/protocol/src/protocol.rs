@@ -1,4 +1,4 @@
-//! Defines the protocol for a Codex session between a client and an agent.
+//! Defines the protocol for a Motyga session between a client and an agent.
 //!
 //! Uses a SQ (Submission Queue) / EQ (Event Queue) pattern to asynchronously communicate
 //! between user and agent.
@@ -55,8 +55,8 @@ use crate::request_permissions::RequestPermissionsEvent;
 use crate::request_permissions::RequestPermissionsResponse;
 use crate::request_user_input::RequestUserInputResponse;
 use crate::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Deserializer;
@@ -191,21 +191,21 @@ pub struct McpServerRefreshConfig {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConversationStartParams {
-    /// Whether Codex response handoffs are managed through explicit client append calls.
+    /// Whether Motyga response handoffs are managed through explicit client append calls.
     pub client_managed_handoffs: bool,
-    /// Sends automatic Codex responses as realtime conversation items instead of handoff appends.
-    pub codex_responses_as_items: bool,
-    /// Optional prefix added to automatic Codex response items when `codex_responses_as_items` is set.
-    pub codex_response_item_prefix: Option<String>,
-    /// Optional prefix added to automatic V1 Codex commentary sent with
-    /// `conversation.handoff.append` when `codex_responses_as_items` is not set. Final answers are
+    /// Sends automatic Motyga responses as realtime conversation items instead of handoff appends.
+    pub motyga_responses_as_items: bool,
+    /// Optional prefix added to automatic Motyga response items when `motyga_responses_as_items` is set.
+    pub motyga_response_item_prefix: Option<String>,
+    /// Optional prefix added to automatic V1 Motyga commentary sent with
+    /// `conversation.handoff.append` when `motyga_responses_as_items` is not set. Final answers are
     /// sent without the prefix.
-    pub codex_response_handoff_prefix: Option<String>,
+    pub motyga_response_handoff_prefix: Option<String>,
     /// Overrides the configured realtime model for this session only.
     pub model: Option<String>,
     /// Selects whether the realtime session should produce text or audio output.
     pub output_modality: RealtimeOutputModality,
-    /// Whether to append Codex's startup context to the realtime backend prompt.
+    /// Whether to append Motyga's startup context to the realtime backend prompt.
     pub include_startup_context: bool,
     pub prompt: Option<Option<String>>,
     pub realtime_session_id: Option<String>,
@@ -645,7 +645,7 @@ pub enum Op {
     /// model.
     SetThreadMemoryMode { mode: ThreadMemoryMode },
 
-    /// Request Codex to drop the last N user turns from in-memory context.
+    /// Request Motyga to drop the last N user turns from in-memory context.
     ///
     /// This does not attempt to revert local filesystem changes. Clients are
     /// responsible for undoing any edits on disk.
@@ -657,7 +657,7 @@ pub enum Op {
     /// Record that the user approved one retry of a concrete Guardian-denied action.
     ApproveGuardianDeniedAction { event: GuardianAssessmentEvent },
 
-    /// Request to shut down codex instance.
+    /// Request to shut down motyga instance.
     Shutdown,
 
     /// Execute a user-initiated one-off shell command (triggered by "!cmd").
@@ -881,7 +881,7 @@ impl Op {
 }
 
 /// Determines the conditions under which the user is consulted to approve
-/// running the command proposed by Codex.
+/// running the command proposed by Motyga.
 #[derive(
     Debug,
     Clone,
@@ -1038,7 +1038,7 @@ pub enum SandboxPolicy {
 /// A writable root path accompanied by a list of subpaths that should remain
 /// read‑only even when the root is writable. This is primarily used to ensure
 /// that folders containing files that could be modified to escalate the
-/// privileges of the agent (e.g. `.codex`, `.git`, notably `.git/hooks`) under
+/// privileges of the agent (e.g. `.motyga`, `.git`, notably `.git/hooks`) under
 /// a writable root are not modified by the agent.
 #[derive(Debug, Clone, PartialEq, Eq, JsonSchema)]
 pub struct WritableRoot {
@@ -1231,13 +1231,13 @@ impl SandboxPolicy {
                 roots
                     .into_iter()
                     .map(|writable_root| {
-                        let protect_missing_dot_codex = cwd_root
+                        let protect_missing_dot_motyga = cwd_root
                             .as_ref()
                             .is_some_and(|cwd_root| cwd_root == &writable_root);
                         WritableRoot {
                             read_only_subpaths: default_read_only_subpaths_for_writable_root(
                                 &writable_root,
-                                protect_missing_dot_codex,
+                                protect_missing_dot_motyga,
                             ),
                             protected_metadata_names: Vec::new(),
                             root: writable_root,
@@ -1720,11 +1720,11 @@ pub enum NonSteerableTurnKind {
     Compact,
 }
 
-/// Codex errors that we expose to clients.
+/// Motyga errors that we expose to clients.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, TS)]
 #[serde(rename_all = "snake_case")]
 #[ts(rename_all = "snake_case")]
-pub enum CodexErrorInfo {
+pub enum MotygaErrorInfo {
     ContextWindowExceeded,
     SessionBudgetExceeded,
     UsageLimitExceeded,
@@ -1758,7 +1758,7 @@ pub enum CodexErrorInfo {
     Other,
 }
 
-impl CodexErrorInfo {
+impl MotygaErrorInfo {
     /// Whether this error should mark the current turn as failed when replaying history.
     pub fn affects_turn_status(&self) -> bool {
         match self {
@@ -1931,15 +1931,15 @@ pub struct ExitedReviewModeEvent {
 pub struct ErrorEvent {
     pub message: String,
     #[serde(default)]
-    pub codex_error_info: Option<CodexErrorInfo>,
+    pub motyga_error_info: Option<MotygaErrorInfo>,
 }
 
 impl ErrorEvent {
     /// Whether this error should mark the current turn as failed when replaying history.
     pub fn affects_turn_status(&self) -> bool {
-        self.codex_error_info
+        self.motyga_error_info
             .as_ref()
-            .is_none_or(CodexErrorInfo::affects_turn_status)
+            .is_none_or(MotygaErrorInfo::affects_turn_status)
     }
 }
 
@@ -2909,7 +2909,7 @@ impl SessionSource {
             | SessionSource::VSCode
             | SessionSource::Exec
             | SessionSource::Mcp
-            | SessionSource::Unknown => Some(Product::Codex),
+            | SessionSource::Unknown => Some(Product::Motyga),
             SessionSource::Internal(_) | SessionSource::SubAgent(_) => None,
         }
     }
@@ -3270,7 +3270,7 @@ pub struct TurnContextItem {
     pub realtime_active: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub effort: Option<ReasoningEffortConfig>,
-    // Compatibility-only field written with a default value so older Codex
+    // Compatibility-only field written with a default value so older Motyga
     // versions can deserialize turn-context rollout items. It is no longer
     // read by context reconstruction and should be removed in a future schema
     // cleanup.
@@ -3316,7 +3316,7 @@ impl TruncationPolicy {
     pub fn token_budget(&self) -> usize {
         match self {
             TruncationPolicy::Bytes(bytes) => {
-                usize::try_from(codex_utils_string::approx_tokens_from_byte_count(*bytes))
+                usize::try_from(motyga_utils_string::approx_tokens_from_byte_count(*bytes))
                     .unwrap_or(usize::MAX)
             }
             TruncationPolicy::Tokens(tokens) => *tokens,
@@ -3327,7 +3327,7 @@ impl TruncationPolicy {
         match self {
             TruncationPolicy::Bytes(bytes) => *bytes,
             TruncationPolicy::Tokens(tokens) => {
-                codex_utils_string::approx_bytes_for_tokens(*tokens)
+                motyga_utils_string::approx_bytes_for_tokens(*tokens)
             }
         }
     }
@@ -3606,7 +3606,7 @@ pub struct ThreadRolledBackEvent {
 pub struct StreamErrorEvent {
     pub message: String,
     #[serde(default)]
-    pub codex_error_info: Option<CodexErrorInfo>,
+    pub motyga_error_info: Option<MotygaErrorInfo>,
     /// Optional details about the underlying stream failure (often the same
     /// human-readable message that is surfaced as the terminal error if retries
     /// are exhausted).
@@ -3751,8 +3751,8 @@ pub struct RealtimeConversationListVoicesResponseEvent {
 pub enum Product {
     #[serde(alias = "CHATGPT")]
     Chatgpt,
-    #[serde(alias = "CODEX")]
-    Codex,
+    #[serde(alias = "MOTYGA")]
+    Motyga,
     #[serde(alias = "ATLAS")]
     Atlas,
 }
@@ -3760,7 +3760,7 @@ impl Product {
     pub fn to_app_platform(self) -> &'static str {
         match self {
             Self::Chatgpt => "chat",
-            Self::Codex => "codex",
+            Self::Motyga => "motyga",
             Self::Atlas => "atlas",
         }
     }
@@ -3769,7 +3769,7 @@ impl Product {
         let normalized = value.trim().to_ascii_lowercase();
         match normalized.as_str() {
             "chatgpt" => Some(Self::Chatgpt),
-            "codex" => Some(Self::Codex),
+            "motyga" => Some(Self::Motyga),
             "atlas" => Some(Self::Atlas),
             _ => None,
         }
@@ -4396,9 +4396,9 @@ mod tests {
     use crate::permissions::FileSystemSpecialPath;
     use crate::permissions::NetworkSandboxPolicy;
     use anyhow::Result;
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use codex_utils_absolute_path::test_support::PathBufExt;
-    use codex_utils_absolute_path::test_support::test_path_buf;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
+    use motyga_utils_absolute_path::test_support::test_path_buf;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use std::path::PathBuf;
@@ -4587,26 +4587,26 @@ mod tests {
     }
 
     #[test]
-    fn session_source_restriction_product_defaults_non_subagent_sources_to_codex() {
+    fn session_source_restriction_product_defaults_non_subagent_sources_to_motyga() {
         assert_eq!(
             SessionSource::Cli.restriction_product(),
-            Some(Product::Codex)
+            Some(Product::Motyga)
         );
         assert_eq!(
             SessionSource::VSCode.restriction_product(),
-            Some(Product::Codex)
+            Some(Product::Motyga)
         );
         assert_eq!(
             SessionSource::Exec.restriction_product(),
-            Some(Product::Codex)
+            Some(Product::Motyga)
         );
         assert_eq!(
             SessionSource::Mcp.restriction_product(),
-            Some(Product::Codex)
+            Some(Product::Motyga)
         );
         assert_eq!(
             SessionSource::Unknown.restriction_product(),
-            Some(Product::Codex)
+            Some(Product::Motyga)
         );
     }
 
@@ -4634,8 +4634,8 @@ mod tests {
             Some(Product::Atlas)
         );
         assert_eq!(
-            SessionSource::Custom("codex".to_string()).restriction_product(),
-            Some(Product::Codex)
+            SessionSource::Custom("motyga".to_string()).restriction_product(),
+            Some(Product::Motyga)
         );
         assert_eq!(
             SessionSource::Custom("atlas-dev".to_string()).restriction_product(),
@@ -4651,9 +4651,9 @@ mod tests {
         );
         assert!(
             !SessionSource::Custom("chatgpt".to_string())
-                .matches_product_restriction(&[Product::Codex])
+                .matches_product_restriction(&[Product::Motyga])
         );
-        assert!(SessionSource::VSCode.matches_product_restriction(&[Product::Codex]));
+        assert!(SessionSource::VSCode.matches_product_restriction(&[Product::Motyga]));
         assert!(
             !SessionSource::Custom("atlas-dev".to_string())
                 .matches_product_restriction(&[Product::Atlas])
@@ -4858,7 +4858,7 @@ mod tests {
     #[test]
     fn restricted_file_system_policy_treats_root_with_carveouts_as_scoped_access() {
         let cwd = TempDir::new().expect("tempdir");
-        let canonical_cwd = codex_utils_absolute_path::canonicalize_preserving_symlinks(cwd.path())
+        let canonical_cwd = motyga_utils_absolute_path::canonicalize_preserving_symlinks(cwd.path())
             .expect("canonicalize cwd");
         let root = AbsolutePathBuf::from_absolute_path(&canonical_cwd)
             .expect("absolute canonical tempdir")
@@ -4869,7 +4869,7 @@ mod tests {
             .expect("filesystem root");
         let blocked = AbsolutePathBuf::resolve_path_against_base("blocked", cwd.path());
         let expected_blocked = AbsolutePathBuf::from_absolute_path(
-            codex_utils_absolute_path::canonicalize_preserving_symlinks(cwd.path())
+            motyga_utils_absolute_path::canonicalize_preserving_symlinks(cwd.path())
                 .expect("canonicalize cwd")
                 .join("blocked"),
         )
@@ -4913,8 +4913,8 @@ mod tests {
     fn restricted_file_system_policy_derives_effective_paths() {
         let cwd = TempDir::new().expect("tempdir");
         std::fs::create_dir_all(cwd.path().join(".agents")).expect("create .agents");
-        std::fs::create_dir_all(cwd.path().join(".motyga")).expect("create .codex");
-        let canonical_cwd = codex_utils_absolute_path::canonicalize_preserving_symlinks(cwd.path())
+        std::fs::create_dir_all(cwd.path().join(".motyga")).expect("create .motyga");
+        let canonical_cwd = motyga_utils_absolute_path::canonicalize_preserving_symlinks(cwd.path())
             .expect("canonicalize cwd");
         let cwd_absolute =
             AbsolutePathBuf::from_absolute_path(&canonical_cwd).expect("absolute tempdir");
@@ -4923,8 +4923,8 @@ mod tests {
             .expect("canonical secret");
         let expected_agents = AbsolutePathBuf::from_absolute_path(canonical_cwd.join(".agents"))
             .expect("canonical .agents");
-        let expected_codex = AbsolutePathBuf::from_absolute_path(canonical_cwd.join(".motyga"))
-            .expect("canonical .codex");
+        let expected_motyga = AbsolutePathBuf::from_absolute_path(canonical_cwd.join(".motyga"))
+            .expect("canonical .motyga");
         let policy = FileSystemSandboxPolicy::restricted(vec![
             FileSystemSandboxEntry {
                 path: FileSystemPath::Special {
@@ -4975,14 +4975,14 @@ mod tests {
             writable_roots[0]
                 .read_only_subpaths
                 .iter()
-                .any(|path| path.as_path() == expected_codex.as_path())
+                .any(|path| path.as_path() == expected_motyga.as_path())
         );
     }
 
     #[test]
     fn restricted_file_system_policy_treats_read_entries_as_read_only_subpaths() {
         let cwd = TempDir::new().expect("tempdir");
-        let canonical_cwd = codex_utils_absolute_path::canonicalize_preserving_symlinks(cwd.path())
+        let canonical_cwd = motyga_utils_absolute_path::canonicalize_preserving_symlinks(cwd.path())
             .expect("canonicalize cwd");
         let docs = AbsolutePathBuf::resolve_path_against_base("docs", cwd.path());
         let docs_public = AbsolutePathBuf::resolve_path_against_base("docs/public", cwd.path());
@@ -4991,8 +4991,8 @@ mod tests {
         let expected_docs_public =
             AbsolutePathBuf::from_absolute_path(canonical_cwd.join("docs/public"))
                 .expect("canonical docs/public");
-        let expected_dot_codex = AbsolutePathBuf::from_absolute_path(canonical_cwd.join(".motyga"))
-            .expect("canonical .codex");
+        let expected_dot_motyga = AbsolutePathBuf::from_absolute_path(canonical_cwd.join(".motyga"))
+            .expect("canonical .motyga");
         let policy = FileSystemSandboxPolicy::restricted(vec![
             FileSystemSandboxEntry {
                 path: FileSystemPath::Special {
@@ -5017,7 +5017,7 @@ mod tests {
                 (
                     canonical_cwd,
                     vec![
-                        expected_dot_codex.to_path_buf(),
+                        expected_dot_motyga.to_path_buf(),
                         expected_docs.to_path_buf()
                     ],
                 ),
@@ -5395,7 +5395,7 @@ mod tests {
     fn rollback_failed_error_does_not_affect_turn_status() {
         let event = ErrorEvent {
             message: "rollback failed".into(),
-            codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
+            motyga_error_info: Some(MotygaErrorInfo::ThreadRollbackFailed),
         };
         assert!(!event.affects_turn_status());
     }
@@ -5404,7 +5404,7 @@ mod tests {
     fn active_turn_not_steerable_error_does_not_affect_turn_status() {
         let event = ErrorEvent {
             message: "cannot steer a review turn".into(),
-            codex_error_info: Some(CodexErrorInfo::ActiveTurnNotSteerable {
+            motyga_error_info: Some(MotygaErrorInfo::ActiveTurnNotSteerable {
                 turn_kind: NonSteerableTurnKind::Review,
             }),
         };
@@ -5415,7 +5415,7 @@ mod tests {
     fn generic_error_affects_turn_status() {
         let event = ErrorEvent {
             message: "generic".into(),
-            codex_error_info: Some(CodexErrorInfo::Other),
+            motyga_error_info: Some(MotygaErrorInfo::Other),
         };
         assert!(event.affects_turn_status());
     }
@@ -5599,7 +5599,7 @@ mod tests {
             "id": "00000000-0000-0000-0000-000000000001",
             "timestamp": "2026-01-01T00:00:00Z",
             "cwd": "/tmp",
-            "originator": "codex",
+            "originator": "motyga",
             "cli_version": "0.0.0",
             "model_provider": null,
             "base_instructions": null

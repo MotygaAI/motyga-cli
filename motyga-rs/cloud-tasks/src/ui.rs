@@ -21,9 +21,9 @@ use std::time::Instant;
 use crate::app::App;
 use crate::app::AttemptView;
 use crate::util::format_relative_time_now;
-use codex_cloud_tasks_client::AttemptStatus;
-use codex_cloud_tasks_client::TaskStatus;
-use codex_tui::render_markdown_text;
+use motyga_cloud_tasks_client::AttemptStatus;
+use motyga_cloud_tasks_client::TaskStatus;
+use motyga_tui::render_markdown_text;
 
 pub fn draw(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
@@ -61,7 +61,7 @@ static ROUNDED: OnceLock<bool> = OnceLock::new();
 
 fn rounded_enabled() -> bool {
     *ROUNDED.get_or_init(|| {
-        std::env::var("CODEX_TUI_ROUNDED")
+        std::env::var("MOTYGA_TUI_ROUNDED")
             .ok()
             .map(|v| v == "1")
             .unwrap_or(true)
@@ -785,7 +785,7 @@ fn style_diff_line(raw: &str) -> Line<'static> {
     Line::from(vec![Span::raw(raw.to_string())])
 }
 
-fn render_task_item(_app: &App, t: &codex_cloud_tasks_client::TaskSummary) -> ListItem<'static> {
+fn render_task_item(_app: &App, t: &motyga_cloud_tasks_client::TaskSummary) -> ListItem<'static> {
     let status = match t.status {
         TaskStatus::Ready => "READY".green(),
         TaskStatus::Pending => "PENDING".magenta(),

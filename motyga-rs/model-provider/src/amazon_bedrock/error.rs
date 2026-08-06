@@ -1,5 +1,5 @@
-use codex_api::ApiError;
-use codex_protocol::error::CodexErr;
+use motyga_api::ApiError;
+use motyga_protocol::error::MotygaErr;
 use http::StatusCode;
 
 pub(super) const BEDROCK_EXPIRED_SIGNATURE_MESSAGE: &str = concat!(
@@ -8,9 +8,9 @@ pub(super) const BEDROCK_EXPIRED_SIGNATURE_MESSAGE: &str = concat!(
     "update or unset it, then restart Motyga",
 );
 
-pub(super) fn map_api_error(error: ApiError) -> CodexErr {
-    let mut error = codex_api::map_api_error(error);
-    if let CodexErr::UnexpectedStatus(response) = &mut error
+pub(super) fn map_api_error(error: ApiError) -> MotygaErr {
+    let mut error = motyga_api::map_api_error(error);
+    if let MotygaErr::UnexpectedStatus(response) = &mut error
         && response.status == StatusCode::UNAUTHORIZED
         && response.body.contains("Signature expired:")
     {

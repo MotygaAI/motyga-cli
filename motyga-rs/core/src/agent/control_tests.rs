@@ -1,5 +1,5 @@
 use super::*;
-use crate::CodexThread;
+use crate::MotygaThread;
 use crate::StateDbHandle;
 use crate::ThreadManager;
 use crate::agent::agent_status_from_event;
@@ -13,36 +13,36 @@ use crate::context::SubagentNotification;
 use crate::init_state_db;
 use crate::thread_manager::StartThreadOptions;
 use assert_matches::assert_matches;
-use codex_extension_api::ExtensionDataInit;
-use codex_extension_api::empty_extension_registry;
-use codex_features::Feature;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_protocol::AgentPath;
-use codex_protocol::capabilities::CapabilityRootLocation;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::CompactedItem;
-use codex_protocol::protocol::ErrorEvent;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::InterAgentCommunication;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::protocol::TurnAbortedEvent;
-use codex_protocol::protocol::TurnCompleteEvent;
-use codex_protocol::protocol::TurnStartedEvent;
-use codex_thread_store::ArchiveThreadParams;
-use codex_thread_store::InMemoryThreadStore;
-use codex_thread_store::LocalThreadStore;
-use codex_thread_store::LocalThreadStoreConfig;
-use codex_thread_store::ThreadStore;
-use codex_utils_path_uri::PathUri;
+use motyga_extension_api::ExtensionDataInit;
+use motyga_extension_api::empty_extension_registry;
+use motyga_features::Feature;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_protocol::AgentPath;
+use motyga_protocol::capabilities::CapabilityRootLocation;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::MessagePhase;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::CompactedItem;
+use motyga_protocol::protocol::ErrorEvent;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::InterAgentCommunication;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_protocol::protocol::TurnAbortedEvent;
+use motyga_protocol::protocol::TurnCompleteEvent;
+use motyga_protocol::protocol::TurnStartedEvent;
+use motyga_thread_store::ArchiveThreadParams;
+use motyga_thread_store::InMemoryThreadStore;
+use motyga_thread_store::LocalThreadStore;
+use motyga_thread_store::LocalThreadStoreConfig;
+use motyga_thread_store::ThreadStore;
+use motyga_utils_path_uri::PathUri;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use tokio::time::Duration;
@@ -55,7 +55,7 @@ async fn test_config_with_cli_overrides(
 ) -> (TempDir, Config) {
     let home = TempDir::new().expect("create temp dir");
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(home.path().to_path_buf())
+        .motyga_home(home.path().to_path_buf())
         .cli_overrides(cli_overrides)
         .build()
         .await
@@ -123,10 +123,10 @@ impl AgentControlHarness {
     async fn new_with_config(home: TempDir, config: Config) -> Self {
         let state_db = init_state_db(&config).await;
         let manager = ThreadManager::with_models_provider_home_and_state_for_tests(
-            CodexAuth::from_api_key("dummy"),
+            MotygaAuth::from_api_key("dummy"),
             config.model_provider.clone(),
-            config.codex_home.to_path_buf(),
-            std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+            config.motyga_home.to_path_buf(),
+            std::sync::Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
             state_db.clone(),
         );
         let control = manager.agent_control();
@@ -139,7 +139,7 @@ impl AgentControlHarness {
         }
     }
 
-    async fn start_thread(&self) -> (ThreadId, Arc<CodexThread>) {
+    async fn start_thread(&self) -> (ThreadId, Arc<MotygaThread>) {
         let new_thread = self
             .manager
             .start_thread(self.config.clone())
@@ -149,7 +149,7 @@ impl AgentControlHarness {
     }
 }
 
-async fn persisted_originator(thread: &CodexThread) -> String {
+async fn persisted_originator(thread: &MotygaThread) -> String {
     thread.ensure_rollout_materialized().await;
     thread
         .flush_rollout()
@@ -233,11 +233,11 @@ fn history_contains_assistant_inter_agent_communication(
     })
 }
 
-async fn wait_for_subagent_notification(parent_thread: &Arc<CodexThread>) -> bool {
+async fn wait_for_subagent_notification(parent_thread: &Arc<MotygaThread>) -> bool {
     let wait = async {
         loop {
             let history_items = parent_thread
-                .codex
+                .motyga
                 .session
                 .clone_history()
                 .await
@@ -254,13 +254,13 @@ async fn wait_for_subagent_notification(parent_thread: &Arc<CodexThread>) -> boo
     timeout(Duration::from_secs(10), wait).await.is_ok()
 }
 
-async fn persist_thread_for_tree_resume(thread: &Arc<CodexThread>, message: &str) {
+async fn persist_thread_for_tree_resume(thread: &Arc<MotygaThread>, message: &str) {
     thread
         .inject_user_message_without_turn(message.to_string())
         .await;
-    thread.codex.session.ensure_rollout_materialized().await;
+    thread.motyga.session.ensure_rollout_materialized().await;
     thread
-        .codex
+        .motyga
         .session
         .flush_rollout()
         .await
@@ -297,7 +297,7 @@ async fn wait_for_live_thread_spawn_children(
 
 async fn assert_thread_not_loaded(manager: &ThreadManager, thread_id: ThreadId) {
     match manager.get_thread(thread_id).await {
-        Err(CodexErr::ThreadNotFound(id)) => assert_eq!(id, thread_id),
+        Err(MotygaErr::ThreadNotFound(id)) => assert_eq!(id, thread_id),
         Err(err) => panic!("expected ThreadNotFound, got {err:?}"),
         Ok(_) => panic!("expected thread not to be loaded"),
     }
@@ -358,7 +358,7 @@ async fn on_event_updates_status_from_task_complete() {
 async fn on_event_updates_status_from_error() {
     let status = agent_status_from_event(&EventMsg::Error(ErrorEvent {
         message: "boom".to_string(),
-        codex_error_info: None,
+        motyga_error_info: None,
     }));
 
     let expected = AgentStatus::Errored("boom".to_string());
@@ -427,7 +427,7 @@ async fn send_input_errors_when_thread_missing() {
         )
         .await
         .expect_err("send_input should fail for missing thread");
-    assert_matches!(err, CodexErr::ThreadNotFound(id) if id == thread_id);
+    assert_matches!(err, MotygaErr::ThreadNotFound(id) if id == thread_id);
 }
 
 #[tokio::test]
@@ -454,7 +454,7 @@ async fn subscribe_status_errors_for_missing_thread() {
         .subscribe_status(thread_id)
         .await
         .expect_err("subscribe_status should fail for missing thread");
-    assert_matches!(err, CodexErr::ThreadNotFound(id) if id == thread_id);
+    assert_matches!(err, MotygaErr::ThreadNotFound(id) if id == thread_id);
 }
 
 #[tokio::test]
@@ -554,10 +554,10 @@ async fn send_inter_agent_communication_without_turn_queues_message_without_trig
     timeout(Duration::from_secs(5), async {
         loop {
             if thread
-                .codex
+                .motyga
                 .session
                 .input_queue
-                .has_pending_input(&thread.codex.session.active_turn)
+                .has_pending_input(&thread.motyga.session.active_turn)
                 .await
             {
                 break;
@@ -569,7 +569,7 @@ async fn send_inter_agent_communication_without_turn_queues_message_without_trig
     .expect("inter-agent communication should stay pending");
 
     let history_items = thread
-        .codex
+        .motyga
         .session
         .clone_history()
         .await
@@ -633,7 +633,7 @@ async fn ensure_v2_agent_loaded_reloads_registered_unloaded_agent() {
             .is_some()
     );
     match harness.manager.get_thread(spawned_agent.thread_id).await {
-        Err(CodexErr::ThreadNotFound(id)) => assert_eq!(id, spawned_agent.thread_id),
+        Err(MotygaErr::ThreadNotFound(id)) => assert_eq!(id, spawned_agent.thread_id),
         Err(err) => panic!("expected ThreadNotFound, got {err:?}"),
         Ok(_) => panic!("expected thread to be removed"),
     }
@@ -743,10 +743,10 @@ async fn resume_agent_from_rollout_does_not_reopen_v2_descendants() {
     assert_eq!(report.timed_out, Vec::<ThreadId>::new());
 
     let resumed_manager = ThreadManager::with_models_provider_home_and_state_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         harness.config.model_provider.clone(),
-        harness.config.codex_home.to_path_buf(),
-        std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        harness.config.motyga_home.to_path_buf(),
+        std::sync::Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         harness.state_db.clone(),
     );
     let resumed_control = resumed_manager.agent_control();
@@ -927,7 +927,7 @@ async fn spawn_agent_can_fork_parent_thread_history_with_sanitized_items() {
         .inject_user_message_without_turn("parent seed context".to_string())
         .await;
     let expected_parent_seed = parent_thread
-        .codex
+        .motyga
         .session
         .clone_history()
         .await
@@ -935,7 +935,7 @@ async fn spawn_agent_can_fork_parent_thread_history_with_sanitized_items() {
         .first()
         .cloned()
         .expect("parent seed should be recorded");
-    let turn_context = parent_thread.codex.session.new_default_turn().await;
+    let turn_context = parent_thread.motyga.session.new_default_turn().await;
     let parent_spawn_call_id = "spawn-call-history".to_string();
     let trigger_message = InterAgentCommunication::new(
         AgentPath::root(),
@@ -945,7 +945,7 @@ async fn spawn_agent_can_fork_parent_thread_history_with_sanitized_items() {
         /*trigger_turn*/ true,
     );
     parent_thread
-        .codex
+        .motyga
         .session
         .record_conversation_items(
             turn_context.as_ref(),
@@ -985,19 +985,19 @@ async fn spawn_agent_can_fork_parent_thread_history_with_sanitized_items() {
         .await;
     let parent_reference_context_item = turn_context.to_turn_context_item();
     parent_thread
-        .codex
+        .motyga
         .session
         .persist_rollout_items(&[RolloutItem::TurnContext(
             parent_reference_context_item.clone(),
         )])
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .ensure_rollout_materialized()
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .flush_rollout()
         .await
@@ -1030,7 +1030,7 @@ async fn spawn_agent_can_fork_parent_thread_history_with_sanitized_items() {
         .await
         .expect("child thread should be registered");
     assert_ne!(child_thread_id, parent_thread_id);
-    let history = child_thread.codex.session.clone_history().await;
+    let history = child_thread.motyga.session.clone_history().await;
     let mut expected_final_answer =
         assistant_message("parent final answer", Some(MessagePhase::FinalAnswer));
     expected_final_answer.set_turn_id_if_missing(&turn_context.sub_id);
@@ -1053,7 +1053,7 @@ async fn spawn_agent_can_fork_parent_thread_history_with_sanitized_items() {
         "full-history forked child history should replace parent usage hints with the child subagent hint while filtering non-final assistant/tool chatter"
     );
     assert_eq!(
-        serde_json::to_value(child_thread.codex.session.reference_context_item().await)
+        serde_json::to_value(child_thread.motyga.session.reference_context_item().await)
             .expect("serialize child reference context item"),
         serde_json::to_value(Some(parent_reference_context_item))
             .expect("serialize expected reference context item"),
@@ -1089,7 +1089,7 @@ async fn spawn_agent_can_fork_parent_thread_history_with_sanitized_items() {
         .get_thread(no_hint_child_thread_id)
         .await
         .expect("no-hint child thread should be registered");
-    let no_hint_history = no_hint_child_thread.codex.session.clone_history().await;
+    let no_hint_history = no_hint_child_thread.motyga.session.clone_history().await;
     assert!(
         !history_contains_text(no_hint_history.raw_items(), "Child subagent guidance."),
         "full-history forked child should not add empty subagent guidance"
@@ -1153,7 +1153,7 @@ async fn spawn_agent_fork_strips_parent_usage_hints_from_compacted_history() {
         .expect("start parent thread");
     let parent_thread_id = new_thread.thread_id;
     let parent_thread = new_thread.thread;
-    let turn_context = parent_thread.codex.session.new_default_turn().await;
+    let turn_context = parent_thread.motyga.session.new_default_turn().await;
     let parent_spawn_call_id = "spawn-call-compacted-usage-hints".to_string();
     let replacement_history = vec![
         ResponseItem::Message {
@@ -1176,7 +1176,7 @@ async fn spawn_agent_fork_strips_parent_usage_hints_from_compacted_history() {
         },
     ];
     parent_thread
-        .codex
+        .motyga
         .session
         .persist_rollout_items(&[
             RolloutItem::Compacted(CompactedItem {
@@ -1192,12 +1192,12 @@ async fn spawn_agent_fork_strips_parent_usage_hints_from_compacted_history() {
         ])
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .ensure_rollout_materialized()
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .flush_rollout()
         .await
@@ -1230,7 +1230,7 @@ async fn spawn_agent_fork_strips_parent_usage_hints_from_compacted_history() {
         .get_thread(child_thread_id)
         .await
         .expect("child thread should be registered");
-    let history = child_thread.codex.session.clone_history().await;
+    let history = child_thread.motyga.session.clone_history().await;
     assert!(
         history_contains_text(history.raw_items(), "compacted parent summary"),
         "forked child history should retain compacted non-hint content"
@@ -1259,10 +1259,10 @@ async fn spawn_agent_fork_strips_parent_usage_hints_from_compacted_history() {
 async fn spawn_agent_fork_flushes_parent_rollout_before_loading_history() {
     let harness = AgentControlHarness::new().await;
     let (parent_thread_id, parent_thread) = harness.start_thread().await;
-    let turn_context = parent_thread.codex.session.new_default_turn().await;
+    let turn_context = parent_thread.motyga.session.new_default_turn().await;
     let parent_spawn_call_id = "spawn-call-unflushed".to_string();
     parent_thread
-        .codex
+        .motyga
         .session
         .record_conversation_items(
             turn_context.as_ref(),
@@ -1300,7 +1300,7 @@ async fn spawn_agent_fork_flushes_parent_rollout_before_loading_history() {
         .get_thread(child_thread_id)
         .await
         .expect("child thread should be registered");
-    let history = child_thread.codex.session.clone_history().await;
+    let history = child_thread.motyga.session.clone_history().await;
     assert!(
         history_contains_text(history.raw_items(), "unflushed final answer"),
         "forked child history should include unflushed assistant final answers after flushing the parent rollout"
@@ -1332,9 +1332,9 @@ async fn spawn_agent_fork_last_n_turns_keeps_only_recent_turns() {
         "queued message".to_string(),
         /*trigger_turn*/ false,
     );
-    let queued_turn_context = parent_thread.codex.session.new_default_turn().await;
+    let queued_turn_context = parent_thread.motyga.session.new_default_turn().await;
     parent_thread
-        .codex
+        .motyga
         .session
         .record_conversation_items(
             queued_turn_context.as_ref(),
@@ -1349,9 +1349,9 @@ async fn spawn_agent_fork_last_n_turns_keeps_only_recent_turns() {
         "triggered context".to_string(),
         /*trigger_turn*/ true,
     );
-    let triggered_turn_context = parent_thread.codex.session.new_default_turn().await;
+    let triggered_turn_context = parent_thread.motyga.session.new_default_turn().await;
     parent_thread
-        .codex
+        .motyga
         .session
         .record_conversation_items(
             triggered_turn_context.as_ref(),
@@ -1361,10 +1361,10 @@ async fn spawn_agent_fork_last_n_turns_keeps_only_recent_turns() {
     parent_thread
         .inject_user_message_without_turn("current parent task".to_string())
         .await;
-    let spawn_turn_context = parent_thread.codex.session.new_default_turn().await;
+    let spawn_turn_context = parent_thread.motyga.session.new_default_turn().await;
     let parent_spawn_call_id = "spawn-call-last-n".to_string();
     parent_thread
-        .codex
+        .motyga
         .session
         .record_conversation_items(
             spawn_turn_context.as_ref(),
@@ -1372,19 +1372,19 @@ async fn spawn_agent_fork_last_n_turns_keeps_only_recent_turns() {
         )
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .persist_rollout_items(&[RolloutItem::TurnContext(
             spawn_turn_context.to_turn_context_item(),
         )])
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .ensure_rollout_materialized()
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .flush_rollout()
         .await
@@ -1417,7 +1417,7 @@ async fn spawn_agent_fork_last_n_turns_keeps_only_recent_turns() {
         .get_thread(child_thread_id)
         .await
         .expect("child thread should be registered");
-    let history = child_thread.codex.session.clone_history().await;
+    let history = child_thread.motyga.session.clone_history().await;
 
     assert!(
         !history_contains_text(history.raw_items(), "old parent context"),
@@ -1437,7 +1437,7 @@ async fn spawn_agent_fork_last_n_turns_keeps_only_recent_turns() {
     );
     assert!(
         child_thread
-            .codex
+            .motyga
             .session
             .reference_context_item()
             .await
@@ -1488,9 +1488,9 @@ async fn spawn_agent_fork_last_n_turns_drops_parent_startup_prefix_when_under_li
         .expect("start parent thread");
     let parent_thread_id = parent.thread_id;
     let parent_thread = parent.thread;
-    let startup_turn_context = parent_thread.codex.session.new_default_turn().await;
+    let startup_turn_context = parent_thread.motyga.session.new_default_turn().await;
     parent_thread
-        .codex
+        .motyga
         .session
         .record_conversation_items(
             startup_turn_context.as_ref(),
@@ -1508,10 +1508,10 @@ async fn spawn_agent_fork_last_n_turns_drops_parent_startup_prefix_when_under_li
     parent_thread
         .inject_user_message_without_turn("current parent task".to_string())
         .await;
-    let spawn_turn_context = parent_thread.codex.session.new_default_turn().await;
+    let spawn_turn_context = parent_thread.motyga.session.new_default_turn().await;
     let parent_spawn_call_id = "spawn-call-last-n-under-limit".to_string();
     parent_thread
-        .codex
+        .motyga
         .session
         .record_conversation_items(
             spawn_turn_context.as_ref(),
@@ -1519,12 +1519,12 @@ async fn spawn_agent_fork_last_n_turns_drops_parent_startup_prefix_when_under_li
         )
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .ensure_rollout_materialized()
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .flush_rollout()
         .await
@@ -1557,7 +1557,7 @@ async fn spawn_agent_fork_last_n_turns_drops_parent_startup_prefix_when_under_li
         .get_thread(child_thread_id)
         .await
         .expect("child thread should be registered");
-    let history = child_thread.codex.session.clone_history().await;
+    let history = child_thread.motyga.session.clone_history().await;
     assert!(
         history_contains_text(history.raw_items(), "current parent task"),
         "bounded fork should retain the requested recent parent turn"
@@ -1568,7 +1568,7 @@ async fn spawn_agent_fork_last_n_turns_drops_parent_startup_prefix_when_under_li
     );
     assert_eq!(
         &child_thread
-            .codex
+            .motyga
             .session
             .services
             .selected_capability_roots,
@@ -1576,7 +1576,7 @@ async fn spawn_agent_fork_last_n_turns_drops_parent_startup_prefix_when_under_li
     );
     assert!(
         child_thread
-            .codex
+            .motyga
             .session
             .reference_context_item()
             .await
@@ -1616,10 +1616,10 @@ async fn spawn_agent_fork_last_n_turns_strips_parent_usage_hints() {
     parent_thread
         .inject_user_message_without_turn("parent task".to_string())
         .await;
-    let turn_context = parent_thread.codex.session.new_default_turn().await;
+    let turn_context = parent_thread.motyga.session.new_default_turn().await;
     let parent_spawn_call_id = "spawn-call-last-n-usage-hints".to_string();
     parent_thread
-        .codex
+        .motyga
         .session
         .record_conversation_items(
             turn_context.as_ref(),
@@ -1638,12 +1638,12 @@ async fn spawn_agent_fork_last_n_turns_strips_parent_usage_hints() {
         )
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .ensure_rollout_materialized()
         .await;
     parent_thread
-        .codex
+        .motyga
         .session
         .flush_rollout()
         .await
@@ -1676,7 +1676,7 @@ async fn spawn_agent_fork_last_n_turns_strips_parent_usage_hints() {
         .get_thread(child_thread_id)
         .await
         .expect("child thread should be registered");
-    let history = child_thread.codex.session.clone_history().await;
+    let history = child_thread.motyga.session.clone_history().await;
     assert!(
         history_contains_text(history.raw_items(), "parent task"),
         "bounded fork should retain the requested recent parent turn"
@@ -1706,10 +1706,10 @@ async fn spawn_agent_respects_max_threads_limit() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        std::sync::Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let control = manager.agent_control();
 
@@ -1735,11 +1735,11 @@ async fn spawn_agent_respects_max_threads_limit() {
         )
         .await
         .expect_err("spawn_agent should respect max threads");
-    let CodexErr::AgentLimitReached {
+    let MotygaErr::AgentLimitReached {
         max_threads: seen_max_threads,
     } = err
     else {
-        panic!("expected CodexErr::AgentLimitReached");
+        panic!("expected MotygaErr::AgentLimitReached");
     };
     assert_eq!(seen_max_threads, max_threads);
 
@@ -1758,10 +1758,10 @@ async fn spawn_agent_releases_slot_after_shutdown() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        std::sync::Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let control = manager.agent_control();
 
@@ -1801,10 +1801,10 @@ async fn spawn_agent_limit_shared_across_clones() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        std::sync::Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let control = manager.agent_control();
     let cloned = control.clone();
@@ -1826,8 +1826,8 @@ async fn spawn_agent_limit_shared_across_clones() {
         )
         .await
         .expect_err("spawn_agent should respect shared guard");
-    let CodexErr::AgentLimitReached { max_threads } = err else {
-        panic!("expected CodexErr::AgentLimitReached");
+    let MotygaErr::AgentLimitReached { max_threads } = err else {
+        panic!("expected MotygaErr::AgentLimitReached");
     };
     assert_eq!(max_threads, 1);
 
@@ -1846,10 +1846,10 @@ async fn resume_agent_respects_max_threads_limit() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        std::sync::Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let control = manager.agent_control();
 
@@ -1879,11 +1879,11 @@ async fn resume_agent_respects_max_threads_limit() {
         .resume_agent_from_rollout(config, resumable_id, SessionSource::Exec)
         .await
         .expect_err("resume should respect max threads");
-    let CodexErr::AgentLimitReached {
+    let MotygaErr::AgentLimitReached {
         max_threads: seen_max_threads,
     } = err
     else {
-        panic!("expected CodexErr::AgentLimitReached");
+        panic!("expected MotygaErr::AgentLimitReached");
     };
     assert_eq!(seen_max_threads, max_threads);
 
@@ -1902,10 +1902,10 @@ async fn resume_agent_releases_slot_after_resume_failure() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        std::sync::Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let control = manager.agent_control();
 
@@ -2013,9 +2013,9 @@ async fn multi_agent_v2_completion_ignores_dead_direct_parent() {
         .get_thread(tester_thread_id)
         .await
         .expect("tester thread should exist");
-    let tester_turn = tester_thread.codex.session.new_default_turn().await;
+    let tester_turn = tester_thread.motyga.session.new_default_turn().await;
     tester_thread
-        .codex
+        .motyga
         .session
         .send_event(
             tester_turn.as_ref(),
@@ -2049,7 +2049,7 @@ async fn multi_agent_v2_completion_ignores_dead_direct_parent() {
     );
 
     let root_history_items = root_thread
-        .codex
+        .motyga
         .session
         .clone_history()
         .await
@@ -2100,9 +2100,9 @@ async fn multi_agent_v2_completion_queues_message_for_direct_parent() {
         tester_path.to_string(),
         Some(tester_path.clone()),
     );
-    let tester_turn = tester_thread.codex.session.new_default_turn().await;
+    let tester_turn = tester_thread.motyga.session.new_default_turn().await;
     tester_thread
-        .codex
+        .motyga
         .session
         .send_event(
             tester_turn.as_ref(),
@@ -2152,7 +2152,7 @@ async fn multi_agent_v2_completion_queues_message_for_direct_parent() {
     .expect("completion watcher should queue a direct-parent message");
 
     let root_history_items = root_thread
-        .codex
+        .motyga
         .session
         .clone_history()
         .await
@@ -2192,7 +2192,7 @@ async fn completion_watcher_notifies_parent_when_child_is_missing() {
     assert_eq!(wait_for_subagent_notification(&parent_thread).await, true);
 
     let history_items = parent_thread
-        .codex
+        .motyga
         .session
         .clone_history()
         .await
@@ -2268,7 +2268,7 @@ async fn spawn_thread_subagents_persist_parent_originator_across_new_and_truncat
             session_source: None,
             thread_source: None,
             dynamic_tools: Vec::new(),
-            metrics_service_name: Some("codex_work_desktop".to_string()),
+            metrics_service_name: Some("motyga_work_desktop".to_string()),
             parent_trace: None,
             environments: Vec::new(),
             thread_extension_init: ExtensionDataInit::default(),
@@ -2277,7 +2277,7 @@ async fn spawn_thread_subagents_persist_parent_originator_across_new_and_truncat
         .await
         .expect("parent thread should start");
     let parent_originator = persisted_originator(&parent.thread).await;
-    assert_eq!(parent_originator, "codex_work_desktop");
+    assert_eq!(parent_originator, "motyga_work_desktop");
 
     let child_thread_id = harness
         .control
@@ -2383,9 +2383,9 @@ async fn resume_thread_subagent_restores_stored_metadata() {
     let thread_store = Arc::new(InMemoryThreadStore::default());
     let manager = ThreadManager::new(
         &config,
-        AuthManager::from_auth_for_testing(CodexAuth::from_api_key("dummy")),
+        AuthManager::from_auth_for_testing(MotygaAuth::from_api_key("dummy")),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -2429,12 +2429,12 @@ async fn resume_thread_subagent_restores_stored_metadata() {
         .await
         .expect("child thread should exist");
     child_thread
-        .codex
+        .motyga
         .session
         .ensure_rollout_materialized()
         .await;
     child_thread
-        .codex
+        .motyga
         .session
         .flush_rollout()
         .await
@@ -2718,10 +2718,10 @@ async fn list_agent_subtree_thread_ids_includes_anonymous_and_closed_descendants
 async fn list_agent_subtree_thread_ids_finds_live_descendants_of_unloaded_root() {
     let (_home, config) = test_config().await;
     let manager = ThreadManager::with_models_provider_home_and_state_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        std::sync::Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         /*state_db*/ None,
     );
     let control = manager.agent_control();

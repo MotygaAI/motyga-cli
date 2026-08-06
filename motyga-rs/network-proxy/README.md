@@ -1,6 +1,6 @@
-# codex-network-proxy
+# motyga-network-proxy
 
-`codex-network-proxy` is Codex's local network policy enforcement proxy. It runs:
+`motyga-network-proxy` is Motyga's local network policy enforcement proxy. It runs:
 
 - an HTTP proxy (default `127.0.0.1:3128`)
 - a SOCKS5 proxy (default `127.0.0.1:8081`, enabled by default)
@@ -11,7 +11,7 @@ It enforces an allow/deny policy and a "limited" mode intended for read-only net
 
 ### 1) Configure
 
-`codex-network-proxy` reads from Codex's merged `config.toml` (via `codex-core` config loading).
+`motyga-network-proxy` reads from Motyga's merged `config.toml` (via `motyga-core` config loading).
 
 Network settings live under the selected permissions profile. Example config:
 
@@ -77,7 +77,7 @@ strip_request_headers = ["authorization"]
 ### 2) Run the proxy
 
 ```bash
-cargo run -p codex-network-proxy --
+cargo run -p motyga-network-proxy --
 ```
 
 ### 3) Point a client at it
@@ -116,10 +116,10 @@ through the same host allowlist/denylist checks.
 
 ## Library API
 
-`codex-network-proxy` can be embedded as a library with a thin API:
+`motyga-network-proxy` can be embedded as a library with a thin API:
 
 ```rust
-use codex_network_proxy::{NetworkProxy, NetworkDecision, NetworkPolicyRequest};
+use motyga_network_proxy::{NetworkProxy, NetworkDecision, NetworkPolicyRequest};
 
 let proxy = NetworkProxy::builder()
     .http_addr("127.0.0.1:8080".parse()?)
@@ -157,12 +157,12 @@ the decider can auto-allow network requests originating from that command.
 
 ## OTEL Audit Events (embedded/managed)
 
-When `codex-network-proxy` is embedded in managed Codex runtime, policy decisions emit structured
-OTEL-compatible events with `target=codex_otel.network_proxy`.
+When `motyga-network-proxy` is embedded in managed Motyga runtime, policy decisions emit structured
+OTEL-compatible events with `target=motyga_otel.network_proxy`.
 
 Event name:
 
-- `codex.network_proxy.policy_decision`
+- `motyga.network_proxy.policy_decision`
   - emitted for each policy decision (`domain` and `non_domain`).
   - `network.policy.scope = "domain"` for host-policy evaluations (`evaluate_host_policy`).
   - `network.policy.scope = "non_domain"` for mode-guard/proxy-state checks (including unix-socket guard paths and unix-socket allow decisions).
@@ -203,7 +203,7 @@ Audit events intentionally avoid logging full URL/path/query data.
 
 ## Security notes (important)
 
-This section documents the protections implemented by `codex-network-proxy`, and the boundaries of
+This section documents the protections implemented by `motyga-network-proxy`, and the boundaries of
 what it can reasonably guarantee.
 
 - Allowlist-first policy: if `domains` has no `allow` entries, requests are blocked until an allowlist is configured.

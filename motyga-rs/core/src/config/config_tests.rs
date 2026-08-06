@@ -2,99 +2,99 @@ use crate::config::edit::ConfigEdit;
 use crate::config::edit::ConfigEditsBuilder;
 use crate::config::edit::apply_blocking;
 use assert_matches::assert_matches;
-use codex_config::CONFIG_TOML_FILE;
-use codex_config::ConfigLayerEntry;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStack;
-use codex_config::McpServerCommandMatcher;
-use codex_config::McpServerIdentity;
-use codex_config::McpServerRequirement;
-use codex_config::McpServerValueMatcher;
-use codex_config::ProfileV2Name;
-use codex_config::RequirementSource;
-use codex_config::Sourced;
-use codex_config::config_toml::AgentRoleToml;
-use codex_config::config_toml::AgentsToml;
-use codex_config::config_toml::AutoReviewToml;
-use codex_config::config_toml::ConfigToml;
-use codex_config::config_toml::ExperimentalRequestUserInput;
-use codex_config::config_toml::ProjectConfig;
-use codex_config::config_toml::RealtimeConfig;
-use codex_config::config_toml::RealtimeToml;
-use codex_config::config_toml::RealtimeTransport;
-use codex_config::config_toml::RealtimeWsMode;
-use codex_config::config_toml::RealtimeWsVersion;
-use codex_config::config_toml::ToolsToml;
-use codex_config::loader::project_trust_key;
-use codex_config::permissions_toml::FilesystemPermissionToml;
-use codex_config::permissions_toml::FilesystemPermissionsToml;
-use codex_config::permissions_toml::NetworkDomainPermissionToml;
-use codex_config::permissions_toml::NetworkDomainPermissionsToml;
-use codex_config::permissions_toml::NetworkMitmActionToml;
-use codex_config::permissions_toml::NetworkMitmHookToml;
-use codex_config::permissions_toml::NetworkMitmToml;
-use codex_config::permissions_toml::NetworkToml;
-use codex_config::permissions_toml::PermissionProfileToml;
-use codex_config::permissions_toml::PermissionsToml;
-use codex_config::permissions_toml::WorkspaceRootsToml;
-use codex_config::types::AppToolApproval;
-use codex_config::types::ApprovalsReviewer;
-use codex_config::types::BundledSkillsConfig;
-use codex_config::types::FeedbackConfigToml;
-use codex_config::types::HistoryPersistence;
-use codex_config::types::McpServerEnvVar;
-use codex_config::types::McpServerOAuthConfig;
-use codex_config::types::McpServerToolConfig;
-use codex_config::types::McpServerTransportConfig;
-use codex_config::types::MemoriesConfig;
-use codex_config::types::MemoriesToml;
-use codex_config::types::ModelAvailabilityNuxConfig;
-use codex_config::types::Notice;
-use codex_config::types::NotificationCondition;
-use codex_config::types::NotificationMethod;
-use codex_config::types::Notifications;
-use codex_config::types::OtelConfigToml;
-use codex_config::types::OtelExporterKind;
-use codex_config::types::SandboxWorkspaceWrite;
-use codex_config::types::SessionPickerViewMode;
-use codex_config::types::SkillsConfig;
-use codex_config::types::ToolSuggestDisabledTool;
-use codex_config::types::ToolSuggestDiscoverableType;
-use codex_config::types::Tui;
-use codex_config::types::TuiKeymap;
-use codex_config::types::TuiNotificationSettings;
-use codex_config::types::TuiPetAnchor;
-use codex_config::types::WindowsSandboxModeToml;
-use codex_config::types::WindowsToml;
-use codex_core_plugins::PluginsManager;
-use codex_exec_server::LOCAL_FS;
-use codex_features::Feature;
-use codex_features::FeaturesToml;
-use codex_model_provider_info::LMSTUDIO_OSS_PROVIDER_ID;
-use codex_model_provider_info::OLLAMA_OSS_PROVIDER_ID;
-use codex_model_provider_info::WireApi;
-use codex_models_manager::bundled_models_response;
-use codex_network_proxy::NetworkMode;
-use codex_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
-use codex_protocol::models::ManagedFileSystemPermissions;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::SandboxEnforcement;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::NetworkAccess;
-use codex_protocol::protocol::RealtimeVoice;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_utils_path_uri::LegacyAppPathString;
+use motyga_config::CONFIG_TOML_FILE;
+use motyga_config::ConfigLayerEntry;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStack;
+use motyga_config::McpServerCommandMatcher;
+use motyga_config::McpServerIdentity;
+use motyga_config::McpServerRequirement;
+use motyga_config::McpServerValueMatcher;
+use motyga_config::ProfileV2Name;
+use motyga_config::RequirementSource;
+use motyga_config::Sourced;
+use motyga_config::config_toml::AgentRoleToml;
+use motyga_config::config_toml::AgentsToml;
+use motyga_config::config_toml::AutoReviewToml;
+use motyga_config::config_toml::ConfigToml;
+use motyga_config::config_toml::ExperimentalRequestUserInput;
+use motyga_config::config_toml::ProjectConfig;
+use motyga_config::config_toml::RealtimeConfig;
+use motyga_config::config_toml::RealtimeToml;
+use motyga_config::config_toml::RealtimeTransport;
+use motyga_config::config_toml::RealtimeWsMode;
+use motyga_config::config_toml::RealtimeWsVersion;
+use motyga_config::config_toml::ToolsToml;
+use motyga_config::loader::project_trust_key;
+use motyga_config::permissions_toml::FilesystemPermissionToml;
+use motyga_config::permissions_toml::FilesystemPermissionsToml;
+use motyga_config::permissions_toml::NetworkDomainPermissionToml;
+use motyga_config::permissions_toml::NetworkDomainPermissionsToml;
+use motyga_config::permissions_toml::NetworkMitmActionToml;
+use motyga_config::permissions_toml::NetworkMitmHookToml;
+use motyga_config::permissions_toml::NetworkMitmToml;
+use motyga_config::permissions_toml::NetworkToml;
+use motyga_config::permissions_toml::PermissionProfileToml;
+use motyga_config::permissions_toml::PermissionsToml;
+use motyga_config::permissions_toml::WorkspaceRootsToml;
+use motyga_config::types::AppToolApproval;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_config::types::BundledSkillsConfig;
+use motyga_config::types::FeedbackConfigToml;
+use motyga_config::types::HistoryPersistence;
+use motyga_config::types::McpServerEnvVar;
+use motyga_config::types::McpServerOAuthConfig;
+use motyga_config::types::McpServerToolConfig;
+use motyga_config::types::McpServerTransportConfig;
+use motyga_config::types::MemoriesConfig;
+use motyga_config::types::MemoriesToml;
+use motyga_config::types::ModelAvailabilityNuxConfig;
+use motyga_config::types::Notice;
+use motyga_config::types::NotificationCondition;
+use motyga_config::types::NotificationMethod;
+use motyga_config::types::Notifications;
+use motyga_config::types::OtelConfigToml;
+use motyga_config::types::OtelExporterKind;
+use motyga_config::types::SandboxWorkspaceWrite;
+use motyga_config::types::SessionPickerViewMode;
+use motyga_config::types::SkillsConfig;
+use motyga_config::types::ToolSuggestDisabledTool;
+use motyga_config::types::ToolSuggestDiscoverableType;
+use motyga_config::types::Tui;
+use motyga_config::types::TuiKeymap;
+use motyga_config::types::TuiNotificationSettings;
+use motyga_config::types::TuiPetAnchor;
+use motyga_config::types::WindowsSandboxModeToml;
+use motyga_config::types::WindowsToml;
+use motyga_core_plugins::PluginsManager;
+use motyga_exec_server::LOCAL_FS;
+use motyga_features::Feature;
+use motyga_features::FeaturesToml;
+use motyga_model_provider_info::LMSTUDIO_OSS_PROVIDER_ID;
+use motyga_model_provider_info::OLLAMA_OSS_PROVIDER_ID;
+use motyga_model_provider_info::WireApi;
+use motyga_models_manager::bundled_models_response;
+use motyga_network_proxy::NetworkMode;
+use motyga_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
+use motyga_protocol::models::ManagedFileSystemPermissions;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::SandboxEnforcement;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::NetworkAccess;
+use motyga_protocol::protocol::RealtimeVoice;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_utils_path_uri::LegacyAppPathString;
 use serde::Deserialize;
 use tempfile::tempdir;
 
@@ -109,7 +109,7 @@ use rmcp::model::ElicitationCapability;
 use rmcp::model::FormElicitationCapability;
 use rmcp::model::UrlElicitationCapability;
 
-use codex_config::test_support::CloudConfigBundleFixture;
+use motyga_config::test_support::CloudConfigBundleFixture;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::path::Path;
@@ -130,7 +130,7 @@ fn stdio_mcp_with_args(command: &str, args: &[&str]) -> McpServerConfig {
             env_vars: Vec::new(),
             cwd: None,
         },
-        environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+        environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
         enabled: true,
         required: false,
         supports_parallel_tool_calls: false,
@@ -156,7 +156,7 @@ fn http_mcp(url: &str) -> McpServerConfig {
             http_headers: None,
             env_http_headers: None,
         },
-        environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+        environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
         enabled: true,
         required: false,
         supports_parallel_tool_calls: false,
@@ -202,14 +202,14 @@ async fn derive_legacy_sandbox_policy_for_test(
 #[tokio::test]
 async fn load_config_normalizes_relative_cwd_override() -> std::io::Result<()> {
     let expected_cwd = AbsolutePathBuf::relative_to_current_dir("nested")?;
-    let codex_home = tempdir()?;
+    let motyga_home = tempdir()?;
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
         ConfigOverrides {
             cwd: Some(PathBuf::from("nested")),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -421,7 +421,7 @@ enabled = false
 
 #[tokio::test]
 async fn load_config_resolves_experimental_request_user_input_enabled() -> std::io::Result<()> {
-    let codex_home = tempdir()?;
+    let motyga_home = tempdir()?;
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml {
             tools: Some(ToolsToml {
@@ -433,7 +433,7 @@ async fn load_config_resolves_experimental_request_user_input_enabled() -> std::
             ..ConfigToml::default()
         },
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -443,12 +443,12 @@ async fn load_config_resolves_experimental_request_user_input_enabled() -> std::
 
 #[tokio::test]
 async fn load_config_resolves_code_mode_config() -> std::io::Result<()> {
-    let codex_home = tempdir()?;
+    let motyga_home = tempdir()?;
     let config_toml: ConfigToml = toml::from_str(
         r#"
 [features.code_mode]
 enabled = true
-excluded_tool_namespaces = ["mcp__codex_apps", "multi_agent_v1"]
+excluded_tool_namespaces = ["mcp__motyga_apps", "multi_agent_v1"]
 direct_only_tool_namespaces = ["mcp__history", "mcp__notes"]
 "#,
     )
@@ -456,13 +456,13 @@ direct_only_tool_namespaces = ["mcp__history", "mcp__notes"]
     let config = Config::load_from_base_config_with_overrides(
         config_toml,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
     assert_eq!(
         config.code_mode.excluded_tool_namespaces,
-        vec!["mcp__codex_apps".to_string(), "multi_agent_v1".to_string()]
+        vec!["mcp__motyga_apps".to_string(), "multi_agent_v1".to_string()]
     );
     assert_eq!(
         config.code_mode.direct_only_tool_namespaces,
@@ -494,12 +494,12 @@ guidance_message = "Preserve important state before compaction."
             },
         ),
     ] {
-        let codex_home = tempdir()?;
+        let motyga_home = tempdir()?;
         let config_toml = toml::from_str(config_toml).expect("TOML should deserialize");
         let config = Config::load_from_base_config_with_overrides(
             config_toml,
             ConfigOverrides::default(),
-            codex_home.abs(),
+            motyga_home.abs(),
         )
         .await?;
 
@@ -515,7 +515,7 @@ async fn load_config_rejects_invalid_token_budget_reminder_template() -> std::io
         String::new(),
         "x".repeat(TOKEN_BUDGET_REMINDER_MESSAGE_TEMPLATE_MAX_BYTES + 1),
     ] {
-        let codex_home = tempdir()?;
+        let motyga_home = tempdir()?;
         let config_toml = toml::from_str(&format!(
             "[features.token_budget]\nenabled = true\nreminder_message_template = {reminder_message_template:?}\n"
         ))
@@ -523,7 +523,7 @@ async fn load_config_rejects_invalid_token_budget_reminder_template() -> std::io
         let error = Config::load_from_base_config_with_overrides(
             config_toml,
             ConfigOverrides::default(),
-            codex_home.abs(),
+            motyga_home.abs(),
         )
         .await
         .expect_err("invalid reminder template should be rejected");
@@ -536,7 +536,7 @@ async fn load_config_rejects_invalid_token_budget_reminder_template() -> std::io
 #[tokio::test]
 async fn load_config_rejects_non_positive_token_budget_reminder_threshold() -> std::io::Result<()> {
     for reminder_threshold_tokens in [-1, 0] {
-        let codex_home = tempdir()?;
+        let motyga_home = tempdir()?;
         let config_toml = toml::from_str(&format!(
             "[features.token_budget]\nenabled = true\nreminder_threshold_tokens = {reminder_threshold_tokens}\n"
         ))
@@ -544,7 +544,7 @@ async fn load_config_rejects_non_positive_token_budget_reminder_threshold() -> s
         let error = Config::load_from_base_config_with_overrides(
             config_toml,
             ConfigOverrides::default(),
-            codex_home.abs(),
+            motyga_home.abs(),
         )
         .await
         .expect_err("non-positive reminder threshold should be rejected");
@@ -560,7 +560,7 @@ async fn load_config_rejects_non_positive_token_budget_reminder_threshold() -> s
 
 #[tokio::test]
 async fn load_config_resolves_rollout_budget() -> std::io::Result<()> {
-    let codex_home = tempdir()?;
+    let motyga_home = tempdir()?;
     let config_toml: ConfigToml = toml::from_str(
         r#"
 [features.rollout_budget]
@@ -575,7 +575,7 @@ prefill_token_weight = 0.1
     let config = Config::load_from_base_config_with_overrides(
         config_toml,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -599,13 +599,13 @@ async fn load_config_rejects_enabled_rollout_budget_without_limit() -> std::io::
         "[features]\nrollout_budget = true\n",
         "[features.rollout_budget]\nenabled = true\n",
     ] {
-        let codex_home = tempdir()?;
+        let motyga_home = tempdir()?;
         let config_toml: ConfigToml =
             toml::from_str(config_toml).expect("TOML deserialization should succeed");
         let err = Config::load_from_base_config_with_overrides(
             config_toml,
             ConfigOverrides::default(),
-            codex_home.abs(),
+            motyga_home.abs(),
         )
         .await
         .expect_err("enabled rollout budget without limit_tokens should be rejected");
@@ -654,12 +654,12 @@ sleep_tool = true
 }
 
 async fn load_current_time_reminder_config(config_toml: &str) -> std::io::Result<Config> {
-    let codex_home = tempdir()?;
+    let motyga_home = tempdir()?;
     let config_toml = toml::from_str(config_toml).expect("TOML should deserialize");
     Config::load_from_base_config_with_overrides(
         config_toml,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await
 }
@@ -692,7 +692,7 @@ fn rejects_provider_aws_for_custom_provider() {
 name = "Custom Provider"
 
 [model_providers.custom.aws]
-profile = "codex-bedrock"
+profile = "motyga-bedrock"
 "#,
     )
     .unwrap_err();
@@ -709,7 +709,7 @@ fn accepts_amazon_bedrock_aws_profile_override() {
     let cfg = toml::from_str::<ConfigToml>(
         r#"
 [model_providers.amazon-bedrock.aws]
-profile = "codex-bedrock"
+profile = "motyga-bedrock"
 region = "us-west-2"
 "#,
     )
@@ -720,7 +720,7 @@ region = "us-west-2"
             .get("amazon-bedrock")
             .and_then(|provider| provider.aws.as_ref())
             .and_then(|aws| aws.profile.as_deref()),
-        Some("codex-bedrock")
+        Some("motyga-bedrock")
     );
     assert_eq!(
         cfg.model_providers
@@ -738,7 +738,7 @@ async fn load_config_applies_amazon_bedrock_aws_profile_override() {
 model_provider = "amazon-bedrock"
 
 [model_providers.amazon-bedrock.aws]
-profile = "codex-bedrock"
+profile = "motyga-bedrock"
 region = "us-west-2"
 "#,
     )
@@ -759,7 +759,7 @@ region = "us-west-2"
             .aws
             .as_ref()
             .and_then(|aws| aws.profile.as_deref()),
-        Some("codex-bedrock")
+        Some("motyga-bedrock")
     );
     assert_eq!(
         config
@@ -784,7 +784,7 @@ requires_openai_auth = true
 supports_websockets = true
 
 [model_providers.amazon-bedrock.aws]
-profile = "codex-bedrock"
+profile = "motyga-bedrock"
 region = "us-west-2"
 "#,
     )
@@ -1242,7 +1242,7 @@ action = ["noop"]
 #[tokio::test]
 async fn permissions_profiles_proxy_policy_does_not_start_managed_network_proxy_without_feature()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
 
@@ -1276,7 +1276,7 @@ async fn permissions_profiles_proxy_policy_does_not_start_managed_network_proxy_
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
     assert_eq!(
@@ -1292,7 +1292,7 @@ async fn permissions_profiles_proxy_policy_does_not_start_managed_network_proxy_
 
 #[tokio::test]
 async fn permissions_profiles_proxy_policy_starts_managed_network_proxy() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
 
@@ -1328,7 +1328,7 @@ async fn permissions_profiles_proxy_policy_starts_managed_network_proxy() -> std
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
     assert_eq!(
@@ -1344,7 +1344,7 @@ async fn permissions_profiles_proxy_policy_starts_managed_network_proxy() -> std
 
 #[tokio::test]
 async fn network_proxy_feature_is_no_op_without_sandbox_network() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml {
@@ -1355,7 +1355,7 @@ async fn network_proxy_feature_is_no_op_without_sandbox_network() -> std::io::Re
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -1446,7 +1446,7 @@ async fn network_proxy_feature_matrix_preserves_sandbox_network_semantics() -> s
     ];
 
     for case in cases {
-        let codex_home = TempDir::new()?;
+        let motyga_home = TempDir::new()?;
         let cwd = TempDir::new()?;
         std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
         let features = case
@@ -1499,7 +1499,7 @@ async fn network_proxy_feature_matrix_preserves_sandbox_network_semantics() -> s
                 cwd: Some(cwd.path().to_path_buf()),
                 ..Default::default()
             },
-            codex_home.abs(),
+            motyga_home.abs(),
         )
         .await?;
 
@@ -1522,10 +1522,10 @@ async fn network_proxy_feature_matrix_preserves_sandbox_network_semantics() -> s
 
 #[tokio::test]
 async fn network_proxy_cli_overrides_merge_toggle_with_proxy_config() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"
 sandbox_mode = "workspace-write"
 
@@ -1537,7 +1537,7 @@ sandbox = "elevated"
 "#,
     )?;
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cli_overrides(vec![
             (
                 "features.network_proxy.enabled".to_string(),
@@ -1571,7 +1571,7 @@ sandbox = "elevated"
 
 #[tokio::test]
 async fn respect_system_proxy_feature_resolves_enabled() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml {
             features: Some(
@@ -1585,7 +1585,7 @@ respect_system_proxy = true
             ..Default::default()
         },
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -1633,9 +1633,9 @@ respect_system_proxy = true
 
 #[tokio::test]
 async fn respect_system_proxy_cli_override_enables_feature() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"
 [features]
 respect_system_proxy = false
@@ -1643,7 +1643,7 @@ respect_system_proxy = false
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cli_overrides(vec![(
             "features.respect_system_proxy".to_string(),
             toml::Value::Boolean(true),
@@ -1657,10 +1657,10 @@ respect_system_proxy = false
 
 #[tokio::test]
 async fn experimental_network_requirements_enable_proxy_without_feature() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -1687,7 +1687,7 @@ enabled = true
 
 #[tokio::test]
 async fn network_proxy_feature_uses_profile_network_proxy_settings() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml {
@@ -1722,7 +1722,7 @@ async fn network_proxy_feature_uses_profile_network_proxy_settings() -> std::io:
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -1743,7 +1743,7 @@ async fn network_proxy_feature_uses_profile_network_proxy_settings() -> std::io:
 #[tokio::test]
 async fn disabled_network_proxy_feature_does_not_start_profile_proxy_policy() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml {
@@ -1786,7 +1786,7 @@ enabled = false
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -1801,7 +1801,7 @@ enabled = false
 #[tokio::test]
 async fn permissions_profiles_network_disabled_by_default_does_not_start_proxy()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
 
@@ -1840,7 +1840,7 @@ async fn permissions_profiles_network_disabled_by_default_does_not_start_proxy()
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -1850,7 +1850,7 @@ async fn permissions_profiles_network_disabled_by_default_does_not_start_proxy()
 
 #[tokio::test]
 async fn default_permissions_profile_populates_runtime_sandbox_policy() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::create_dir_all(cwd.path().join("docs"))?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
@@ -1893,7 +1893,7 @@ async fn default_permissions_profile_populates_runtime_sandbox_policy() -> std::
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -1953,7 +1953,7 @@ async fn default_permissions_profile_populates_runtime_sandbox_policy() -> std::
 
 #[tokio::test]
 async fn default_permissions_extended_profile_preserves_parent_metadata() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
 
@@ -1996,7 +1996,7 @@ async fn default_permissions_extended_profile_preserves_parent_metadata() -> std
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2012,7 +2012,7 @@ async fn default_permissions_extended_profile_preserves_parent_metadata() -> std
 
 #[tokio::test]
 async fn permission_profile_override_populates_runtime_permissions() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let permission_profile = PermissionProfile::Disabled;
 
@@ -2023,7 +2023,7 @@ async fn permission_profile_override_populates_runtime_permissions() -> std::io:
             permission_profile: Some(permission_profile.clone()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2066,7 +2066,7 @@ fn permission_snapshot_setter_preserves_permission_constraints() {
 #[tokio::test]
 async fn permission_profile_override_preserves_managed_unrestricted_filesystem()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let permission_profile = PermissionProfile::Managed {
         file_system: ManagedFileSystemPermissions::Unrestricted,
@@ -2080,7 +2080,7 @@ async fn permission_profile_override_preserves_managed_unrestricted_filesystem()
             permission_profile: Some(permission_profile.clone()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2100,7 +2100,7 @@ async fn permission_profile_override_preserves_managed_unrestricted_filesystem()
 #[tokio::test]
 async fn managed_unrestricted_permission_profile_still_enables_network_requirements()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let permission_profile = PermissionProfile::Managed {
         file_system: ManagedFileSystemPermissions::Unrestricted,
@@ -2114,7 +2114,7 @@ async fn managed_unrestricted_permission_profile_still_enables_network_requireme
             permission_profile: Some(permission_profile),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
     assert_eq!(
@@ -2134,14 +2134,14 @@ async fn managed_unrestricted_permission_profile_still_enables_network_requireme
         .collect();
     let mut requirements = config.config_layer_stack.requirements().clone();
     requirements.network = Some(Sourced::new(
-        codex_config::NetworkConstraints {
+        motyga_config::NetworkConstraints {
             enabled: Some(true),
             ..Default::default()
         },
         RequirementSource::LegacyManagedConfigTomlFromMdm,
     ));
     let mut requirements_toml = config.config_layer_stack.requirements_toml().clone();
-    requirements_toml.network = Some(codex_config::NetworkRequirementsToml {
+    requirements_toml.network = Some(motyga_config::NetworkRequirementsToml {
         enabled: Some(true),
         ..Default::default()
     });
@@ -2155,7 +2155,7 @@ async fn managed_unrestricted_permission_profile_still_enables_network_requireme
 #[tokio::test]
 async fn permission_profile_override_keeps_memories_root_out_of_legacy_projection()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let permission_profile = PermissionProfile::from_runtime_permissions(
         &FileSystemSandboxPolicy::restricted(vec![
@@ -2182,11 +2182,11 @@ async fn permission_profile_override_keeps_memories_root_out_of_legacy_projectio
             permission_profile: Some(permission_profile),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
-    let memories_root = codex_home.path().join("memories").abs();
+    let memories_root = motyga_home.path().join("memories").abs();
     assert!(
         !config
             .permissions
@@ -2208,7 +2208,7 @@ async fn permission_profile_override_keeps_memories_root_out_of_legacy_projectio
 #[tokio::test]
 async fn permission_profile_override_preserves_configured_network_policy_without_starting_proxy()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let permission_profile = PermissionProfile::Disabled;
 
@@ -2252,7 +2252,7 @@ async fn permission_profile_override_preserves_configured_network_policy_without
             permission_profile: Some(permission_profile.clone()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
     assert!(
@@ -2268,7 +2268,7 @@ async fn permission_profile_override_preserves_configured_network_policy_without
 
 #[tokio::test]
 async fn workspace_root_glob_none_compiles_to_filesystem_pattern_entry() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let extra_root = TempDir::new()?;
     tokio::fs::write(cwd.path().join(".git"), "gitdir: nowhere").await?;
@@ -2305,7 +2305,7 @@ async fn workspace_root_glob_none_compiles_to_filesystem_pattern_entry() -> std:
             additional_writable_roots: vec![extra_root.path().to_path_buf()],
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2352,7 +2352,7 @@ async fn workspace_root_glob_none_compiles_to_filesystem_pattern_entry() -> std:
 
 #[tokio::test]
 async fn permissions_profiles_require_default_permissions() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
 
@@ -2382,7 +2382,7 @@ async fn permissions_profiles_require_default_permissions() -> std::io::Result<(
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await
     .expect_err("missing default_permissions should be rejected");
@@ -2398,7 +2398,7 @@ async fn permissions_profiles_require_default_permissions() -> std::io::Result<(
 #[tokio::test]
 async fn default_permissions_can_select_builtin_profile_without_permissions_table()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
 
     let config = Config::load_from_base_config_with_overrides(
@@ -2410,7 +2410,7 @@ async fn default_permissions_can_select_builtin_profile_without_permissions_tabl
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2438,7 +2438,7 @@ async fn default_permissions_can_select_builtin_profile_without_permissions_tabl
 
 #[tokio::test]
 async fn default_permissions_read_only_keeps_add_dir_read_only() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let extra_root = TempDir::new()?;
     let extra_root = extra_root.path().abs();
@@ -2453,7 +2453,7 @@ async fn default_permissions_read_only_keeps_add_dir_read_only() -> std::io::Res
             additional_writable_roots: vec![extra_root.to_path_buf()],
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2475,7 +2475,7 @@ async fn default_permissions_read_only_keeps_add_dir_read_only() -> std::io::Res
 async fn workspace_profile_applies_rules_to_runtime_and_profile_workspace_roots()
 -> std::io::Result<()> {
     let temp_dir = TempDir::new()?;
-    let codex_home = temp_dir.path().join("codex-home");
+    let motyga_home = temp_dir.path().join("motyga-home");
     let cwd = temp_dir.path().join("frontend");
     let runtime_root = temp_dir.path().join("backend");
     let profile_root = temp_dir.path().join("shared");
@@ -2521,7 +2521,7 @@ async fn workspace_profile_applies_rules_to_runtime_and_profile_workspace_roots(
             additional_writable_roots: vec![runtime_root.clone()],
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2557,7 +2557,7 @@ async fn workspace_profile_applies_rules_to_runtime_and_profile_workspace_roots(
         );
         assert!(
             !policy.can_write_path_with_cwd(&root.join(".motyga"), cwd.as_path()),
-            "expected .codex carveout under {root:?}, policy: {policy:?}"
+            "expected .motyga carveout under {root:?}, policy: {policy:?}"
         );
     }
     assert_eq!(
@@ -2574,7 +2574,7 @@ async fn workspace_profile_applies_rules_to_runtime_and_profile_workspace_roots(
 #[tokio::test]
 async fn explicit_builtin_workspace_profile_ignores_legacy_workspace_write_settings()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let extra_root = TempDir::new()?;
 
@@ -2593,7 +2593,7 @@ async fn explicit_builtin_workspace_profile_ignores_legacy_workspace_write_setti
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2615,7 +2615,7 @@ async fn explicit_builtin_workspace_profile_ignores_legacy_workspace_write_setti
 
 #[tokio::test]
 async fn default_permissions_profile_can_extend_builtin_workspace() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
 
     let config = Config::load_from_base_config_with_overrides(
@@ -2648,7 +2648,7 @@ async fn default_permissions_profile_can_extend_builtin_workspace() -> std::io::
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2713,7 +2713,7 @@ async fn default_permissions_profile_can_extend_builtin_workspace() -> std::io::
 
 #[tokio::test]
 async fn default_permissions_profile_can_extend_builtin_read_only() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
 
     let config = Config::load_from_base_config_with_overrides(
@@ -2740,7 +2740,7 @@ async fn default_permissions_profile_can_extend_builtin_read_only() -> std::io::
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2769,7 +2769,7 @@ async fn default_permissions_profile_can_extend_builtin_read_only() -> std::io::
 
 #[tokio::test]
 async fn empty_config_defaults_to_builtin_profile_for_trusted_project() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let project_key = cwd.path().to_string_lossy().to_string();
 
@@ -2787,7 +2787,7 @@ async fn empty_config_defaults_to_builtin_profile_for_trusted_project() -> std::
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2824,7 +2824,7 @@ async fn empty_config_defaults_to_builtin_profile_for_trusted_project() -> std::
 
 #[tokio::test]
 async fn empty_config_defaults_to_builtin_profile_for_untrusted_project() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let project_key = cwd.path().to_string_lossy().to_string();
 
@@ -2842,7 +2842,7 @@ async fn empty_config_defaults_to_builtin_profile_for_untrusted_project() -> std
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2884,7 +2884,7 @@ async fn empty_config_defaults_to_builtin_profile_for_untrusted_project() -> std
 #[tokio::test]
 async fn implicit_builtin_workspace_profile_preserves_sandbox_workspace_write_settings()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let extra_root = TempDir::new()?;
     let extra_root = extra_root.path().abs();
@@ -2914,7 +2914,7 @@ async fn implicit_builtin_workspace_profile_preserves_sandbox_workspace_write_se
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -2953,7 +2953,7 @@ async fn implicit_builtin_workspace_profile_preserves_sandbox_workspace_write_se
 #[tokio::test]
 async fn implicit_builtin_workspace_profile_preserves_add_dir_metadata_carveouts()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let extra_root = TempDir::new()?;
     for subpath in [".git", ".agents", ".motyga"] {
@@ -2980,7 +2980,7 @@ async fn implicit_builtin_workspace_profile_preserves_add_dir_metadata_carveouts
             additional_writable_roots: vec![extra_root.path().to_path_buf()],
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -3003,7 +3003,7 @@ async fn implicit_builtin_workspace_profile_preserves_add_dir_metadata_carveouts
 #[tokio::test]
 async fn empty_config_defaults_to_builtin_read_only_without_trust_decision() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
 
     let config = Config::load_from_base_config_with_overrides(
@@ -3012,7 +3012,7 @@ async fn empty_config_defaults_to_builtin_read_only_without_trust_decision() -> 
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -3030,7 +3030,7 @@ async fn empty_config_defaults_to_builtin_read_only_without_trust_decision() -> 
 
 #[tokio::test]
 async fn default_permissions_can_select_builtin_full_access_profile() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
 
     let config = Config::load_from_base_config_with_overrides(
@@ -3042,7 +3042,7 @@ async fn default_permissions_can_select_builtin_full_access_profile() -> std::io
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -3063,7 +3063,7 @@ async fn default_permissions_can_select_builtin_full_access_profile() -> std::io
 
 #[tokio::test]
 async fn legacy_danger_no_sandbox_is_rejected() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
 
     let err = Config::load_from_base_config_with_overrides(
@@ -3075,7 +3075,7 @@ async fn legacy_danger_no_sandbox_is_rejected() -> std::io::Result<()> {
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await
     .expect_err("legacy full-access alias should be rejected");
@@ -3089,7 +3089,7 @@ async fn legacy_danger_no_sandbox_is_rejected() -> std::io::Result<()> {
 
 #[tokio::test]
 async fn user_defined_permission_profile_names_cannot_use_builtin_prefix() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
 
     let err = Config::load_from_base_config_with_overrides(
@@ -3107,7 +3107,7 @@ async fn user_defined_permission_profile_names_cannot_use_builtin_prefix() -> st
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await
     .expect_err("reserved profile name should be rejected");
@@ -3122,7 +3122,7 @@ async fn user_defined_permission_profile_names_cannot_use_builtin_prefix() -> st
 
 #[tokio::test]
 async fn unknown_builtin_permission_profile_name_is_rejected() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
 
     let err = Config::load_from_base_config_with_overrides(
@@ -3134,7 +3134,7 @@ async fn unknown_builtin_permission_profile_name_is_rejected() -> std::io::Resul
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await
     .expect_err("unknown built-in profile name should be rejected");
@@ -3150,7 +3150,7 @@ async fn unknown_builtin_permission_profile_name_is_rejected() -> std::io::Resul
 #[tokio::test]
 async fn permissions_profiles_allow_direct_write_roots_outside_workspace_root()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
     let external_write_dir = TempDir::new()?;
@@ -3184,7 +3184,7 @@ async fn permissions_profiles_allow_direct_write_roots_outside_workspace_root()
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -3217,7 +3217,7 @@ async fn permissions_profiles_allow_direct_write_roots_outside_workspace_root()
 #[tokio::test]
 async fn permissions_profiles_reject_nested_entries_for_non_workspace_roots() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
 
@@ -3251,7 +3251,7 @@ async fn permissions_profiles_reject_nested_entries_for_non_workspace_roots() ->
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await
     .expect_err("nested entries outside :workspace_roots should be rejected");
@@ -3267,7 +3267,7 @@ async fn permissions_profiles_reject_nested_entries_for_non_workspace_roots() ->
 async fn load_workspace_permission_profile(
     profile: PermissionProfileToml,
 ) -> std::io::Result<Config> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
 
@@ -3283,7 +3283,7 @@ async fn load_workspace_permission_profile(
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await
 }
@@ -3434,7 +3434,7 @@ async fn permissions_profiles_allow_empty_filesystem_with_warning() -> std::io::
 
 #[tokio::test]
 async fn permissions_profiles_reject_workspace_root_parent_traversal() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
 
@@ -3468,7 +3468,7 @@ async fn permissions_profiles_reject_workspace_root_parent_traversal() -> std::i
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await
     .expect_err("parent traversal should be rejected for project root subpaths");
@@ -3483,7 +3483,7 @@ async fn permissions_profiles_reject_workspace_root_parent_traversal() -> std::i
 
 #[tokio::test]
 async fn permissions_profiles_allow_network_enablement() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     std::fs::write(cwd.path().join(".git"), "gitdir: nowhere")?;
 
@@ -3517,7 +3517,7 @@ async fn permissions_profiles_allow_network_enablement() -> std::io::Result<()> 
             cwd: Some(cwd.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -3973,7 +3973,7 @@ exclude_slash_tmp = true
 
 #[tokio::test]
 async fn legacy_sandbox_mode_builds_profiles_with_compatible_projection() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     let extra_root = test_absolute_path("/tmp/legacy-extra-root");
     let cases = vec![
@@ -4013,7 +4013,7 @@ exclude_slash_tmp = true
                 cwd: Some(cwd.path().to_path_buf()),
                 ..Default::default()
             },
-            codex_home.abs(),
+            motyga_home.abs(),
         )
         .await?;
 
@@ -4374,7 +4374,7 @@ fn filter_plugin_mcp_servers_by_allowlist_enforces_plugin_and_identity_rules() {
     let requirements = Sourced::new(
         BTreeMap::from([(
             "sample@test".to_string(),
-            codex_config::PluginRequirementsToml {
+            motyga_config::PluginRequirementsToml {
                 mcp_servers: Some(BTreeMap::from([
                     (
                         MATCHED_SERVER.to_string(),
@@ -4424,7 +4424,7 @@ fn filter_plugin_mcp_servers_by_allowlist_blocks_unlisted_plugin() {
     let requirements = Sourced::new(
         BTreeMap::from([(
             "other@test".to_string(),
-            codex_config::PluginRequirementsToml {
+            motyga_config::PluginRequirementsToml {
                 mcp_servers: Some(BTreeMap::from([(
                     "server-a".to_string(),
                     McpServerRequirement::Identity {
@@ -4488,7 +4488,7 @@ fn filter_plugin_mcp_servers_by_matchers_enforces_name_and_invocation() {
     let requirements = Sourced::new(
         BTreeMap::from([(
             "sample@test".to_string(),
-            codex_config::PluginRequirementsToml {
+            motyga_config::PluginRequirementsToml {
                 mcp_servers: Some(BTreeMap::from([
                     (MATCHED_SERVER.to_string(), requirement.clone()),
                     (MISMATCHED_SERVER.to_string(), requirement),
@@ -4519,10 +4519,10 @@ fn filter_plugin_mcp_servers_by_matchers_enforces_name_and_invocation() {
 
 #[tokio::test]
 async fn rebuild_preserving_session_layers_refreshes_requirements() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let user_file = AbsolutePathBuf::resolve_path_against_base(CONFIG_TOML_FILE, codex_home.path());
-    let project_dot_codex =
-        AbsolutePathBuf::resolve_path_against_base("project/.codex", codex_home.path());
+    let motyga_home = TempDir::new()?;
+    let user_file = AbsolutePathBuf::resolve_path_against_base(CONFIG_TOML_FILE, motyga_home.path());
+    let project_dot_motyga =
+        AbsolutePathBuf::resolve_path_against_base("project/.motyga", motyga_home.path());
     let mcp_requirements = BTreeMap::from([
         (
             "session_overrides_user".to_string(),
@@ -4557,11 +4557,11 @@ async fn rebuild_preserving_session_layers_refreshes_requirements() -> std::io::
             },
         ),
     ]);
-    let requirements_toml = codex_config::ConfigRequirementsToml {
+    let requirements_toml = motyga_config::ConfigRequirementsToml {
         mcp_servers: Some(mcp_requirements.clone()),
         ..Default::default()
     };
-    let requirements = codex_config::ConfigRequirements {
+    let requirements = motyga_config::ConfigRequirements {
         mcp_servers: Some(Sourced::new(mcp_requirements, RequirementSource::Unknown)),
         ..Default::default()
     };
@@ -4584,7 +4584,7 @@ async fn rebuild_preserving_session_layers_refreshes_requirements() -> std::io::
             ),
             ConfigLayerEntry::new(
                 ConfigLayerSource::Project {
-                    dot_codex_folder: project_dot_codex.clone(),
+                    dot_motyga_folder: project_dot_motyga.clone(),
                 },
                 toml::toml! {
                     [mcp_servers.fresh_project]
@@ -4613,10 +4613,10 @@ async fn rebuild_preserving_session_layers_refreshes_requirements() -> std::io::
         LOCAL_FS.as_ref(),
         refreshed_toml,
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
         refreshed_layer_stack,
     )
     .await?;
@@ -4639,7 +4639,7 @@ async fn rebuild_preserving_session_layers_refreshes_requirements() -> std::io::
             ),
             ConfigLayerEntry::new(
                 ConfigLayerSource::Project {
-                    dot_codex_folder: project_dot_codex,
+                    dot_motyga_folder: project_dot_motyga,
                 },
                 toml::toml! {
                     [mcp_servers.fresh_project]
@@ -4680,10 +4680,10 @@ async fn rebuild_preserving_session_layers_refreshes_requirements() -> std::io::
         LOCAL_FS.as_ref(),
         thread_toml,
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
         thread_layer_stack,
     )
     .await?;
@@ -4729,8 +4729,8 @@ async fn rebuild_preserving_session_layers_refreshes_requirements() -> std::io::
 #[tokio::test]
 async fn rebuild_preserving_session_layers_refreshes_plugin_derived_mcp_config()
 -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new()?;
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -4751,7 +4751,7 @@ async fn rebuild_preserving_session_layers_refreshes_plugin_derived_mcp_config()
 }"#,
     )?;
 
-    let user_file = AbsolutePathBuf::resolve_path_against_base(CONFIG_TOML_FILE, codex_home.path());
+    let user_file = AbsolutePathBuf::resolve_path_against_base(CONFIG_TOML_FILE, motyga_home.path());
     let refreshed_layer_stack = ConfigLayerStack::new(
         vec![ConfigLayerEntry::new(
             ConfigLayerSource::User {
@@ -4774,10 +4774,10 @@ async fn rebuild_preserving_session_layers_refreshes_plugin_derived_mcp_config()
         LOCAL_FS.as_ref(),
         refreshed_layer_stack.effective_config().try_into()?,
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
         refreshed_layer_stack,
     )
     .await?;
@@ -4803,17 +4803,17 @@ async fn rebuild_preserving_session_layers_refreshes_plugin_derived_mcp_config()
         LOCAL_FS.as_ref(),
         thread_layer_stack.effective_config().try_into()?,
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
         thread_layer_stack,
     )
     .await?;
     let config = thread_config
         .rebuild_preserving_session_layers(&refreshed_config)
         .await?;
-    let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let plugins_manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let mcp_config = config.to_mcp_config(&plugins_manager).await;
     let configured_servers = mcp_config.mcp_server_catalog.configured_servers();
 
@@ -4836,8 +4836,8 @@ async fn rebuild_preserving_session_layers_refreshes_plugin_derived_mcp_config()
 
 #[tokio::test]
 async fn to_mcp_config_omits_plugin_id_when_user_server_shadows_plugin_mcp() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new()?;
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -4858,7 +4858,7 @@ async fn to_mcp_config_omits_plugin_id_when_user_server_shadows_plugin_mcp() -> 
 }"#,
     )?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"
 [features]
 plugins = true
@@ -4872,10 +4872,10 @@ enabled = true
     )?;
 
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .build()
         .await?;
-    let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let plugins_manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let mcp_config = config.to_mcp_config(&plugins_manager).await;
     let configured_servers = mcp_config.mcp_server_catalog.configured_servers();
 
@@ -4895,8 +4895,8 @@ enabled = true
 
 #[tokio::test]
 async fn selected_plugin_wins_after_discovered_plugin_requirements() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new()?;
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -4921,7 +4921,7 @@ async fn selected_plugin_wins_after_discovered_plugin_requirements() -> anyhow::
 }"#,
     )?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"
 [features]
 plugins = true
@@ -4932,7 +4932,7 @@ enabled = true
     )?;
 
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -4943,7 +4943,7 @@ url = "https://sample.example/mcp"
         )
         .build()
         .await?;
-    let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let plugins_manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let mcp_config = config.to_mcp_config(&plugins_manager).await;
     let configured_servers = mcp_config.mcp_server_catalog.configured_servers();
 
@@ -4990,7 +4990,7 @@ url = "https://sample.example/mcp"
             .server("unlisted")
             .map(|server| (server.source().clone(), server.config().clone())),
         Some((
-            codex_mcp::McpServerSource::SelectedPlugin(McpPluginAttribution::new(
+            motyga_mcp::McpServerSource::SelectedPlugin(McpPluginAttribution::new(
                 "selected-root".to_string(),
                 "Selected Plugin".to_string(),
             )),
@@ -5002,8 +5002,8 @@ url = "https://sample.example/mcp"
 
 #[tokio::test]
 async fn to_mcp_config_empty_mcp_requirements_disable_plugin_mcps() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new()?;
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -5024,7 +5024,7 @@ async fn to_mcp_config_empty_mcp_requirements_disable_plugin_mcps() -> anyhow::R
 }"#,
     )?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"
 [features]
 plugins = true
@@ -5035,7 +5035,7 @@ enabled = true
     )?;
 
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -5045,7 +5045,7 @@ enabled = true
         )
         .build()
         .await?;
-    let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let plugins_manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let mcp_config = config.to_mcp_config(&plugins_manager).await;
     let configured_servers = mcp_config.mcp_server_catalog.configured_servers();
 
@@ -5116,8 +5116,8 @@ async fn add_dir_override_extends_workspace_writable_roots() -> std::io::Result<
 
 #[tokio::test]
 async fn default_zsh_path_sets_runtime_zsh_path() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let default_zsh_path = codex_home.path().join("packaged-zsh");
+    let motyga_home = TempDir::new()?;
+    let default_zsh_path = motyga_home.path().join("packaged-zsh");
 
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
@@ -5125,7 +5125,7 @@ async fn default_zsh_path_sets_runtime_zsh_path() -> std::io::Result<()> {
             default_zsh_path: Some(default_zsh_path.abs()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
     assert_eq!(config.zsh_path, Some(default_zsh_path));
@@ -5134,19 +5134,19 @@ async fn default_zsh_path_sets_runtime_zsh_path() -> std::io::Result<()> {
 }
 
 #[tokio::test]
-async fn sqlite_home_defaults_to_codex_home_for_workspace_write() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+async fn sqlite_home_defaults_to_motyga_home_for_workspace_write() -> std::io::Result<()> {
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
         ConfigOverrides {
             sandbox_mode: Some(SandboxMode::WorkspaceWrite),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
-    assert_eq!(config.sqlite_home, codex_home.path().to_path_buf());
+    assert_eq!(config.sqlite_home, motyga_home.path().to_path_buf());
 
     Ok(())
 }
@@ -5154,9 +5154,9 @@ async fn sqlite_home_defaults_to_codex_home_for_workspace_write() -> std::io::Re
 #[tokio::test]
 async fn workspace_write_includes_configured_writable_root_once_without_memories_root()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let memories_root = codex_home.path().join("memories");
-    let writable_root = codex_home.path().join("writable").abs();
+    let motyga_home = TempDir::new()?;
+    let memories_root = motyga_home.path().join("memories");
+    let writable_root = motyga_home.path().join("writable").abs();
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml {
             sandbox_workspace_write: Some(SandboxWorkspaceWrite {
@@ -5169,7 +5169,7 @@ async fn workspace_write_includes_configured_writable_root_once_without_memories
             sandbox_mode: Some(SandboxMode::WorkspaceWrite),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -5208,9 +5208,9 @@ async fn workspace_write_includes_configured_writable_root_once_without_memories
 #[tokio::test]
 async fn memory_tool_makes_memories_root_readable_without_creating_or_widening_writes()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cwd = TempDir::new()?;
-    let memories_root = codex_home.path().join("memories");
+    let memories_root = motyga_home.path().join("memories");
     let memories_root_abs = memories_root.abs();
 
     let config = Config::load_from_base_config_with_overrides(
@@ -5231,7 +5231,7 @@ async fn memory_tool_makes_memories_root_readable_without_creating_or_widening_w
             sandbox_mode: Some(SandboxMode::WorkspaceWrite),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -5263,13 +5263,13 @@ async fn memory_tool_makes_memories_root_readable_without_creating_or_widening_w
 
 #[tokio::test]
 async fn config_defaults_to_file_cli_auth_store_mode() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml::default();
 
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -5283,7 +5283,7 @@ async fn config_defaults_to_file_cli_auth_store_mode() -> std::io::Result<()> {
 
 #[tokio::test]
 async fn config_resolves_explicit_keyring_auth_store_mode() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         cli_auth_credentials_store: Some(AuthCredentialsStoreMode::Keyring),
         ..Default::default()
@@ -5292,7 +5292,7 @@ async fn config_resolves_explicit_keyring_auth_store_mode() -> std::io::Result<(
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -5309,13 +5309,13 @@ async fn config_resolves_explicit_keyring_auth_store_mode() -> std::io::Result<(
 
 #[tokio::test]
 async fn config_resolves_default_oauth_store_mode() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml::default();
 
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -5383,7 +5383,7 @@ fn local_dev_builds_force_file_mcp_oauth_store_modes() {
 
 #[tokio::test]
 async fn feedback_enabled_defaults_to_true() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         feedback: Some(FeedbackConfigToml::default()),
         ..Default::default()
@@ -5392,7 +5392,7 @@ async fn feedback_enabled_defaults_to_true() -> std::io::Result<()> {
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -5520,11 +5520,11 @@ fn web_search_mode_for_turn_does_not_implicitly_select_indexed() -> anyhow::Resu
 
 #[tokio::test]
 async fn project_profiles_are_ignored() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let workspace = TempDir::new()?;
     let workspace_key = workspace.path().to_string_lossy().replace('\\', "\\\\");
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         format!(
             r#"
 [projects."{workspace_key}"]
@@ -5545,7 +5545,7 @@ model = "gpt-project-local"
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .harness_overrides(ConfigOverrides {
             cwd: Some(workspace.path().to_path_buf()),
             ..Default::default()
@@ -5571,7 +5571,7 @@ model = "gpt-project-local"
 
 #[tokio::test]
 async fn feature_table_overrides_legacy_flags() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let mut entries = BTreeMap::new();
     entries.insert("apply_patch_freeform".to_string(), false);
     let cfg = ConfigToml {
@@ -5582,7 +5582,7 @@ async fn feature_table_overrides_legacy_flags() -> std::io::Result<()> {
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -5593,7 +5593,7 @@ async fn feature_table_overrides_legacy_flags() -> std::io::Result<()> {
 
 #[tokio::test]
 async fn legacy_toggles_map_to_features() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         experimental_use_unified_exec_tool: Some(true),
         ..Default::default()
@@ -5602,7 +5602,7 @@ async fn legacy_toggles_map_to_features() -> std::io::Result<()> {
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -5616,7 +5616,7 @@ async fn legacy_toggles_map_to_features() -> std::io::Result<()> {
 #[tokio::test]
 async fn responses_websocket_features_do_not_change_wire_api() -> std::io::Result<()> {
     for feature_key in ["responses_websockets", "responses_websockets_v2"] {
-        let codex_home = TempDir::new()?;
+        let motyga_home = TempDir::new()?;
         let mut entries = BTreeMap::new();
         entries.insert(feature_key.to_string(), true);
         let cfg = ConfigToml {
@@ -5627,7 +5627,7 @@ async fn responses_websocket_features_do_not_change_wire_api() -> std::io::Resul
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.abs(),
+            motyga_home.abs(),
         )
         .await?;
 
@@ -5639,7 +5639,7 @@ async fn responses_websocket_features_do_not_change_wire_api() -> std::io::Resul
 
 #[tokio::test]
 async fn config_honors_explicit_file_oauth_store_mode() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         mcp_oauth_credentials_store: Some(OAuthCredentialsStoreMode::File),
         ..Default::default()
@@ -5648,7 +5648,7 @@ async fn config_honors_explicit_file_oauth_store_mode() -> std::io::Result<()> {
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -5662,27 +5662,27 @@ async fn config_honors_explicit_file_oauth_store_mode() -> std::io::Result<()> {
 
 #[tokio::test]
 async fn managed_config_overrides_oauth_store_mode() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let managed_path = codex_home.path().join("managed_config.toml");
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let motyga_home = TempDir::new()?;
+    let managed_path = motyga_home.path().join("managed_config.toml");
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
 
     std::fs::write(&config_path, "mcp_oauth_credentials_store = \"file\"\n")?;
     std::fs::write(&managed_path, "mcp_oauth_credentials_store = \"keyring\"\n")?;
 
     let overrides = LoaderOverrides::with_managed_config_path_for_tests(managed_path.clone());
 
-    let cwd = codex_home.path().abs();
+    let cwd = motyga_home.path().abs();
     let config_layer_stack = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        codex_home.path(),
+        motyga_home.path(),
         Some(cwd),
         &Vec::new(),
         overrides,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
     let cfg =
-        deserialize_config_toml_with_base(config_layer_stack.effective_config(), codex_home.path())
+        deserialize_config_toml_with_base(config_layer_stack.effective_config(), motyga_home.path())
             .map_err(|e| {
                 tracing::error!("Failed to deserialize overridden config: {e}");
                 e
@@ -5695,7 +5695,7 @@ async fn managed_config_overrides_oauth_store_mode() -> anyhow::Result<()> {
     let final_config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
     assert_eq!(
@@ -5711,9 +5711,9 @@ async fn managed_config_overrides_oauth_store_mode() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn load_global_mcp_servers_returns_empty_if_missing() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
-    let servers = load_global_mcp_servers(codex_home.path()).await?;
+    let servers = load_global_mcp_servers(motyga_home.path()).await?;
     assert!(servers.is_empty());
 
     Ok(())
@@ -5721,8 +5721,8 @@ async fn load_global_mcp_servers_returns_empty_if_missing() -> anyhow::Result<()
 
 #[tokio::test]
 async fn replace_mcp_servers_round_trips_entries() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let expected_cwd = LegacyAppPathString::from_path(codex_home.path());
+    let motyga_home = TempDir::new()?;
+    let expected_cwd = LegacyAppPathString::from_path(motyga_home.path());
 
     let mut servers = BTreeMap::new();
     servers.insert(
@@ -5754,11 +5754,11 @@ async fn replace_mcp_servers_round_trips_entries() -> anyhow::Result<()> {
     );
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     assert_eq!(loaded.len(), 1);
     let docs = loaded.get("docs").expect("docs entry");
     match &docs.transport {
@@ -5784,10 +5784,10 @@ async fn replace_mcp_servers_round_trips_entries() -> anyhow::Result<()> {
 
     let empty = BTreeMap::new();
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(empty.clone())],
     )?;
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     assert!(loaded.is_empty());
 
     Ok(())
@@ -5795,30 +5795,30 @@ async fn replace_mcp_servers_round_trips_entries() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn managed_config_wins_over_cli_overrides() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let managed_path = codex_home.path().join("managed_config.toml");
+    let motyga_home = TempDir::new()?;
+    let managed_path = motyga_home.path().join("managed_config.toml");
 
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         "model = \"base\"\n",
     )?;
     std::fs::write(&managed_path, "model = \"managed_config\"\n")?;
 
     let overrides = LoaderOverrides::with_managed_config_path_for_tests(managed_path);
 
-    let cwd = codex_home.path().abs();
+    let cwd = motyga_home.path().abs();
     let config_layer_stack = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        codex_home.path(),
+        motyga_home.path(),
         Some(cwd),
         &[("model".to_string(), TomlValue::String("cli".to_string()))],
         overrides,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
     let cfg =
-        deserialize_config_toml_with_base(config_layer_stack.effective_config(), codex_home.path())
+        deserialize_config_toml_with_base(config_layer_stack.effective_config(), motyga_home.path())
             .map_err(|e| {
                 tracing::error!("Failed to deserialize overridden config: {e}");
                 e
@@ -5830,8 +5830,8 @@ async fn managed_config_wins_over_cli_overrides() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn load_global_mcp_servers_accepts_legacy_ms_field() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let motyga_home = TempDir::new()?;
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
 
     std::fs::write(
         &config_path,
@@ -5843,7 +5843,7 @@ startup_timeout_ms = 2500
 "#,
     )?;
 
-    let servers = load_global_mcp_servers(codex_home.path()).await?;
+    let servers = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = servers.get("docs").expect("docs entry");
     assert_eq!(docs.startup_timeout_sec, Some(Duration::from_millis(2500)));
 
@@ -5931,7 +5931,7 @@ fn desktop_toml_round_trips_opaque_nested_values() -> anyhow::Result<()> {
         r#"
 [desktop]
 appearanceTheme = "dark"
-selected-avatar-id = "codex"
+selected-avatar-id = "motyga"
 recentViews = ["threads", "settings"]
 
 [desktop.workspace]
@@ -5951,7 +5951,7 @@ pane = { selected = "console", expanded = false }
     );
     assert_eq!(
         desktop.get("selected-avatar-id"),
-        Some(&serde_json::json!("codex"))
+        Some(&serde_json::json!("motyga"))
     );
     assert_eq!(
         desktop.get("recentViews"),
@@ -5978,14 +5978,14 @@ pane = { selected = "console", expanded = false }
 
 #[tokio::test]
 async fn to_mcp_config_preserves_apps_feature_from_config() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let mut config = Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
-    let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let plugins_manager = PluginsManager::new(motyga_home.path().to_path_buf());
 
     config.apps_mcp_product_sku = Some("tpp".to_string());
     let mcp_config = config.to_mcp_config(&plugins_manager).await;
@@ -6005,14 +6005,14 @@ async fn to_mcp_config_preserves_apps_feature_from_config() -> std::io::Result<(
 
 #[tokio::test]
 async fn to_mcp_config_flows_mcp_tool_prefix_from_feature() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let mut config = Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
-    let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let plugins_manager = PluginsManager::new(motyga_home.path().to_path_buf());
 
     let mcp_config = config.to_mcp_config(&plugins_manager).await;
     assert!(mcp_config.prefix_mcp_tool_names);
@@ -6026,14 +6026,14 @@ async fn to_mcp_config_flows_mcp_tool_prefix_from_feature() -> std::io::Result<(
 
 #[tokio::test]
 async fn to_mcp_config_preserves_auth_elicitation_feature_from_config() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let mut config = Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
-    let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let plugins_manager = PluginsManager::new(motyga_home.path().to_path_buf());
 
     let mcp_config = config.to_mcp_config(&plugins_manager).await;
     assert_eq!(
@@ -6056,8 +6056,8 @@ async fn to_mcp_config_preserves_auth_elicitation_feature_from_config() -> std::
 
 #[tokio::test]
 async fn load_global_mcp_servers_rejects_inline_bearer_token() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let motyga_home = TempDir::new()?;
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
 
     std::fs::write(
         &config_path,
@@ -6068,7 +6068,7 @@ bearer_token = "secret"
 "#,
     )?;
 
-    let err = load_global_mcp_servers(codex_home.path())
+    let err = load_global_mcp_servers(motyga_home.path())
         .await
         .expect_err("bearer_token entries should be rejected");
 
@@ -6081,7 +6081,7 @@ bearer_token = "secret"
 
 #[tokio::test]
 async fn replace_mcp_servers_serializes_env_sorted() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6097,7 +6097,7 @@ async fn replace_mcp_servers_serializes_env_sorted() -> anyhow::Result<()> {
                 env_vars: Vec::new(),
                 cwd: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6115,11 +6115,11 @@ async fn replace_mcp_servers_serializes_env_sorted() -> anyhow::Result<()> {
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert_eq!(
         serialized,
@@ -6133,7 +6133,7 @@ ZIG_VAR = "3"
 "#
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     match &docs.transport {
         McpServerTransportConfig::Stdio {
@@ -6161,7 +6161,7 @@ ZIG_VAR = "3"
 
 #[tokio::test]
 async fn replace_mcp_servers_serializes_env_vars() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6174,7 +6174,7 @@ async fn replace_mcp_servers_serializes_env_vars() -> anyhow::Result<()> {
                 env_vars: vec!["ALPHA".into(), "BETA".into()],
                 cwd: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6192,18 +6192,18 @@ async fn replace_mcp_servers_serializes_env_vars() -> anyhow::Result<()> {
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert!(
         serialized.contains(r#"env_vars = ["ALPHA", "BETA"]"#),
         "serialized config missing env_vars field:\n{serialized}"
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     match &docs.transport {
         McpServerTransportConfig::Stdio { env_vars, .. } => {
@@ -6217,7 +6217,7 @@ async fn replace_mcp_servers_serializes_env_vars() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn replace_mcp_servers_serializes_sourced_env_vars() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6236,7 +6236,7 @@ async fn replace_mcp_servers_serializes_sourced_env_vars() -> anyhow::Result<()>
                 ],
                 cwd: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6254,11 +6254,11 @@ async fn replace_mcp_servers_serializes_sourced_env_vars() -> anyhow::Result<()>
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert!(
         serialized
@@ -6266,7 +6266,7 @@ async fn replace_mcp_servers_serializes_sourced_env_vars() -> anyhow::Result<()>
         "serialized config missing sourced env_vars field:\n{serialized}"
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     assert_eq!(loaded, servers);
 
     Ok(())
@@ -6274,9 +6274,9 @@ async fn replace_mcp_servers_serializes_sourced_env_vars() -> anyhow::Result<()>
 
 #[tokio::test]
 async fn replace_mcp_servers_serializes_cwd() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
-    let cwd_path = PathBuf::from("/tmp/codex-mcp");
+    let cwd_path = PathBuf::from("/tmp/motyga-mcp");
     let cwd = LegacyAppPathString::from_path(&cwd_path);
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6289,7 +6289,7 @@ async fn replace_mcp_servers_serializes_cwd() -> anyhow::Result<()> {
                 env_vars: Vec::new(),
                 cwd: Some(cwd.clone()),
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6307,18 +6307,18 @@ async fn replace_mcp_servers_serializes_cwd() -> anyhow::Result<()> {
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert!(
-        serialized.contains(r#"cwd = "/tmp/codex-mcp""#),
+        serialized.contains(r#"cwd = "/tmp/motyga-mcp""#),
         "serialized config missing cwd field:\n{serialized}"
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     match &docs.transport {
         McpServerTransportConfig::Stdio { cwd, .. } => {
@@ -6332,7 +6332,7 @@ async fn replace_mcp_servers_serializes_cwd() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn replace_mcp_servers_streamable_http_serializes_bearer_token() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6344,7 +6344,7 @@ async fn replace_mcp_servers_streamable_http_serializes_bearer_token() -> anyhow
                 http_headers: None,
                 env_http_headers: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6362,11 +6362,11 @@ async fn replace_mcp_servers_streamable_http_serializes_bearer_token() -> anyhow
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert_eq!(
         serialized,
@@ -6377,7 +6377,7 @@ startup_timeout_sec = 2.0
 "#
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     match &docs.transport {
         McpServerTransportConfig::StreamableHttp {
@@ -6400,7 +6400,7 @@ startup_timeout_sec = 2.0
 
 #[tokio::test]
 async fn replace_mcp_servers_streamable_http_serializes_custom_headers() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6415,7 +6415,7 @@ async fn replace_mcp_servers_streamable_http_serializes_custom_headers() -> anyh
                     "DOCS_AUTH".to_string(),
                 )])),
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6432,11 +6432,11 @@ async fn replace_mcp_servers_streamable_http_serializes_custom_headers() -> anyh
         },
     )]);
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert_eq!(
         serialized,
@@ -6453,7 +6453,7 @@ X-Auth = "DOCS_AUTH"
 "#
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     match &docs.transport {
         McpServerTransportConfig::StreamableHttp {
@@ -6481,9 +6481,9 @@ X-Auth = "DOCS_AUTH"
 
 #[tokio::test]
 async fn replace_mcp_servers_streamable_http_removes_optional_sections() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
 
     let mut servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6498,7 +6498,7 @@ async fn replace_mcp_servers_streamable_http_removes_optional_sections() -> anyh
                     "DOCS_AUTH".to_string(),
                 )])),
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6516,7 +6516,7 @@ async fn replace_mcp_servers_streamable_http_removes_optional_sections() -> anyh
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
     let serialized_with_optional = std::fs::read_to_string(&config_path)?;
@@ -6534,7 +6534,7 @@ async fn replace_mcp_servers_streamable_http_removes_optional_sections() -> anyh
                 http_headers: None,
                 env_http_headers: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6551,7 +6551,7 @@ async fn replace_mcp_servers_streamable_http_removes_optional_sections() -> anyh
         },
     );
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
@@ -6563,7 +6563,7 @@ url = "https://example.com/mcp"
 "#
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     match &docs.transport {
         McpServerTransportConfig::StreamableHttp {
@@ -6588,8 +6588,8 @@ url = "https://example.com/mcp"
 #[tokio::test]
 async fn replace_mcp_servers_streamable_http_isolates_headers_between_servers() -> anyhow::Result<()>
 {
-    let codex_home = TempDir::new()?;
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let motyga_home = TempDir::new()?;
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
 
     let servers = BTreeMap::from([
         (
@@ -6605,7 +6605,7 @@ async fn replace_mcp_servers_streamable_http_isolates_headers_between_servers() 
                         "DOCS_AUTH".to_string(),
                     )])),
                 },
-                environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+                environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
                 enabled: true,
                 required: false,
                 supports_parallel_tool_calls: false,
@@ -6632,7 +6632,7 @@ async fn replace_mcp_servers_streamable_http_isolates_headers_between_servers() 
                     env_vars: Vec::new(),
                     cwd: None,
                 },
-                environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+                environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
                 enabled: true,
                 required: false,
                 supports_parallel_tool_calls: false,
@@ -6651,7 +6651,7 @@ async fn replace_mcp_servers_streamable_http_isolates_headers_between_servers() 
     ]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
@@ -6673,7 +6673,7 @@ async fn replace_mcp_servers_streamable_http_isolates_headers_between_servers() 
         "serialized config should not add bearer token to logs:\n{serialized}"
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     match &docs.transport {
         McpServerTransportConfig::StreamableHttp {
@@ -6708,7 +6708,7 @@ async fn replace_mcp_servers_streamable_http_isolates_headers_between_servers() 
 
 #[tokio::test]
 async fn replace_mcp_servers_serializes_disabled_flag() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6721,7 +6721,7 @@ async fn replace_mcp_servers_serializes_disabled_flag() -> anyhow::Result<()> {
                 env_vars: Vec::new(),
                 cwd: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: false,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6739,18 +6739,18 @@ async fn replace_mcp_servers_serializes_disabled_flag() -> anyhow::Result<()> {
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert!(
         serialized.contains("enabled = false"),
         "serialized config missing disabled flag:\n{serialized}"
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     assert!(!docs.enabled);
 
@@ -6759,7 +6759,7 @@ async fn replace_mcp_servers_serializes_disabled_flag() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn replace_mcp_servers_serializes_required_flag() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6772,7 +6772,7 @@ async fn replace_mcp_servers_serializes_required_flag() -> anyhow::Result<()> {
                 env_vars: Vec::new(),
                 cwd: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: true,
             supports_parallel_tool_calls: false,
@@ -6790,18 +6790,18 @@ async fn replace_mcp_servers_serializes_required_flag() -> anyhow::Result<()> {
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert!(
         serialized.contains("required = true"),
         "serialized config missing required flag:\n{serialized}"
     );
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     assert!(docs.required);
 
@@ -6810,7 +6810,7 @@ async fn replace_mcp_servers_serializes_required_flag() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn replace_mcp_servers_serializes_tool_filters() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6823,7 +6823,7 @@ async fn replace_mcp_servers_serializes_tool_filters() -> anyhow::Result<()> {
                 env_vars: Vec::new(),
                 cwd: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6841,16 +6841,16 @@ async fn replace_mcp_servers_serializes_tool_filters() -> anyhow::Result<()> {
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert!(serialized.contains(r#"enabled_tools = ["allowed"]"#));
     assert!(serialized.contains(r#"disabled_tools = ["blocked"]"#));
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     assert_eq!(
         docs.enabled_tools.as_ref(),
@@ -6866,7 +6866,7 @@ async fn replace_mcp_servers_serializes_tool_filters() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn replace_mcp_servers_streamable_http_serializes_oauth_resource() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let servers = BTreeMap::from([(
         "docs".to_string(),
@@ -6878,7 +6878,7 @@ async fn replace_mcp_servers_streamable_http_serializes_oauth_resource() -> anyh
                 http_headers: None,
                 env_http_headers: None,
             },
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             enabled: true,
             required: false,
             supports_parallel_tool_calls: false,
@@ -6890,7 +6890,7 @@ async fn replace_mcp_servers_streamable_http_serializes_oauth_resource() -> anyh
             disabled_tools: None,
             scopes: None,
             oauth: Some(McpServerOAuthConfig {
-                client_id: Some("eci-prd-pub-codex-123".to_string()),
+                client_id: Some("eci-prd-pub-motyga-123".to_string()),
             }),
             oauth_resource: Some("https://resource.example.com".to_string()),
             tools: HashMap::new(),
@@ -6898,37 +6898,37 @@ async fn replace_mcp_servers_streamable_http_serializes_oauth_resource() -> anyh
     )]);
 
     apply_blocking(
-        codex_home.path(),
+        motyga_home.path(),
         &[ConfigEdit::ReplaceMcpServers(servers.clone())],
     )?;
 
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert!(serialized.contains("[mcp_servers.docs.oauth]"));
-    assert!(serialized.contains(r#"client_id = "eci-prd-pub-codex-123""#));
+    assert!(serialized.contains(r#"client_id = "eci-prd-pub-motyga-123""#));
     assert!(serialized.contains(r#"oauth_resource = "https://resource.example.com""#));
 
-    let loaded = load_global_mcp_servers(codex_home.path()).await?;
+    let loaded = load_global_mcp_servers(motyga_home.path()).await?;
     let docs = loaded.get("docs").expect("docs entry");
     assert_eq!(
         docs.oauth_resource.as_deref(),
         Some("https://resource.example.com")
     );
-    assert_eq!(docs.oauth_client_id(), Some("eci-prd-pub-codex-123"));
+    assert_eq!(docs.oauth_client_id(), Some("eci-prd-pub-motyga-123"));
 
     Ok(())
 }
 
 #[tokio::test]
 async fn set_model_updates_defaults() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
-    ConfigEditsBuilder::new(codex_home.path())
+    ConfigEditsBuilder::new(motyga_home.path())
         .set_model(Some("gpt-5.4"), Some(ReasoningEffort::High))
         .apply()
         .await?;
 
-    let serialized = tokio::fs::read_to_string(codex_home.path().join(CONFIG_TOML_FILE)).await?;
+    let serialized = tokio::fs::read_to_string(motyga_home.path().join(CONFIG_TOML_FILE)).await?;
     let parsed: ConfigToml = toml::from_str(&serialized)?;
 
     assert_eq!(parsed.model.as_deref(), Some("gpt-5.4"));
@@ -6939,14 +6939,14 @@ async fn set_model_updates_defaults() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn for_config_writes_selected_user_config_file() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let base_config = codex_home.path().join(CONFIG_TOML_FILE);
-    let selected_config = codex_home.path().join("work.config.toml");
+    let motyga_home = TempDir::new()?;
+    let base_config = motyga_home.path().join(CONFIG_TOML_FILE);
+    let selected_config = motyga_home.path().join("work.config.toml");
     tokio::fs::write(&base_config, r#"model_provider = "openai""#).await?;
     tokio::fs::write(&selected_config, r#"model = "gpt-old""#).await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .loader_overrides(LoaderOverrides {
             user_config_path: Some(selected_config.abs()),
             user_config_profile: Some("work".parse().expect("profile-v2 name")),
@@ -6974,19 +6974,19 @@ async fn for_config_writes_selected_user_config_file() -> anyhow::Result<()> {
 
 #[test]
 fn profile_v2_config_path_resolves_validated_names() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let profile_name: ProfileV2Name = "work".parse()?;
     assert_eq!(
-        resolve_profile_v2_config_path(codex_home.path(), &profile_name),
-        codex_home.path().join("work.config.toml").abs()
+        resolve_profile_v2_config_path(motyga_home.path(), &profile_name),
+        motyga_home.path().join("work.config.toml").abs()
     );
     Ok(())
 }
 
 #[tokio::test]
 async fn set_model_overwrites_existing_model() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
-    let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+    let motyga_home = TempDir::new()?;
+    let config_path = motyga_home.path().join(CONFIG_TOML_FILE);
 
     tokio::fs::write(
         &config_path,
@@ -7000,7 +7000,7 @@ model = "gpt-4.1"
     )
     .await?;
 
-    ConfigEditsBuilder::new(codex_home.path())
+    ConfigEditsBuilder::new(motyga_home.path())
         .set_model(Some("o4-mini"), Some(ReasoningEffort::High))
         .apply()
         .await?;
@@ -7023,7 +7023,7 @@ model = "gpt-4.1"
 
 struct PrecedenceTestFixture {
     cwd: TempDir,
-    codex_home: TempDir,
+    motyga_home: TempDir,
     cfg: ConfigToml,
 }
 
@@ -7032,14 +7032,14 @@ impl PrecedenceTestFixture {
         self.cwd.path().to_path_buf()
     }
 
-    fn codex_home(&self) -> AbsolutePathBuf {
-        self.codex_home.abs()
+    fn motyga_home(&self) -> AbsolutePathBuf {
+        self.motyga_home.abs()
     }
 }
 
 #[tokio::test]
 async fn cli_override_sets_compact_prompt() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let overrides = ConfigOverrides {
         compact_prompt: Some("Use the compact override".to_string()),
         ..Default::default()
@@ -7048,7 +7048,7 @@ async fn cli_override_sets_compact_prompt() -> std::io::Result<()> {
     let config = Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
         overrides,
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -7062,8 +7062,8 @@ async fn cli_override_sets_compact_prompt() -> std::io::Result<()> {
 
 #[tokio::test]
 async fn loads_compact_prompt_from_file() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let workspace = codex_home.path().join("workspace");
+    let motyga_home = TempDir::new()?;
+    let workspace = motyga_home.path().join("workspace");
     std::fs::create_dir_all(&workspace)?;
 
     let prompt_path = workspace.join("compact_prompt.txt");
@@ -7080,7 +7080,7 @@ async fn loads_compact_prompt_from_file() -> std::io::Result<()> {
     };
 
     let config =
-        Config::load_from_base_config_with_overrides(cfg, overrides, codex_home.abs()).await?;
+        Config::load_from_base_config_with_overrides(cfg, overrides, motyga_home.abs()).await?;
 
     assert_eq!(
         config.compact_prompt.as_deref(),
@@ -7092,11 +7092,11 @@ async fn loads_compact_prompt_from_file() -> std::io::Result<()> {
 
 #[tokio::test]
 async fn load_config_uses_requirements_guardian_policy_config() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config_layer_stack = ConfigLayerStack::new(
         Vec::new(),
         Default::default(),
-        codex_config::ConfigRequirementsToml {
+        motyga_config::ConfigRequirementsToml {
             guardian_policy_config: Some(
                 "  Use the workspace-managed guardian policy.  ".to_string(),
             ),
@@ -7109,10 +7109,10 @@ async fn load_config_uses_requirements_guardian_policy_config() -> std::io::Resu
         LOCAL_FS.as_ref(),
         ConfigToml::default(),
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
         config_layer_stack,
     )
     .await?;
@@ -7145,7 +7145,7 @@ policy = "Use the user-configured guardian policy."
 
 #[tokio::test]
 async fn load_config_uses_auto_review_guardian_policy_config() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         auto_review: Some(AutoReviewToml {
             policy: Some("  Use the user-configured guardian policy.  ".to_string()),
@@ -7156,10 +7156,10 @@ async fn load_config_uses_auto_review_guardian_policy_config() -> std::io::Resul
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -7173,11 +7173,11 @@ async fn load_config_uses_auto_review_guardian_policy_config() -> std::io::Resul
 
 #[tokio::test]
 async fn requirements_guardian_policy_beats_auto_review() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config_layer_stack = ConfigLayerStack::new(
         Vec::new(),
         Default::default(),
-        codex_config::ConfigRequirementsToml {
+        motyga_config::ConfigRequirementsToml {
             guardian_policy_config: Some("Use the managed guardian policy.".to_string()),
             ..Default::default()
         },
@@ -7194,10 +7194,10 @@ async fn requirements_guardian_policy_beats_auto_review() -> std::io::Result<()>
         LOCAL_FS.as_ref(),
         cfg,
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
         config_layer_stack,
     )
     .await?;
@@ -7212,7 +7212,7 @@ async fn requirements_guardian_policy_beats_auto_review() -> std::io::Result<()>
 
 #[tokio::test]
 async fn load_config_ignores_empty_auto_review_guardian_policy_config() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         auto_review: Some(AutoReviewToml {
             policy: Some("   ".to_string()),
@@ -7223,10 +7223,10 @@ async fn load_config_ignores_empty_auto_review_guardian_policy_config() -> std::
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -7237,11 +7237,11 @@ async fn load_config_ignores_empty_auto_review_guardian_policy_config() -> std::
 
 #[tokio::test]
 async fn load_config_ignores_empty_requirements_guardian_policy_config() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config_layer_stack = ConfigLayerStack::new(
         Vec::new(),
         Default::default(),
-        codex_config::ConfigRequirementsToml {
+        motyga_config::ConfigRequirementsToml {
             guardian_policy_config: Some("   ".to_string()),
             ..Default::default()
         },
@@ -7252,10 +7252,10 @@ async fn load_config_ignores_empty_requirements_guardian_policy_config() -> std:
         LOCAL_FS.as_ref(),
         ConfigToml::default(),
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
         config_layer_stack,
     )
     .await?;
@@ -7267,8 +7267,8 @@ async fn load_config_ignores_empty_requirements_guardian_policy_config() -> std:
 
 #[tokio::test]
 async fn load_config_rejects_missing_agent_role_config_file() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let missing_path = codex_home.path().join("agents").join("researcher.toml");
+    let motyga_home = TempDir::new()?;
+    let missing_path = motyga_home.path().join("agents").join("researcher.toml");
     let cfg = ConfigToml {
         agents: Some(AgentsToml {
             max_threads: None,
@@ -7290,7 +7290,7 @@ async fn load_config_rejects_missing_agent_role_config_file() -> std::io::Result
     let result = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await;
     let err = result.expect_err("missing role config file should be rejected");
@@ -7304,8 +7304,8 @@ async fn load_config_rejects_missing_agent_role_config_file() -> std::io::Result
 
 #[tokio::test]
 async fn agent_role_relative_config_file_resolves_against_config_toml() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let role_config_path = codex_home.path().join("agents").join("researcher.toml");
+    let motyga_home = TempDir::new()?;
+    let role_config_path = motyga_home.path().join("agents").join("researcher.toml");
     tokio::fs::create_dir_all(
         role_config_path
             .parent()
@@ -7318,7 +7318,7 @@ async fn agent_role_relative_config_file_resolves_against_config_toml() -> std::
     )
     .await?;
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[agents.researcher]
 description = "Research role"
 config_file = "./agents/researcher.toml"
@@ -7328,8 +7328,8 @@ nickname_candidates = ["Hypatia", "Noether"]
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
     assert_eq!(
@@ -7353,8 +7353,8 @@ nickname_candidates = ["Hypatia", "Noether"]
 
 #[tokio::test]
 async fn agent_role_relative_config_file_resolves_from_config_layer() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let role_config_path = codex_home.path().join("agents").join("researcher.toml");
+    let motyga_home = TempDir::new()?;
+    let role_config_path = motyga_home.path().join("agents").join("researcher.toml");
     tokio::fs::create_dir_all(
         role_config_path
             .parent()
@@ -7373,16 +7373,16 @@ config_file = "./agents/researcher.toml"
 "#,
     )
     .expect("agent role layer config should parse");
-    let config_layer_stack = codex_config::ConfigLayerStack::new(
-        vec![codex_config::ConfigLayerEntry::new(
+    let config_layer_stack = motyga_config::ConfigLayerStack::new(
+        vec![motyga_config::ConfigLayerEntry::new(
             ConfigLayerSource::User {
-                file: codex_home.path().join(CONFIG_TOML_FILE).abs(),
+                file: motyga_home.path().join(CONFIG_TOML_FILE).abs(),
                 profile: None,
             },
             layer_config,
         )],
         Default::default(),
-        codex_config::ConfigRequirementsToml::default(),
+        motyga_config::ConfigRequirementsToml::default(),
     )
     .map_err(std::io::Error::other)?;
 
@@ -7390,10 +7390,10 @@ config_file = "./agents/researcher.toml"
         LOCAL_FS.as_ref(),
         ConfigToml::default(),
         ConfigOverrides {
-            cwd: Some(codex_home.path().to_path_buf()),
+            cwd: Some(motyga_home.path().to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
         config_layer_stack,
     )
     .await?;
@@ -7411,8 +7411,8 @@ config_file = "./agents/researcher.toml"
 
 #[tokio::test]
 async fn agent_role_file_metadata_overrides_config_toml_metadata() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let role_config_path = codex_home.path().join("agents").join("researcher.toml");
+    let motyga_home = TempDir::new()?;
+    let role_config_path = motyga_home.path().join("agents").join("researcher.toml");
     tokio::fs::create_dir_all(
         role_config_path
             .parent()
@@ -7430,7 +7430,7 @@ model = "gpt-5.2"
     )
     .await?;
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[agents.researcher]
 description = "Research role from config"
 config_file = "./agents/researcher.toml"
@@ -7440,8 +7440,8 @@ nickname_candidates = ["Noether"]
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
     let role = config
@@ -7463,7 +7463,7 @@ nickname_candidates = ["Noether"]
 #[tokio::test]
 async fn agent_role_file_without_developer_instructions_is_dropped_with_warning()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let nested_cwd = repo_root.path().join("packages").join("app");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
@@ -7471,7 +7471,7 @@ async fn agent_role_file_without_developer_instructions_is_dropped_with_warning(
 
     let workspace_key = repo_root.path().to_string_lossy().replace('\\', "\\\\");
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         format!(
             r#"[projects."{workspace_key}"]
 trust_level = "trusted"
@@ -7503,7 +7503,7 @@ model = "gpt-5.2"
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .harness_overrides(ConfigOverrides {
             cwd: Some(nested_cwd),
             ..Default::default()
@@ -7531,8 +7531,8 @@ model = "gpt-5.2"
 #[tokio::test]
 async fn legacy_agent_role_config_file_allows_missing_developer_instructions() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
-    let role_config_path = codex_home.path().join("agents").join("researcher.toml");
+    let motyga_home = TempDir::new()?;
+    let role_config_path = motyga_home.path().join("agents").join("researcher.toml");
     tokio::fs::create_dir_all(
         role_config_path
             .parent()
@@ -7548,7 +7548,7 @@ model_reasoning_effort = "high"
     )
     .await?;
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[agents.researcher]
 description = "Research role from config"
 config_file = "./agents/researcher.toml"
@@ -7557,8 +7557,8 @@ config_file = "./agents/researcher.toml"
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
     assert_eq!(
@@ -7582,8 +7582,8 @@ config_file = "./agents/researcher.toml"
 #[tokio::test]
 async fn agent_role_without_description_after_merge_is_dropped_with_warning() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
-    let role_config_path = codex_home.path().join("agents").join("researcher.toml");
+    let motyga_home = TempDir::new()?;
+    let role_config_path = motyga_home.path().join("agents").join("researcher.toml");
     tokio::fs::create_dir_all(
         role_config_path
             .parent()
@@ -7599,7 +7599,7 @@ model = "gpt-5.2"
     )
     .await?;
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[agents.researcher]
 config_file = "./agents/researcher.toml"
 
@@ -7610,8 +7610,8 @@ description = "Review role"
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
     assert!(!config.agent_roles.contains_key("researcher"));
@@ -7634,7 +7634,7 @@ description = "Review role"
 
 #[tokio::test]
 async fn discovered_agent_role_file_without_name_is_dropped_with_warning() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let nested_cwd = repo_root.path().join("packages").join("app");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
@@ -7642,7 +7642,7 @@ async fn discovered_agent_role_file_without_name_is_dropped_with_warning() -> st
 
     let workspace_key = repo_root.path().to_string_lossy().replace('\\', "\\\\");
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         format!(
             r#"[projects."{workspace_key}"]
 trust_level = "trusted"
@@ -7672,7 +7672,7 @@ developer_instructions = "Review carefully"
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .harness_overrides(ConfigOverrides {
             cwd: Some(nested_cwd),
             ..Default::default()
@@ -7699,8 +7699,8 @@ developer_instructions = "Review carefully"
 
 #[tokio::test]
 async fn agent_role_file_name_takes_precedence_over_config_key() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let role_config_path = codex_home.path().join("agents").join("researcher.toml");
+    let motyga_home = TempDir::new()?;
+    let role_config_path = motyga_home.path().join("agents").join("researcher.toml");
     tokio::fs::create_dir_all(
         role_config_path
             .parent()
@@ -7718,7 +7718,7 @@ model = "gpt-5.2"
     )
     .await?;
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[agents.researcher]
 description = "Research role from config"
 config_file = "./agents/researcher.toml"
@@ -7727,8 +7727,8 @@ config_file = "./agents/researcher.toml"
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
     assert_eq!(config.agent_roles.contains_key("researcher"), false);
@@ -7744,9 +7744,9 @@ config_file = "./agents/researcher.toml"
 
 #[tokio::test]
 async fn loads_legacy_split_agent_roles_from_config_toml() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let researcher_path = codex_home.path().join("agents").join("researcher.toml");
-    let reviewer_path = codex_home.path().join("agents").join("reviewer.toml");
+    let motyga_home = TempDir::new()?;
+    let researcher_path = motyga_home.path().join("agents").join("researcher.toml");
+    let reviewer_path = motyga_home.path().join("agents").join("reviewer.toml");
     tokio::fs::create_dir_all(
         researcher_path
             .parent()
@@ -7764,7 +7764,7 @@ async fn loads_legacy_split_agent_roles_from_config_toml() -> std::io::Result<()
     )
     .await?;
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[agents.researcher]
 description = "Research role"
 config_file = "./agents/researcher.toml"
@@ -7779,8 +7779,8 @@ nickname_candidates = ["Atlas"]
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -7834,7 +7834,7 @@ nickname_candidates = ["Atlas"]
 
 #[tokio::test]
 async fn discovers_multiple_standalone_agent_role_files() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let nested_cwd = repo_root.path().join("packages").join("app");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
@@ -7842,7 +7842,7 @@ async fn discovers_multiple_standalone_agent_role_files() -> std::io::Result<()>
 
     let workspace_key = repo_root.path().to_string_lossy().replace('\\', "\\\\");
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         format!(
             r#"[projects."{workspace_key}"]
 trust_level = "trusted"
@@ -7913,7 +7913,7 @@ developer_instructions = "Write carefully"
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .harness_overrides(ConfigOverrides {
             cwd: Some(nested_cwd),
             ..Default::default()
@@ -7965,7 +7965,7 @@ developer_instructions = "Write carefully"
 #[tokio::test]
 async fn mixed_legacy_and_standalone_agent_role_sources_merge_with_precedence()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let nested_cwd = repo_root.path().join("packages").join("app");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
@@ -7973,7 +7973,7 @@ async fn mixed_legacy_and_standalone_agent_role_sources_merge_with_precedence()
 
     let workspace_key = repo_root.path().to_string_lossy().replace('\\', "\\\\");
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         format!(
             r#"[projects."{workspace_key}"]
 trust_level = "trusted"
@@ -7992,7 +7992,7 @@ nickname_candidates = ["Ada"]
     )
     .await?;
 
-    let home_agents_dir = codex_home.path().join("agents");
+    let home_agents_dir = motyga_home.path().join("agents");
     tokio::fs::create_dir_all(&home_agents_dir).await?;
     tokio::fs::write(
         home_agents_dir.join("researcher.toml"),
@@ -8037,7 +8037,7 @@ model = "gpt-5.2"
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .harness_overrides(ConfigOverrides {
             cwd: Some(nested_cwd),
             ..Default::default()
@@ -8111,7 +8111,7 @@ model = "gpt-5.2"
 #[tokio::test]
 async fn higher_precedence_agent_role_can_inherit_description_from_lower_layer()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let nested_cwd = repo_root.path().join("packages").join("app");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
@@ -8119,7 +8119,7 @@ async fn higher_precedence_agent_role_can_inherit_description_from_lower_layer()
 
     let workspace_key = repo_root.path().to_string_lossy().replace('\\', "\\\\");
     tokio::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         format!(
             r#"[projects."{workspace_key}"]
 trust_level = "trusted"
@@ -8132,7 +8132,7 @@ config_file = "./agents/researcher.toml"
     )
     .await?;
 
-    let home_agents_dir = codex_home.path().join("agents");
+    let home_agents_dir = motyga_home.path().join("agents");
     tokio::fs::create_dir_all(&home_agents_dir).await?;
     tokio::fs::write(
         home_agents_dir.join("researcher.toml"),
@@ -8157,7 +8157,7 @@ model = "gpt-5-mini"
     .await?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .harness_overrides(ConfigOverrides {
             cwd: Some(nested_cwd),
             ..Default::default()
@@ -8193,7 +8193,7 @@ model = "gpt-5-mini"
 
 #[tokio::test]
 async fn load_config_resolves_agent_interrupt_message() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         agents: Some(AgentsToml {
             interrupt_message: Some(false),
@@ -8205,7 +8205,7 @@ async fn load_config_resolves_agent_interrupt_message() -> std::io::Result<()> {
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -8216,7 +8216,7 @@ async fn load_config_resolves_agent_interrupt_message() -> std::io::Result<()> {
 
 #[tokio::test]
 async fn load_config_normalizes_agent_role_nickname_candidates() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         agents: Some(AgentsToml {
             max_threads: None,
@@ -8241,7 +8241,7 @@ async fn load_config_normalizes_agent_role_nickname_candidates() -> std::io::Res
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -8259,7 +8259,7 @@ async fn load_config_normalizes_agent_role_nickname_candidates() -> std::io::Res
 
 #[tokio::test]
 async fn load_config_rejects_empty_agent_role_nickname_candidates() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         agents: Some(AgentsToml {
             max_threads: None,
@@ -8281,7 +8281,7 @@ async fn load_config_rejects_empty_agent_role_nickname_candidates() -> std::io::
     let result = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await;
     let err = result.expect_err("empty nickname candidates should be rejected");
@@ -8296,7 +8296,7 @@ async fn load_config_rejects_empty_agent_role_nickname_candidates() -> std::io::
 
 #[tokio::test]
 async fn load_config_rejects_duplicate_agent_role_nickname_candidates() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         agents: Some(AgentsToml {
             max_threads: None,
@@ -8318,7 +8318,7 @@ async fn load_config_rejects_duplicate_agent_role_nickname_candidates() -> std::
     let result = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await;
     let err = result.expect_err("duplicate nickname candidates should be rejected");
@@ -8333,7 +8333,7 @@ async fn load_config_rejects_duplicate_agent_role_nickname_candidates() -> std::
 
 #[tokio::test]
 async fn load_config_rejects_unsafe_agent_role_nickname_candidates() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         agents: Some(AgentsToml {
             max_threads: None,
@@ -8355,7 +8355,7 @@ async fn load_config_rejects_unsafe_agent_role_nickname_candidates() -> std::io:
     let result = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await;
     let err = result.expect_err("unsafe nickname candidates should be rejected");
@@ -8369,8 +8369,8 @@ async fn load_config_rejects_unsafe_agent_role_nickname_candidates() -> std::io:
 
 #[tokio::test]
 async fn model_catalog_json_loads_from_path() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let catalog_path = codex_home.path().join("catalog.json");
+    let motyga_home = TempDir::new()?;
+    let catalog_path = motyga_home.path().join("catalog.json");
     let mut catalog = bundled_models_response()
         .unwrap_or_else(|err| panic!("bundled models.json should parse: {err}"));
     catalog.models = catalog.models.into_iter().take(1).collect();
@@ -8387,7 +8387,7 @@ async fn model_catalog_json_loads_from_path() -> std::io::Result<()> {
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -8397,8 +8397,8 @@ async fn model_catalog_json_loads_from_path() -> std::io::Result<()> {
 
 #[tokio::test]
 async fn model_catalog_json_rejects_empty_catalog() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let catalog_path = codex_home.path().join("catalog.json");
+    let motyga_home = TempDir::new()?;
+    let catalog_path = motyga_home.path().join("catalog.json");
     std::fs::write(&catalog_path, r#"{"models":[]}"#)?;
 
     let cfg = ConfigToml {
@@ -8409,7 +8409,7 @@ async fn model_catalog_json_rejects_empty_catalog() -> std::io::Result<()> {
     let err = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await
     .expect_err("empty custom catalog should fail config load");
@@ -8478,11 +8478,11 @@ model_verbosity = "high"
     // a parent folder, either.
     std::fs::write(cwd.join(".git"), "gitdir: nowhere")?;
 
-    let codex_home_temp_dir = TempDir::new().unwrap();
+    let motyga_home_temp_dir = TempDir::new().unwrap();
 
     Ok(PrecedenceTestFixture {
         cwd: cwd_temp_dir,
-        codex_home: codex_home_temp_dir,
+        motyga_home: motyga_home_temp_dir,
         cfg,
     })
 }
@@ -8498,7 +8498,7 @@ async fn legacy_profile_selection_is_rejected() -> std::io::Result<()> {
             cwd: Some(fixture.cwd_path()),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
     )
     .await
     .expect_err("legacy profile selection should be rejected");
@@ -8522,7 +8522,7 @@ async fn metrics_exporter_defaults_to_statsig_when_missing() -> std::io::Result<
             cwd: Some(fixture.cwd_path()),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
     )
     .await?;
 
@@ -8538,7 +8538,7 @@ async fn trace_exporter_defaults_to_none_when_log_exporter_is_set() -> std::io::
         exporter: Some(OtelExporterKind::OtlpHttp {
             endpoint: "http://localhost:14318/v1/logs".to_string(),
             headers: HashMap::new(),
-            protocol: codex_config::types::OtelHttpProtocol::Binary,
+            protocol: motyga_config::types::OtelHttpProtocol::Binary,
             tls: None,
         }),
         metrics_exporter: Some(OtelExporterKind::None),
@@ -8551,7 +8551,7 @@ async fn trace_exporter_defaults_to_none_when_log_exporter_is_set() -> std::io::
             cwd: Some(fixture.cwd_path()),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
     )
     .await?;
 
@@ -8584,7 +8584,7 @@ beta = "two"
             cwd: Some(fixture.cwd_path()),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
     )
     .await?;
 
@@ -8633,7 +8633,7 @@ alpha = "one\ntwo"
             cwd: Some(fixture.cwd_path()),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
     )
     .await?;
 
@@ -8687,7 +8687,7 @@ async fn explicit_null_service_tier_override_maps_to_default_service_tier() -> s
             service_tier: Some(None),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
     )
     .await?;
 
@@ -8710,7 +8710,7 @@ async fn default_service_tier_override_uses_default_request_value() -> std::io::
             service_tier: Some(Some("default".to_string())),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
     )
     .await?;
 
@@ -8732,7 +8732,7 @@ async fn legacy_fast_service_tier_override_uses_priority_request_value() -> std:
             service_tier: Some(Some("fast".to_string())),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
     )
     .await?;
 
@@ -8748,7 +8748,7 @@ async fn config_toml_priority_service_tier_uses_priority_request_value() -> std:
     let mut fixture = create_test_fixture()?;
     fixture.cfg.service_tier = Some(ServiceTier::Fast.request_value().to_string());
     let cwd = fixture.cwd_path();
-    let codex_home = fixture.codex_home();
+    let motyga_home = fixture.motyga_home();
 
     let config = Config::load_from_base_config_with_overrides(
         fixture.cfg,
@@ -8756,7 +8756,7 @@ async fn config_toml_priority_service_tier_uses_priority_request_value() -> std:
             cwd: Some(cwd),
             ..Default::default()
         },
-        codex_home,
+        motyga_home,
     )
     .await?;
 
@@ -8772,7 +8772,7 @@ async fn config_toml_service_tier_accepts_arbitrary_string() -> std::io::Result<
     let mut fixture = create_test_fixture()?;
     fixture.cfg.service_tier = Some("experimental-tier-id".to_string());
     let cwd = fixture.cwd_path();
-    let codex_home = fixture.codex_home();
+    let motyga_home = fixture.motyga_home();
 
     let config = Config::load_from_base_config_with_overrides(
         fixture.cfg,
@@ -8780,7 +8780,7 @@ async fn config_toml_service_tier_accepts_arbitrary_string() -> std::io::Result<
             cwd: Some(cwd),
             ..Default::default()
         },
-        codex_home,
+        motyga_home,
     )
     .await?;
 
@@ -8796,7 +8796,7 @@ async fn config_toml_legacy_fast_service_tier_uses_priority_request_value() -> s
     let mut fixture = create_test_fixture()?;
     fixture.cfg.service_tier = Some("fast".to_string());
     let cwd = fixture.cwd_path();
-    let codex_home = fixture.codex_home();
+    let motyga_home = fixture.motyga_home();
 
     let config = Config::load_from_base_config_with_overrides(
         fixture.cfg,
@@ -8804,7 +8804,7 @@ async fn config_toml_legacy_fast_service_tier_uses_priority_request_value() -> s
             cwd: Some(cwd),
             ..Default::default()
         },
-        codex_home,
+        motyga_home,
     )
     .await?;
 
@@ -8830,7 +8830,7 @@ async fn fast_default_opt_out_notice_config_is_respected() -> std::io::Result<()
             cwd: Some(fixture.cwd_path()),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
     )
     .await?;
 
@@ -8844,14 +8844,14 @@ async fn test_requirements_web_search_mode_allowlist_does_not_warn_when_unset() 
 {
     let fixture = create_test_fixture()?;
 
-    let requirements_toml = codex_config::ConfigRequirementsToml {
+    let requirements_toml = motyga_config::ConfigRequirementsToml {
         allowed_approval_policies: None,
         allowed_approvals_reviewers: None,
         allowed_sandbox_modes: None,
         allowed_permission_profiles: None,
         default_permissions: None,
         remote_sandbox_config: None,
-        allowed_web_search_modes: Some(vec![codex_config::WebSearchModeRequirement::Cached]),
+        allowed_web_search_modes: Some(vec![motyga_config::WebSearchModeRequirement::Cached]),
         allow_managed_hooks_only: None,
         allow_appshots: None,
         allow_remote_control: None,
@@ -8870,7 +8870,7 @@ async fn test_requirements_web_search_mode_allowlist_does_not_warn_when_unset() 
         models: None,
         guardian_policy_config: None,
     };
-    let requirement_source = codex_config::RequirementSource::Unknown;
+    let requirement_source = motyga_config::RequirementSource::Unknown;
     let requirement_source_for_error = requirement_source.clone();
     let allowed = vec![WebSearchMode::Disabled, WebSearchMode::Cached];
     let constrained = Constrained::new(WebSearchMode::Cached, move |candidate| {
@@ -8885,15 +8885,15 @@ async fn test_requirements_web_search_mode_allowlist_does_not_warn_when_unset() 
             })
         }
     })?;
-    let requirements = codex_config::ConfigRequirements {
-        web_search_mode: codex_config::ConstrainedWithSource::new(
+    let requirements = motyga_config::ConfigRequirements {
+        web_search_mode: motyga_config::ConstrainedWithSource::new(
             constrained,
             Some(requirement_source),
         ),
         ..Default::default()
     };
     let config_layer_stack =
-        codex_config::ConfigLayerStack::new(Vec::new(), requirements, requirements_toml)
+        motyga_config::ConfigLayerStack::new(Vec::new(), requirements, requirements_toml)
             .expect("config layer stack");
 
     let config = Config::load_config_with_layer_stack(
@@ -8903,7 +8903,7 @@ async fn test_requirements_web_search_mode_allowlist_does_not_warn_when_unset() 
             cwd: Some(fixture.cwd_path()),
             ..Default::default()
         },
-        fixture.codex_home(),
+        fixture.motyga_home(),
         config_layer_stack,
     )
     .await?;
@@ -8986,12 +8986,12 @@ trust_level = "trusted"
 fn test_set_project_trusted_migrates_top_level_inline_projects_preserving_entries()
 -> anyhow::Result<()> {
     let initial = r#"toplevel = "baz"
-projects = { "/Users/mbolin/code/codex4" = { trust_level = "trusted", foo = "bar" } , "/Users/mbolin/code/codex3" = { trust_level = "trusted" } }
+projects = { "/Users/mbolin/code/motyga4" = { trust_level = "trusted", foo = "bar" } , "/Users/mbolin/code/motyga3" = { trust_level = "trusted" } }
 model = "foo""#;
     let mut doc = initial.parse::<DocumentMut>()?;
 
     // Approve a new directory
-    let new_project = Path::new("/Users/mbolin/code/codex2");
+    let new_project = Path::new("/Users/mbolin/code/motyga2");
     set_project_trust_level_inner(&mut doc, new_project, TrustLevel::Trusted)?;
 
     let contents = doc.to_string();
@@ -9003,11 +9003,11 @@ model = "foo""#;
         r#"toplevel = "baz"
 model = "foo"
 
-[projects."/Users/mbolin/code/codex4"]
+[projects."/Users/mbolin/code/motyga4"]
 trust_level = "trusted"
 foo = "bar"
 
-[projects."/Users/mbolin/code/codex3"]
+[projects."/Users/mbolin/code/motyga3"]
 trust_level = "trusted"
 
 [projects."{new_project_key}"]
@@ -9049,29 +9049,29 @@ async fn active_project_does_not_match_configured_alias_for_canonical_cwd() -> a
 #[test]
 fn test_set_default_oss_provider() -> std::io::Result<()> {
     let temp_dir = TempDir::new()?;
-    let codex_home = temp_dir.path();
-    let config_path = codex_home.join(CONFIG_TOML_FILE);
+    let motyga_home = temp_dir.path();
+    let config_path = motyga_home.join(CONFIG_TOML_FILE);
 
     // Test setting valid provider on empty config
-    set_default_oss_provider(codex_home, OLLAMA_OSS_PROVIDER_ID)?;
+    set_default_oss_provider(motyga_home, OLLAMA_OSS_PROVIDER_ID)?;
     let content = std::fs::read_to_string(&config_path)?;
     assert!(content.contains("oss_provider = \"ollama\""));
 
     // Test updating existing config
     std::fs::write(&config_path, "model = \"gpt-4\"\n")?;
-    set_default_oss_provider(codex_home, LMSTUDIO_OSS_PROVIDER_ID)?;
+    set_default_oss_provider(motyga_home, LMSTUDIO_OSS_PROVIDER_ID)?;
     let content = std::fs::read_to_string(&config_path)?;
     assert!(content.contains("oss_provider = \"lmstudio\""));
     assert!(content.contains("model = \"gpt-4\""));
 
     // Test overwriting existing oss_provider
-    set_default_oss_provider(codex_home, OLLAMA_OSS_PROVIDER_ID)?;
+    set_default_oss_provider(motyga_home, OLLAMA_OSS_PROVIDER_ID)?;
     let content = std::fs::read_to_string(&config_path)?;
     assert!(content.contains("oss_provider = \"ollama\""));
     assert!(!content.contains("oss_provider = \"lmstudio\""));
 
     // Test invalid provider
-    let result = set_default_oss_provider(codex_home, "invalid_provider");
+    let result = set_default_oss_provider(motyga_home, "invalid_provider");
     assert!(result.is_err());
     let error = result.unwrap_err();
     assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
@@ -9084,9 +9084,9 @@ fn test_set_default_oss_provider() -> std::io::Result<()> {
 #[test]
 fn test_set_default_oss_provider_rejects_legacy_ollama_chat_provider() -> std::io::Result<()> {
     let temp_dir = TempDir::new()?;
-    let codex_home = temp_dir.path();
+    let motyga_home = temp_dir.path();
 
-    let result = set_default_oss_provider(codex_home, LEGACY_OLLAMA_CHAT_PROVIDER_ID);
+    let result = set_default_oss_provider(motyga_home, LEGACY_OLLAMA_CHAT_PROVIDER_ID);
     assert!(result.is_err());
     let error = result.unwrap_err();
     assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
@@ -9102,7 +9102,7 @@ fn test_set_default_oss_provider_rejects_legacy_ollama_chat_provider() -> std::i
 #[tokio::test]
 async fn test_load_config_rejects_legacy_ollama_chat_provider_with_helpful_error()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg = ConfigToml {
         model_provider: Some(LEGACY_OLLAMA_CHAT_PROVIDER_ID.to_string()),
         ..Default::default()
@@ -9111,7 +9111,7 @@ async fn test_load_config_rejects_legacy_ollama_chat_provider_with_helpful_error
     let result = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await;
     assert!(result.is_err());
@@ -9321,7 +9321,7 @@ fn config_toml_deserializes_mcp_oauth_callback_url() {
 
 #[tokio::test]
 async fn config_loads_mcp_oauth_callback_port_from_toml() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let toml = r#"
 model = "gpt-5.4"
 mcp_oauth_callback_port = 5678
@@ -9332,7 +9332,7 @@ mcp_oauth_callback_port = 5678
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -9342,7 +9342,7 @@ mcp_oauth_callback_port = 5678
 
 #[tokio::test]
 async fn config_loads_allow_login_shell_from_toml() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg: ConfigToml = toml::from_str(
         r#"
 model = "gpt-5.4"
@@ -9354,7 +9354,7 @@ allow_login_shell = false
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -9364,7 +9364,7 @@ allow_login_shell = false
 
 #[tokio::test]
 async fn config_loads_apps_mcp_product_sku_from_toml() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let toml = r#"
 model = "gpt-5.4"
 apps_mcp_product_sku = "tpp"
@@ -9375,7 +9375,7 @@ apps_mcp_product_sku = "tpp"
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -9385,7 +9385,7 @@ apps_mcp_product_sku = "tpp"
 
 #[tokio::test]
 async fn config_loads_orchestrator_settings_from_toml() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let cfg: ConfigToml = toml::from_str(
         r#"
 model = "gpt-5.4"
@@ -9402,7 +9402,7 @@ enabled = false
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -9418,7 +9418,7 @@ enabled = false
 
 #[tokio::test]
 async fn config_loads_mcp_oauth_callback_url_from_toml() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let toml = r#"
 model = "gpt-5.4"
 mcp_oauth_callback_url = "https://example.com/callback"
@@ -9429,7 +9429,7 @@ mcp_oauth_callback_url = "https://example.com/callback"
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -9442,7 +9442,7 @@ mcp_oauth_callback_url = "https://example.com/callback"
 
 #[tokio::test]
 async fn test_untrusted_project_gets_unless_trusted_approval_policy() -> anyhow::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let test_project_dir = TempDir::new()?;
     let test_path = test_project_dir.path();
 
@@ -9460,7 +9460,7 @@ async fn test_untrusted_project_gets_unless_trusted_approval_policy() -> anyhow:
             cwd: Some(test_path.to_path_buf()),
             ..Default::default()
         },
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -9496,10 +9496,10 @@ async fn test_untrusted_project_gets_unless_trusted_approval_policy() -> anyhow:
 #[tokio::test]
 async fn requirements_disallowing_default_sandbox_falls_back_to_required_default()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_sandbox_modes = ["read-only"]"#,
@@ -9516,16 +9516,16 @@ async fn requirements_disallowing_default_sandbox_falls_back_to_required_default
 
 #[tokio::test]
 async fn explicit_sandbox_mode_falls_back_when_disallowed_by_requirements() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"sandbox_mode = "danger-full-access"
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_sandbox_modes = ["read-only"]"#,
@@ -9542,17 +9542,17 @@ async fn explicit_sandbox_mode_falls_back_when_disallowed_by_requirements() -> s
 
 #[tokio::test]
 async fn windows_sandbox_mode_falls_back_when_disallowed_by_requirements() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[windows]
 sandbox = "unelevated"
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"[windows]
@@ -9565,7 +9565,7 @@ allowed_sandbox_implementations = ["elevated"]
 
     assert_eq!(
         config.permissions.windows_sandbox_mode,
-        Some(codex_config::types::WindowsSandboxModeToml::Elevated)
+        Some(motyga_config::types::WindowsSandboxModeToml::Elevated)
     );
     assert!(
         config.startup_warnings.iter().any(|warning| warning
@@ -9579,17 +9579,17 @@ allowed_sandbox_implementations = ["elevated"]
 #[tokio::test]
 async fn danger_full_access_with_never_is_rejected_when_requirements_force_read_only()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"approval_policy = "never"
 sandbox_mode = "danger-full-access"
 "#,
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_sandbox_modes = ["read-only"]"#,
@@ -9610,9 +9610,9 @@ sandbox_mode = "danger-full-access"
 #[tokio::test]
 async fn named_full_access_profile_with_never_is_rejected_when_requirements_force_read_only()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"approval_policy = "never"
 default_permissions = "dev"
 
@@ -9622,8 +9622,8 @@ default_permissions = "dev"
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_sandbox_modes = ["read-only"]"#,
@@ -9644,10 +9644,10 @@ default_permissions = "dev"
 #[tokio::test]
 async fn permission_profile_override_falls_back_when_disallowed_by_requirements()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .harness_overrides(ConfigOverrides {
             permission_profile: Some(PermissionProfile::Disabled),
             ..Default::default()
@@ -9671,10 +9671,10 @@ async fn permission_profile_override_falls_back_when_disallowed_by_requirements(
 
 #[tokio::test]
 async fn active_profile_is_cleared_when_requirements_force_fallback() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .harness_overrides(ConfigOverrides {
             default_permissions: Some(BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS.to_string()),
             ..Default::default()
@@ -9703,11 +9703,11 @@ async fn active_profile_is_cleared_when_requirements_force_fallback() -> std::io
 
 #[tokio::test]
 async fn bypass_hook_trust_adds_startup_warning() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .harness_overrides(ConfigOverrides {
             bypass_hook_trust: Some(true),
             ..Default::default()
@@ -9726,9 +9726,9 @@ async fn bypass_hook_trust_adds_startup_warning() -> std::io::Result<()> {
 
 #[tokio::test]
 async fn permission_profile_override_preserves_split_write_roots() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let cwd = codex_home.path().join("workspace");
-    let outside_root = codex_home.path().join("outside-write");
+    let motyga_home = TempDir::new()?;
+    let cwd = motyga_home.path().join("workspace");
+    let outside_root = motyga_home.path().join("outside-write");
     std::fs::create_dir_all(&cwd)?;
     std::fs::create_dir_all(&outside_root)?;
     let outside_root =
@@ -9754,7 +9754,7 @@ async fn permission_profile_override_preserves_split_write_roots() -> std::io::R
     );
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .fallback_cwd(Some(cwd))
         .harness_overrides(ConfigOverrides {
             permission_profile: Some(permission_profile),
@@ -9783,16 +9783,16 @@ async fn permission_profile_override_preserves_split_write_roots() -> std::io::R
 #[tokio::test]
 async fn requirements_web_search_mode_overrides_danger_full_access_default() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"sandbox_mode = "danger-full-access"
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_web_search_modes = ["cached"]"#,
@@ -9815,11 +9815,11 @@ async fn requirements_web_search_mode_overrides_danger_full_access_default() -> 
 #[tokio::test]
 async fn requirements_disallowing_default_approval_falls_back_to_required_default()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let workspace = TempDir::new()?;
     let workspace_key = workspace.path().to_string_lossy().replace('\\', "\\\\");
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         format!(
             r#"
 [projects."{workspace_key}"]
@@ -9829,7 +9829,7 @@ trust_level = "untrusted"
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .fallback_cwd(Some(workspace.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
@@ -9849,16 +9849,16 @@ trust_level = "untrusted"
 #[tokio::test]
 async fn explicit_approval_policy_falls_back_when_disallowed_by_requirements() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"approval_policy = "untrusted"
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_approval_policies = ["on-request"]"#,
@@ -9875,10 +9875,10 @@ async fn explicit_approval_policy_falls_back_when_disallowed_by_requirements() -
 
 #[tokio::test]
 async fn feature_requirements_normalize_effective_feature_values() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -9907,10 +9907,10 @@ shell_tool = false
 
 #[tokio::test]
 async fn feature_requirements_auto_review_disables_guardian_approval() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -9929,10 +9929,10 @@ auto_review = false
 
 #[tokio::test]
 async fn browser_feature_requirements_are_valid() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -9955,19 +9955,19 @@ browser_use_full_cdp_access = false
 
 #[tokio::test]
 async fn debug_config_lockfile_export_settings_load_from_nested_table() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[debug.config_lockfile]
 export_dir = "locks"
-allow_codex_version_mismatch = true
+allow_motyga_version_mismatch = true
 save_fields_resolved_from_model_catalog = false
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -9975,10 +9975,10 @@ save_fields_resolved_from_model_catalog = false
         config.config_lock_export_dir,
         Some(AbsolutePathBuf::resolve_path_against_base(
             "locks",
-            codex_home.path()
+            motyga_home.path()
         ))
     );
-    assert!(config.config_lock_allow_codex_version_mismatch);
+    assert!(config.config_lock_allow_motyga_version_mismatch);
     assert!(!config.config_lock_save_fields_resolved_from_model_catalog);
 
     Ok(())
@@ -9986,13 +9986,13 @@ save_fields_resolved_from_model_catalog = false
 
 #[tokio::test]
 async fn debug_config_lockfile_load_path_loads_lock_from_nested_table() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let lock_path = codex_home.path().join("session.config.lock.toml");
+    let motyga_home = TempDir::new()?;
+    let lock_path = motyga_home.path().join("session.config.lock.toml");
     std::fs::write(
         &lock_path,
         format!(
             r#"version = {}
-codex_version = "older-version"
+motyga_version = "older-version"
 
 [config]
 "#,
@@ -10000,11 +10000,11 @@ codex_version = "older-version"
         ),
     )?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         format!(
             r#"[debug.config_lockfile]
 load_path = '{}'
-allow_codex_version_mismatch = true
+allow_motyga_version_mismatch = true
 save_fields_resolved_from_model_catalog = false
 "#,
             lock_path.display()
@@ -10012,13 +10012,13 @@ save_fields_resolved_from_model_catalog = false
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
     assert!(config.config_lock_toml.is_some());
-    assert!(config.config_lock_allow_codex_version_mismatch);
+    assert!(config.config_lock_allow_motyga_version_mismatch);
     assert!(!config.config_lock_save_fields_resolved_from_model_catalog);
 
     Ok(())
@@ -10026,9 +10026,9 @@ save_fields_resolved_from_model_catalog = false
 
 #[tokio::test]
 async fn explicit_feature_config_is_normalized_by_requirements() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"
 [features]
 personality = false
@@ -10037,8 +10037,8 @@ shell_tool = true
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -10068,11 +10068,11 @@ shell_tool = false
 #[tokio::test]
 async fn approvals_reviewer_defaults_to_manual_only_without_guardian_feature() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10082,9 +10082,9 @@ async fn approvals_reviewer_defaults_to_manual_only_without_guardian_feature() -
 
 #[tokio::test]
 async fn prompt_instruction_blocks_can_be_disabled_from_config() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"include_permissions_instructions = false
 include_apps_instructions = false
 include_collaboration_mode_instructions = false
@@ -10096,8 +10096,8 @@ include_instructions = false
     )?;
 
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10112,17 +10112,17 @@ include_instructions = false
 #[tokio::test]
 async fn approvals_reviewer_stays_manual_only_when_guardian_feature_is_enabled()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features]
 guardian_approval = true
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10133,16 +10133,16 @@ guardian_approval = true
 #[tokio::test]
 async fn approvals_reviewer_can_be_set_in_config_without_guardian_approval() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"approvals_reviewer = "user"
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10153,10 +10153,10 @@ async fn approvals_reviewer_can_be_set_in_config_without_guardian_approval() -> 
 #[tokio::test]
 async fn requirements_disallowing_default_approvals_reviewer_falls_back_to_required_default()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_approvals_reviewers = ["guardian_subagent"]"#,
@@ -10172,16 +10172,16 @@ async fn requirements_disallowing_default_approvals_reviewer_falls_back_to_requi
 #[tokio::test]
 async fn root_approvals_reviewer_falls_back_when_disallowed_by_requirements() -> std::io::Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"approvals_reviewer = "user"
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_approvals_reviewers = ["guardian_subagent"]"#,
@@ -10205,8 +10205,8 @@ async fn root_approvals_reviewer_falls_back_when_disallowed_by_requirements() ->
 #[tokio::test]
 async fn profile_approvals_reviewer_falls_back_when_disallowed_by_requirements()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
-    let selected_config = codex_home.path().join("default.config.toml");
+    let motyga_home = TempDir::new()?;
+    let selected_config = motyga_home.path().join("default.config.toml");
     std::fs::write(
         &selected_config,
         r#"approvals_reviewer = "user"
@@ -10214,8 +10214,8 @@ async fn profile_approvals_reviewer_falls_back_when_disallowed_by_requirements()
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .loader_overrides(LoaderOverrides {
             user_config_path: Some(selected_config.abs()),
             user_config_profile: Some("default".parse().expect("profile-v2 name")),
@@ -10236,16 +10236,16 @@ async fn profile_approvals_reviewer_falls_back_when_disallowed_by_requirements()
 #[tokio::test]
 async fn approvals_reviewer_preserves_valid_user_choice_when_allowed_by_requirements()
 -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"approvals_reviewer = "guardian_subagent"
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_approvals_reviewers = ["user", "guardian_subagent"]"#,
@@ -10268,24 +10268,24 @@ async fn approvals_reviewer_preserves_valid_user_choice_when_allowed_by_requirem
 
 #[tokio::test]
 async fn smart_approvals_alias_is_ignored() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features]
 smart_approvals = true
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
     assert!(config.features.enabled(Feature::GuardianApproval));
     assert_eq!(config.approvals_reviewer, ApprovalsReviewer::User);
 
-    let serialized = tokio::fs::read_to_string(codex_home.path().join(CONFIG_TOML_FILE)).await?;
+    let serialized = tokio::fs::read_to_string(motyga_home.path().join(CONFIG_TOML_FILE)).await?;
     assert!(serialized.contains("smart_approvals = true"));
     assert!(!serialized.contains("guardian_approval"));
     assert!(!serialized.contains("approvals_reviewer"));
@@ -10295,9 +10295,9 @@ smart_approvals = true
 
 #[tokio::test]
 async fn multi_agent_v2_config_from_feature_table() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 max_concurrent_threads_per_session = 5
@@ -10314,8 +10314,8 @@ non_code_mode_only = true
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10355,17 +10355,17 @@ non_code_mode_only = true
 
 #[tokio::test]
 async fn multi_agent_v2_default_session_thread_cap_counts_root() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 "#,
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10407,9 +10407,9 @@ max_concurrent_threads_per_session = 17
 
 #[tokio::test]
 async fn multi_agent_v2_empty_usage_hint_overrides_clear_default_hints() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 root_agent_usage_hint_text = ""
@@ -10418,8 +10418,8 @@ subagent_usage_hint_text = ""
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10431,9 +10431,9 @@ subagent_usage_hint_text = ""
 
 #[tokio::test]
 async fn multi_agent_v2_feature_rejects_agents_max_threads() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 
@@ -10443,8 +10443,8 @@ max_threads = 3
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
     let err = config
@@ -10466,9 +10466,9 @@ max_threads = 3
 
 #[tokio::test]
 async fn catalog_v2_allows_agents_max_threads_when_feature_disabled() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = false
 
@@ -10478,8 +10478,8 @@ max_threads = 3
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10494,9 +10494,9 @@ max_threads = 3
 
 #[tokio::test]
 async fn multi_agent_v2_rejects_invalid_wait_timeouts() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 min_wait_timeout_ms = 0
@@ -10506,8 +10506,8 @@ default_wait_timeout_ms = 0
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10516,7 +10516,7 @@ default_wait_timeout_ms = 0
     assert_eq!(config.multi_agent_v2.default_wait_timeout_ms, 0);
 
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 min_wait_timeout_ms = -1
@@ -10524,8 +10524,8 @@ min_wait_timeout_ms = -1
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await
         .expect_err("negative min_wait_timeout_ms should be rejected");
@@ -10537,7 +10537,7 @@ min_wait_timeout_ms = -1
     );
 
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 min_wait_timeout_ms = 3600001
@@ -10545,8 +10545,8 @@ min_wait_timeout_ms = 3600001
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await
         .expect_err("too large min_wait_timeout_ms should be rejected");
@@ -10558,7 +10558,7 @@ min_wait_timeout_ms = 3600001
     );
 
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 max_wait_timeout_ms = -1
@@ -10566,8 +10566,8 @@ max_wait_timeout_ms = -1
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await
         .expect_err("negative max_wait_timeout_ms should be rejected");
@@ -10579,7 +10579,7 @@ max_wait_timeout_ms = -1
     );
 
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 max_wait_timeout_ms = 3600001
@@ -10587,8 +10587,8 @@ max_wait_timeout_ms = 3600001
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await
         .expect_err("too large max_wait_timeout_ms should be rejected");
@@ -10600,7 +10600,7 @@ max_wait_timeout_ms = 3600001
     );
 
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 default_wait_timeout_ms = -1
@@ -10608,8 +10608,8 @@ default_wait_timeout_ms = -1
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await
         .expect_err("negative default_wait_timeout_ms should be rejected");
@@ -10621,7 +10621,7 @@ default_wait_timeout_ms = -1
     );
 
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 min_wait_timeout_ms = 1000
@@ -10630,8 +10630,8 @@ max_wait_timeout_ms = 500
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await
         .expect_err("min greater than max should be rejected");
@@ -10643,7 +10643,7 @@ max_wait_timeout_ms = 500
     );
 
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 min_wait_timeout_ms = 1000
@@ -10653,8 +10653,8 @@ default_wait_timeout_ms = 500
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await
         .expect_err("default less than min should be rejected");
@@ -10666,7 +10666,7 @@ default_wait_timeout_ms = 500
     );
 
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 min_wait_timeout_ms = 1000
@@ -10676,8 +10676,8 @@ default_wait_timeout_ms = 2500
     )?;
 
     let err = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await
         .expect_err("default greater than max should be rejected");
@@ -10703,9 +10703,9 @@ async fn multi_agent_v2_rejects_invalid_tool_namespace() -> std::io::Result<()> 
             "features.multi_agent_v2.tool_namespace uses a reserved namespace: functions",
         ),
     ] {
-        let codex_home = TempDir::new()?;
+        let motyga_home = TempDir::new()?;
         std::fs::write(
-            codex_home.path().join(CONFIG_TOML_FILE),
+            motyga_home.path().join(CONFIG_TOML_FILE),
             format!(
                 r#"[features.multi_agent_v2]
 enabled = true
@@ -10715,8 +10715,8 @@ tool_namespace = "{namespace}"
         )?;
 
         let err = ConfigBuilder::without_managed_config_for_tests()
-            .codex_home(codex_home.path().to_path_buf())
-            .fallback_cwd(Some(codex_home.path().to_path_buf()))
+            .motyga_home(motyga_home.path().to_path_buf())
+            .fallback_cwd(Some(motyga_home.path().to_path_buf()))
             .build()
             .await
             .expect_err("invalid multi_agent_v2 tool namespace should fail");
@@ -10729,9 +10729,9 @@ tool_namespace = "{namespace}"
 
 #[tokio::test]
 async fn multi_agent_v2_session_thread_cap_one_disallows_subagents() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features.multi_agent_v2]
 enabled = true
 max_concurrent_threads_per_session = 1
@@ -10739,8 +10739,8 @@ max_concurrent_threads_per_session = 1
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .build()
         .await?;
 
@@ -10758,10 +10758,10 @@ max_concurrent_threads_per_session = 1
 
 #[tokio::test]
 async fn feature_requirements_normalize_runtime_feature_mutations() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let mut config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -10792,10 +10792,10 @@ shell_tool = false
 
 #[tokio::test]
 async fn feature_requirements_warn_on_collab_legacy_alias() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -10822,10 +10822,10 @@ collab = true
 
 #[tokio::test]
 async fn feature_requirements_warn_and_ignore_unknown_feature() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -10885,11 +10885,11 @@ discoverables = [
         })
     );
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -10940,11 +10940,11 @@ disabled_tools = [
         })
     );
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -10963,11 +10963,11 @@ disabled_tools = [
 
 #[tokio::test]
 async fn tool_suggest_disabled_tools_merge_across_config_layers() -> std::io::Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let workspace = TempDir::new()?;
     let workspace_key = workspace.path().to_string_lossy().replace('\\', "\\\\");
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         format!(
             r#"
 [projects."{workspace_key}"]
@@ -10998,7 +10998,7 @@ disabled_tools = [
     )?;
 
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .harness_overrides(ConfigOverrides {
             cwd: Some(workspace.path().to_path_buf()),
             ..Default::default()
@@ -11032,11 +11032,11 @@ experimental_realtime_start_instructions = "start instructions from config"
         Some("start instructions from config")
     );
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -11061,11 +11061,11 @@ experimental_thread_config_endpoint = "http://127.0.0.1:8061"
         Some("http://127.0.0.1:8061")
     );
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -11093,11 +11093,11 @@ experimental_realtime_webrtc_call_base_url = "http://127.0.0.1:8082/v1"
         cfg.experimental_realtime_webrtc_call_base_url.as_deref(),
         Some("http://127.0.0.1:8082/v1")
     );
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -11126,11 +11126,11 @@ experimental_realtime_ws_backend_prompt = "prompt from config"
         Some("prompt from config")
     );
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -11155,11 +11155,11 @@ experimental_realtime_ws_startup_context = "startup context from config"
         Some("startup context from config")
     );
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -11184,11 +11184,11 @@ experimental_realtime_ws_model = "realtime-test-model"
         Some("realtime-test-model")
     );
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -11209,11 +11209,11 @@ voice = "marin"
     )
     .expect("TOML deserialization should succeed");
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -11250,11 +11250,11 @@ voice = "cedar"
         })
     );
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 
@@ -11288,11 +11288,11 @@ speaker = "Desk Speakers"
     assert_eq!(realtime_audio.microphone.as_deref(), Some("USB Mic"));
     assert_eq!(realtime_audio.speaker.as_deref(), Some("Desk Speakers"));
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let config = Config::load_from_base_config_with_overrides(
         cfg,
         ConfigOverrides::default(),
-        codex_home.abs(),
+        motyga_home.abs(),
     )
     .await?;
 

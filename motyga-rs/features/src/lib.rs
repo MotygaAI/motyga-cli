@@ -3,10 +3,10 @@
 //! This crate defines the feature registry plus the logic used to resolve an
 //! effective feature set from config-like inputs.
 
-use codex_otel::SessionTelemetry;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::WarningEvent;
+use motyga_otel::SessionTelemetry;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::WarningEvent;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -85,7 +85,7 @@ pub enum Feature {
     /// Enable the default shell tool.
     ShellTool,
     /// Enable Claude-style lifecycle hooks loaded from hooks.json files.
-    CodexHooks,
+    MotygaHooks,
     /// Store CLI auth in the encrypted local secrets backend when keyring storage is selected.
     SecretAuthStorage,
 
@@ -138,11 +138,11 @@ pub enum Feature {
     LocalThreadStoreCompression,
     /// Enable the Chronicle sidecar for passive screen-context memories.
     Chronicle,
-    /// Compress request bodies (zstd) when sending streaming requests to codex-backend.
+    /// Compress request bodies (zstd) when sending streaming requests to motyga-backend.
     EnableRequestCompression,
     /// Start the managed network proxy for sandboxed sessions.
     NetworkProxy,
-    /// Respect host system proxy settings for Codex-owned network clients.
+    /// Respect host system proxy settings for Motyga-owned network clients.
     RespectSystemProxy,
     /// Enable collab tools.
     Collab,
@@ -186,7 +186,7 @@ pub enum Feature {
     ///
     /// Requirements-only gate: this should be set from requirements, not user config.
     BrowserUseExternal,
-    /// Allow Codex Computer Use.
+    /// Allow Motyga Computer Use.
     ///
     /// Requirements-only gate: this should be set from requirements, not user config.
     ComputerUse,
@@ -265,7 +265,7 @@ pub enum Feature {
     /// Legacy remote models flag kept for backward compatibility.
     RemoteModels,
     /// Removed legacy git commit attribution guidance flag.
-    CodexGitCommit,
+    MotygaGitCommit,
     /// Persist rollout metadata to a local SQLite database.
     Sqlite,
     /// Removed compatibility flag for the deleted apply_patch fallback feature.
@@ -427,7 +427,7 @@ impl Features {
             }
             if self.enabled(feature.id) != feature.default_enabled {
                 otel.counter(
-                    "codex.feature.state",
+                    "motyga.feature.state",
                     /*inc*/ 1,
                     &[
                         ("feature", feature.key),
@@ -901,8 +901,8 @@ pub const FEATURES: &[FeatureSpec] = &[
         default_enabled: false,
     },
     FeatureSpec {
-        id: Feature::CodexGitCommit,
-        key: "codex_git_commit",
+        id: Feature::MotygaGitCommit,
+        key: "motyga_git_commit",
         stage: Stage::Removed,
         default_enabled: false,
     },
@@ -959,7 +959,7 @@ pub const FEATURES: &[FeatureSpec] = &[
         default_enabled: false,
     },
     FeatureSpec {
-        id: Feature::CodexHooks,
+        id: Feature::MotygaHooks,
         key: "hooks",
         stage: Stage::Stable,
         default_enabled: true,

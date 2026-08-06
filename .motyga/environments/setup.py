@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Set up ignored files that should be shared with Codex worktrees."""
+"""Set up ignored files that should be shared with Motyga worktrees."""
 
 import shutil
 import subprocess
@@ -56,7 +56,7 @@ def copy_from_main_worktree_to_worktree(repo_relative_path: str) -> None:
 
 
 def main() -> None:
-    print("Codex environment setup:")
+    print("Motyga environment setup:")
     # See motyga-rs/docs/bazel.md for the repository's Bazel workflow.
     copy_from_main_worktree_to_worktree("user.bazelrc")
 

@@ -2,7 +2,7 @@ use super::*;
 use crate::agent::next_thread_spawn_depth;
 use crate::tools::handlers::multi_agents_spec::create_resume_agent_tool;
 use crate::turn_timing::now_unix_timestamp_ms;
-use codex_tools::ToolSpec;
+use motyga_tools::ToolSpec;
 use std::sync::Arc;
 
 pub(crate) struct Handler;
@@ -23,7 +23,7 @@ impl ToolExecutor<ToolInvocation> for Handler {
         )
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(async move { handle_resume_agent(invocation).await.map(boxed_tool_output) })
     }
 }
@@ -132,7 +132,7 @@ async fn handle_resume_agent(
         return Err(err);
     }
     turn.session_telemetry
-        .counter("codex.multi_agent.resume", /*inc*/ 1, &[]);
+        .counter("motyga.multi_agent.resume", /*inc*/ 1, &[]);
 
     Ok(ResumeAgentResult { status })
 }

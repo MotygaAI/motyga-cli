@@ -1,11 +1,11 @@
-use codex_code_mode_protocol::StartedCell;
-use codex_code_mode_protocol::host::ClientToHost;
-use codex_code_mode_protocol::host::EncodedFrame;
-use codex_code_mode_protocol::host::HostRequest;
-use codex_code_mode_protocol::host::HostResponse;
-use codex_code_mode_protocol::host::HostToClient;
-use codex_code_mode_protocol::host::RequestId;
-use codex_code_mode_protocol::host::WireCellId;
+use motyga_code_mode_protocol::StartedCell;
+use motyga_code_mode_protocol::host::ClientToHost;
+use motyga_code_mode_protocol::host::EncodedFrame;
+use motyga_code_mode_protocol::host::HostRequest;
+use motyga_code_mode_protocol::host::HostResponse;
+use motyga_code_mode_protocol::host::HostToClient;
+use motyga_code_mode_protocol::host::RequestId;
+use motyga_code_mode_protocol::host::WireCellId;
 use tokio::sync::oneshot;
 
 use super::ConnectionDriver;
@@ -367,7 +367,7 @@ impl ConnectionDriver {
     fn complete_initial_response(
         &mut self,
         id: RequestId,
-        result: Result<codex_code_mode_protocol::host::WireRuntimeResponse, String>,
+        result: Result<motyga_code_mode_protocol::host::WireRuntimeResponse, String>,
     ) -> bool {
         let Some(initial) = self.requests.remove_initial_response(id) else {
             self.fail(format!(

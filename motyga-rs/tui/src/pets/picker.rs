@@ -39,17 +39,17 @@ struct PetPickerEntry {
 /// Build the selection popup parameters for `/pets`.
 ///
 /// The picker preselects `DEFAULT_PET_ID` when no pet is configured so the UI
-/// has a sensible starting point without implying that Codex is already the
+/// has a sensible starting point without implying that Motyga is already the
 /// active ambient pet. Callers should treat the returned actions as the only
 /// supported mutation path; bypassing them would skip preview-loading and
 /// selection-specific event wiring.
 pub(crate) fn build_pet_picker_params(
     current_pet: Option<&str>,
-    codex_home: &Path,
+    motyga_home: &Path,
     preview_state: PetPickerPreviewState,
 ) -> SelectionViewParams {
     let preferred_pet = current_pet.unwrap_or(DEFAULT_PET_ID);
-    let mut entries = available_pet_entries(codex_home);
+    let mut entries = available_pet_entries(motyga_home);
     entries.sort_by(|left, right| left.display_name.cmp(&right.display_name));
     if let Some(disabled_idx) = entries
         .iter()
@@ -135,7 +135,7 @@ pub(crate) fn build_pet_picker_params(
     }
 }
 
-fn available_pet_entries(codex_home: &Path) -> Vec<PetPickerEntry> {
+fn available_pet_entries(motyga_home: &Path) -> Vec<PetPickerEntry> {
     let mut entries = catalog::BUILTIN_PETS
         .iter()
         .map(|pet| PetPickerEntry {
@@ -151,14 +151,14 @@ fn available_pet_entries(codex_home: &Path) -> Vec<PetPickerEntry> {
         display_name: "Disable terminal pets".to_string(),
         description: None,
     });
-    entries.extend(custom_pet_entries(codex_home));
+    entries.extend(custom_pet_entries(motyga_home));
     entries
 }
 
-fn custom_pet_entries(codex_home: &Path) -> Vec<PetPickerEntry> {
+fn custom_pet_entries(motyga_home: &Path) -> Vec<PetPickerEntry> {
     let mut entries_by_selector = HashMap::new();
     for (directory_name, manifest_file) in [("avatars", "avatar.json"), ("pets", "pet.json")] {
-        let Ok(children) = fs::read_dir(codex_home.join(directory_name)) else {
+        let Ok(children) = fs::read_dir(motyga_home.join(directory_name)) else {
             continue;
         };
         for child in children.flatten() {
@@ -174,7 +174,7 @@ fn custom_pet_entries(codex_home: &Path) -> Vec<PetPickerEntry> {
             }
             let selector = custom_pet_selector(id);
             let Ok(pet) =
-                Pet::load_with_codex_home(&selector, /*codex_home*/ Some(codex_home))
+                Pet::load_with_motyga_home(&selector, /*motyga_home*/ Some(motyga_home))
             else {
                 continue;
             };
@@ -234,12 +234,12 @@ mod tests {
 
     #[test]
     fn picker_lists_app_bundled_and_custom_pets() {
-        let codex_home = tempfile::tempdir().unwrap();
-        write_pet(codex_home.path(), "chefito", "Chefito");
+        let motyga_home = tempfile::tempdir().unwrap();
+        write_pet(motyga_home.path(), "chefito", "Chefito");
 
         let params = build_pet_picker_params(
             Some("chefito"),
-            codex_home.path(),
+            motyga_home.path(),
             PetPickerPreviewState::default(),
         );
 
@@ -271,10 +271,10 @@ mod tests {
 
     #[test]
     fn picker_preselects_motyga_without_marking_it_current_when_no_pet_is_configured() {
-        let codex_home = tempfile::tempdir().unwrap();
+        let motyga_home = tempfile::tempdir().unwrap();
         let params = build_pet_picker_params(
             /*current_pet*/ None,
-            codex_home.path(),
+            motyga_home.path(),
             PetPickerPreviewState::default(),
         );
 
@@ -285,10 +285,10 @@ mod tests {
 
     #[test]
     fn picker_marks_disabled_pet_as_current() {
-        let codex_home = tempfile::tempdir().unwrap();
+        let motyga_home = tempfile::tempdir().unwrap();
         let params = build_pet_picker_params(
             Some(DISABLED_PET_ID),
-            codex_home.path(),
+            motyga_home.path(),
             PetPickerPreviewState::default(),
         );
 
@@ -304,12 +304,12 @@ mod tests {
 
     #[test]
     fn picker_imports_legacy_avatar_manifests() {
-        let codex_home = tempfile::tempdir().unwrap();
-        write_legacy_avatar(codex_home.path(), "legacy", "Legacy");
+        let motyga_home = tempfile::tempdir().unwrap();
+        write_legacy_avatar(motyga_home.path(), "legacy", "Legacy");
 
         let params = build_pet_picker_params(
             Some("custom:legacy"),
-            codex_home.path(),
+            motyga_home.path(),
             PetPickerPreviewState::default(),
         );
         let legacy = params

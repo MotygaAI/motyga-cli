@@ -1,23 +1,23 @@
 #![cfg(target_os = "linux")]
 #![allow(clippy::unwrap_used)]
-use codex_core::exec::ExecCapturePolicy;
-use codex_core::exec::ExecParams;
-use codex_core::exec::process_exec_tool_call;
-use codex_core::exec_env::create_env;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_protocol::config_types::ShellEnvironmentPolicy;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result;
-use codex_protocol::error::SandboxErr;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_core::exec::ExecCapturePolicy;
+use motyga_core::exec::ExecParams;
+use motyga_core::exec::process_exec_tool_call;
+use motyga_core::exec_env::create_env;
+use motyga_core::sandboxing::SandboxPermissions;
+use motyga_protocol::config_types::ShellEnvironmentPolicy;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result;
+use motyga_protocol::error::SandboxErr;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -47,8 +47,8 @@ fn create_env_from_core_vars() -> HashMap<String, String> {
     create_env(&policy, /*thread_id*/ None)
 }
 
-fn codex_linux_sandbox_exe() -> PathBuf {
-    let sandbox_program = PathBuf::from(env!("CARGO_BIN_EXE_codex-linux-sandbox"));
+fn motyga_linux_sandbox_exe() -> PathBuf {
+    let sandbox_program = PathBuf::from(env!("CARGO_BIN_EXE_motyga-linux-sandbox"));
     match sandbox_program.canonicalize() {
         Ok(path) => path,
         Err(_) => sandbox_program,
@@ -69,7 +69,7 @@ async fn run_cmd_output(
     cmd: &[&str],
     writable_roots: &[PathBuf],
     timeout_ms: u64,
-) -> codex_protocol::exec_output::ExecToolCallOutput {
+) -> motyga_protocol::exec_output::ExecToolCallOutput {
     run_cmd_result_with_writable_roots(
         cmd,
         writable_roots,
@@ -87,7 +87,7 @@ async fn run_cmd_result_with_writable_roots(
     timeout_ms: u64,
     use_legacy_landlock: bool,
     network_access: bool,
-) -> Result<codex_protocol::exec_output::ExecToolCallOutput> {
+) -> Result<motyga_protocol::exec_output::ExecToolCallOutput> {
     let writable_roots = writable_roots
         .iter()
         .map(|path| AbsolutePathBuf::try_from(path.as_path()).unwrap())
@@ -115,7 +115,7 @@ async fn run_cmd_result_with_permission_profile(
     permission_profile: PermissionProfile,
     timeout_ms: u64,
     use_legacy_landlock: bool,
-) -> Result<codex_protocol::exec_output::ExecToolCallOutput> {
+) -> Result<motyga_protocol::exec_output::ExecToolCallOutput> {
     let cwd = AbsolutePathBuf::current_dir().expect("cwd should exist");
     run_cmd_result_with_permission_profile_for_cwd(
         cmd,
@@ -134,7 +134,7 @@ async fn run_cmd_result_with_cwd_and_writable_roots(
     timeout_ms: u64,
     use_legacy_landlock: bool,
     network_access: bool,
-) -> Result<codex_protocol::exec_output::ExecToolCallOutput> {
+) -> Result<motyga_protocol::exec_output::ExecToolCallOutput> {
     let writable_roots = writable_roots
         .iter()
         .map(|path| AbsolutePathBuf::try_from(path.as_path()).unwrap())
@@ -166,7 +166,7 @@ async fn run_cmd_result_with_permission_profile_for_cwd(
     permission_profile: PermissionProfile,
     timeout_ms: u64,
     use_legacy_landlock: bool,
-) -> Result<codex_protocol::exec_output::ExecToolCallOutput> {
+) -> Result<motyga_protocol::exec_output::ExecToolCallOutput> {
     let sandbox_cwd = cwd.clone();
     let params = ExecParams {
         command: cmd.iter().copied().map(str::to_owned).collect(),
@@ -182,21 +182,21 @@ async fn run_cmd_result_with_permission_profile_for_cwd(
         justification: None,
         arg0: None,
     };
-    let codex_linux_sandbox_exe = Some(codex_linux_sandbox_exe());
+    let motyga_linux_sandbox_exe = Some(motyga_linux_sandbox_exe());
 
     process_exec_tool_call(
         params,
         &permission_profile,
         &sandbox_cwd,
         std::slice::from_ref(&sandbox_cwd),
-        &codex_linux_sandbox_exe,
+        &motyga_linux_sandbox_exe,
         use_legacy_landlock,
         /*stdout_stream*/ None,
     )
     .await
 }
 
-fn is_bwrap_unavailable_output(output: &codex_protocol::exec_output::ExecToolCallOutput) -> bool {
+fn is_bwrap_unavailable_output(output: &motyga_protocol::exec_output::ExecToolCallOutput) -> bool {
     output.stderr.text.contains(BWRAP_UNAVAILABLE_ERR)
         || (output
             .stderr
@@ -218,26 +218,26 @@ async fn should_skip_bwrap_tests() -> bool {
     .await
     {
         Ok(output) => is_bwrap_unavailable_output(&output),
-        Err(CodexErr::Sandbox(SandboxErr::Denied { output, .. })) => {
+        Err(MotygaErr::Sandbox(SandboxErr::Denied { output, .. })) => {
             is_bwrap_unavailable_output(&output)
         }
         // Probe timeouts are not actionable for the bwrap-specific assertions below;
         // skip rather than fail the whole suite.
-        Err(CodexErr::Sandbox(SandboxErr::Timeout { .. })) => true,
+        Err(MotygaErr::Sandbox(SandboxErr::Timeout { .. })) => true,
         Err(err) => panic!("bwrap availability probe failed unexpectedly: {err:?}"),
     }
 }
 
 fn expect_denied(
-    result: Result<codex_protocol::exec_output::ExecToolCallOutput>,
+    result: Result<motyga_protocol::exec_output::ExecToolCallOutput>,
     context: &str,
-) -> codex_protocol::exec_output::ExecToolCallOutput {
+) -> motyga_protocol::exec_output::ExecToolCallOutput {
     match result {
         Ok(output) => {
             assert_ne!(output.exit_code, 0, "{context}: expected nonzero exit code");
             output
         }
-        Err(CodexErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
+        Err(MotygaErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
         Err(err) => panic!("{context}: {err:?}"),
     }
 }
@@ -441,14 +441,14 @@ async fn assert_network_blocked(cmd: &[&str]) {
         arg0: None,
     };
 
-    let codex_linux_sandbox_exe: Option<PathBuf> = Some(codex_linux_sandbox_exe());
+    let motyga_linux_sandbox_exe: Option<PathBuf> = Some(motyga_linux_sandbox_exe());
     let permission_profile = PermissionProfile::read_only();
     let result = process_exec_tool_call(
         params,
         &permission_profile,
         &sandbox_cwd,
         std::slice::from_ref(&sandbox_cwd),
-        &codex_linux_sandbox_exe,
+        &motyga_linux_sandbox_exe,
         /*use_legacy_landlock*/ false,
         /*stdout_stream*/ None,
     )
@@ -456,7 +456,7 @@ async fn assert_network_blocked(cmd: &[&str]) {
 
     let output = match result {
         Ok(output) => output,
-        Err(CodexErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
+        Err(MotygaErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
         _ => {
             panic!("expected sandbox denied error, got: {result:?}");
         }
@@ -501,7 +501,7 @@ async fn sandbox_blocks_nc() {
 }
 
 #[tokio::test]
-async fn sandbox_blocks_git_and_codex_writes_inside_writable_root() {
+async fn sandbox_blocks_git_and_motyga_writes_inside_writable_root() {
     if should_skip_bwrap_tests().await {
         eprintln!("skipping bwrap test: bwrap sandbox prerequisites are unavailable");
         return;
@@ -509,12 +509,12 @@ async fn sandbox_blocks_git_and_codex_writes_inside_writable_root() {
 
     let tmpdir = tempfile::tempdir().expect("tempdir");
     let dot_git = tmpdir.path().join(".git");
-    let dot_codex = tmpdir.path().join(".motyga");
+    let dot_motyga = tmpdir.path().join(".motyga");
     std::fs::create_dir_all(&dot_git).expect("create .git");
-    std::fs::create_dir_all(&dot_codex).expect("create .codex");
+    std::fs::create_dir_all(&dot_motyga).expect("create .motyga");
 
     let git_target = dot_git.join("config");
-    let codex_target = dot_codex.join("config.toml");
+    let motyga_target = dot_motyga.join("config.toml");
 
     let git_output = expect_denied(
         run_cmd_result_with_writable_roots(
@@ -532,12 +532,12 @@ async fn sandbox_blocks_git_and_codex_writes_inside_writable_root() {
         ".git write should be denied under bubblewrap",
     );
 
-    let codex_output = expect_denied(
+    let motyga_output = expect_denied(
         run_cmd_result_with_writable_roots(
             &[
                 "bash",
                 "-lc",
-                &format!("echo denied > {}", codex_target.to_string_lossy()),
+                &format!("echo denied > {}", motyga_target.to_string_lossy()),
             ],
             &[tmpdir.path().to_path_buf()],
             LONG_TIMEOUT_MS,
@@ -545,14 +545,14 @@ async fn sandbox_blocks_git_and_codex_writes_inside_writable_root() {
             /*network_access*/ true,
         )
         .await,
-        ".codex write should be denied under bubblewrap",
+        ".motyga write should be denied under bubblewrap",
     );
     assert_ne!(git_output.exit_code, 0);
-    assert_ne!(codex_output.exit_code, 0);
+    assert_ne!(motyga_output.exit_code, 0);
 }
 
 #[tokio::test]
-async fn sandbox_blocks_codex_symlink_replacement_attack() {
+async fn sandbox_blocks_motyga_symlink_replacement_attack() {
     if should_skip_bwrap_tests().await {
         eprintln!("skipping bwrap test: bwrap sandbox prerequisites are unavailable");
         return;
@@ -561,20 +561,20 @@ async fn sandbox_blocks_codex_symlink_replacement_attack() {
     use std::os::unix::fs::symlink;
 
     let tmpdir = tempfile::tempdir().expect("tempdir");
-    let decoy = tmpdir.path().join("decoy-codex");
+    let decoy = tmpdir.path().join("decoy-motyga");
     std::fs::create_dir_all(&decoy).expect("create decoy dir");
 
-    let dot_codex = tmpdir.path().join(".motyga");
-    symlink(&decoy, &dot_codex).expect("create .codex symlink");
+    let dot_motyga = tmpdir.path().join(".motyga");
+    symlink(&decoy, &dot_motyga).expect("create .motyga symlink");
 
-    let codex_target = dot_codex.join("config.toml");
+    let motyga_target = dot_motyga.join("config.toml");
 
-    let codex_output = expect_denied(
+    let motyga_output = expect_denied(
         run_cmd_result_with_writable_roots(
             &[
                 "bash",
                 "-lc",
-                &format!("echo denied > {}", codex_target.to_string_lossy()),
+                &format!("echo denied > {}", motyga_target.to_string_lossy()),
             ],
             &[tmpdir.path().to_path_buf()],
             LONG_TIMEOUT_MS,
@@ -582,13 +582,13 @@ async fn sandbox_blocks_codex_symlink_replacement_attack() {
             /*network_access*/ true,
         )
         .await,
-        ".codex symlink replacement should be denied",
+        ".motyga symlink replacement should be denied",
     );
-    assert_ne!(codex_output.exit_code, 0);
+    assert_ne!(motyga_output.exit_code, 0);
 }
 
 #[tokio::test]
-async fn sandbox_reports_codex_symlink_build_failure_without_panicking() {
+async fn sandbox_reports_motyga_symlink_build_failure_without_panicking() {
     if should_skip_bwrap_tests().await {
         eprintln!("skipping bwrap test: bwrap sandbox prerequisites are unavailable");
         return;
@@ -597,11 +597,11 @@ async fn sandbox_reports_codex_symlink_build_failure_without_panicking() {
     use std::os::unix::fs::symlink;
 
     let tmpdir = tempfile::tempdir().expect("tempdir");
-    let decoy = tmpdir.path().join("decoy-codex");
+    let decoy = tmpdir.path().join("decoy-motyga");
     std::fs::create_dir_all(&decoy).expect("create decoy dir");
 
-    let dot_codex = tmpdir.path().join(".motyga");
-    symlink(&decoy, &dot_codex).expect("create .codex symlink");
+    let dot_motyga = tmpdir.path().join(".motyga");
+    symlink(&decoy, &dot_motyga).expect("create .motyga symlink");
 
     let output = match run_cmd_result_with_writable_roots(
         &["bash", "-lc", "true"],
@@ -612,8 +612,8 @@ async fn sandbox_reports_codex_symlink_build_failure_without_panicking() {
     )
     .await
     {
-        Err(CodexErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
-        result => panic!(".codex symlink build failure should deny: {result:?}"),
+        Err(MotygaErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
+        result => panic!(".motyga symlink build failure should deny: {result:?}"),
     };
 
     assert_eq!(output.exit_code, 1);
@@ -680,7 +680,7 @@ async fn sandbox_keeps_parent_repo_discovery_while_blocking_child_metadata() {
         r#"set -e
 test "$(git rev-parse --show-toplevel)" = '{repo}'
 git status --short > status.before
-if grep -E '(^|[[:space:]])\.(git|codex|agents)(/|$)' status.before; then
+if grep -E '(^|[[:space:]])\.(git|motyga|agents)(/|$)' status.before; then
   cat status.before
   exit 21
 fi
@@ -719,7 +719,7 @@ fi
     assert_ne!(git_init_output.exit_code, 0);
     assert!(!subdir.join(".git").exists());
 
-    let mkdir_codex_output = expect_denied(
+    let mkdir_motyga_output = expect_denied(
         run_cmd_result_with_cwd_and_writable_roots(
             &["mkdir", ".motyga"],
             &subdir,
@@ -729,9 +729,9 @@ fi
             /*network_access*/ true,
         )
         .await,
-        "child .codex directory creation should be denied",
+        "child .motyga directory creation should be denied",
     );
-    assert_ne!(mkdir_codex_output.exit_code, 0);
+    assert_ne!(mkdir_motyga_output.exit_code, 0);
     assert!(!subdir.join(".motyga").exists());
 
     let script = format!(
@@ -776,7 +776,7 @@ async fn sandbox_blocks_explicit_split_policy_carveouts_under_bwrap() {
     let blocked_target = blocked.join("secret.txt");
     // These tests bypass the usual legacy-policy bridge, so explicitly keep
     // the sandbox helper binary and minimal runtime paths readable.
-    let sandbox_helper_dir = codex_linux_sandbox_exe()
+    let sandbox_helper_dir = motyga_linux_sandbox_exe()
         .parent()
         .expect("sandbox helper should have a parent")
         .to_path_buf();
@@ -844,7 +844,7 @@ async fn sandbox_reenables_writable_subpaths_under_unreadable_parents() {
     let allowed_target = allowed.join("note.txt");
     // These tests bypass the usual legacy-policy bridge, so explicitly keep
     // the sandbox helper binary and minimal runtime paths readable.
-    let sandbox_helper_dir = codex_linux_sandbox_exe()
+    let sandbox_helper_dir = motyga_linux_sandbox_exe()
         .parent()
         .expect("sandbox helper should have a parent")
         .to_path_buf();

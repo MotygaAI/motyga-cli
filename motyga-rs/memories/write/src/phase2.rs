@@ -13,18 +13,18 @@ use crate::workspace::memory_workspace_diff;
 use crate::workspace::prepare_memory_workspace;
 use crate::workspace::reset_memory_workspace_baseline;
 use crate::workspace::write_workspace_diff;
-use codex_config::Constrained;
-use codex_core::config::Config;
-use codex_features::Feature;
-use codex_model_provider::ModelProvider;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::AgentStatus;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::user_input::UserInput;
-use codex_state::Stage1Output;
-use codex_state::StateRuntime;
+use motyga_config::Constrained;
+use motyga_core::config::Config;
+use motyga_features::Feature;
+use motyga_model_provider::ModelProvider;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::AgentStatus;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::user_input::UserInput;
+use motyga_state::Stage1Output;
+use motyga_state::StateRuntime;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
@@ -50,7 +50,7 @@ pub async fn run(context: Arc<MemoryStartupContext>, config: Arc<Config>) {
         // This should not happen.
         return;
     };
-    let root = memory_root(&config.codex_home);
+    let root = memory_root(&config.motyga_home);
     let max_raw_memories = config.memories.max_raw_memories_for_consolidation;
     let max_unused_days = config.memories.max_unused_days;
 
@@ -227,7 +227,7 @@ mod job {
                 "failed_claim"
             })?;
         let (token, watermark) = match claim {
-            codex_state::Phase2JobClaimOutcome::Claimed {
+            motyga_state::Phase2JobClaimOutcome::Claimed {
                 ownership_token,
                 input_watermark,
             } => {
@@ -238,13 +238,13 @@ mod job {
                 );
                 (ownership_token, input_watermark)
             }
-            codex_state::Phase2JobClaimOutcome::SkippedRetryUnavailable => {
+            motyga_state::Phase2JobClaimOutcome::SkippedRetryUnavailable => {
                 return Err("skipped_retry_unavailable");
             }
-            codex_state::Phase2JobClaimOutcome::SkippedCooldown => {
+            motyga_state::Phase2JobClaimOutcome::SkippedCooldown => {
                 return Err("skipped_cooldown");
             }
-            codex_state::Phase2JobClaimOutcome::SkippedRunning => return Err("skipped_running"),
+            motyga_state::Phase2JobClaimOutcome::SkippedRunning => return Err("skipped_running"),
         };
 
         Ok(Claim { token, watermark })
@@ -283,7 +283,7 @@ mod job {
         db: &StateRuntime,
         claim: &Claim,
         completion_watermark: i64,
-        selected_outputs: &[codex_state::Stage1Output],
+        selected_outputs: &[motyga_state::Stage1Output],
         reason: &'static str,
     ) -> bool {
         context.counter(MEMORY_PHASE_TWO_JOBS, /*inc*/ 1, &[("status", reason)]);
@@ -299,7 +299,7 @@ mod agent {
     use tracing::warn;
 
     pub(super) fn get_config(config: &Config, provider: &dyn ModelProvider) -> Option<Config> {
-        let root = memory_root(&config.codex_home);
+        let root = memory_root(&config.motyga_home);
         let mut agent_config = config.clone();
 
         agent_config.cwd = root.clone();
@@ -361,10 +361,10 @@ mod agent {
         context: Arc<MemoryStartupContext>,
         claim: Claim,
         new_watermark: i64,
-        selected_outputs: Vec<codex_state::Stage1Output>,
-        memory_root: codex_utils_absolute_path::AbsolutePathBuf,
+        selected_outputs: Vec<motyga_state::Stage1Output>,
+        memory_root: motyga_utils_absolute_path::AbsolutePathBuf,
         agent: SpawnedConsolidationAgent,
-        phase_two_e2e_timer: Option<codex_otel::Timer>,
+        phase_two_e2e_timer: Option<motyga_otel::Timer>,
     ) {
         let Some(db) = context.state_db() else {
             return;
@@ -453,7 +453,7 @@ mod agent {
         db: Arc<StateRuntime>,
         token: String,
         thread_id: ThreadId,
-        thread: &codex_core::CodexThread,
+        thread: &motyga_core::MotygaThread,
     ) -> AgentStatus {
         let mut heartbeat_interval =
             tokio::time::interval(Duration::from_secs(crate::stage_two::JOB_HEARTBEAT_SECONDS));
@@ -519,7 +519,7 @@ mod agent {
 
 pub(super) fn get_watermark(
     claimed_watermark: i64,
-    latest_memories: &[codex_state::Stage1Output],
+    latest_memories: &[motyga_state::Stage1Output],
 ) -> i64 {
     latest_memories
         .iter()

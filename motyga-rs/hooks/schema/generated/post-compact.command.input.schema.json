@@ -40,7 +40,7 @@
       "type": "string"
     },
     "turn_id": {
-      "description": "Codex extension: expose the active turn id to internal turn-scoped hooks.",
+      "description": "Motyga extension: expose the active turn id to internal turn-scoped hooks.",
       "type": "string"
     }
   },

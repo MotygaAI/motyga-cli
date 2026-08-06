@@ -1,7 +1,7 @@
-//! Plugin path resolution, plaintext mention sigils, and MCP connector helpers shared across Codex
+//! Plugin path resolution, plaintext mention sigils, and MCP connector helpers shared across Motyga
 //! crates.
 
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 pub mod mcp_connector;
 pub mod mention_syntax;

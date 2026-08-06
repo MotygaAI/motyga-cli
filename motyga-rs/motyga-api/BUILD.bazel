@@ -1,0 +1,6 @@
+load("//:defs.bzl", "motyga_rust_crate")
+
+motyga_rust_crate(
+    name = "motyga-api",
+    crate_name = "motyga_api",
+)

@@ -13,16 +13,16 @@ use crate::metrics::emit_fetch_attempt_metric;
 use crate::metrics::emit_fetch_final_metric;
 use crate::metrics::emit_load_metric;
 use crate::validation::validate_bundle;
-use codex_config::AbsolutePathBuf;
-use codex_config::CloudConfigBundle;
-use codex_config::CloudConfigBundleLoadError;
-use codex_config::CloudConfigBundleLoadErrorCode;
-use codex_core::util::backoff;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::RefreshTokenError;
-use codex_login::UnauthorizedRecovery;
-use codex_protocol::account::PlanType;
+use motyga_config::AbsolutePathBuf;
+use motyga_config::CloudConfigBundle;
+use motyga_config::CloudConfigBundleLoadError;
+use motyga_config::CloudConfigBundleLoadErrorCode;
+use motyga_core::util::backoff;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::RefreshTokenError;
+use motyga_login::UnauthorizedRecovery;
+use motyga_protocol::account::PlanType;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -40,15 +40,15 @@ const CLOUD_CONFIG_BUNDLE_AUTH_RECOVERY_FAILED_MESSAGE: &str = concat!(
     "Please log out and sign in again."
 );
 
-fn auth_identity(auth: &CodexAuth) -> (Option<String>, Option<String>) {
+fn auth_identity(auth: &MotygaAuth) -> (Option<String>, Option<String>) {
     (auth.get_chatgpt_user_id(), auth.get_account_id())
 }
 
-fn cloud_config_eligible_auth(auth: &CodexAuth) -> bool {
+fn cloud_config_eligible_auth(auth: &MotygaAuth) -> bool {
     let Some(plan_type) = auth.account_plan_type() else {
         return false;
     };
-    auth.uses_codex_backend()
+    auth.uses_motyga_backend()
         && (plan_type.is_business_like()
             || matches!(plan_type, PlanType::Enterprise | PlanType::Edu))
 }
@@ -75,7 +75,7 @@ pub(crate) struct CloudConfigBundleService<C> {
     auth_manager: Arc<AuthManager>,
     client: Arc<C>,
     cache: CloudConfigBundleCache,
-    codex_home: AbsolutePathBuf,
+    motyga_home: AbsolutePathBuf,
     timeout: Duration,
 }
 
@@ -85,7 +85,7 @@ impl<C> Clone for CloudConfigBundleService<C> {
             auth_manager: Arc::clone(&self.auth_manager),
             client: Arc::clone(&self.client),
             cache: self.cache.clone(),
-            codex_home: self.codex_home.clone(),
+            motyga_home: self.motyga_home.clone(),
             timeout: self.timeout,
         }
     }
@@ -98,15 +98,15 @@ where
     pub(crate) fn new(
         auth_manager: Arc<AuthManager>,
         client: Arc<C>,
-        codex_home: PathBuf,
+        motyga_home: PathBuf,
         timeout: Duration,
     ) -> Self {
-        let codex_home = AbsolutePathBuf::resolve_path_against_base(codex_home, "/");
+        let motyga_home = AbsolutePathBuf::resolve_path_against_base(motyga_home, "/");
         Self {
             auth_manager,
             client,
-            cache: CloudConfigBundleCache::new(codex_home.clone()),
-            codex_home,
+            cache: CloudConfigBundleCache::new(motyga_home.clone()),
+            motyga_home,
             timeout,
         }
     }
@@ -115,7 +115,7 @@ where
         &self,
     ) -> Result<Option<CloudConfigBundle>, CloudConfigBundleLoadError> {
         let _timer =
-            codex_otel::start_global_timer("codex.cloud_config_bundle.fetch.duration_ms", &[]);
+            motyga_otel::start_global_timer("motyga.cloud_config_bundle.fetch.duration_ms", &[]);
         let started_at = Instant::now();
         let load_result = timeout(self.timeout, self.load_startup_bundle())
             .await
@@ -200,7 +200,7 @@ where
     ) -> CachedBundleLookup {
         match self.cache.load(chatgpt_user_id, account_id).await {
             Ok(signed_payload) => {
-                if let Err(err) = validate_bundle(&signed_payload.bundle, &self.codex_home) {
+                if let Err(err) = validate_bundle(&signed_payload.bundle, &self.motyga_home) {
                     tracing::warn!(
                         path = %self.cache.path().display(),
                         error = %err,
@@ -226,7 +226,7 @@ where
 
     async fn fetch_remote_bundle_and_update_cache_with_retries(
         &self,
-        mut auth: CodexAuth,
+        mut auth: MotygaAuth,
         trigger: &'static str,
     ) -> Result<Option<CloudConfigBundle>, CloudConfigBundleLoadError> {
         let mut attempt = 1;
@@ -299,13 +299,13 @@ where
 
     async fn validate_and_cache_remote_bundle(
         &self,
-        auth: &CodexAuth,
+        auth: &MotygaAuth,
         trigger: &'static str,
         attempt: usize,
         bundle: CloudConfigBundle,
     ) -> Result<Option<CloudConfigBundle>, CloudConfigBundleLoadError> {
         emit_fetch_attempt_metric(trigger, attempt, "success", /*status_code*/ None);
-        if let Err(err) = validate_bundle(&bundle, &self.codex_home) {
+        if let Err(err) = validate_bundle(&bundle, &self.motyga_home) {
             emit_fetch_final_metric(
                 trigger,
                 "error",
@@ -364,7 +364,7 @@ where
 
     async fn handle_unauthorized(
         &self,
-        auth: &mut CodexAuth,
+        auth: &mut MotygaAuth,
         auth_recovery: &mut UnauthorizedRecovery,
         trigger: &'static str,
         attempt: usize,

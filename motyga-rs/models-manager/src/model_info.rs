@@ -1,16 +1,16 @@
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelInstructionsVariables;
-use codex_protocol::openai_models::ModelMessages;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::TruncationMode;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::openai_models::WebSearchToolType;
-use codex_protocol::openai_models::default_input_modalities;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::openai_models::ConfigShellToolType;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelInstructionsVariables;
+use motyga_protocol::openai_models::ModelMessages;
+use motyga_protocol::openai_models::ModelVisibility;
+use motyga_protocol::openai_models::TruncationMode;
+use motyga_protocol::openai_models::TruncationPolicyConfig;
+use motyga_protocol::openai_models::WebSearchToolType;
+use motyga_protocol::openai_models::default_input_modalities;
 
 use crate::config::ModelsManagerConfig;
-use codex_utils_output_truncation::approx_bytes_for_tokens;
+use motyga_utils_output_truncation::approx_bytes_for_tokens;
 use tracing::warn;
 
 pub const BASE_INSTRUCTIONS: &str = include_str!("../prompt.md");
@@ -110,7 +110,7 @@ pub fn model_info_from_slug(slug: &str) -> ModelInfo {
 
 fn local_personality_messages_for_slug(slug: &str) -> Option<ModelMessages> {
     match slug {
-        "gpt-5.2-codex" | "exp-codex-personality" => Some(ModelMessages {
+        "gpt-5.2-codex" | "exp-motyga-personality" => Some(ModelMessages {
             instructions_template: Some(format!(
                 "{DEFAULT_PERSONALITY_HEADER}\n\n{PERSONALITY_PLACEHOLDER}\n\n{BASE_INSTRUCTIONS}"
             )),

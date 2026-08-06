@@ -2,16 +2,16 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use codex_core::config::Config;
-use codex_core::config::Constrained;
-use codex_features::Feature;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
+use motyga_core::config::Config;
+use motyga_core::config::Constrained;
+use motyga_features::Feature;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
 
-use crate::test_codex::TestCodex;
-use crate::test_codex::TestCodexBuilder;
-use crate::test_codex::test_codex;
+use crate::test_motyga::TestMotyga;
+use crate::test_motyga::TestMotygaBuilder;
+use crate::test_motyga::test_motyga;
 
 #[derive(Clone)]
 pub struct ZshForkRuntime {
@@ -56,9 +56,9 @@ pub fn zsh_fork_runtime(test_name: &str) -> Result<Option<ZshForkRuntime>> {
         );
         return Ok(None);
     }
-    let Ok(main_execve_wrapper_exe) = codex_utils_cargo_bin::cargo_bin("codex-execve-wrapper")
+    let Ok(main_execve_wrapper_exe) = motyga_utils_cargo_bin::cargo_bin("motyga-execve-wrapper")
     else {
-        eprintln!("skipping {test_name}: unable to resolve `codex-execve-wrapper` binary");
+        eprintln!("skipping {test_name}: unable to resolve `motyga-execve-wrapper` binary");
         return Ok(None);
     };
 
@@ -74,7 +74,7 @@ pub async fn build_zsh_fork_test<F>(
     approval_policy: AskForApproval,
     permission_profile: PermissionProfile,
     pre_build_hook: F,
-) -> Result<TestCodex>
+) -> Result<TestMotyga>
 where
     F: FnOnce(&Path) + Send + 'static,
 {
@@ -95,7 +95,7 @@ pub async fn build_unified_exec_zsh_fork_test<F>(
     approval_policy: AskForApproval,
     permission_profile: PermissionProfile,
     pre_build_hook: F,
-) -> Result<TestCodex>
+) -> Result<TestMotyga>
 where
     F: FnOnce(&Path) + Send + 'static,
 {
@@ -122,14 +122,14 @@ where
 pub fn zsh_fork_test_builder(
     runtime: ZshForkRuntime,
     approval_policy: AskForApproval,
-) -> TestCodexBuilder {
-    test_codex().with_config(move |config| {
+) -> TestMotygaBuilder {
+    test_motyga().with_config(move |config| {
         runtime.apply_to_config(config, approval_policy);
     })
 }
 
 fn find_test_zsh_path() -> Result<Option<PathBuf>> {
-    let repo_root = codex_utils_cargo_bin::repo_root()?;
+    let repo_root = motyga_utils_cargo_bin::repo_root()?;
     let dotslash_zsh = repo_root.join("motyga-rs/app-server/tests/suite/zsh");
     if !dotslash_zsh.is_file() {
         eprintln!(

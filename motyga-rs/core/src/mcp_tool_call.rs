@@ -23,63 +23,63 @@ use crate::session::turn_context::TurnContext;
 use crate::tools::hook_names::HookToolName;
 use crate::tools::sandboxing::PermissionRequestPayload;
 use crate::turn_metadata::McpTurnMetadataContext;
-use codex_analytics::AppInvocation;
-use codex_analytics::InvocationType;
-use codex_analytics::build_track_events_context;
-use codex_config::ConfigLayerSource;
-use codex_config::types::AppToolApproval;
-use codex_config::types::ApprovalsReviewer;
-use codex_connectors::AppToolPolicy;
-use codex_connectors::AppToolPolicyEvaluator;
-use codex_connectors::AppToolPolicyInput;
-use codex_features::Feature;
-use codex_hooks::PermissionRequestDecision;
-use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
-use codex_mcp::MCP_TOOL_CODEX_APPS_META_KEY;
-use codex_mcp::McpConnectionManager;
-use codex_mcp::McpPermissionPromptAutoApproveContext;
-use codex_mcp::SandboxState;
-use codex_mcp::auth_elicitation_completed_result;
-use codex_mcp::build_auth_elicitation_plan;
-use codex_mcp::declared_openai_file_input_param_names;
-use codex_mcp::mcp_permission_prompt_is_auto_approved;
-use codex_protocol::approvals::ElicitationRequest;
-use codex_protocol::items::McpToolCallError;
-use codex_protocol::items::McpToolCallItem;
-use codex_protocol::items::McpToolCallStatus;
-use codex_protocol::items::TurnItem;
-use codex_protocol::mcp::CallToolResult;
-use codex_protocol::mcp_approval_meta::APPROVAL_KIND_KEY as MCP_TOOL_APPROVAL_KIND_KEY;
-use codex_protocol::mcp_approval_meta::APPROVAL_KIND_MCP_TOOL_CALL as MCP_TOOL_APPROVAL_KIND_MCP_TOOL_CALL;
-use codex_protocol::mcp_approval_meta::CONNECTOR_DESCRIPTION_KEY as MCP_TOOL_APPROVAL_CONNECTOR_DESCRIPTION_KEY;
-use codex_protocol::mcp_approval_meta::CONNECTOR_ID_KEY as MCP_TOOL_APPROVAL_CONNECTOR_ID_KEY;
-use codex_protocol::mcp_approval_meta::CONNECTOR_NAME_KEY as MCP_TOOL_APPROVAL_CONNECTOR_NAME_KEY;
-use codex_protocol::mcp_approval_meta::PERSIST_ALWAYS as MCP_TOOL_APPROVAL_PERSIST_ALWAYS;
-use codex_protocol::mcp_approval_meta::PERSIST_KEY as MCP_TOOL_APPROVAL_PERSIST_KEY;
-use codex_protocol::mcp_approval_meta::PERSIST_SESSION as MCP_TOOL_APPROVAL_PERSIST_SESSION;
-use codex_protocol::mcp_approval_meta::SOURCE_CONNECTOR as MCP_TOOL_APPROVAL_SOURCE_CONNECTOR;
-use codex_protocol::mcp_approval_meta::SOURCE_KEY as MCP_TOOL_APPROVAL_SOURCE_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_DESCRIPTION_KEY as MCP_TOOL_APPROVAL_TOOL_DESCRIPTION_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_PARAMS_DISPLAY_KEY as MCP_TOOL_APPROVAL_TOOL_PARAMS_DISPLAY_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_PARAMS_KEY as MCP_TOOL_APPROVAL_TOOL_PARAMS_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_TITLE_KEY as MCP_TOOL_APPROVAL_TOOL_TITLE_KEY;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::McpInvocation;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::request_user_input::RequestUserInputAnswer;
-use codex_protocol::request_user_input::RequestUserInputArgs;
-use codex_protocol::request_user_input::RequestUserInputQuestion;
-use codex_protocol::request_user_input::RequestUserInputQuestionOption;
-use codex_protocol::request_user_input::RequestUserInputResponse;
-use codex_rmcp_client::ElicitationAction;
-use codex_rmcp_client::ElicitationResponse;
-use codex_rollout::state_db;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_output_truncation::TruncationPolicy;
-use codex_utils_output_truncation::truncate_text;
-use codex_utils_path_uri::PathUri;
-use codex_utils_pty::DEFAULT_OUTPUT_BYTES_CAP;
+use motyga_analytics::AppInvocation;
+use motyga_analytics::InvocationType;
+use motyga_analytics::build_track_events_context;
+use motyga_config::ConfigLayerSource;
+use motyga_config::types::AppToolApproval;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_connectors::AppToolPolicy;
+use motyga_connectors::AppToolPolicyEvaluator;
+use motyga_connectors::AppToolPolicyInput;
+use motyga_features::Feature;
+use motyga_hooks::PermissionRequestDecision;
+use motyga_mcp::MOTYGA_APPS_MCP_SERVER_NAME;
+use motyga_mcp::MCP_TOOL_MOTYGA_APPS_META_KEY;
+use motyga_mcp::McpConnectionManager;
+use motyga_mcp::McpPermissionPromptAutoApproveContext;
+use motyga_mcp::SandboxState;
+use motyga_mcp::auth_elicitation_completed_result;
+use motyga_mcp::build_auth_elicitation_plan;
+use motyga_mcp::declared_openai_file_input_param_names;
+use motyga_mcp::mcp_permission_prompt_is_auto_approved;
+use motyga_protocol::approvals::ElicitationRequest;
+use motyga_protocol::items::McpToolCallError;
+use motyga_protocol::items::McpToolCallItem;
+use motyga_protocol::items::McpToolCallStatus;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::mcp::CallToolResult;
+use motyga_protocol::mcp_approval_meta::APPROVAL_KIND_KEY as MCP_TOOL_APPROVAL_KIND_KEY;
+use motyga_protocol::mcp_approval_meta::APPROVAL_KIND_MCP_TOOL_CALL as MCP_TOOL_APPROVAL_KIND_MCP_TOOL_CALL;
+use motyga_protocol::mcp_approval_meta::CONNECTOR_DESCRIPTION_KEY as MCP_TOOL_APPROVAL_CONNECTOR_DESCRIPTION_KEY;
+use motyga_protocol::mcp_approval_meta::CONNECTOR_ID_KEY as MCP_TOOL_APPROVAL_CONNECTOR_ID_KEY;
+use motyga_protocol::mcp_approval_meta::CONNECTOR_NAME_KEY as MCP_TOOL_APPROVAL_CONNECTOR_NAME_KEY;
+use motyga_protocol::mcp_approval_meta::PERSIST_ALWAYS as MCP_TOOL_APPROVAL_PERSIST_ALWAYS;
+use motyga_protocol::mcp_approval_meta::PERSIST_KEY as MCP_TOOL_APPROVAL_PERSIST_KEY;
+use motyga_protocol::mcp_approval_meta::PERSIST_SESSION as MCP_TOOL_APPROVAL_PERSIST_SESSION;
+use motyga_protocol::mcp_approval_meta::SOURCE_CONNECTOR as MCP_TOOL_APPROVAL_SOURCE_CONNECTOR;
+use motyga_protocol::mcp_approval_meta::SOURCE_KEY as MCP_TOOL_APPROVAL_SOURCE_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_DESCRIPTION_KEY as MCP_TOOL_APPROVAL_TOOL_DESCRIPTION_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_PARAMS_DISPLAY_KEY as MCP_TOOL_APPROVAL_TOOL_PARAMS_DISPLAY_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_PARAMS_KEY as MCP_TOOL_APPROVAL_TOOL_PARAMS_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_TITLE_KEY as MCP_TOOL_APPROVAL_TOOL_TITLE_KEY;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::McpInvocation;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::request_user_input::RequestUserInputAnswer;
+use motyga_protocol::request_user_input::RequestUserInputArgs;
+use motyga_protocol::request_user_input::RequestUserInputQuestion;
+use motyga_protocol::request_user_input::RequestUserInputQuestionOption;
+use motyga_protocol::request_user_input::RequestUserInputResponse;
+use motyga_rmcp_client::ElicitationAction;
+use motyga_rmcp_client::ElicitationResponse;
+use motyga_rollout::state_db;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_output_truncation::TruncationPolicy;
+use motyga_utils_output_truncation::truncate_text;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_pty::DEFAULT_OUTPUT_BYTES_CAP;
 use rmcp::model::ToolAnnotations;
 use serde::Deserialize;
 use serde::Serialize;
@@ -99,13 +99,13 @@ use telemetry::emit_mcp_call_metrics;
 use telemetry::mcp_call_metric_outcome;
 use telemetry::record_mcp_call_outcome_span_telemetry;
 
-const MCP_RESULT_TELEMETRY_META_KEY: &str = "codex/telemetry";
+const MCP_RESULT_TELEMETRY_META_KEY: &str = "motyga/telemetry";
 const MCP_RESULT_TELEMETRY_SPAN_KEY: &str = "span";
 const MCP_RESULT_TELEMETRY_TARGET_ID_KEY: &str = "target_id";
 const MCP_RESULT_TELEMETRY_DID_TRIGGER_SERVER_USER_FLOW_KEY: &str = "did_trigger_server_user_flow";
-const MCP_RESULT_TELEMETRY_TARGET_ID_SPAN_ATTR: &str = "codex.mcp.target.id";
+const MCP_RESULT_TELEMETRY_TARGET_ID_SPAN_ATTR: &str = "motyga.mcp.target.id";
 const MCP_RESULT_TELEMETRY_SERVER_USER_FLOW_SPAN_ATTR: &str =
-    "codex.mcp.server_user_flow.triggered";
+    "motyga.mcp.server_user_flow.triggered";
 const MCP_RESULT_TELEMETRY_TARGET_ID_MAX_CHARS: usize = 256;
 const MCP_TOOL_CALL_EVENT_RESULT_MAX_BYTES: usize = DEFAULT_OUTPUT_BYTES_CAP;
 
@@ -154,7 +154,7 @@ pub(crate) async fn handle_mcp_tool_call(
     )
     .await;
     let item_metadata = McpToolCallItemMetadata::from_tool_metadata(&server, metadata.as_ref());
-    let app_tool_policy = if server == CODEX_APPS_MCP_SERVER_NAME {
+    let app_tool_policy = if server == MOTYGA_APPS_MCP_SERVER_NAME {
         let annotations = metadata
             .as_ref()
             .and_then(|metadata| metadata.annotations.as_ref());
@@ -174,7 +174,7 @@ pub(crate) async fn handle_mcp_tool_call(
     } else {
         AppToolPolicy::default()
     };
-    let approval_mode = if server == CODEX_APPS_MCP_SERVER_NAME {
+    let approval_mode = if server == MOTYGA_APPS_MCP_SERVER_NAME {
         app_tool_policy.approval
     } else if let Some(approval_mode) = {
         // Selected-plugin registrations are absent from config.toml and the legacy plugin manager,
@@ -196,7 +196,7 @@ pub(crate) async fn handle_mcp_tool_call(
         .as_ref()
         .and_then(|metadata| metadata.connector_name.clone());
 
-    if server == CODEX_APPS_MCP_SERVER_NAME && !app_tool_policy.enabled {
+    if server == MOTYGA_APPS_MCP_SERVER_NAME && !app_tool_policy.enabled {
         let result = notify_mcp_tool_call_skip(
             sess.as_ref(),
             turn_context.as_ref(),
@@ -334,7 +334,7 @@ struct McpToolCallItemMetadata {
 
 impl McpToolCallItemMetadata {
     fn from_tool_metadata(server: &str, metadata: Option<&McpToolApprovalMetadata>) -> Self {
-        let trusted_mcp_app_metadata = if server == CODEX_APPS_MCP_SERVER_NAME {
+        let trusted_mcp_app_metadata = if server == MOTYGA_APPS_MCP_SERVER_NAME {
             metadata
         } else {
             None
@@ -348,7 +348,7 @@ impl McpToolCallItemMetadata {
             app_name: trusted_mcp_app_metadata.and_then(|metadata| metadata.connector_name.clone()),
             template_id: trusted_mcp_app_metadata.and_then(|metadata| metadata.template_id.clone()),
             action_name: trusted_mcp_app_metadata
-                .and_then(|metadata| metadata.codex_apps_meta.as_ref())
+                .and_then(|metadata| metadata.motyga_apps_meta.as_ref())
                 .and_then(|meta| meta.get(MCP_TOOL_RESOURCE_URI_META_KEY))
                 .and_then(serde_json::Value::as_str)
                 .and_then(|resource_uri| resource_uri.trim_matches('/').rsplit('/').next())
@@ -438,7 +438,7 @@ async fn handle_approved_mcp_tool_call(
         truncate_mcp_tool_result_for_event(&result),
     )
     .await;
-    maybe_track_codex_app_used(sess, turn_context, manager, &server, &tool_name).await;
+    maybe_track_motyga_app_used(sess, turn_context, manager, &server, &tool_name).await;
 
     let outcome = mcp_call_metric_outcome(&result);
     emit_mcp_call_metrics(
@@ -485,10 +485,10 @@ fn mcp_tool_call_span(
         turn.id = turn_context.sub_id.as_str(),
         server.address = Empty,
         server.port = Empty,
-        codex.mcp.target.id = Empty,
-        codex.mcp.server_user_flow.triggered = Empty,
+        motyga.mcp.target.id = Empty,
+        motyga.mcp.server_user_flow.triggered = Empty,
         error.type = Empty,
-        codex.mcp.error.code = Empty,
+        motyga.mcp.error.code = Empty,
     );
     record_server_fields(&span, fields.server_origin);
     span
@@ -604,7 +604,7 @@ async fn execute_mcp_tool_call(
             .contains(&InputModality::Image),
         Ok(result),
     )?;
-    Ok(maybe_request_codex_apps_auth_elicitation(
+    Ok(maybe_request_motyga_apps_auth_elicitation(
         sess,
         turn_context,
         manager,
@@ -616,7 +616,7 @@ async fn execute_mcp_tool_call(
     .await)
 }
 
-async fn maybe_request_codex_apps_auth_elicitation(
+async fn maybe_request_motyga_apps_auth_elicitation(
     sess: &Session,
     turn_context: &TurnContext,
     manager: &McpConnectionManager,
@@ -625,7 +625,7 @@ async fn maybe_request_codex_apps_auth_elicitation(
     metadata: Option<&McpToolApprovalMetadata>,
     result: CallToolResult,
 ) -> CallToolResult {
-    if !manager.is_host_owned_codex_apps_server(server) {
+    if !manager.is_host_owned_motyga_apps_server(server) {
         return result;
     }
 
@@ -649,7 +649,7 @@ async fn maybe_request_codex_apps_auth_elicitation(
     let connector_id = metadata.and_then(|metadata| metadata.connector_id.as_deref());
     let connector_name = metadata.and_then(|metadata| metadata.connector_name.as_deref());
     let install_url = connector_id.map(|connector_id| {
-        codex_connectors::metadata::connector_install_url(
+        motyga_connectors::metadata::connector_install_url(
             connector_name.unwrap_or(connector_id),
             connector_id,
         )
@@ -670,7 +670,7 @@ async fn maybe_request_codex_apps_auth_elicitation(
     let response = sess
         .request_mcp_server_elicitation(
             turn_context,
-            CODEX_APPS_MCP_SERVER_NAME.to_string(),
+            MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
             request_id,
             request,
         )
@@ -683,16 +683,16 @@ async fn maybe_request_codex_apps_auth_elicitation(
         return result;
     }
 
-    refresh_codex_apps_after_connector_auth(sess, turn_context, manager).await;
+    refresh_motyga_apps_after_connector_auth(sess, turn_context, manager).await;
     auth_elicitation_completed_result(&plan.auth_failure, result.meta)
 }
 
-async fn refresh_codex_apps_after_connector_auth(
+async fn refresh_motyga_apps_after_connector_auth(
     sess: &Session,
     turn_context: &TurnContext,
     manager: &McpConnectionManager,
 ) {
-    let mcp_tools_result = manager.hard_refresh_codex_apps_tools_cache().await;
+    let mcp_tools_result = manager.hard_refresh_motyga_apps_tools_cache().await;
 
     match mcp_tools_result {
         Ok(mcp_tools) => {
@@ -726,14 +726,14 @@ async fn augment_mcp_tool_request_meta_with_sandbox_state(
 
     let server_environment_id = manager
         .server_environment_id(server)
-        .unwrap_or(codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID);
+        .unwrap_or(motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID);
     let Some(sandbox_cwd) = sandbox_cwd_for_mcp_server(step_context, server_environment_id) else {
         return Ok(meta);
     };
     let permission_profile = turn_context.permission_profile();
     let sandbox_state = serde_json::to_value(SandboxState {
         permission_profile,
-        codex_linux_sandbox_exe: step_context.mcp.config().codex_linux_sandbox_exe.clone(),
+        motyga_linux_sandbox_exe: step_context.mcp.config().motyga_linux_sandbox_exe.clone(),
         sandbox_cwd,
         use_legacy_landlock: step_context.mcp.config().use_legacy_landlock,
     })?;
@@ -741,7 +741,7 @@ async fn augment_mcp_tool_request_meta_with_sandbox_state(
     match meta.as_mut() {
         Some(serde_json::Value::Object(map)) => {
             map.insert(
-                codex_mcp::MCP_SANDBOX_STATE_META_CAPABILITY.to_string(),
+                motyga_mcp::MCP_SANDBOX_STATE_META_CAPABILITY.to_string(),
                 sandbox_state,
             );
         }
@@ -749,7 +749,7 @@ async fn augment_mcp_tool_request_meta_with_sandbox_state(
         None => {
             let mut map = serde_json::Map::new();
             map.insert(
-                codex_mcp::MCP_SANDBOX_STATE_META_CAPABILITY.to_string(),
+                motyga_mcp::MCP_SANDBOX_STATE_META_CAPABILITY.to_string(),
                 sandbox_state,
             );
             meta = Some(serde_json::Value::Object(map));
@@ -769,7 +769,7 @@ fn sandbox_cwd_for_mcp_server(step_context: &StepContext, environment_id: &str) 
         return Some(environment.cwd().clone());
     }
 
-    if environment_id == codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID {
+    if environment_id == motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID {
         #[allow(deprecated)]
         return Some(PathUri::from_abs_path(&step_context.turn.cwd));
     }
@@ -955,14 +955,14 @@ struct McpAppUsageMetadata {
     app_name: Option<String>,
 }
 
-async fn maybe_track_codex_app_used(
+async fn maybe_track_motyga_app_used(
     sess: &Session,
     turn_context: &TurnContext,
     manager: &McpConnectionManager,
     server: &str,
     tool_name: &str,
 ) {
-    if server != CODEX_APPS_MCP_SERVER_NAME {
+    if server != MOTYGA_APPS_MCP_SERVER_NAME {
         return;
     }
     let metadata = lookup_mcp_app_usage_metadata(manager, server, tool_name).await;
@@ -1018,7 +1018,7 @@ pub(crate) struct McpToolApprovalMetadata {
     tool_description: Option<String>,
     mcp_app_resource_uri: Option<String>,
     template_id: Option<String>,
-    codex_apps_meta: Option<serde_json::Map<String, serde_json::Value>>,
+    motyga_apps_meta: Option<serde_json::Map<String, serde_json::Value>>,
     openai_file_input_params: Option<Vec<String>>,
 }
 
@@ -1045,7 +1045,7 @@ async fn custom_mcp_tool_approval_mode(
         .and_then(|table| table.get("mcp_servers"))
         .cloned()
         .and_then(|value| {
-            HashMap::<String, codex_config::types::McpServerConfig>::deserialize(value).ok()
+            HashMap::<String, motyga_config::types::McpServerConfig>::deserialize(value).ok()
         })
         .and_then(|servers| {
             let server_config = servers.get(server)?;
@@ -1096,22 +1096,22 @@ fn build_mcp_tool_call_request_meta(
         })
     {
         request_meta.insert(
-            crate::X_CODEX_TURN_METADATA_HEADER.to_string(),
+            crate::X_MOTYGA_TURN_METADATA_HEADER.to_string(),
             turn_metadata,
         );
     }
 
-    if server == CODEX_APPS_MCP_SERVER_NAME {
-        let mut codex_apps_meta = metadata
-            .and_then(|metadata| metadata.codex_apps_meta.clone())
+    if server == MOTYGA_APPS_MCP_SERVER_NAME {
+        let mut motyga_apps_meta = metadata
+            .and_then(|metadata| metadata.motyga_apps_meta.clone())
             .unwrap_or_default();
-        codex_apps_meta.insert(
+        motyga_apps_meta.insert(
             "call_id".to_string(),
             serde_json::Value::String(call_id.to_string()),
         );
         request_meta.insert(
-            MCP_TOOL_CODEX_APPS_META_KEY.to_string(),
-            serde_json::Value::Object(codex_apps_meta),
+            MCP_TOOL_MOTYGA_APPS_META_KEY.to_string(),
+            serde_json::Value::Object(motyga_apps_meta),
         );
     }
     if let Some(plugin_id) = metadata.and_then(|metadata| metadata.plugin_id.as_ref()) {
@@ -1171,7 +1171,7 @@ pub(crate) const MCP_TOOL_APPROVAL_ACCEPT_FOR_SESSION: &str = "Allow for this se
 // RequestUserInput compatibility path. That legacy MCP prompt has allow/cancel labels but no
 // real "Decline" answer, so this lets guardian denials round-trip distinctly from user cancel.
 // This is not a user-facing option.
-pub(crate) const MCP_TOOL_APPROVAL_DECLINE_SYNTHETIC: &str = "__codex_mcp_decline__";
+pub(crate) const MCP_TOOL_APPROVAL_DECLINE_SYNTHETIC: &str = "__motyga_mcp_decline__";
 const MCP_TOOL_APPROVAL_ACCEPT_AND_REMEMBER: &str = "Allow and don't ask me again";
 const MCP_TOOL_APPROVAL_CANCEL: &str = "Cancel";
 
@@ -1405,7 +1405,7 @@ fn session_mcp_tool_approval_key(
     }
 
     let connector_id = metadata.and_then(|metadata| metadata.connector_id.clone());
-    if invocation.server == CODEX_APPS_MCP_SERVER_NAME && connector_id.is_none() {
+    if invocation.server == MOTYGA_APPS_MCP_SERVER_NAME && connector_id.is_none() {
         return None;
     }
 
@@ -1437,7 +1437,7 @@ pub(crate) fn build_guardian_mcp_tool_review_request(
         connector_id: metadata.and_then(|metadata| metadata.connector_id.clone()),
         connector_name: metadata.and_then(|metadata| metadata.connector_name.clone()),
         connector_description: metadata.and_then(|metadata| metadata.connector_description.clone()),
-        connected_account_email: (invocation.server == CODEX_APPS_MCP_SERVER_NAME)
+        connected_account_email: (invocation.server == MOTYGA_APPS_MCP_SERVER_NAME)
             .then(|| metadata.and_then(|metadata| metadata.connected_account_email.clone()))
             .flatten(),
         tool_title: metadata.and_then(|metadata| metadata.tool_title.clone()),
@@ -1486,7 +1486,7 @@ pub(crate) async fn lookup_mcp_tool_metadata(
     let tool_info = tools
         .into_iter()
         .find(|tool_info| tool_info.server_name == server && tool_info.tool.name == tool_name)?;
-    let connector_description = if server == CODEX_APPS_MCP_SERVER_NAME {
+    let connector_description = if server == MOTYGA_APPS_MCP_SERVER_NAME {
         let connectors = match connectors::list_cached_accessible_connectors_from_mcp_tools(
             turn_context.config.as_ref(),
         )
@@ -1516,15 +1516,15 @@ pub(crate) async fn lookup_mcp_tool_metadata(
         None
     };
 
-    let codex_apps_meta = tool_info
+    let motyga_apps_meta = tool_info
         .tool
         .meta
         .as_ref()
-        .and_then(|meta| meta.get(MCP_TOOL_CODEX_APPS_META_KEY))
+        .and_then(|meta| meta.get(MCP_TOOL_MOTYGA_APPS_META_KEY))
         .and_then(serde_json::Value::as_object)
         .cloned();
-    let connected_account_email = if server == CODEX_APPS_MCP_SERVER_NAME {
-        codex_apps_meta
+    let connected_account_email = if server == MOTYGA_APPS_MCP_SERVER_NAME {
+        motyga_apps_meta
             .as_ref()
             .and_then(|meta| meta.get(MCP_TOOL_CONNECTED_ACCOUNT_EMAIL_META_KEY))
             .and_then(serde_json::Value::as_str)
@@ -1552,12 +1552,12 @@ pub(crate) async fn lookup_mcp_tool_metadata(
         tool_title: tool_info.tool.title,
         tool_description: tool_info.tool.description.map(std::borrow::Cow::into_owned),
         mcp_app_resource_uri: get_mcp_app_resource_uri(tool_info.tool.meta.as_deref()),
-        template_id: codex_apps_meta
+        template_id: motyga_apps_meta
             .as_ref()
             .and_then(|meta| meta.get(MCP_TOOL_TEMPLATE_ID_META_KEY))
             .and_then(serde_json::Value::as_str)
             .map(str::to_string),
-        codex_apps_meta,
+        motyga_apps_meta,
         // Disallow custom MCPs from uploading files via fileParams.
         openai_file_input_params: openai_file_input_params_for_server(
             server,
@@ -1570,7 +1570,7 @@ fn openai_file_input_params_for_server(
     server: &str,
     meta: Option<&serde_json::Map<String, serde_json::Value>>,
 ) -> Option<Vec<String>> {
-    (server == CODEX_APPS_MCP_SERVER_NAME)
+    (server == MOTYGA_APPS_MCP_SERVER_NAME)
         .then_some(declared_openai_file_input_param_names(meta))
         .filter(|params| !params.is_empty())
 }
@@ -1670,7 +1670,7 @@ fn build_mcp_tool_approval_fallback_message(
         .filter(|name| !name.is_empty())
         .map(ToString::to_string)
         .unwrap_or_else(|| {
-            if server == CODEX_APPS_MCP_SERVER_NAME {
+            if server == MOTYGA_APPS_MCP_SERVER_NAME {
                 "this app".to_string()
             } else {
                 format!("the {server} MCP server")
@@ -1755,7 +1755,7 @@ fn build_mcp_tool_approval_elicitation_meta(
                 serde_json::Value::String(tool_description.clone()),
             );
         }
-        if server == CODEX_APPS_MCP_SERVER_NAME
+        if server == MOTYGA_APPS_MCP_SERVER_NAME
             && (metadata.connector_id.is_some()
                 || metadata.connector_name.is_some()
                 || metadata.connector_description.is_some())
@@ -1982,12 +1982,12 @@ async fn maybe_persist_mcp_tool_approval(
 ) {
     let tool_name = key.tool_name.clone();
 
-    let persist_result = if key.server == CODEX_APPS_MCP_SERVER_NAME {
+    let persist_result = if key.server == MOTYGA_APPS_MCP_SERVER_NAME {
         let Some(connector_id) = key.connector_id.clone() else {
             remember_mcp_tool_approval(sess, key).await;
             return;
         };
-        persist_codex_app_tool_approval(&turn_context.config, &connector_id, &tool_name).await
+        persist_motyga_app_tool_approval(&turn_context.config, &connector_id, &tool_name).await
     } else {
         persist_non_app_mcp_tool_approval(sess, &turn_context.config, &key.server, &tool_name).await
     };
@@ -2007,7 +2007,7 @@ async fn maybe_persist_mcp_tool_approval(
     remember_mcp_tool_approval(sess, key).await;
 }
 
-async fn persist_codex_app_tool_approval(
+async fn persist_motyga_app_tool_approval(
     config: &Config,
     connector_id: &str,
     tool_name: &str,
@@ -2127,7 +2127,7 @@ fn user_mcp_server_is_configured(config: &Config, server: &str) -> anyhow::Resul
         return Ok(false);
     };
     let servers =
-        HashMap::<String, codex_config::types::McpServerConfig>::deserialize(mcp_servers_toml)?;
+        HashMap::<String, motyga_config::types::McpServerConfig>::deserialize(mcp_servers_toml)?;
     Ok(servers.contains_key(server))
 }
 
@@ -2150,7 +2150,7 @@ fn project_mcp_tool_approval_config_folder(
                 .and_then(|table| table.get("mcp_servers"))
                 .cloned()
                 .and_then(|value| {
-                    HashMap::<String, codex_config::types::McpServerConfig>::deserialize(value).ok()
+                    HashMap::<String, motyga_config::types::McpServerConfig>::deserialize(value).ok()
                 })?;
             if servers.contains_key(server) {
                 layer.config_folder()

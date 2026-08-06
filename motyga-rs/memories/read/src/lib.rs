@@ -1,4 +1,4 @@
-//! Read-path helpers for Codex memories.
+//! Read-path helpers for Motyga memories.
 //!
 //! This crate owns memory injection, memory citation parsing, and telemetry
 //! classification for read access to the memory folder. It intentionally does
@@ -8,8 +8,8 @@ pub mod citations;
 mod metrics;
 pub mod usage;
 
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
-pub fn memory_root(codex_home: &AbsolutePathBuf) -> AbsolutePathBuf {
-    codex_home.join("memories")
+pub fn memory_root(motyga_home: &AbsolutePathBuf) -> AbsolutePathBuf {
+    motyga_home.join("memories")
 }

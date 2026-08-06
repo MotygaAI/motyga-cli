@@ -1,25 +1,25 @@
 use crate::client::AnalyticsEventsQueue;
 use crate::events::AppServerRpcTransport;
-use crate::events::CodexAcceptedLineFingerprintsEventParams;
-use crate::events::CodexAcceptedLineFingerprintsEventRequest;
-use crate::events::CodexAppMentionedEventRequest;
-use crate::events::CodexAppServerClientMetadata;
-use crate::events::CodexAppUsedEventRequest;
-use crate::events::CodexCommandExecutionEventParams;
-use crate::events::CodexCommandExecutionEventRequest;
-use crate::events::CodexCompactionEventRequest;
-use crate::events::CodexHookRunEventRequest;
-use crate::events::CodexOnboardingExternalAgentImportFailureEventRequest;
-use crate::events::CodexOnboardingExternalAgentImportFailureMetadata;
-use crate::events::CodexPluginEventRequest;
-use crate::events::CodexPluginInstallFailedEventRequest;
-use crate::events::CodexPluginInstallFailedMetadata;
-use crate::events::CodexPluginUsedEventRequest;
-use crate::events::CodexReviewEventParams;
-use crate::events::CodexReviewEventRequest;
-use crate::events::CodexRuntimeMetadata;
-use crate::events::CodexToolItemEventBase;
-use crate::events::CodexTurnEventRequest;
+use crate::events::MotygaAcceptedLineFingerprintsEventParams;
+use crate::events::MotygaAcceptedLineFingerprintsEventRequest;
+use crate::events::MotygaAppMentionedEventRequest;
+use crate::events::MotygaAppServerClientMetadata;
+use crate::events::MotygaAppUsedEventRequest;
+use crate::events::MotygaCommandExecutionEventParams;
+use crate::events::MotygaCommandExecutionEventRequest;
+use crate::events::MotygaCompactionEventRequest;
+use crate::events::MotygaHookRunEventRequest;
+use crate::events::MotygaOnboardingExternalAgentImportFailureEventRequest;
+use crate::events::MotygaOnboardingExternalAgentImportFailureMetadata;
+use crate::events::MotygaPluginEventRequest;
+use crate::events::MotygaPluginInstallFailedEventRequest;
+use crate::events::MotygaPluginInstallFailedMetadata;
+use crate::events::MotygaPluginUsedEventRequest;
+use crate::events::MotygaReviewEventParams;
+use crate::events::MotygaReviewEventRequest;
+use crate::events::MotygaRuntimeMetadata;
+use crate::events::MotygaToolItemEventBase;
+use crate::events::MotygaTurnEventRequest;
 use crate::events::FinalApprovalOutcome;
 use crate::events::GuardianApprovalRequestSource;
 use crate::events::GuardianReviewDecision;
@@ -36,18 +36,18 @@ use crate::events::ThreadInitializedEvent;
 use crate::events::ThreadInitializedEventParams;
 use crate::events::ToolItemTerminalStatus;
 use crate::events::TrackEventRequest;
-use crate::events::codex_app_metadata;
-use crate::events::codex_hook_run_metadata;
-use crate::events::codex_plugin_metadata;
-use crate::events::codex_plugin_used_metadata;
+use crate::events::motyga_app_metadata;
+use crate::events::motyga_hook_run_metadata;
+use crate::events::motyga_plugin_metadata;
+use crate::events::motyga_plugin_used_metadata;
 use crate::events::subagent_thread_started_event_request;
 use crate::facts::AnalyticsFact;
 use crate::facts::AnalyticsJsonRpcError;
 use crate::facts::AppInvocation;
 use crate::facts::AppMentionedInput;
 use crate::facts::AppUsedInput;
-use crate::facts::CodexCompactionEvent;
-use crate::facts::CodexErrKind;
+use crate::facts::MotygaCompactionEvent;
+use crate::facts::MotygaErrKind;
 use crate::facts::CompactionImplementation;
 use crate::facts::CompactionPhase;
 use crate::facts::CompactionReason;
@@ -74,7 +74,7 @@ use crate::facts::SkillInvokedInput;
 use crate::facts::SubAgentThreadStartedInput;
 use crate::facts::ThreadInitializationMode;
 use crate::facts::TrackEventsContext;
-use crate::facts::TurnCodexErrorFact;
+use crate::facts::TurnMotygaErrorFact;
 use crate::facts::TurnProfile;
 use crate::facts::TurnProfileFact;
 use crate::facts::TurnResolvedConfigFact;
@@ -84,86 +84,86 @@ use crate::facts::TurnTokenUsageFact;
 use crate::reducer::AnalyticsReducer;
 use crate::reducer::normalize_path_for_skill_id;
 use crate::reducer::skill_id_for_local_skill;
-use codex_app_server_protocol::ApprovalsReviewer as AppServerApprovalsReviewer;
-use codex_app_server_protocol::AskForApproval as AppServerAskForApproval;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::ClientResponsePayload;
-use codex_app_server_protocol::CodexErrorInfo;
-use codex_app_server_protocol::CollabAgentTool;
-use codex_app_server_protocol::CollabAgentToolCallStatus;
-use codex_app_server_protocol::CommandAction;
-use codex_app_server_protocol::CommandExecutionApprovalDecision;
-use codex_app_server_protocol::CommandExecutionRequestApprovalParams;
-use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
-use codex_app_server_protocol::CommandExecutionSource;
-use codex_app_server_protocol::CommandExecutionStatus;
-use codex_app_server_protocol::DynamicToolCallStatus;
-use codex_app_server_protocol::GuardianApprovalReview;
-use codex_app_server_protocol::GuardianApprovalReviewAction;
-use codex_app_server_protocol::GuardianApprovalReviewStatus;
-use codex_app_server_protocol::GuardianCommandSource as AppServerGuardianCommandSource;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::ItemGuardianApprovalReviewCompletedNotification;
-use codex_app_server_protocol::ItemStartedNotification;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::McpToolCallStatus;
-use codex_app_server_protocol::NonSteerableTurnKind;
-use codex_app_server_protocol::PatchApplyStatus;
-use codex_app_server_protocol::PermissionsRequestApprovalParams;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::RequestPermissionProfile;
-use codex_app_server_protocol::SandboxPolicy as AppServerSandboxPolicy;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::ServerResponse;
-use codex_app_server_protocol::SessionSource as AppServerSessionSource;
-use codex_app_server_protocol::SubAgentActivityKind;
-use codex_app_server_protocol::Thread;
-use codex_app_server_protocol::ThreadArchiveParams;
-use codex_app_server_protocol::ThreadArchiveResponse;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadResumeResponse;
-use codex_app_server_protocol::ThreadSource as AppServerThreadSource;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::ThreadStatus as AppServerThreadStatus;
-use codex_app_server_protocol::Turn;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnDiffUpdatedNotification;
-use codex_app_server_protocol::TurnError as AppServerTurnError;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartedNotification;
-use codex_app_server_protocol::TurnStatus as AppServerTurnStatus;
-use codex_app_server_protocol::TurnSteerParams;
-use codex_app_server_protocol::TurnSteerResponse;
-use codex_app_server_protocol::UserInput;
-use codex_login::default_client::DEFAULT_ORIGINATOR;
-use codex_login::default_client::originator;
-use codex_plugin::AppConnectorId;
-use codex_plugin::PluginCapabilitySummary;
-use codex_plugin::PluginId;
-use codex_plugin::PluginTelemetryMetadata;
-use codex_protocol::approvals::NetworkApprovalProtocol;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::error::CodexErr;
-use codex_protocol::models::NetworkPermissions as CoreNetworkPermissions;
-use codex_protocol::models::PermissionProfile as CorePermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::HookEventName;
-use codex_protocol::protocol::HookRunStatus;
-use codex_protocol::protocol::HookSource;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::ThreadSource;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::request_permissions::PermissionGrantScope as CorePermissionGrantScope;
-use codex_protocol::request_permissions::RequestPermissionProfile as CoreRequestPermissionProfile;
-use codex_protocol::request_permissions::RequestPermissionsResponse as CoreRequestPermissionsResponse;
-use codex_utils_absolute_path::test_support::PathBufExt;
-use codex_utils_absolute_path::test_support::test_path_buf;
+use motyga_app_server_protocol::ApprovalsReviewer as AppServerApprovalsReviewer;
+use motyga_app_server_protocol::AskForApproval as AppServerAskForApproval;
+use motyga_app_server_protocol::ClientInfo;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::ClientResponsePayload;
+use motyga_app_server_protocol::MotygaErrorInfo;
+use motyga_app_server_protocol::CollabAgentTool;
+use motyga_app_server_protocol::CollabAgentToolCallStatus;
+use motyga_app_server_protocol::CommandAction;
+use motyga_app_server_protocol::CommandExecutionApprovalDecision;
+use motyga_app_server_protocol::CommandExecutionRequestApprovalParams;
+use motyga_app_server_protocol::CommandExecutionRequestApprovalResponse;
+use motyga_app_server_protocol::CommandExecutionSource;
+use motyga_app_server_protocol::CommandExecutionStatus;
+use motyga_app_server_protocol::DynamicToolCallStatus;
+use motyga_app_server_protocol::GuardianApprovalReview;
+use motyga_app_server_protocol::GuardianApprovalReviewAction;
+use motyga_app_server_protocol::GuardianApprovalReviewStatus;
+use motyga_app_server_protocol::GuardianCommandSource as AppServerGuardianCommandSource;
+use motyga_app_server_protocol::InitializeCapabilities;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::ItemCompletedNotification;
+use motyga_app_server_protocol::ItemGuardianApprovalReviewCompletedNotification;
+use motyga_app_server_protocol::ItemStartedNotification;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::McpToolCallStatus;
+use motyga_app_server_protocol::NonSteerableTurnKind;
+use motyga_app_server_protocol::PatchApplyStatus;
+use motyga_app_server_protocol::PermissionsRequestApprovalParams;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::RequestPermissionProfile;
+use motyga_app_server_protocol::SandboxPolicy as AppServerSandboxPolicy;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::ServerResponse;
+use motyga_app_server_protocol::SessionSource as AppServerSessionSource;
+use motyga_app_server_protocol::SubAgentActivityKind;
+use motyga_app_server_protocol::Thread;
+use motyga_app_server_protocol::ThreadArchiveParams;
+use motyga_app_server_protocol::ThreadArchiveResponse;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadResumeResponse;
+use motyga_app_server_protocol::ThreadSource as AppServerThreadSource;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::ThreadStatus as AppServerThreadStatus;
+use motyga_app_server_protocol::Turn;
+use motyga_app_server_protocol::TurnCompletedNotification;
+use motyga_app_server_protocol::TurnDiffUpdatedNotification;
+use motyga_app_server_protocol::TurnError as AppServerTurnError;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartedNotification;
+use motyga_app_server_protocol::TurnStatus as AppServerTurnStatus;
+use motyga_app_server_protocol::TurnSteerParams;
+use motyga_app_server_protocol::TurnSteerResponse;
+use motyga_app_server_protocol::UserInput;
+use motyga_login::default_client::DEFAULT_ORIGINATOR;
+use motyga_login::default_client::originator;
+use motyga_plugin::AppConnectorId;
+use motyga_plugin::PluginCapabilitySummary;
+use motyga_plugin::PluginId;
+use motyga_plugin::PluginTelemetryMetadata;
+use motyga_protocol::approvals::NetworkApprovalProtocol;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::models::NetworkPermissions as CoreNetworkPermissions;
+use motyga_protocol::models::PermissionProfile as CorePermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::HookRunStatus;
+use motyga_protocol::protocol::HookSource;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::request_permissions::PermissionGrantScope as CorePermissionGrantScope;
+use motyga_protocol::request_permissions::RequestPermissionProfile as CoreRequestPermissionProfile;
+use motyga_protocol::request_permissions::RequestPermissionsResponse as CoreRequestPermissionsResponse;
+use motyga_utils_absolute_path::test_support::PathBufExt;
+use motyga_utils_absolute_path::test_support::test_path_buf;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 use std::collections::HashSet;
@@ -172,7 +172,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use tokio::sync::mpsc;
 
-const TEST_PRODUCT_CLIENT_ID: &str = "codex_work_desktop";
+const TEST_PRODUCT_CLIENT_ID: &str = "motyga_work_desktop";
 
 fn test_tracking_context(thread_id: &str, turn_id: &str) -> TrackEventsContext {
     TrackEventsContext {
@@ -245,19 +245,19 @@ fn sample_thread_start_response(
     })
 }
 
-fn sample_app_server_client_metadata() -> CodexAppServerClientMetadata {
-    CodexAppServerClientMetadata {
+fn sample_app_server_client_metadata() -> MotygaAppServerClientMetadata {
+    MotygaAppServerClientMetadata {
         product_client_id: DEFAULT_ORIGINATOR.to_string(),
-        client_name: Some("codex-tui".to_string()),
+        client_name: Some("motyga-tui".to_string()),
         client_version: Some("1.0.0".to_string()),
         rpc_transport: AppServerRpcTransport::Stdio,
         experimental_api_enabled: Some(true),
     }
 }
 
-fn sample_runtime_metadata() -> CodexRuntimeMetadata {
-    CodexRuntimeMetadata {
-        codex_rs_version: "0.1.0".to_string(),
+fn sample_runtime_metadata() -> MotygaRuntimeMetadata {
+    MotygaRuntimeMetadata {
+        motyga_rs_version: "0.1.0".to_string(),
         runtime_os: "macos".to_string(),
         runtime_os_version: "15.3.1".to_string(),
         runtime_arch: "aarch64".to_string(),
@@ -333,10 +333,10 @@ fn sample_turn_start_request(thread_id: &str, request_id: i64) -> ClientRequest 
 }
 
 fn sample_turn_start_response(turn_id: &str) -> ClientResponsePayload {
-    ClientResponsePayload::TurnStart(codex_app_server_protocol::TurnStartResponse {
+    ClientResponsePayload::TurnStart(motyga_app_server_protocol::TurnStartResponse {
         turn: Turn {
             id: turn_id.to_string(),
-            items_view: codex_app_server_protocol::TurnItemsView::Full,
+            items_view: motyga_app_server_protocol::TurnItemsView::Full,
             items: vec![],
             status: AppServerTurnStatus::InProgress,
             error: None,
@@ -352,7 +352,7 @@ fn sample_turn_started_notification(thread_id: &str, turn_id: &str) -> ServerNot
         thread_id: thread_id.to_string(),
         turn: Turn {
             id: turn_id.to_string(),
-            items_view: codex_app_server_protocol::TurnItemsView::Full,
+            items_view: motyga_app_server_protocol::TurnItemsView::Full,
             items: vec![],
             status: AppServerTurnStatus::InProgress,
             error: None,
@@ -381,18 +381,18 @@ fn sample_turn_completed_notification(
     thread_id: &str,
     turn_id: &str,
     status: AppServerTurnStatus,
-    codex_error_info: Option<codex_app_server_protocol::CodexErrorInfo>,
+    motyga_error_info: Option<motyga_app_server_protocol::MotygaErrorInfo>,
 ) -> ServerNotification {
     ServerNotification::TurnCompleted(TurnCompletedNotification {
         thread_id: thread_id.to_string(),
         turn: Turn {
             id: turn_id.to_string(),
-            items_view: codex_app_server_protocol::TurnItemsView::Full,
+            items_view: motyga_app_server_protocol::TurnItemsView::Full,
             items: vec![],
             status,
-            error: codex_error_info.map(|codex_error_info| AppServerTurnError {
+            error: motyga_error_info.map(|motyga_error_info| AppServerTurnError {
                 message: "turn failed".to_string(),
-                codex_error_info: Some(codex_error_info),
+                motyga_error_info: Some(motyga_error_info),
                 additional_details: None,
             }),
             started_at: None,
@@ -491,7 +491,7 @@ fn non_steerable_review_error() -> JSONRPCErrorError {
         data: Some(
             serde_json::to_value(AppServerTurnError {
                 message: "cannot steer a review turn".to_string(),
-                codex_error_info: Some(CodexErrorInfo::ActiveTurnNotSteerable {
+                motyga_error_info: Some(MotygaErrorInfo::ActiveTurnNotSteerable {
                     turn_kind: NonSteerableTurnKind::Review,
                 }),
                 additional_details: None,
@@ -538,13 +538,13 @@ async fn ingest_rejected_turn_steer(
                 connection_id: 8,
                 params: InitializeParams {
                     client_info: ClientInfo {
-                        name: "codex-web".to_string(),
+                        name: "motyga-web".to_string(),
                         title: None,
                         version: "1.0.0".to_string(),
                     },
                     capabilities: None,
                 },
-                product_client_id: "codex-web".to_string(),
+                product_client_id: "motyga-web".to_string(),
                 runtime: sample_runtime_metadata(),
                 rpc_transport: AppServerRpcTransport::Stdio,
             },
@@ -600,13 +600,13 @@ async fn ingest_initialize(reducer: &mut AnalyticsReducer, out: &mut Vec<TrackEv
                 connection_id: 7,
                 params: InitializeParams {
                     client_info: ClientInfo {
-                        name: "codex-tui".to_string(),
+                        name: "motyga-tui".to_string(),
                         title: None,
                         version: "1.0.0".to_string(),
                     },
                     capabilities: None,
                 },
-                product_client_id: "codex-tui".to_string(),
+                product_client_id: "motyga-tui".to_string(),
                 runtime: sample_runtime_metadata(),
                 rpc_transport: AppServerRpcTransport::Stdio,
             },
@@ -789,7 +789,7 @@ fn sample_initialize_fact(connection_id: u64) -> AnalyticsFact {
         connection_id,
         params: InitializeParams {
             client_info: ClientInfo {
-                name: "codex-tui".to_string(),
+                name: "motyga-tui".to_string(),
                 title: None,
                 version: "1.0.0".to_string(),
             },
@@ -801,8 +801,8 @@ fn sample_initialize_fact(connection_id: u64) -> AnalyticsFact {
             }),
         },
         product_client_id: DEFAULT_ORIGINATOR.to_string(),
-        runtime: CodexRuntimeMetadata {
-            codex_rs_version: "0.99.0".to_string(),
+        runtime: MotygaRuntimeMetadata {
+            motyga_rs_version: "0.99.0".to_string(),
             runtime_os: "linux".to_string(),
             runtime_os_version: "24.04".to_string(),
             runtime_arch: "x86_64".to_string(),
@@ -831,7 +831,7 @@ async fn ingest_complete_child_turn(
             thread_id,
             turn_id,
             AppServerTurnStatus::Completed,
-            /*codex_error_info*/ None,
+            /*motyga_error_info*/ None,
         ))),
     ] {
         reducer.ingest(fact, events).await;
@@ -929,7 +929,7 @@ fn sample_permissions_approval_request(request_id: i64) -> ServerRequest {
             cwd: test_path_buf("/tmp").abs(),
             reason: Some("need network".to_string()),
             permissions: RequestPermissionProfile {
-                network: Some(codex_app_server_protocol::AdditionalNetworkPermissions {
+                network: Some(motyga_app_server_protocol::AdditionalNetworkPermissions {
                     enabled: Some(true),
                 }),
                 file_system: None,
@@ -962,7 +962,7 @@ fn sample_guardian_review_completed(
             completed_at_ms: 1_042,
             review_id: review_id.to_string(),
             target_item_id: target_item_id.map(str::to_string),
-            decision_source: codex_app_server_protocol::AutoReviewDecisionSource::Agent,
+            decision_source: motyga_app_server_protocol::AutoReviewDecisionSource::Agent,
             review: GuardianApprovalReview {
                 status,
                 risk_level: None,
@@ -1015,7 +1015,7 @@ fn normalize_path_for_skill_id_user_scoped_uses_absolute_path() {
 
 #[test]
 fn normalize_path_for_skill_id_admin_scoped_uses_absolute_path() {
-    let skill_path = PathBuf::from("/etc/codex/skills/doc/SKILL.md");
+    let skill_path = PathBuf::from("/etc/motyga/skills/doc/SKILL.md");
 
     let path = normalize_path_for_skill_id(
         /*repo_url*/ None,
@@ -1045,9 +1045,9 @@ fn normalize_path_for_skill_id_repo_root_not_in_skill_path_uses_absolute_path() 
 #[test]
 fn app_mentioned_event_serializes_expected_shape() {
     let tracking = test_tracking_context("thread-1", "turn-1");
-    let event = TrackEventRequest::AppMentioned(CodexAppMentionedEventRequest {
-        event_type: "codex_app_mentioned",
-        event_params: codex_app_metadata(
+    let event = TrackEventRequest::AppMentioned(MotygaAppMentionedEventRequest {
+        event_type: "motyga_app_mentioned",
+        event_params: motyga_app_metadata(
             &tracking,
             AppInvocation {
                 connector_id: Some("calendar".to_string()),
@@ -1062,7 +1062,7 @@ fn app_mentioned_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_app_mentioned",
+            "event_type": "motyga_app_mentioned",
             "event_params": {
                 "connector_id": "calendar",
                 "thread_id": "thread-1",
@@ -1079,9 +1079,9 @@ fn app_mentioned_event_serializes_expected_shape() {
 #[test]
 fn app_used_event_serializes_expected_shape() {
     let tracking = test_tracking_context("thread-2", "turn-2");
-    let event = TrackEventRequest::AppUsed(CodexAppUsedEventRequest {
-        event_type: "codex_app_used",
-        event_params: codex_app_metadata(
+    let event = TrackEventRequest::AppUsed(MotygaAppUsedEventRequest {
+        event_type: "motyga_app_used",
+        event_params: motyga_app_metadata(
             &tracking,
             AppInvocation {
                 connector_id: Some("drive".to_string()),
@@ -1096,7 +1096,7 @@ fn app_used_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_app_used",
+            "event_type": "motyga_app_used",
             "event_params": {
                 "connector_id": "drive",
                 "thread_id": "thread-2",
@@ -1113,13 +1113,13 @@ fn app_used_event_serializes_expected_shape() {
 #[test]
 fn accepted_line_fingerprints_event_serializes_expected_shape() {
     let event = TrackEventRequest::AcceptedLineFingerprints(Box::new(
-        CodexAcceptedLineFingerprintsEventRequest {
-            event_type: "codex_accepted_line_fingerprints",
-            event_params: CodexAcceptedLineFingerprintsEventParams {
-                event_type: "codex.accepted_line_fingerprints",
+        MotygaAcceptedLineFingerprintsEventRequest {
+            event_type: "motyga_accepted_line_fingerprints",
+            event_params: MotygaAcceptedLineFingerprintsEventParams {
+                event_type: "motyga.accepted_line_fingerprints",
                 turn_id: "turn-1".to_string(),
                 thread_id: "thread-1".to_string(),
-                product_surface: Some("codex".to_string()),
+                product_surface: Some("motyga".to_string()),
                 model_slug: Some("gpt-5.1-codex".to_string()),
                 completed_at: 1710000000,
                 repo_hash: Some("repo-hash-1".to_string()),
@@ -1135,12 +1135,12 @@ fn accepted_line_fingerprints_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_accepted_line_fingerprints",
+            "event_type": "motyga_accepted_line_fingerprints",
             "event_params": {
-                "event_type": "codex.accepted_line_fingerprints",
+                "event_type": "motyga.accepted_line_fingerprints",
                 "turn_id": "turn-1",
                 "thread_id": "thread-1",
-                "product_surface": "codex",
+                "product_surface": "motyga",
                 "model_slug": "gpt-5.1-codex",
                 "completed_at": 1710000000,
                 "repo_hash": "repo-hash-1",
@@ -1200,7 +1200,7 @@ index 1111111..2222222
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut events,
         )
@@ -1271,7 +1271,7 @@ index 1111111..2222222
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut events,
         )
@@ -1292,10 +1292,10 @@ index 1111111..2222222
 
 #[test]
 fn compaction_event_serializes_expected_shape() {
-    let event = TrackEventRequest::Compaction(Box::new(CodexCompactionEventRequest {
-        event_type: "codex_compaction_event",
-        event_params: crate::events::codex_compaction_event_params(
-            CodexCompactionEvent {
+    let event = TrackEventRequest::Compaction(Box::new(MotygaCompactionEventRequest {
+        event_type: "motyga_compaction_event",
+        event_params: crate::events::motyga_compaction_event_params(
+            MotygaCompactionEvent {
                 thread_id: "thread-1".to_string(),
                 turn_id: "turn-1".to_string(),
                 trigger: CompactionTrigger::Auto,
@@ -1304,8 +1304,8 @@ fn compaction_event_serializes_expected_shape() {
                 phase: CompactionPhase::MidTurn,
                 strategy: CompactionStrategy::Memento,
                 status: CompactionStatus::Completed,
-                codex_error_kind: None,
-                codex_error_http_status_code: None,
+                motyga_error_kind: None,
+                motyga_error_http_status_code: None,
                 active_context_tokens_before: 120_000,
                 active_context_tokens_after: 18_000,
                 retained_image_count: None,
@@ -1329,20 +1329,20 @@ fn compaction_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_compaction_event",
+            "event_type": "motyga_compaction_event",
             "event_params": {
                 "thread_id": "thread-1",
                 "session_id": "session-thread-1",
                 "turn_id": "turn-1",
                 "app_server_client": {
                     "product_client_id": DEFAULT_ORIGINATOR,
-                    "client_name": "codex-tui",
+                    "client_name": "motyga-tui",
                     "client_version": "1.0.0",
                     "rpc_transport": "stdio",
                     "experimental_api_enabled": true
                 },
                 "runtime": {
-                    "codex_rs_version": "0.1.0",
+                    "motyga_rs_version": "0.1.0",
                     "runtime_os": "macos",
                     "runtime_os_version": "15.3.1",
                     "runtime_arch": "aarch64"
@@ -1356,8 +1356,8 @@ fn compaction_event_serializes_expected_shape() {
                 "phase": "mid_turn",
                 "strategy": "memento",
                 "status": "completed",
-                "codex_error_kind": null,
-                "codex_error_http_status_code": null,
+                "motyga_error_kind": null,
+                "motyga_error_http_status_code": null,
                 "active_context_tokens_before": 120000,
                 "active_context_tokens_after": 18000,
                 "retained_image_count": null,
@@ -1404,19 +1404,19 @@ fn app_used_dedupe_is_keyed_by_turn_and_connector() {
 #[test]
 fn thread_initialized_event_serializes_expected_shape() {
     let event = TrackEventRequest::ThreadInitialized(ThreadInitializedEvent {
-        event_type: "codex_thread_initialized",
+        event_type: "motyga_thread_initialized",
         event_params: ThreadInitializedEventParams {
             thread_id: "thread-0".to_string(),
             session_id: "session-thread-0".to_string(),
-            app_server_client: CodexAppServerClientMetadata {
+            app_server_client: MotygaAppServerClientMetadata {
                 product_client_id: DEFAULT_ORIGINATOR.to_string(),
-                client_name: Some("codex-tui".to_string()),
+                client_name: Some("motyga-tui".to_string()),
                 client_version: Some("1.0.0".to_string()),
                 rpc_transport: AppServerRpcTransport::Stdio,
                 experimental_api_enabled: Some(true),
             },
-            runtime: CodexRuntimeMetadata {
-                codex_rs_version: "0.1.0".to_string(),
+            runtime: MotygaRuntimeMetadata {
+                motyga_rs_version: "0.1.0".to_string(),
                 runtime_os: "macos".to_string(),
                 runtime_os_version: "15.3.1".to_string(),
                 runtime_arch: "aarch64".to_string(),
@@ -1437,19 +1437,19 @@ fn thread_initialized_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_thread_initialized",
+            "event_type": "motyga_thread_initialized",
             "event_params": {
                 "thread_id": "thread-0",
                 "session_id": "session-thread-0",
                 "app_server_client": {
                     "product_client_id": DEFAULT_ORIGINATOR,
-                    "client_name": "codex-tui",
+                    "client_name": "motyga-tui",
                     "client_version": "1.0.0",
                     "rpc_transport": "stdio",
                     "experimental_api_enabled": true
                 },
                 "runtime": {
-                    "codex_rs_version": "0.1.0",
+                    "motyga_rs_version": "0.1.0",
                     "runtime_os": "macos",
                     "runtime_os_version": "15.3.1",
                     "runtime_arch": "aarch64"
@@ -1469,22 +1469,22 @@ fn thread_initialized_event_serializes_expected_shape() {
 
 #[test]
 fn command_execution_event_serializes_expected_shape() {
-    let event = TrackEventRequest::CommandExecution(CodexCommandExecutionEventRequest {
-        event_type: "codex_command_execution_event",
-        event_params: CodexCommandExecutionEventParams {
-            base: CodexToolItemEventBase {
+    let event = TrackEventRequest::CommandExecution(MotygaCommandExecutionEventRequest {
+        event_type: "motyga_command_execution_event",
+        event_params: MotygaCommandExecutionEventParams {
+            base: MotygaToolItemEventBase {
                 thread_id: "thread-1".to_string(),
                 turn_id: "turn-1".to_string(),
                 item_id: "item-1".to_string(),
-                app_server_client: CodexAppServerClientMetadata {
-                    product_client_id: "codex_tui".to_string(),
-                    client_name: Some("codex-tui".to_string()),
+                app_server_client: MotygaAppServerClientMetadata {
+                    product_client_id: "motyga_tui".to_string(),
+                    client_name: Some("motyga-tui".to_string()),
                     client_version: Some("1.2.3".to_string()),
                     rpc_transport: AppServerRpcTransport::Websocket,
                     experimental_api_enabled: Some(true),
                 },
-                runtime: CodexRuntimeMetadata {
-                    codex_rs_version: "0.99.0".to_string(),
+                runtime: MotygaRuntimeMetadata {
+                    motyga_rs_version: "0.99.0".to_string(),
                     runtime_os: "macos".to_string(),
                     runtime_os_version: "15.3.1".to_string(),
                     runtime_arch: "aarch64".to_string(),
@@ -1520,20 +1520,20 @@ fn command_execution_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_command_execution_event",
+            "event_type": "motyga_command_execution_event",
             "event_params": {
                 "thread_id": "thread-1",
                 "turn_id": "turn-1",
                 "item_id": "item-1",
                 "app_server_client": {
-                    "product_client_id": "codex_tui",
-                    "client_name": "codex-tui",
+                    "product_client_id": "motyga_tui",
+                    "client_name": "motyga-tui",
                     "client_version": "1.2.3",
                     "rpc_transport": "websocket",
                     "experimental_api_enabled": true
                 },
                 "runtime": {
-                    "codex_rs_version": "0.99.0",
+                    "motyga_rs_version": "0.99.0",
                     "runtime_os": "macos",
                     "runtime_os_version": "15.3.1",
                     "runtime_arch": "aarch64"
@@ -1568,22 +1568,22 @@ fn command_execution_event_serializes_expected_shape() {
 
 #[test]
 fn review_event_serializes_expected_shape() {
-    let event = TrackEventRequest::ReviewEvent(CodexReviewEventRequest {
-        event_type: "codex_review_event",
-        event_params: CodexReviewEventParams {
+    let event = TrackEventRequest::ReviewEvent(MotygaReviewEventRequest {
+        event_type: "motyga_review_event",
+        event_params: MotygaReviewEventParams {
             thread_id: "thread-1".to_string(),
             turn_id: "turn-1".to_string(),
             item_id: None,
             review_id: "review-1".to_string(),
-            app_server_client: CodexAppServerClientMetadata {
-                product_client_id: "codex_tui".to_string(),
-                client_name: Some("codex-tui".to_string()),
+            app_server_client: MotygaAppServerClientMetadata {
+                product_client_id: "motyga_tui".to_string(),
+                client_name: Some("motyga-tui".to_string()),
                 client_version: Some("1.2.3".to_string()),
                 rpc_transport: AppServerRpcTransport::Websocket,
                 experimental_api_enabled: Some(true),
             },
-            runtime: CodexRuntimeMetadata {
-                codex_rs_version: "0.99.0".to_string(),
+            runtime: MotygaRuntimeMetadata {
+                motyga_rs_version: "0.99.0".to_string(),
                 runtime_os: "macos".to_string(),
                 runtime_os_version: "15.3.1".to_string(),
                 runtime_arch: "aarch64".to_string(),
@@ -1607,21 +1607,21 @@ fn review_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_review_event",
+            "event_type": "motyga_review_event",
             "event_params": {
                 "thread_id": "thread-1",
                 "turn_id": "turn-1",
                 "item_id": null,
                 "review_id": "review-1",
                 "app_server_client": {
-                    "product_client_id": "codex_tui",
-                    "client_name": "codex-tui",
+                    "product_client_id": "motyga_tui",
+                    "client_name": "motyga-tui",
                     "client_version": "1.2.3",
                     "rpc_transport": "websocket",
                     "experimental_api_enabled": true
                 },
                 "runtime": {
-                    "codex_rs_version": "0.99.0",
+                    "motyga_rs_version": "0.99.0",
                     "runtime_os": "macos",
                     "runtime_os_version": "15.3.1",
                     "runtime_arch": "aarch64"
@@ -1670,7 +1670,7 @@ async fn initialize_caches_client_and_thread_lifecycle_publishes_once_initialize
                 connection_id: 7,
                 params: InitializeParams {
                     client_info: ClientInfo {
-                        name: "codex-tui".to_string(),
+                        name: "motyga-tui".to_string(),
                         title: None,
                         version: "1.0.0".to_string(),
                     },
@@ -1682,8 +1682,8 @@ async fn initialize_caches_client_and_thread_lifecycle_publishes_once_initialize
                     }),
                 },
                 product_client_id: DEFAULT_ORIGINATOR.to_string(),
-                runtime: CodexRuntimeMetadata {
-                    codex_rs_version: "0.99.0".to_string(),
+                runtime: MotygaRuntimeMetadata {
+                    motyga_rs_version: "0.99.0".to_string(),
                     runtime_os: "linux".to_string(),
                     runtime_os_version: "24.04".to_string(),
                     runtime_arch: "x86_64".to_string(),
@@ -1711,7 +1711,7 @@ async fn initialize_caches_client_and_thread_lifecycle_publishes_once_initialize
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_thread_initialized");
+    assert_eq!(payload[0]["event_type"], "motyga_thread_initialized");
     assert_eq!(payload[0]["event_params"]["session_id"], "session-thread-1");
     assert_eq!(
         payload[0]["event_params"]["app_server_client"]["product_client_id"],
@@ -1719,7 +1719,7 @@ async fn initialize_caches_client_and_thread_lifecycle_publishes_once_initialize
     );
     assert_eq!(
         payload[0]["event_params"]["app_server_client"]["client_name"],
-        "codex-tui"
+        "motyga-tui"
     );
     assert_eq!(
         payload[0]["event_params"]["app_server_client"]["client_version"],
@@ -1734,7 +1734,7 @@ async fn initialize_caches_client_and_thread_lifecycle_publishes_once_initialize
         false
     );
     assert_eq!(
-        payload[0]["event_params"]["runtime"]["codex_rs_version"],
+        payload[0]["event_params"]["runtime"]["motyga_rs_version"],
         "0.99.0"
     );
     assert_eq!(payload[0]["event_params"]["runtime"]["runtime_os"], "linux");
@@ -1793,7 +1793,7 @@ async fn thread_originator_overrides_shared_connection_across_thread_events() {
                 "thread_id": "thread-work",
                 "app_server_client": {
                     "product_client_id": TEST_PRODUCT_CLIENT_ID,
-                    "client_name": "codex-tui",
+                    "client_name": "motyga-tui",
                     "client_version": "1.0.0",
                     "rpc_transport": "websocket",
                     "experimental_api_enabled": false,
@@ -1803,7 +1803,7 @@ async fn thread_originator_overrides_shared_connection_across_thread_events() {
                 "thread_id": "thread-default",
                 "app_server_client": {
                     "product_client_id": DEFAULT_ORIGINATOR,
-                    "client_name": "codex-tui",
+                    "client_name": "motyga-tui",
                     "client_version": "1.0.0",
                     "rpc_transport": "websocket",
                     "experimental_api_enabled": false,
@@ -1843,7 +1843,7 @@ async fn thread_originator_overrides_shared_connection_across_thread_events() {
     reducer
         .ingest(
             AnalyticsFact::Custom(CustomAnalyticsFact::Compaction(Box::new(
-                CodexCompactionEvent {
+                MotygaCompactionEvent {
                     thread_id: "thread-work".to_string(),
                     turn_id: "turn-compact".to_string(),
                     trigger: CompactionTrigger::Manual,
@@ -1852,8 +1852,8 @@ async fn thread_originator_overrides_shared_connection_across_thread_events() {
                     phase: CompactionPhase::StandaloneTurn,
                     strategy: CompactionStrategy::Memento,
                     status: CompactionStatus::Completed,
-                    codex_error_kind: None,
-                    codex_error_http_status_code: None,
+                    motyga_error_kind: None,
+                    motyga_error_http_status_code: None,
                     active_context_tokens_before: 131_000,
                     active_context_tokens_after: 64_000,
                     retained_image_count: None,
@@ -1884,15 +1884,15 @@ async fn thread_originator_overrides_shared_connection_across_thread_events() {
             .collect::<Vec<_>>(),
         vec![
             json!({
-                "event_type": "codex_command_execution_event",
+                "event_type": "motyga_command_execution_event",
                 "product_client_id": TEST_PRODUCT_CLIENT_ID,
             }),
             json!({
-                "event_type": "codex_turn_event",
+                "event_type": "motyga_turn_event",
                 "product_client_id": TEST_PRODUCT_CLIENT_ID,
             }),
             json!({
-                "event_type": "codex_compaction_event",
+                "event_type": "motyga_compaction_event",
                 "product_client_id": TEST_PRODUCT_CLIENT_ID,
             }),
         ]
@@ -1965,7 +1965,7 @@ async fn compaction_event_ingests_custom_fact() {
     let mut reducer = AnalyticsReducer::default();
     let mut events = Vec::new();
     let parent_thread_id =
-        codex_protocol::ThreadId::from_string("22222222-2222-2222-2222-222222222222")
+        motyga_protocol::ThreadId::from_string("22222222-2222-2222-2222-222222222222")
             .expect("valid parent thread id");
 
     reducer
@@ -1974,7 +1974,7 @@ async fn compaction_event_ingests_custom_fact() {
                 connection_id: 7,
                 params: InitializeParams {
                     client_info: ClientInfo {
-                        name: "codex-tui".to_string(),
+                        name: "motyga-tui".to_string(),
                         title: None,
                         version: "1.0.0".to_string(),
                     },
@@ -2021,7 +2021,7 @@ async fn compaction_event_ingests_custom_fact() {
     reducer
         .ingest(
             AnalyticsFact::Custom(CustomAnalyticsFact::Compaction(Box::new(
-                CodexCompactionEvent {
+                MotygaCompactionEvent {
                     thread_id: "thread-1".to_string(),
                     turn_id: "turn-compact".to_string(),
                     trigger: CompactionTrigger::Manual,
@@ -2030,8 +2030,8 @@ async fn compaction_event_ingests_custom_fact() {
                     phase: CompactionPhase::StandaloneTurn,
                     strategy: CompactionStrategy::Memento,
                     status: CompactionStatus::Failed,
-                    codex_error_kind: Some(CodexErrKind::ContextWindowExceeded),
-                    codex_error_http_status_code: None,
+                    motyga_error_kind: Some(MotygaErrKind::ContextWindowExceeded),
+                    motyga_error_http_status_code: None,
                     active_context_tokens_before: 131_000,
                     active_context_tokens_after: 131_000,
                     retained_image_count: None,
@@ -2048,16 +2048,16 @@ async fn compaction_event_ingests_custom_fact() {
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_compaction_event");
+    assert_eq!(payload[0]["event_type"], "motyga_compaction_event");
     assert_eq!(payload[0]["event_params"]["session_id"], "session-thread-1");
     assert_eq!(payload[0]["event_params"]["thread_id"], "thread-1");
     assert_eq!(payload[0]["event_params"]["turn_id"], "turn-compact");
     assert_eq!(
-        payload[0]["event_params"]["codex_error_kind"],
+        payload[0]["event_params"]["motyga_error_kind"],
         json!("context_window_exceeded")
     );
     assert_eq!(
-        payload[0]["event_params"]["codex_error_http_status_code"],
+        payload[0]["event_params"]["motyga_error_http_status_code"],
         json!(null)
     );
     assert_eq!(
@@ -2066,14 +2066,14 @@ async fn compaction_event_ingests_custom_fact() {
     );
     assert_eq!(
         payload[0]["event_params"]["app_server_client"]["client_name"],
-        "codex-tui"
+        "motyga-tui"
     );
     assert_eq!(
         payload[0]["event_params"]["app_server_client"]["rpc_transport"],
         "websocket"
     );
     assert_eq!(
-        payload[0]["event_params"]["runtime"]["codex_rs_version"],
+        payload[0]["event_params"]["runtime"]["motyga_rs_version"],
         "0.1.0"
     );
     assert_eq!(payload[0]["event_params"]["thread_source"], "subagent");
@@ -2104,7 +2104,7 @@ async fn guardian_review_event_ingests_custom_fact_with_optional_target_item() {
                 connection_id: 7,
                 params: InitializeParams {
                     client_info: ClientInfo {
-                        name: "codex-tui".to_string(),
+                        name: "motyga-tui".to_string(),
                         title: None,
                         version: "1.0.0".to_string(),
                     },
@@ -2164,7 +2164,7 @@ async fn guardian_review_event_ingests_custom_fact_with_optional_target_item() {
                     guardian_session_kind: None,
                     guardian_model: None,
                     guardian_reasoning_effort: None,
-                    guardian_default_review_model_id: Some("codex-auto-review".to_string()),
+                    guardian_default_review_model_id: Some("motyga-auto-review".to_string()),
                     guardian_catalog_contains_auto_review: Some(false),
                     guardian_review_model_overridden: Some(false),
                     guardian_review_model_override: None,
@@ -2189,7 +2189,7 @@ async fn guardian_review_event_ingests_custom_fact_with_optional_target_item() {
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_guardian_review");
+    assert_eq!(payload[0]["event_type"], "motyga_guardian_review");
     assert_eq!(
         payload[0]["event_params"]["session_id"],
         "session-thread-guardian"
@@ -2207,7 +2207,7 @@ async fn guardian_review_event_ingests_custom_fact_with_optional_target_item() {
         DEFAULT_ORIGINATOR
     );
     assert_eq!(
-        payload[0]["event_params"]["runtime"]["codex_rs_version"],
+        payload[0]["event_params"]["runtime"]["motyga_rs_version"],
         "0.1.0"
     );
     assert_eq!(
@@ -2237,7 +2237,7 @@ async fn guardian_review_event_ingests_custom_fact_with_optional_target_item() {
     assert_eq!(payload[0]["event_params"]["review_timeout_ms"], 90_000);
     assert_eq!(
         payload[0]["event_params"]["guardian_default_review_model_id"],
-        "codex-auto-review"
+        "motyga-auto-review"
     );
     assert_eq!(
         payload[0]["event_params"]["guardian_catalog_contains_auto_review"],
@@ -2332,7 +2332,7 @@ async fn item_lifecycle_notifications_publish_command_execution_event() {
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_command_execution_event");
+    assert_eq!(payload[0]["event_type"], "motyga_command_execution_event");
     assert_eq!(payload[0]["event_params"]["thread_id"], "thread-1");
     assert_eq!(payload[0]["event_params"]["turn_id"], "turn-1");
     assert_eq!(payload[0]["event_params"]["item_id"], "item-1");
@@ -2368,7 +2368,7 @@ async fn item_lifecycle_notifications_publish_command_execution_event() {
     assert_eq!(payload[0]["event_params"]["execution_duration_ms"], 42);
     assert_eq!(
         payload[0]["event_params"]["app_server_client"]["client_name"],
-        "codex-tui"
+        "motyga-tui"
     );
     assert_eq!(payload[0]["event_params"]["thread_source"], "user");
 }
@@ -2407,7 +2407,7 @@ async fn command_execution_approval_response_publishes_user_review_event() {
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_review_event");
+    assert_eq!(payload[0]["event_type"], "motyga_review_event");
     assert_eq!(payload[0]["event_params"]["thread_id"], "thread-1");
     assert_eq!(payload[0]["event_params"]["turn_id"], "turn-1");
     assert_eq!(payload[0]["event_params"]["item_id"], "item-1");
@@ -2462,7 +2462,7 @@ async fn permissions_reviews_emit_events_without_denormalizing_onto_tool_items()
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_review_event");
+    assert_eq!(payload[0]["event_type"], "motyga_review_event");
     assert_eq!(payload[0]["event_params"]["review_id"], "user:51");
     assert_eq!(payload[0]["event_params"]["subject_kind"], "permissions");
     assert_eq!(payload[0]["event_params"]["reviewer"], "user");
@@ -2517,7 +2517,7 @@ async fn effective_session_permissions_response_publishes_session_user_review_ev
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_review_event");
+    assert_eq!(payload[0]["event_type"], "motyga_review_event");
     assert_eq!(payload[0]["event_params"]["review_id"], "user:52");
     assert_eq!(payload[0]["event_params"]["subject_kind"], "permissions");
     assert_eq!(payload[0]["event_params"]["reviewer"], "user");
@@ -2592,7 +2592,7 @@ async fn guardian_completed_notification_publishes_review_event_with_thread_meta
         .await;
 
     let payload = serde_json::to_value(&events[0]).expect("serialize review event");
-    assert_eq!(payload["event_type"], "codex_review_event");
+    assert_eq!(payload["event_type"], "motyga_review_event");
     assert_eq!(payload["event_params"]["review_id"], "guardian-review-1");
     assert_eq!(payload["event_params"]["item_id"], "item-1");
     assert_eq!(payload["event_params"]["thread_source"], "user");
@@ -2712,8 +2712,8 @@ fn subagent_thread_started_review_serializes_expected_shape() {
             thread_id: "thread-review".to_string(),
             parent_thread_id: None,
             forked_from_thread_id: None,
-            product_client_id: "codex-tui".to_string(),
-            client_name: "codex-tui".to_string(),
+            product_client_id: "motyga-tui".to_string(),
+            client_name: "motyga-tui".to_string(),
             client_version: "1.0.0".to_string(),
             model: "gpt-5".to_string(),
             ephemeral: false,
@@ -2726,11 +2726,11 @@ fn subagent_thread_started_review_serializes_expected_shape() {
     assert_eq!(payload["event_params"]["thread_source"], "subagent");
     assert_eq!(
         payload["event_params"]["app_server_client"]["product_client_id"],
-        "codex-tui"
+        "motyga-tui"
     );
     assert_eq!(
         payload["event_params"]["app_server_client"]["client_name"],
-        "codex-tui"
+        "motyga-tui"
     );
     assert_eq!(
         payload["event_params"]["app_server_client"]["client_version"],
@@ -2753,10 +2753,10 @@ fn subagent_thread_started_review_serializes_expected_shape() {
 #[test]
 fn subagent_thread_started_thread_spawn_serializes_thread_lineage() {
     let parent_thread_id =
-        codex_protocol::ThreadId::from_string("11111111-1111-1111-1111-111111111111")
+        motyga_protocol::ThreadId::from_string("11111111-1111-1111-1111-111111111111")
             .expect("valid thread id");
     let forked_from_thread_id =
-        codex_protocol::ThreadId::from_string("22222222-2222-4222-8222-222222222222")
+        motyga_protocol::ThreadId::from_string("22222222-2222-4222-8222-222222222222")
             .expect("valid thread id");
     let event = TrackEventRequest::ThreadInitialized(subagent_thread_started_event_request(
         SubAgentThreadStartedInput {
@@ -2764,8 +2764,8 @@ fn subagent_thread_started_thread_spawn_serializes_thread_lineage() {
             thread_id: "thread-spawn".to_string(),
             parent_thread_id: Some(parent_thread_id.to_string()),
             forked_from_thread_id: Some(forked_from_thread_id.to_string()),
-            product_client_id: "codex-tui".to_string(),
-            client_name: "codex-tui".to_string(),
+            product_client_id: "motyga-tui".to_string(),
+            client_name: "motyga-tui".to_string(),
             client_version: "1.0.0".to_string(),
             model: "gpt-5".to_string(),
             ephemeral: true,
@@ -2803,8 +2803,8 @@ fn subagent_thread_started_memory_consolidation_serializes_expected_shape() {
             thread_id: "thread-memory".to_string(),
             parent_thread_id: None,
             forked_from_thread_id: None,
-            product_client_id: "codex-tui".to_string(),
-            client_name: "codex-tui".to_string(),
+            product_client_id: "motyga-tui".to_string(),
+            client_name: "motyga-tui".to_string(),
             client_version: "1.0.0".to_string(),
             model: "gpt-5".to_string(),
             ephemeral: false,
@@ -2830,8 +2830,8 @@ fn subagent_thread_started_other_serializes_expected_shape() {
             thread_id: "thread-guardian".to_string(),
             parent_thread_id: None,
             forked_from_thread_id: None,
-            product_client_id: "codex-tui".to_string(),
-            client_name: "codex-tui".to_string(),
+            product_client_id: "motyga-tui".to_string(),
+            client_name: "motyga-tui".to_string(),
             client_version: "1.0.0".to_string(),
             model: "gpt-5".to_string(),
             ephemeral: false,
@@ -2848,7 +2848,7 @@ fn subagent_thread_started_other_serializes_expected_shape() {
 #[test]
 fn subagent_thread_started_other_serializes_explicit_parent_thread_id() {
     let parent_thread_id =
-        codex_protocol::ThreadId::from_string("33333333-3333-4333-8333-333333333333")
+        motyga_protocol::ThreadId::from_string("33333333-3333-4333-8333-333333333333")
             .expect("valid thread id");
     let event = TrackEventRequest::ThreadInitialized(subagent_thread_started_event_request(
         SubAgentThreadStartedInput {
@@ -2856,8 +2856,8 @@ fn subagent_thread_started_other_serializes_explicit_parent_thread_id() {
             thread_id: "thread-guardian".to_string(),
             parent_thread_id: Some(parent_thread_id.to_string()),
             forked_from_thread_id: None,
-            product_client_id: "codex-tui".to_string(),
-            client_name: "codex-tui".to_string(),
+            product_client_id: "motyga-tui".to_string(),
+            client_name: "motyga-tui".to_string(),
             client_version: "1.0.0".to_string(),
             model: "gpt-5".to_string(),
             ephemeral: false,
@@ -2887,8 +2887,8 @@ async fn subagent_thread_started_publishes_without_initialize() {
                     thread_id: "thread-review".to_string(),
                     parent_thread_id: None,
                     forked_from_thread_id: None,
-                    product_client_id: "codex-tui".to_string(),
-                    client_name: "codex-tui".to_string(),
+                    product_client_id: "motyga-tui".to_string(),
+                    client_name: "motyga-tui".to_string(),
                     client_version: "1.0.0".to_string(),
                     model: "gpt-5".to_string(),
                     ephemeral: false,
@@ -2902,10 +2902,10 @@ async fn subagent_thread_started_publishes_without_initialize() {
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_thread_initialized");
+    assert_eq!(payload[0]["event_type"], "motyga_thread_initialized");
     assert_eq!(
         payload[0]["event_params"]["app_server_client"]["product_client_id"],
-        "codex-tui"
+        "motyga-tui"
     );
     assert_eq!(payload[0]["event_params"]["thread_source"], "subagent");
     assert_eq!(payload[0]["event_params"]["subagent_source"], "review");
@@ -2916,7 +2916,7 @@ async fn subagent_events_keep_thread_originator_with_explicit_turn_connection() 
     let mut reducer = AnalyticsReducer::default();
     let mut events = Vec::new();
     let parent_thread_id =
-        codex_protocol::ThreadId::from_string("44444444-4444-4444-4444-444444444444")
+        motyga_protocol::ThreadId::from_string("44444444-4444-4444-4444-444444444444")
             .expect("valid parent thread id");
     let parent_thread_id_string = parent_thread_id.to_string();
 
@@ -2986,7 +2986,7 @@ async fn subagent_events_keep_thread_originator_with_explicit_turn_connection() 
     reducer
         .ingest(
             AnalyticsFact::Custom(CustomAnalyticsFact::Compaction(Box::new(
-                CodexCompactionEvent {
+                MotygaCompactionEvent {
                     thread_id: "thread-review".to_string(),
                     turn_id: "turn-compact".to_string(),
                     trigger: CompactionTrigger::Manual,
@@ -2995,8 +2995,8 @@ async fn subagent_events_keep_thread_originator_with_explicit_turn_connection() 
                     phase: CompactionPhase::StandaloneTurn,
                     strategy: CompactionStrategy::Memento,
                     status: CompactionStatus::Completed,
-                    codex_error_kind: None,
-                    codex_error_http_status_code: None,
+                    motyga_error_kind: None,
+                    motyga_error_http_status_code: None,
                     active_context_tokens_before: 131_000,
                     active_context_tokens_after: 64_000,
                     retained_image_count: None,
@@ -3037,7 +3037,7 @@ async fn subagent_events_keep_thread_originator_with_explicit_turn_connection() 
         Some("44444444-4444-4444-4444-444444444444")
     );
     assert_eq!(params.app_server_client.product_client_id, "parent-client");
-    assert_eq!(params.runtime.codex_rs_version, "0.1.0");
+    assert_eq!(params.runtime.motyga_rs_version, "0.1.0");
 
     reducer
         .ingest(
@@ -3087,7 +3087,7 @@ async fn subagent_events_keep_thread_originator_with_explicit_turn_connection() 
     );
     assert_eq!(
         event.event_params.app_server_client.client_name.as_deref(),
-        Some("codex-tui")
+        Some("motyga-tui")
     );
 }
 
@@ -3105,8 +3105,8 @@ async fn subagent_tool_items_inherit_parent_connection_metadata() {
                     thread_id: "thread-subagent".to_string(),
                     parent_thread_id: Some("thread-1".to_string()),
                     forked_from_thread_id: None,
-                    product_client_id: "codex-tui".to_string(),
-                    client_name: "codex-tui".to_string(),
+                    product_client_id: "motyga-tui".to_string(),
+                    client_name: "motyga-tui".to_string(),
                     client_version: "1.0.0".to_string(),
                     model: "gpt-5".to_string(),
                     ephemeral: false,
@@ -3165,22 +3165,22 @@ async fn subagent_tool_items_inherit_parent_connection_metadata() {
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_command_execution_event");
+    assert_eq!(payload[0]["event_type"], "motyga_command_execution_event");
     assert_eq!(payload[0]["event_params"]["thread_source"], "subagent");
     assert_eq!(payload[0]["event_params"]["subagent_source"], "review");
     assert_eq!(payload[0]["event_params"]["parent_thread_id"], "thread-1");
     assert_eq!(
         payload[0]["event_params"]["app_server_client"]["client_name"],
-        "codex-tui"
+        "motyga-tui"
     );
 }
 
 #[test]
 fn plugin_used_event_serializes_expected_shape() {
     let tracking = test_tracking_context("thread-3", "turn-3");
-    let event = TrackEventRequest::PluginUsed(CodexPluginUsedEventRequest {
-        event_type: "codex_plugin_used",
-        event_params: codex_plugin_used_metadata(&tracking, sample_plugin_metadata()),
+    let event = TrackEventRequest::PluginUsed(MotygaPluginUsedEventRequest {
+        event_type: "motyga_plugin_used",
+        event_params: motyga_plugin_used_metadata(&tracking, sample_plugin_metadata()),
     });
 
     let payload = serde_json::to_value(&event).expect("serialize plugin used event");
@@ -3188,7 +3188,7 @@ fn plugin_used_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_plugin_used",
+            "event_type": "motyga_plugin_used",
             "event_params": {
                 "plugin_id": "sample@test",
                 "remote_plugin_id": null,
@@ -3209,9 +3209,9 @@ fn plugin_used_event_serializes_expected_shape() {
 
 #[test]
 fn plugin_management_event_serializes_expected_shape() {
-    let event = TrackEventRequest::PluginInstalled(CodexPluginEventRequest {
-        event_type: "codex_plugin_installed",
-        event_params: codex_plugin_metadata(sample_plugin_metadata()),
+    let event = TrackEventRequest::PluginInstalled(MotygaPluginEventRequest {
+        event_type: "motyga_plugin_installed",
+        event_params: motyga_plugin_metadata(sample_plugin_metadata()),
     });
 
     let payload = serde_json::to_value(&event).expect("serialize plugin installed event");
@@ -3219,7 +3219,7 @@ fn plugin_management_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_plugin_installed",
+            "event_type": "motyga_plugin_installed",
             "event_params": {
                 "plugin_id": "sample@test",
                 "remote_plugin_id": null,
@@ -3236,10 +3236,10 @@ fn plugin_management_event_serializes_expected_shape() {
 
 #[test]
 fn plugin_install_failed_event_serializes_expected_shape() {
-    let event = TrackEventRequest::PluginInstallFailed(CodexPluginInstallFailedEventRequest {
-        event_type: "codex_plugin_install_failed",
-        event_params: CodexPluginInstallFailedMetadata {
-            plugin: codex_plugin_metadata(sample_plugin_metadata()),
+    let event = TrackEventRequest::PluginInstallFailed(MotygaPluginInstallFailedEventRequest {
+        event_type: "motyga_plugin_install_failed",
+        event_params: MotygaPluginInstallFailedMetadata {
+            plugin: motyga_plugin_metadata(sample_plugin_metadata()),
             error_type: "store_io".to_string(),
         },
     });
@@ -3249,7 +3249,7 @@ fn plugin_install_failed_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_plugin_install_failed",
+            "event_type": "motyga_plugin_install_failed",
             "event_params": {
                 "plugin_id": "sample@test",
                 "remote_plugin_id": null,
@@ -3269,9 +3269,9 @@ fn plugin_install_failed_event_serializes_expected_shape() {
 fn plugin_management_event_keeps_plugin_id_local_when_remote_id_exists() {
     let mut plugin = sample_plugin_metadata();
     plugin.remote_plugin_id = Some("plugins~Plugin_remote".to_string());
-    let event = TrackEventRequest::PluginInstalled(CodexPluginEventRequest {
-        event_type: "codex_plugin_installed",
-        event_params: codex_plugin_metadata(plugin),
+    let event = TrackEventRequest::PluginInstalled(MotygaPluginEventRequest {
+        event_type: "motyga_plugin_installed",
+        event_params: motyga_plugin_metadata(plugin),
     });
 
     let payload = serde_json::to_value(&event).expect("serialize plugin installed event");
@@ -3279,7 +3279,7 @@ fn plugin_management_event_keeps_plugin_id_local_when_remote_id_exists() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_plugin_installed",
+            "event_type": "motyga_plugin_installed",
             "event_params": {
                 "plugin_id": "sample@test",
                 "remote_plugin_id": "plugins~Plugin_remote",
@@ -3297,9 +3297,9 @@ fn plugin_management_event_keeps_plugin_id_local_when_remote_id_exists() {
 #[test]
 fn hook_run_event_serializes_expected_shape() {
     let tracking = test_tracking_context("thread-3", "turn-3");
-    let event = TrackEventRequest::HookRun(CodexHookRunEventRequest {
-        event_type: "codex_hook_run",
-        event_params: codex_hook_run_metadata(
+    let event = TrackEventRequest::HookRun(MotygaHookRunEventRequest {
+        event_type: "motyga_hook_run",
+        event_params: motyga_hook_run_metadata(
             &tracking,
             HookRunFact {
                 event_name: HookEventName::PreToolUse,
@@ -3314,7 +3314,7 @@ fn hook_run_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_hook_run",
+            "event_type": "motyga_hook_run",
             "event_params": {
                 "thread_id": "thread-3",
                 "turn_id": "turn-3",
@@ -3332,7 +3332,7 @@ fn hook_run_event_serializes_expected_shape() {
 fn hook_run_metadata_maps_sources_and_statuses() {
     let tracking = test_tracking_context("thread-1", "turn-1");
 
-    let system = serde_json::to_value(codex_hook_run_metadata(
+    let system = serde_json::to_value(motyga_hook_run_metadata(
         &tracking,
         HookRunFact {
             event_name: HookEventName::SessionStart,
@@ -3341,7 +3341,7 @@ fn hook_run_metadata_maps_sources_and_statuses() {
         },
     ))
     .expect("serialize system hook");
-    let project = serde_json::to_value(codex_hook_run_metadata(
+    let project = serde_json::to_value(motyga_hook_run_metadata(
         &tracking,
         HookRunFact {
             event_name: HookEventName::Stop,
@@ -3350,7 +3350,7 @@ fn hook_run_metadata_maps_sources_and_statuses() {
         },
     ))
     .expect("serialize project hook");
-    let cloud_requirements = serde_json::to_value(codex_hook_run_metadata(
+    let cloud_requirements = serde_json::to_value(motyga_hook_run_metadata(
         &tracking,
         HookRunFact {
             event_name: HookEventName::Stop,
@@ -3359,7 +3359,7 @@ fn hook_run_metadata_maps_sources_and_statuses() {
         },
     ))
     .expect("serialize cloud requirements hook");
-    let unknown = serde_json::to_value(codex_hook_run_metadata(
+    let unknown = serde_json::to_value(motyga_hook_run_metadata(
         &tracking,
         HookRunFact {
             event_name: HookEventName::UserPromptSubmit,
@@ -3383,7 +3383,7 @@ fn hook_run_metadata_maps_sources_and_statuses() {
 fn hook_run_metadata_maps_stopped_status() {
     let tracking = test_tracking_context("thread-1", "turn-1");
 
-    let stopped = serde_json::to_value(codex_hook_run_metadata(
+    let stopped = serde_json::to_value(motyga_hook_run_metadata(
         &tracking,
         HookRunFact {
             event_name: HookEventName::Stop,
@@ -3434,7 +3434,7 @@ async fn reducer_ingests_skill_invoked_fact() {
                 tracking,
                 invocations: vec![SkillInvocation {
                     skill_name: "doc".to_string(),
-                    skill_scope: codex_protocol::protocol::SkillScope::User,
+                    skill_scope: motyga_protocol::protocol::SkillScope::User,
                     skill_path,
                     plugin_id: None,
                     invocation_type: InvocationType::Explicit,
@@ -3479,7 +3479,7 @@ async fn reducer_includes_plugin_id_for_plugin_skill_invocations() {
                 tracking,
                 invocations: vec![SkillInvocation {
                     skill_name: "sample:doc".to_string(),
-                    skill_scope: codex_protocol::protocol::SkillScope::User,
+                    skill_scope: motyga_protocol::protocol::SkillScope::User,
                     skill_path,
                     plugin_id: Some("sample@test".to_string()),
                     invocation_type: InvocationType::Explicit,
@@ -3517,7 +3517,7 @@ async fn reducer_ingests_hook_run_fact() {
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 1);
-    assert_eq!(payload[0]["event_type"], "codex_hook_run");
+    assert_eq!(payload[0]["event_type"], "motyga_hook_run");
     assert_eq!(payload[0]["event_params"]["hook_name"], "PostToolUse");
     assert_eq!(payload[0]["event_params"]["hook_source"], "unknown");
     assert_eq!(payload[0]["event_params"]["status"], "failed");
@@ -3567,9 +3567,9 @@ async fn reducer_ingests_app_and_plugin_facts() {
 
     let payload = serde_json::to_value(&events).expect("serialize events");
     assert_eq!(payload.as_array().expect("events array").len(), 3);
-    assert_eq!(payload[0]["event_type"], "codex_app_mentioned");
-    assert_eq!(payload[1]["event_type"], "codex_app_used");
-    assert_eq!(payload[2]["event_type"], "codex_plugin_used");
+    assert_eq!(payload[0]["event_type"], "motyga_app_mentioned");
+    assert_eq!(payload[1]["event_type"], "motyga_app_used");
+    assert_eq!(payload[2]["event_type"], "motyga_plugin_used");
     assert_eq!(
         payload[0]["event_params"]["product_client_id"],
         TEST_PRODUCT_CLIENT_ID
@@ -3605,7 +3605,7 @@ async fn reducer_ingests_plugin_state_changed_fact() {
     assert_eq!(
         payload,
         json!([{
-            "event_type": "codex_plugin_disabled",
+            "event_type": "motyga_plugin_disabled",
             "event_params": {
                 "plugin_id": "sample@test",
                 "remote_plugin_id": null,
@@ -3656,7 +3656,7 @@ async fn reducer_ingests_plugin_install_requested_fact() {
     assert_eq!(
         serde_json::to_value(&events).expect("serialize events"),
         json!([{
-            "event_type": "codex_plugin_install_requested",
+            "event_type": "motyga_plugin_install_requested",
             "event_params": {
                 "suggestion_id": "request_plugin_install_call-1",
                 "plugins": [{
@@ -3701,7 +3701,7 @@ async fn reducer_ingests_plugin_install_failed_fact() {
     assert_eq!(
         payload,
         json!([{
-            "event_type": "codex_plugin_install_failed",
+            "event_type": "motyga_plugin_install_failed",
             "event_params": {
                 "plugin_id": "sample@test",
                 "remote_plugin_id": null,
@@ -3743,7 +3743,7 @@ async fn reducer_ingests_plugin_install_failed_fact_without_detail() {
     assert_eq!(
         payload,
         json!([{
-            "event_type": "codex_plugin_install_failed",
+            "event_type": "motyga_plugin_install_failed",
             "event_params": {
                 "plugin_id": null,
                 "remote_plugin_id": "plugins~Plugin_00000000000000000000000000000000",
@@ -3783,7 +3783,7 @@ async fn reducer_ingests_external_agent_config_import_completed_fact() {
     assert_eq!(
         payload,
         json!([{
-            "event_type": "codex_onboarding_external_agent_import_complete",
+            "event_type": "motyga_onboarding_external_agent_import_complete",
             "event_params": {
                 "import_id": "import-1",
                 "source": "app_server",
@@ -3799,9 +3799,9 @@ async fn reducer_ingests_external_agent_config_import_completed_fact() {
 #[test]
 fn external_agent_config_import_failure_event_serializes_expected_shape() {
     let event = TrackEventRequest::ExternalAgentConfigImportFailure(
-        CodexOnboardingExternalAgentImportFailureEventRequest {
-            event_type: "codex_onboarding_external_agent_import_failure",
-            event_params: CodexOnboardingExternalAgentImportFailureMetadata {
+        MotygaOnboardingExternalAgentImportFailureEventRequest {
+            event_type: "motyga_onboarding_external_agent_import_failure",
+            event_params: MotygaOnboardingExternalAgentImportFailureMetadata {
                 import_id: "import-1".to_string(),
                 source: "app_server".to_string(),
                 item_type: "SESSIONS".to_string(),
@@ -3817,7 +3817,7 @@ fn external_agent_config_import_failure_event_serializes_expected_shape() {
     assert_eq!(
         payload,
         json!({
-            "event_type": "codex_onboarding_external_agent_import_failure",
+            "event_type": "motyga_onboarding_external_agent_import_failure",
             "event_params": {
                 "import_id": "import-1",
                 "source": "app_server",
@@ -3854,7 +3854,7 @@ async fn reducer_ingests_external_agent_config_import_failure_fact() {
     assert_eq!(
         payload,
         json!([{
-            "event_type": "codex_onboarding_external_agent_import_failure",
+            "event_type": "motyga_onboarding_external_agent_import_failure",
             "event_params": {
                 "import_id": "import-1",
                 "source": "app_server",
@@ -3869,9 +3869,9 @@ async fn reducer_ingests_external_agent_config_import_failure_fact() {
 
 #[test]
 fn turn_event_serializes_expected_shape() {
-    let event = TrackEventRequest::TurnEvent(Box::new(CodexTurnEventRequest {
-        event_type: "codex_turn_event",
-        event_params: crate::events::CodexTurnEventParams {
+    let event = TrackEventRequest::TurnEvent(Box::new(MotygaTurnEventRequest {
+        event_type: "motyga_turn_event",
+        event_params: crate::events::MotygaTurnEventParams {
             thread_id: "thread-2".to_string(),
             session_id: "session-thread-2".to_string(),
             turn_id: "turn-2".to_string(),
@@ -3899,8 +3899,8 @@ fn turn_event_serializes_expected_shape() {
             is_first_turn: true,
             status: Some(TurnStatus::Completed),
             turn_error: None,
-            codex_error_kind: None,
-            codex_error_http_status_code: None,
+            motyga_error_kind: None,
+            motyga_error_http_status_code: None,
             steer_count: Some(0),
             total_tool_call_count: None,
             shell_command_count: None,
@@ -3931,7 +3931,7 @@ fn turn_event_serializes_expected_shape() {
     let payload = serde_json::to_value(&event).expect("serialize turn event");
     let expected = serde_json::from_str::<serde_json::Value>(
         r#"{
-            "event_type": "codex_turn_event",
+            "event_type": "motyga_turn_event",
             "event_params": {
                 "thread_id": "thread-2",
                 "session_id": "session-thread-2",
@@ -3939,13 +3939,13 @@ fn turn_event_serializes_expected_shape() {
                 "submission_type": null,
                 "app_server_client": {
                     "product_client_id": "motyga_cli",
-                    "client_name": "codex-tui",
+                    "client_name": "motyga-tui",
                     "client_version": "1.0.0",
                     "rpc_transport": "stdio",
                     "experimental_api_enabled": true
                 },
                 "runtime": {
-                    "codex_rs_version": "0.1.0",
+                    "motyga_rs_version": "0.1.0",
                     "runtime_os": "macos",
                     "runtime_os_version": "15.3.1",
                     "runtime_arch": "aarch64"
@@ -3971,8 +3971,8 @@ fn turn_event_serializes_expected_shape() {
                 "is_first_turn": true,
                 "status": "completed",
                 "turn_error": null,
-                "codex_error_kind": null,
-                "codex_error_http_status_code": null,
+                "motyga_error_kind": null,
+                "motyga_error_http_status_code": null,
                 "steer_count": 0,
                 "total_tool_call_count": null,
                 "shell_command_count": null,
@@ -4045,7 +4045,7 @@ async fn accepted_turn_steer_emits_expected_event() {
 
     assert_eq!(out.len(), 1);
     let payload = serde_json::to_value(&out[0]).expect("serialize turn steer event");
-    assert_eq!(payload["event_type"], json!("codex_turn_steer_event"));
+    assert_eq!(payload["event_type"], json!("motyga_turn_steer_event"));
     assert_eq!(payload["event_params"]["thread_id"], json!("thread-2"));
     assert_eq!(
         payload["event_params"]["session_id"],
@@ -4064,10 +4064,10 @@ async fn accepted_turn_steer_emits_expected_event() {
     );
     assert_eq!(
         payload["event_params"]["app_server_client"]["product_client_id"],
-        json!("codex-tui")
+        json!("motyga-tui")
     );
     assert_eq!(
-        payload["event_params"]["runtime"]["codex_rs_version"],
+        payload["event_params"]["runtime"]["motyga_rs_version"],
         json!("0.1.0")
     );
     assert_eq!(payload["event_params"]["thread_source"], json!("user"));
@@ -4088,17 +4088,17 @@ async fn rejected_turn_steer_uses_request_connection_metadata() {
     )
     .await;
 
-    assert_eq!(payload["event_type"], json!("codex_turn_steer_event"));
+    assert_eq!(payload["event_type"], json!("motyga_turn_steer_event"));
     assert_eq!(payload["event_params"]["thread_id"], json!("thread-2"));
     assert_eq!(payload["event_params"]["expected_turn_id"], json!("turn-2"));
     assert_eq!(payload["event_params"]["accepted_turn_id"], json!(null));
     assert_eq!(payload["event_params"]["num_input_images"], json!(1));
     assert_eq!(
         payload["event_params"]["app_server_client"]["product_client_id"],
-        json!("codex-tui")
+        json!("motyga-tui")
     );
     assert_eq!(
-        payload["event_params"]["runtime"]["codex_rs_version"],
+        payload["event_params"]["runtime"]["motyga_rs_version"],
         json!("0.1.0")
     );
     assert_eq!(payload["event_params"]["thread_source"], json!("user"));
@@ -4230,7 +4230,7 @@ async fn turn_start_error_response_discards_pending_start_request() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut out,
         )
@@ -4259,7 +4259,7 @@ async fn turn_lifecycle_emits_turn_event() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut out,
         )
@@ -4267,7 +4267,7 @@ async fn turn_lifecycle_emits_turn_event() {
 
     assert_eq!(out.len(), 1);
     let payload = serde_json::to_value(&out[0]).expect("serialize turn event");
-    assert_eq!(payload["event_type"], json!("codex_turn_event"));
+    assert_eq!(payload["event_type"], json!("motyga_turn_event"));
     assert_eq!(payload["event_params"]["thread_id"], json!("thread-2"));
     assert_eq!(
         payload["event_params"]["session_id"],
@@ -4277,8 +4277,8 @@ async fn turn_lifecycle_emits_turn_event() {
     assert_eq!(
         payload["event_params"]["app_server_client"],
         json!({
-            "product_client_id": "codex-tui",
-            "client_name": "codex-tui",
+            "product_client_id": "motyga-tui",
+            "client_name": "motyga-tui",
             "client_version": "1.0.0",
             "rpc_transport": "stdio",
             "experimental_api_enabled": null,
@@ -4287,7 +4287,7 @@ async fn turn_lifecycle_emits_turn_event() {
     assert_eq!(
         payload["event_params"]["runtime"],
         json!({
-            "codex_rs_version": "0.1.0",
+            "motyga_rs_version": "0.1.0",
             "runtime_os": "macos",
             "runtime_os_version": "15.3.1",
             "runtime_arch": "aarch64",
@@ -4402,7 +4402,7 @@ async fn turn_event_counts_completed_tool_items() {
         },
         ThreadItem::WebSearch {
             id: "web-1".to_string(),
-            query: "codex".to_string(),
+            query: "motyga".to_string(),
             action: None,
         },
         ThreadItem::ImageGeneration {
@@ -4443,7 +4443,7 @@ async fn turn_event_counts_completed_tool_items() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut out,
         )
@@ -4496,7 +4496,7 @@ async fn item_completed_without_turn_state_does_not_create_turn_state() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut out,
         )
@@ -4598,7 +4598,7 @@ async fn accepted_steers_increment_turn_steer_count() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut out,
         )
@@ -4632,7 +4632,7 @@ async fn turn_does_not_emit_without_required_prerequisites() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut out,
         )
@@ -4657,7 +4657,7 @@ async fn turn_does_not_emit_without_required_prerequisites() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut out,
         )
@@ -4681,11 +4681,11 @@ async fn turn_lifecycle_emits_failed_turn_event() {
     .await;
     reducer
         .ingest(
-            AnalyticsFact::Custom(CustomAnalyticsFact::TurnCodexError(Box::new(
-                TurnCodexErrorFact::from_codex_err(
+            AnalyticsFact::Custom(CustomAnalyticsFact::TurnMotygaError(Box::new(
+                TurnMotygaErrorFact::from_motyga_err(
                     "thread-2".to_string(),
                     "turn-2".to_string(),
-                    &CodexErr::InvalidRequest("unknown turn environment id `env-2`".to_string()),
+                    &MotygaErr::InvalidRequest("unknown turn environment id `env-2`".to_string()),
                 ),
             ))),
             &mut out,
@@ -4697,7 +4697,7 @@ async fn turn_lifecycle_emits_failed_turn_event() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Failed,
-                Some(codex_app_server_protocol::CodexErrorInfo::BadRequest),
+                Some(motyga_app_server_protocol::MotygaErrorInfo::BadRequest),
             ))),
             &mut out,
         )
@@ -4708,11 +4708,11 @@ async fn turn_lifecycle_emits_failed_turn_event() {
     assert_eq!(payload["event_params"]["status"], json!("failed"));
     assert_eq!(payload["event_params"]["turn_error"], json!("badRequest"));
     assert_eq!(
-        payload["event_params"]["codex_error_kind"],
+        payload["event_params"]["motyga_error_kind"],
         json!("invalid_request")
     );
     assert_eq!(
-        payload["event_params"]["codex_error_http_status_code"],
+        payload["event_params"]["motyga_error_http_status_code"],
         json!(null)
     );
 }
@@ -4737,7 +4737,7 @@ async fn turn_lifecycle_emits_interrupted_turn_event_without_error() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Interrupted,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut out,
         )
@@ -4747,7 +4747,7 @@ async fn turn_lifecycle_emits_interrupted_turn_event_without_error() {
     let payload = serde_json::to_value(&out[0]).expect("serialize turn event");
     assert_eq!(payload["event_params"]["status"], json!("interrupted"));
     assert_eq!(payload["event_params"]["turn_error"], json!(null));
-    assert_eq!(payload["event_params"]["codex_error_kind"], json!(null));
+    assert_eq!(payload["event_params"]["motyga_error_kind"], json!(null));
 }
 
 #[tokio::test]
@@ -4770,7 +4770,7 @@ async fn turn_completed_without_started_notification_emits_null_started_at() {
                 "thread-2",
                 "turn-2",
                 AppServerTurnStatus::Completed,
-                /*codex_error_info*/ None,
+                /*motyga_error_info*/ None,
             ))),
             &mut out,
         )

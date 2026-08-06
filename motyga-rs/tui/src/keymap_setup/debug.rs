@@ -1,4 +1,4 @@
-use codex_config::types::TuiKeymap;
+use motyga_config::types::TuiKeymap;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
 use crossterm::event::KeyModifiers;

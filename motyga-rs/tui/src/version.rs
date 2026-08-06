@@ -1,2 +1,2 @@
 /// The current Motyga CLI version as embedded at compile time.
-pub const CODEX_CLI_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const MOTYGA_CLI_VERSION: &str = env!("CARGO_PKG_VERSION");

@@ -7,8 +7,8 @@ use crate::spawn_pty_process;
 use std::collections::HashMap;
 use std::path::Path;
 
-const READY_MARKER: &str = "__CODEX_CHILD_READY__";
-const VALUE_MARKER: &str = "__CODEX_CHILD_VALUE__";
+const READY_MARKER: &str = "__MOTYGA_CHILD_READY__";
+const VALUE_MARKER: &str = "__MOTYGA_CHILD_VALUE__";
 
 struct WindowsShell {
     name: &'static str,
@@ -46,7 +46,7 @@ async fn conpty_delivers_input_to_foreground_children() -> anyhow::Result<()> {
         return Ok(());
     };
     let code = format!(
-        "print('__CODEX_CHILD_'+'READY__', flush=True); value=input(); print('{VALUE_MARKER}'+value.encode('utf-8').hex(), flush=True)"
+        "print('__MOTYGA_CHILD_'+'READY__', flush=True); value=input(); print('{VALUE_MARKER}'+value.encode('utf-8').hex(), flush=True)"
     );
     let expected = "cafeé 漢字";
     let expected_marker = format!("{VALUE_MARKER}{}", utf8_hex(expected));

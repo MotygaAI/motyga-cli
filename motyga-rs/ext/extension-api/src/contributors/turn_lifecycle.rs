@@ -1,7 +1,7 @@
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::protocol::TurnAbortReason;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::protocol::TurnAbortReason;
 
 use crate::ExtensionData;
 
@@ -48,7 +48,7 @@ pub struct TurnErrorInput<'a> {
     /// Stable host-owned turn identifier.
     pub turn_id: &'a str,
     /// Error surfaced by the host for this turn.
-    pub error: CodexErrorInfo,
+    pub error: MotygaErrorInfo,
     /// Store scoped to the host session runtime.
     pub session_store: &'a ExtensionData,
     /// Store scoped to this thread runtime.

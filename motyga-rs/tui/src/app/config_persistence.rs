@@ -6,7 +6,7 @@
 
 use super::*;
 #[cfg(target_os = "windows")]
-use codex_utils_approval_presets::ApprovalPreset;
+use motyga_utils_approval_presets::ApprovalPreset;
 
 #[cfg(target_os = "windows")]
 pub(super) struct WindowsSetupPermissions {
@@ -31,7 +31,7 @@ impl App {
         overrides.cwd = Some(cwd.clone());
         let cwd_display = cwd.display().to_string();
         let builder = ConfigBuilder::default()
-            .codex_home(self.config.codex_home.to_path_buf())
+            .motyga_home(self.config.motyga_home.to_path_buf())
             .cli_overrides(self.cli_kv_overrides.clone())
             .harness_overrides(overrides)
             .loader_overrides(self.loader_overrides.clone())
@@ -53,7 +53,7 @@ impl App {
         overrides.permission_profile = None;
         overrides.default_permissions = Some(profile_id.to_string());
         let builder = ConfigBuilder::default()
-            .codex_home(self.config.codex_home.to_path_buf())
+            .motyga_home(self.config.motyga_home.to_path_buf())
             .cli_overrides(self.cli_kv_overrides.clone())
             .harness_overrides(overrides)
             .loader_overrides(self.loader_overrides.clone())
@@ -182,7 +182,7 @@ impl App {
         self.sync_active_thread_permission_settings_to_cached_session()
             .await;
         self.app_event_tx
-            .send(AppEvent::CodexOp(AppCommand::override_turn_context(
+            .send(AppEvent::MotygaOp(AppCommand::override_turn_context(
                 /*cwd*/ None,
                 approval_policy,
                 approvals_reviewer,
@@ -726,7 +726,7 @@ impl App {
         model: &str,
         reasoning_effort: Option<&ReasoningEffortConfig>,
     ) -> Option<String> {
-        (!model.starts_with("codex-auto-")).then(|| Self::reasoning_label(reasoning_effort))
+        (!model.starts_with("motyga-auto-")).then(|| Self::reasoning_label(reasoning_effort))
     }
 
     pub(crate) fn token_usage(&self) -> crate::token_usage::TokenUsage {
@@ -765,7 +765,7 @@ impl App {
     pub(super) fn restore_runtime_theme_from_config(&self) {
         if let Some(name) = self.config.tui_theme.as_deref()
             && let Some(theme) =
-                crate::render::highlight::resolve_theme_by_name(name, Some(&self.config.codex_home))
+                crate::render::highlight::resolve_theme_by_name(name, Some(&self.config.motyga_home))
         {
             crate::render::highlight::set_syntax_theme(theme);
             return;
@@ -774,7 +774,7 @@ impl App {
         let auto_theme_name = crate::render::highlight::adaptive_default_theme_name();
         if let Some(theme) = crate::render::highlight::resolve_theme_by_name(
             auto_theme_name,
-            Some(&self.config.codex_home),
+            Some(&self.config.motyga_home),
         ) {
             crate::render::highlight::set_syntax_theme(theme);
         }
@@ -966,7 +966,7 @@ impl App {
         {
             let windows_sandbox_level = crate::windows_sandbox::level_from_config(&self.config);
             self.app_event_tx
-                .send(AppEvent::CodexOp(AppCommand::override_turn_context(
+                .send(AppEvent::MotygaOp(AppCommand::override_turn_context(
                     /*cwd*/ None,
                     /*approval_policy*/ None,
                     /*approvals_reviewer*/ None,
@@ -1013,7 +1013,7 @@ fn approvals_reviewer_from_effective_config(
     effective_config
         .config
         .approvals_reviewer
-        .map(codex_app_server_protocol::ApprovalsReviewer::to_core)
+        .map(motyga_app_server_protocol::ApprovalsReviewer::to_core)
 }
 
 fn approval_policy_from_effective_config(
@@ -1043,7 +1043,7 @@ fn features_toml_from_json(value: &serde_json::Value) -> Option<FeaturesToml> {
 #[cfg(target_os = "windows")]
 fn windows_sandbox_mode_from_effective_config(
     effective_config: &ConfigReadResponse,
-) -> Option<codex_config::types::WindowsSandboxModeToml> {
+) -> Option<motyga_config::types::WindowsSandboxModeToml> {
     let root_windows = effective_config
         .config
         .additional
@@ -1064,7 +1064,7 @@ mod tests {
     use crate::app::test_support::make_test_app;
     use crate::legacy_core::config::edit::ConfigEdit;
     use crate::test_support::PathBufExt;
-    use codex_protocol::models::PermissionProfile;
+    use motyga_protocol::models::PermissionProfile;
     use pretty_assertions::assert_eq;
     use tempfile::tempdir;
 
@@ -1089,8 +1089,8 @@ mod tests {
     #[tokio::test]
     async fn refresh_in_memory_config_from_disk_loads_latest_apps_state() -> Result<()> {
         let mut app = make_test_app().await;
-        let codex_home = tempdir()?;
-        app.config.codex_home = codex_home.path().to_path_buf().abs();
+        let motyga_home = tempdir()?;
+        app.config.motyga_home = motyga_home.path().to_path_buf().abs();
         let app_id = "unit_test_refresh_in_memory_config_connector".to_string();
 
         assert_eq!(app_enabled_in_effective_config(&app.config, &app_id), None);
@@ -1131,15 +1131,15 @@ mod tests {
     async fn refresh_in_memory_config_from_disk_keeps_cloud_requirements_for_thread_transitions()
     -> Result<()> {
         let mut app = make_test_app().await;
-        let codex_home = tempdir()?;
-        let required_policy = codex_protocol::protocol::AskForApproval::Never;
+        let motyga_home = tempdir()?;
+        let required_policy = motyga_protocol::protocol::AskForApproval::Never;
         let cloud_config_bundle =
-            codex_config::test_support::CloudConfigBundleFixture::loader_with_enterprise_requirement(
+            motyga_config::test_support::CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"allowed_approval_policies = ["never"]"#,
             );
 
         let config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .motyga_home(motyga_home.path().to_path_buf())
             .loader_overrides(LoaderOverrides::without_managed_config_for_tests())
             .cloud_config_bundle(cloud_config_bundle.clone())
             .build()
@@ -1148,7 +1148,7 @@ mod tests {
         app.cloud_config_bundle = cloud_config_bundle;
         let app_id = "unit_test_cloud_requirements_reload_marker";
         std::fs::write(
-            codex_home.path().join("config.toml"),
+            motyga_home.path().join("config.toml"),
             format!(
                 r#"
 [apps.{app_id}]
@@ -1189,9 +1189,9 @@ enabled = false
     async fn refresh_in_memory_config_from_disk_best_effort_keeps_current_config_on_error()
     -> Result<()> {
         let mut app = make_test_app().await;
-        let codex_home = tempdir()?;
-        app.config.codex_home = codex_home.path().to_path_buf().abs();
-        std::fs::write(codex_home.path().join("config.toml"), "[broken")?;
+        let motyga_home = tempdir()?;
+        app.config.motyga_home = motyga_home.path().to_path_buf().abs();
+        std::fs::write(motyga_home.path().join("config.toml"), "[broken")?;
         let original_config = app.config.clone();
 
         app.refresh_in_memory_config_from_disk_best_effort("starting a new thread")
@@ -1244,10 +1244,10 @@ enabled = false
     #[tokio::test]
     async fn refresh_in_memory_config_from_disk_updates_resize_reflow_config() -> Result<()> {
         let mut app = make_test_app().await;
-        let codex_home = tempdir()?;
-        app.config.codex_home = codex_home.path().to_path_buf().abs();
+        let motyga_home = tempdir()?;
+        app.config.motyga_home = motyga_home.path().to_path_buf().abs();
         std::fs::write(
-            codex_home.path().join("config.toml"),
+            motyga_home.path().join("config.toml"),
             r#"
 [tui]
 terminal_resize_reflow_max_rows = 9000
@@ -1270,7 +1270,7 @@ terminal_resize_reflow_max_rows = 9000
         let effective_config: ConfigReadResponse = serde_json::from_value(serde_json::json!({
             "config": {
                 "approval_policy": AskForApproval::OnRequest,
-                "approvals_reviewer": codex_app_server_protocol::ApprovalsReviewer::AutoReview,
+                "approvals_reviewer": motyga_app_server_protocol::ApprovalsReviewer::AutoReview,
                 "sandbox_mode": AppServerSandboxMode::WorkspaceWrite,
                 "features": {
                     "guardian_approval": false,
@@ -1307,9 +1307,9 @@ terminal_resize_reflow_max_rows = 9000
     async fn rebuild_config_for_resume_or_fallback_uses_current_config_on_same_cwd_error()
     -> Result<()> {
         let mut app = make_test_app().await;
-        let codex_home = tempdir()?;
-        app.config.codex_home = codex_home.path().to_path_buf().abs();
-        std::fs::write(codex_home.path().join("config.toml"), "[broken")?;
+        let motyga_home = tempdir()?;
+        app.config.motyga_home = motyga_home.path().to_path_buf().abs();
+        std::fs::write(motyga_home.path().join("config.toml"), "[broken")?;
         let current_config = app.config.clone();
         let current_cwd = current_config.cwd.clone();
 
@@ -1324,9 +1324,9 @@ terminal_resize_reflow_max_rows = 9000
     #[tokio::test]
     async fn rebuild_config_for_resume_or_fallback_errors_when_cwd_changes() -> Result<()> {
         let mut app = make_test_app().await;
-        let codex_home = tempdir()?;
-        app.config.codex_home = codex_home.path().to_path_buf().abs();
-        std::fs::write(codex_home.path().join("config.toml"), "[broken")?;
+        let motyga_home = tempdir()?;
+        app.config.motyga_home = motyga_home.path().to_path_buf().abs();
+        std::fs::write(motyga_home.path().join("config.toml"), "[broken")?;
         let current_cwd = app.config.cwd.clone();
         let next_cwd_tmp = tempdir()?;
         let next_cwd = next_cwd_tmp.path().to_path_buf();

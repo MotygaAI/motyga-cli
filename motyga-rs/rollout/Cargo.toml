@@ -1,12 +1,12 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-rollout"
+name = "motyga-rollout"
 version.workspace = true
 
 [lib]
 doctest = false
-name = "codex_rollout"
+name = "motyga_rollout"
 path = "src/lib.rs"
 
 [lints]
@@ -15,12 +15,12 @@ workspace = true
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
-codex-file-search = { workspace = true }
-codex-git-utils = { workspace = true }
-codex-otel = { workspace = true }
-codex-protocol = { workspace = true }
-codex-state = { workspace = true }
-codex-utils-path = { workspace = true }
+motyga-file-search = { workspace = true }
+motyga-git-utils = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-state = { workspace = true }
+motyga-utils-path = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

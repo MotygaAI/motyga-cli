@@ -1,21 +1,21 @@
 use std::sync::Arc;
 
-use codex_core::config::Config;
-use codex_extension_api::ConfigContributor;
-use codex_extension_api::ExtensionData;
-use codex_extension_api::ExtensionFuture;
-use codex_extension_api::ExtensionRegistryBuilder;
-use codex_extension_api::ThreadLifecycleContributor;
-use codex_extension_api::ThreadStartInput;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolContributor;
-use codex_extension_api::ToolExecutor;
-use codex_login::AuthManager;
-use codex_model_provider::create_model_provider;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_core::config::Config;
+use motyga_extension_api::ConfigContributor;
+use motyga_extension_api::ExtensionData;
+use motyga_extension_api::ExtensionFuture;
+use motyga_extension_api::ExtensionRegistryBuilder;
+use motyga_extension_api::ThreadLifecycleContributor;
+use motyga_extension_api::ThreadStartInput;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolContributor;
+use motyga_extension_api::ToolExecutor;
+use motyga_login::AuthManager;
+use motyga_model_provider::create_model_provider;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
-use crate::backend::CodexImagesBackend;
+use crate::backend::MotygaImagesBackend;
 use crate::tool::ImageGenerationTool;
 
 #[derive(Clone)]
@@ -93,7 +93,7 @@ impl ToolContributor for ImageGenerationExtension {
         }
 
         vec![Arc::new(ImageGenerationTool::new(
-            CodexImagesBackend::new(create_model_provider(
+            MotygaImagesBackend::new(create_model_provider(
                 config.provider.clone(),
                 Some(self.auth_manager.clone()),
             )),

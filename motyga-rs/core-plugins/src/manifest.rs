@@ -1,8 +1,8 @@
-use codex_config::HooksFile;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathConvention;
-use codex_utils_path_uri::PathUri;
-use codex_utils_plugins::find_plugin_manifest_path;
+use motyga_config::HooksFile;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathConvention;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_plugins::find_plugin_manifest_path;
 use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use std::fs;
@@ -10,14 +10,14 @@ use std::path::Path;
 const MAX_DEFAULT_PROMPT_COUNT: usize = 3;
 const MAX_DEFAULT_PROMPT_LEN: usize = 128;
 
-pub type PluginManifest = codex_plugin::manifest::PluginManifest<AbsolutePathBuf>;
-pub type PluginManifestHooks = codex_plugin::manifest::PluginManifestHooks<AbsolutePathBuf>;
-pub type PluginManifestInterface = codex_plugin::manifest::PluginManifestInterface<AbsolutePathBuf>;
+pub type PluginManifest = motyga_plugin::manifest::PluginManifest<AbsolutePathBuf>;
+pub type PluginManifestHooks = motyga_plugin::manifest::PluginManifestHooks<AbsolutePathBuf>;
+pub type PluginManifestInterface = motyga_plugin::manifest::PluginManifestInterface<AbsolutePathBuf>;
 pub type PluginManifestMcpServers =
-    codex_plugin::manifest::PluginManifestMcpServers<AbsolutePathBuf>;
-pub type PluginManifestPaths = codex_plugin::manifest::PluginManifestPaths<AbsolutePathBuf>;
+    motyga_plugin::manifest::PluginManifestMcpServers<AbsolutePathBuf>;
+pub type PluginManifestPaths = motyga_plugin::manifest::PluginManifestPaths<AbsolutePathBuf>;
 
-pub(crate) type UriPluginManifest = codex_plugin::manifest::PluginManifest<PathUri>;
+pub(crate) type UriPluginManifest = motyga_plugin::manifest::PluginManifest<PathUri>;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -196,7 +196,7 @@ pub(crate) fn parse_plugin_manifest_uri(
             screenshots,
         } = interface;
 
-        let interface = codex_plugin::manifest::PluginManifestInterface {
+        let interface = motyga_plugin::manifest::PluginManifestInterface {
             display_name,
             short_description,
             long_description,
@@ -252,12 +252,12 @@ pub(crate) fn parse_plugin_manifest_uri(
 
         has_fields.then_some(interface)
     });
-    Ok(codex_plugin::manifest::PluginManifest {
+    Ok(motyga_plugin::manifest::PluginManifest {
         name,
         version,
         description,
         keywords,
-        paths: codex_plugin::manifest::PluginManifestPaths {
+        paths: motyga_plugin::manifest::PluginManifestPaths {
             skills: resolve_manifest_paths(plugin_root, "skills", skills.as_ref()),
             mcp_servers: resolve_manifest_mcp_servers(plugin_root, mcp_servers),
             apps: resolve_manifest_path(plugin_root, "apps", apps.as_deref()),
@@ -270,26 +270,26 @@ pub(crate) fn parse_plugin_manifest_uri(
 fn resolve_manifest_hooks(
     plugin_root: &PathUri,
     hooks: Option<RawPluginManifestHooks>,
-) -> Option<codex_plugin::manifest::PluginManifestHooks<PathUri>> {
+) -> Option<motyga_plugin::manifest::PluginManifestHooks<PathUri>> {
     match hooks? {
         RawPluginManifestHooks::Path(path) => {
             resolve_manifest_path(plugin_root, "hooks", Some(&path))
-                .map(|path| codex_plugin::manifest::PluginManifestHooks::Paths(vec![path]))
+                .map(|path| motyga_plugin::manifest::PluginManifestHooks::Paths(vec![path]))
         }
         RawPluginManifestHooks::Paths(paths) => {
             let hooks = paths
                 .iter()
                 .filter_map(|path| resolve_manifest_path(plugin_root, "hooks", Some(path)))
                 .collect::<Vec<_>>();
-            (!hooks.is_empty()).then_some(codex_plugin::manifest::PluginManifestHooks::Paths(hooks))
+            (!hooks.is_empty()).then_some(motyga_plugin::manifest::PluginManifestHooks::Paths(hooks))
         }
         RawPluginManifestHooks::Inline(hooks) => {
-            Some(codex_plugin::manifest::PluginManifestHooks::Inline(vec![
+            Some(motyga_plugin::manifest::PluginManifestHooks::Inline(vec![
                 hooks,
             ]))
         }
         RawPluginManifestHooks::InlineList(hooks) => (!hooks.is_empty())
-            .then_some(codex_plugin::manifest::PluginManifestHooks::Inline(hooks)),
+            .then_some(motyga_plugin::manifest::PluginManifestHooks::Inline(hooks)),
         RawPluginManifestHooks::Invalid(value) => {
             tracing::warn!(
                 "ignoring hooks: expected a string, string array, object, or object array; found {}",
@@ -303,14 +303,14 @@ fn resolve_manifest_hooks(
 fn resolve_manifest_mcp_servers(
     plugin_root: &PathUri,
     mcp_servers: Option<RawPluginManifestMcpServers>,
-) -> Option<codex_plugin::manifest::PluginManifestMcpServers<PathUri>> {
+) -> Option<motyga_plugin::manifest::PluginManifestMcpServers<PathUri>> {
     match mcp_servers? {
         RawPluginManifestMcpServers::Path(path) => {
             resolve_manifest_path(plugin_root, "mcpServers", Some(&path))
-                .map(codex_plugin::manifest::PluginManifestMcpServers::Path)
+                .map(motyga_plugin::manifest::PluginManifestMcpServers::Path)
         }
         RawPluginManifestMcpServers::Object(servers) => match serde_json::to_string(&servers) {
-            Ok(servers) => Some(codex_plugin::manifest::PluginManifestMcpServers::Object(
+            Ok(servers) => Some(motyga_plugin::manifest::PluginManifestMcpServers::Object(
                 servers,
             )),
             Err(err) => {
@@ -510,19 +510,19 @@ mod tests {
     use super::MAX_DEFAULT_PROMPT_LEN;
     use super::PluginManifest;
     use super::load_plugin_manifest;
-    use codex_exec_server::EnvironmentManager;
-    use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-    use codex_plugin::PluginProvider;
-    use codex_plugin::ResolvedPlugin;
-    use codex_plugin::manifest::PluginManifest as GenericPluginManifest;
-    use codex_plugin::manifest::PluginManifestHooks;
-    use codex_plugin::manifest::PluginManifestInterface;
-    use codex_plugin::manifest::PluginManifestMcpServers;
-    use codex_plugin::manifest::PluginManifestPaths;
-    use codex_protocol::capabilities::CapabilityRootLocation;
-    use codex_protocol::capabilities::SelectedCapabilityRoot;
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use codex_utils_path_uri::PathUri;
+    use motyga_exec_server::EnvironmentManager;
+    use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+    use motyga_plugin::PluginProvider;
+    use motyga_plugin::ResolvedPlugin;
+    use motyga_plugin::manifest::PluginManifest as GenericPluginManifest;
+    use motyga_plugin::manifest::PluginManifestHooks;
+    use motyga_plugin::manifest::PluginManifestInterface;
+    use motyga_plugin::manifest::PluginManifestMcpServers;
+    use motyga_plugin::manifest::PluginManifestPaths;
+    use motyga_protocol::capabilities::CapabilityRootLocation;
+    use motyga_protocol::capabilities::SelectedCapabilityRoot;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_path_uri::PathUri;
     use pretty_assertions::assert_eq;
     use std::fs;
     use std::path::Path;

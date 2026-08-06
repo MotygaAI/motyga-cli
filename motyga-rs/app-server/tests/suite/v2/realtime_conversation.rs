@@ -5,50 +5,50 @@ use app_test_support::create_final_assistant_message_sse_response;
 use app_test_support::create_mock_responses_server_sequence_unchecked;
 use app_test_support::create_shell_command_sse_response;
 use app_test_support::to_response;
-use codex_app_server_protocol::CommandExecutionStatus;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::ItemStartedNotification;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::LoginAccountResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadRealtimeAppendAudioParams;
-use codex_app_server_protocol::ThreadRealtimeAppendAudioResponse;
-use codex_app_server_protocol::ThreadRealtimeAppendSpeechParams;
-use codex_app_server_protocol::ThreadRealtimeAppendSpeechResponse;
-use codex_app_server_protocol::ThreadRealtimeAppendTextParams;
-use codex_app_server_protocol::ThreadRealtimeAppendTextResponse;
-use codex_app_server_protocol::ThreadRealtimeAudioChunk;
-use codex_app_server_protocol::ThreadRealtimeClosedNotification;
-use codex_app_server_protocol::ThreadRealtimeErrorNotification;
-use codex_app_server_protocol::ThreadRealtimeItemAddedNotification;
-use codex_app_server_protocol::ThreadRealtimeListVoicesParams;
-use codex_app_server_protocol::ThreadRealtimeListVoicesResponse;
-use codex_app_server_protocol::ThreadRealtimeOutputAudioDeltaNotification;
-use codex_app_server_protocol::ThreadRealtimeSdpNotification;
-use codex_app_server_protocol::ThreadRealtimeStartParams;
-use codex_app_server_protocol::ThreadRealtimeStartResponse;
-use codex_app_server_protocol::ThreadRealtimeStartTransport;
-use codex_app_server_protocol::ThreadRealtimeStartedNotification;
-use codex_app_server_protocol::ThreadRealtimeStopParams;
-use codex_app_server_protocol::ThreadRealtimeStopResponse;
-use codex_app_server_protocol::ThreadRealtimeTranscriptDeltaNotification;
-use codex_app_server_protocol::ThreadRealtimeTranscriptDoneNotification;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::TurnStartedNotification;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_features::FEATURES;
-use codex_features::Feature;
-use codex_protocol::protocol::ConversationTextRole;
-use codex_protocol::protocol::RealtimeConversationVersion;
-use codex_protocol::protocol::RealtimeOutputModality;
-use codex_protocol::protocol::RealtimeVoice;
-use codex_protocol::protocol::RealtimeVoicesList;
+use motyga_app_server_protocol::CommandExecutionStatus;
+use motyga_app_server_protocol::ItemCompletedNotification;
+use motyga_app_server_protocol::ItemStartedNotification;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::LoginAccountResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadRealtimeAppendAudioParams;
+use motyga_app_server_protocol::ThreadRealtimeAppendAudioResponse;
+use motyga_app_server_protocol::ThreadRealtimeAppendSpeechParams;
+use motyga_app_server_protocol::ThreadRealtimeAppendSpeechResponse;
+use motyga_app_server_protocol::ThreadRealtimeAppendTextParams;
+use motyga_app_server_protocol::ThreadRealtimeAppendTextResponse;
+use motyga_app_server_protocol::ThreadRealtimeAudioChunk;
+use motyga_app_server_protocol::ThreadRealtimeClosedNotification;
+use motyga_app_server_protocol::ThreadRealtimeErrorNotification;
+use motyga_app_server_protocol::ThreadRealtimeItemAddedNotification;
+use motyga_app_server_protocol::ThreadRealtimeListVoicesParams;
+use motyga_app_server_protocol::ThreadRealtimeListVoicesResponse;
+use motyga_app_server_protocol::ThreadRealtimeOutputAudioDeltaNotification;
+use motyga_app_server_protocol::ThreadRealtimeSdpNotification;
+use motyga_app_server_protocol::ThreadRealtimeStartParams;
+use motyga_app_server_protocol::ThreadRealtimeStartResponse;
+use motyga_app_server_protocol::ThreadRealtimeStartTransport;
+use motyga_app_server_protocol::ThreadRealtimeStartedNotification;
+use motyga_app_server_protocol::ThreadRealtimeStopParams;
+use motyga_app_server_protocol::ThreadRealtimeStopResponse;
+use motyga_app_server_protocol::ThreadRealtimeTranscriptDeltaNotification;
+use motyga_app_server_protocol::ThreadRealtimeTranscriptDoneNotification;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnCompletedNotification;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::TurnStartedNotification;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_features::FEATURES;
+use motyga_features::Feature;
+use motyga_protocol::protocol::ConversationTextRole;
+use motyga_protocol::protocol::RealtimeConversationVersion;
+use motyga_protocol::protocol::RealtimeOutputModality;
+use motyga_protocol::protocol::RealtimeVoice;
+use motyga_protocol::protocol::RealtimeVoicesList;
 use core_test_support::responses;
 use core_test_support::responses::WebSocketConnectionConfig;
 use core_test_support::responses::WebSocketRequest;
@@ -80,7 +80,7 @@ use wiremock::matchers::path_regex;
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 const DELEGATED_SHELL_TURN_TIMEOUT: Duration = Duration::from_secs(30);
 const DELEGATED_SHELL_TOOL_TIMEOUT_MS: u64 = 30_000;
-const STARTUP_CONTEXT_HEADER: &str = "Startup context from Codex.";
+const STARTUP_CONTEXT_HEADER: &str = "Startup context from Motyga.";
 const V2_STEERING_ACKNOWLEDGEMENT: &str =
     "This was sent to steer the previous background agent task.";
 const V2_HANDOFF_COMPLETE_ACKNOWLEDGEMENT: &str =
@@ -88,7 +88,7 @@ const V2_HANDOFF_COMPLETE_ACKNOWLEDGEMENT: &str =
 const RESPONSE_ITEM_PREFIX: &str =
     "Use the following context to inform future responses, but do not speak it to the user.";
 const RESPONSE_HANDOFF_PREFIX: &str =
-    "Silent Codex context. Do not speak, acknowledge, or summarize this item.";
+    "Silent Motyga context. Do not speak, acknowledge, or summarize this item.";
 
 #[derive(Debug, Clone, Copy)]
 enum StartupContextConfig<'a> {
@@ -203,7 +203,7 @@ struct RealtimeSidebandScript {
 
 struct RealtimeE2eHarness {
     mcp: TestAppServer,
-    _codex_home: TempDir,
+    _motyga_home: TempDir,
     main_loop_responses_server: MockServer,
     realtime_server: WebSocketTestServer,
     call_capture: RealtimeCallRequestCapture,
@@ -280,9 +280,9 @@ impl RealtimeE2eHarness {
 
         let realtime_server =
             start_websocket_server_with_headers(realtime_sideband.connections).await;
-        let codex_home = TempDir::new()?;
+        let motyga_home = TempDir::new()?;
         create_config_toml_with_realtime_version(
-            codex_home.path(),
+            motyga_home.path(),
             &main_loop_responses_server.uri(),
             realtime_server.uri(),
             /*realtime_enabled*/ true,
@@ -291,7 +291,7 @@ impl RealtimeE2eHarness {
             sandbox,
         )?;
 
-        let mut mcp = TestAppServer::new(codex_home.path()).await?;
+        let mut mcp = TestAppServer::new(motyga_home.path()).await?;
         timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
         login_with_api_key(&mut mcp, "sk-test-key").await?;
 
@@ -307,7 +307,7 @@ impl RealtimeE2eHarness {
 
         Ok(Self {
             mcp,
-            _codex_home: codex_home,
+            _motyga_home: motyga_home,
             main_loop_responses_server,
             realtime_server,
             call_capture,
@@ -316,32 +316,32 @@ impl RealtimeE2eHarness {
     }
 
     async fn start_webrtc_realtime(&mut self, offer_sdp: &str) -> Result<StartedWebrtcRealtime> {
-        self.start_webrtc_realtime_with_codex_response_routing(
+        self.start_webrtc_realtime_with_motyga_response_routing(
             offer_sdp, /*client_managed_handoffs*/ None,
-            /*codex_responses_as_items*/ None, /*codex_response_handoff_prefix*/ None,
+            /*motyga_responses_as_items*/ None, /*motyga_response_handoff_prefix*/ None,
         )
         .await
     }
 
-    async fn start_webrtc_realtime_with_codex_response_items(
+    async fn start_webrtc_realtime_with_motyga_response_items(
         &mut self,
         offer_sdp: &str,
     ) -> Result<StartedWebrtcRealtime> {
-        self.start_webrtc_realtime_with_codex_response_routing(
+        self.start_webrtc_realtime_with_motyga_response_routing(
             offer_sdp,
             /*client_managed_handoffs*/ None,
-            /*codex_responses_as_items*/ Some(true),
-            /*codex_response_handoff_prefix*/ None,
+            /*motyga_responses_as_items*/ Some(true),
+            /*motyga_response_handoff_prefix*/ None,
         )
         .await
     }
 
-    async fn start_webrtc_realtime_with_codex_response_routing(
+    async fn start_webrtc_realtime_with_motyga_response_routing(
         &mut self,
         offer_sdp: &str,
         client_managed_handoffs: Option<bool>,
-        codex_responses_as_items: Option<bool>,
-        codex_response_handoff_prefix: Option<&str>,
+        motyga_responses_as_items: Option<bool>,
+        motyga_response_handoff_prefix: Option<&str>,
     ) -> Result<StartedWebrtcRealtime> {
         // Starts realtime through the public JSON-RPC method, then waits for the same client-visible
         // notifications a desktop app needs: started first, SDP answer second.
@@ -350,11 +350,11 @@ impl RealtimeE2eHarness {
             .send_thread_realtime_start_request(ThreadRealtimeStartParams {
                 client_managed_handoffs,
                 thread_id: self.thread_id.clone(),
-                codex_response_item_prefix: codex_responses_as_items
+                motyga_response_item_prefix: motyga_responses_as_items
                     .unwrap_or(false)
                     .then(|| RESPONSE_ITEM_PREFIX.to_string()),
-                codex_response_handoff_prefix: codex_response_handoff_prefix.map(str::to_string),
-                codex_responses_as_items,
+                motyga_response_handoff_prefix: motyga_response_handoff_prefix.map(str::to_string),
+                motyga_responses_as_items,
                 model: None,
                 output_modality: RealtimeOutputModality::Audio,
                 include_startup_context: None,
@@ -386,35 +386,35 @@ impl RealtimeE2eHarness {
     }
 
     async fn start_websocket_realtime(&mut self) -> Result<ThreadRealtimeStartedNotification> {
-        self.start_websocket_realtime_with_codex_responses_as_items(
-            /*codex_responses_as_items*/ None,
+        self.start_websocket_realtime_with_motyga_responses_as_items(
+            /*motyga_responses_as_items*/ None,
         )
         .await
     }
 
-    async fn start_websocket_realtime_with_codex_response_items(
+    async fn start_websocket_realtime_with_motyga_response_items(
         &mut self,
     ) -> Result<ThreadRealtimeStartedNotification> {
-        self.start_websocket_realtime_with_codex_responses_as_items(
-            /*codex_responses_as_items*/ Some(true),
+        self.start_websocket_realtime_with_motyga_responses_as_items(
+            /*motyga_responses_as_items*/ Some(true),
         )
         .await
     }
 
-    async fn start_websocket_realtime_with_codex_responses_as_items(
+    async fn start_websocket_realtime_with_motyga_responses_as_items(
         &mut self,
-        codex_responses_as_items: Option<bool>,
+        motyga_responses_as_items: Option<bool>,
     ) -> Result<ThreadRealtimeStartedNotification> {
         let start_request_id = self
             .mcp
             .send_thread_realtime_start_request(ThreadRealtimeStartParams {
                 thread_id: self.thread_id.clone(),
                 client_managed_handoffs: None,
-                codex_response_item_prefix: codex_responses_as_items
+                motyga_response_item_prefix: motyga_responses_as_items
                     .unwrap_or(false)
                     .then(|| RESPONSE_ITEM_PREFIX.to_string()),
-                codex_response_handoff_prefix: None,
-                codex_responses_as_items,
+                motyga_response_handoff_prefix: None,
+                motyga_responses_as_items,
                 model: None,
                 output_modality: RealtimeOutputModality::Audio,
                 include_startup_context: None,
@@ -646,16 +646,16 @@ async fn realtime_conversation_streams_v2_notifications() -> Result<()> {
     ]])
     .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         realtime_server.uri(),
         /*realtime_enabled*/ true,
         StartupContextConfig::Generated,
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     login_with_api_key(&mut mcp, "sk-test-key").await?;
 
@@ -672,9 +672,9 @@ async fn realtime_conversation_streams_v2_notifications() -> Result<()> {
     let start_request_id = mcp
         .send_thread_realtime_start_request(ThreadRealtimeStartParams {
             client_managed_handoffs: None,
-            codex_responses_as_items: None,
-            codex_response_item_prefix: None,
-            codex_response_handoff_prefix: None,
+            motyga_responses_as_items: None,
+            motyga_response_item_prefix: None,
+            motyga_response_handoff_prefix: None,
             thread_id: thread_start.thread.id.clone(),
             model: Some("realtime-treatment-model".to_string()),
             output_modality: RealtimeOutputModality::Audio,
@@ -937,16 +937,16 @@ async fn realtime_start_can_skip_startup_context() -> Result<()> {
     })]]])
     .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         realtime_server.uri(),
         /*realtime_enabled*/ true,
         StartupContextConfig::Generated,
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     login_with_api_key(&mut mcp, "sk-test-key").await?;
 
@@ -963,9 +963,9 @@ async fn realtime_start_can_skip_startup_context() -> Result<()> {
     let start_request_id = mcp
         .send_thread_realtime_start_request(ThreadRealtimeStartParams {
             client_managed_handoffs: None,
-            codex_responses_as_items: None,
-            codex_response_item_prefix: None,
-            codex_response_handoff_prefix: None,
+            motyga_responses_as_items: None,
+            motyga_response_item_prefix: None,
+            motyga_response_handoff_prefix: None,
             thread_id: thread_start.thread.id.clone(),
             model: None,
             output_modality: RealtimeOutputModality::Audio,
@@ -1035,16 +1035,16 @@ async fn realtime_text_output_modality_requests_text_output_and_final_transcript
     ]]])
     .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         realtime_server.uri(),
         /*realtime_enabled*/ true,
         StartupContextConfig::Generated,
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     login_with_api_key(&mut mcp, "sk-test-key").await?;
 
@@ -1061,9 +1061,9 @@ async fn realtime_text_output_modality_requests_text_output_and_final_transcript
     let start_request_id = mcp
         .send_thread_realtime_start_request(ThreadRealtimeStartParams {
             client_managed_handoffs: None,
-            codex_responses_as_items: None,
-            codex_response_item_prefix: None,
-            codex_response_handoff_prefix: None,
+            motyga_responses_as_items: None,
+            motyga_response_item_prefix: None,
+            motyga_response_handoff_prefix: None,
             thread_id: thread_start.thread.id.clone(),
             model: None,
             output_modality: RealtimeOutputModality::Text,
@@ -1144,16 +1144,16 @@ async fn realtime_text_output_modality_requests_text_output_and_final_transcript
 
 #[tokio::test]
 async fn realtime_list_voices_returns_supported_names() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         "http://127.0.0.1:1",
         "ws://127.0.0.1:1",
         /*realtime_enabled*/ true,
         StartupContextConfig::Generated,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1216,16 +1216,16 @@ async fn realtime_conversation_stop_emits_closed_notification() -> Result<()> {
     ]])
     .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         realtime_server.uri(),
         /*realtime_enabled*/ true,
         StartupContextConfig::Generated,
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     login_with_api_key(&mut mcp, "sk-test-key").await?;
 
@@ -1242,9 +1242,9 @@ async fn realtime_conversation_stop_emits_closed_notification() -> Result<()> {
     let start_request_id = mcp
         .send_thread_realtime_start_request(ThreadRealtimeStartParams {
             client_managed_handoffs: None,
-            codex_responses_as_items: None,
-            codex_response_item_prefix: None,
-            codex_response_handoff_prefix: None,
+            motyga_responses_as_items: None,
+            motyga_response_item_prefix: None,
+            motyga_response_handoff_prefix: None,
             thread_id: thread_start.thread.id.clone(),
             model: None,
             output_modality: RealtimeOutputModality::Audio,
@@ -1319,16 +1319,16 @@ async fn realtime_webrtc_start_emits_sdp_notification() -> Result<()> {
     }])
     .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         realtime_server.uri(),
         /*realtime_enabled*/ true,
         StartupContextConfig::Override("startup context"),
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     login_with_api_key(&mut mcp, "sk-test-key").await?;
 
@@ -1346,9 +1346,9 @@ async fn realtime_webrtc_start_emits_sdp_notification() -> Result<()> {
     let start_request_id = mcp
         .send_thread_realtime_start_request(ThreadRealtimeStartParams {
             client_managed_handoffs: None,
-            codex_responses_as_items: None,
-            codex_response_item_prefix: None,
-            codex_response_handoff_prefix: None,
+            motyga_responses_as_items: None,
+            motyga_response_item_prefix: None,
+            motyga_response_handoff_prefix: None,
             thread_id: thread_id.clone(),
             model: None,
             output_modality: RealtimeOutputModality::Audio,
@@ -1438,25 +1438,25 @@ async fn realtime_webrtc_start_emits_sdp_notification() -> Result<()> {
             .headers
             .get("content-type")
             .and_then(|value| value.to_str().ok()),
-        Some("multipart/form-data; boundary=codex-realtime-call-boundary")
+        Some("multipart/form-data; boundary=motyga-realtime-call-boundary")
     );
     let body = String::from_utf8(request.body).context("multipart body should be utf-8")?;
     let session = normalized_json_string(v1_session_create_json())?;
     assert_eq!(
         body,
         format!(
-            "--codex-realtime-call-boundary\r\n\
+            "--motyga-realtime-call-boundary\r\n\
              Content-Disposition: form-data; name=\"sdp\"\r\n\
              Content-Type: application/sdp\r\n\
              \r\n\
              v=offer\r\n\
              \r\n\
-             --codex-realtime-call-boundary\r\n\
+             --motyga-realtime-call-boundary\r\n\
              Content-Disposition: form-data; name=\"session\"\r\n\
              Content-Type: application/json\r\n\
              \r\n\
              {session}\r\n\
-             --codex-realtime-call-boundary--\r\n"
+             --motyga-realtime-call-boundary--\r\n"
         )
     );
 
@@ -1573,7 +1573,7 @@ async fn webrtc_v1_default_automatic_output_uses_handoff_append() -> Result<()> 
         harness.sideband_outbound_request(/*request_index*/ 1).await,
         json!({
             "type": "conversation.handoff.append",
-            "handoff_id": "codex",
+            "handoff_id": "motyga",
             "output_text": "legacy automatic speech",
         })
     );
@@ -1599,11 +1599,11 @@ async fn webrtc_v1_client_managed_handoffs_disable_automatic_output() -> Result<
     .await?;
 
     let started = harness
-        .start_webrtc_realtime_with_codex_response_routing(
+        .start_webrtc_realtime_with_motyga_response_routing(
             "v=offer\r\n",
             /*client_managed_handoffs*/ Some(true),
-            /*codex_responses_as_items*/ None,
-            /*codex_response_handoff_prefix*/ None,
+            /*motyga_responses_as_items*/ None,
+            /*motyga_response_handoff_prefix*/ None,
         )
         .await?;
     assert_eq!(started.started.version, RealtimeConversationVersion::V1);
@@ -1641,7 +1641,7 @@ async fn webrtc_v1_client_managed_handoffs_disable_automatic_output() -> Result<
     .await;
     assert!(
         automatic_handoff.is_err(),
-        "automatic Codex output should not reach realtime in client-managed handoff mode"
+        "automatic Motyga output should not reach realtime in client-managed handoff mode"
     );
 
     harness
@@ -1651,7 +1651,7 @@ async fn webrtc_v1_client_managed_handoffs_disable_automatic_output() -> Result<
         harness.sideband_outbound_request(/*request_index*/ 1).await,
         json!({
             "type": "conversation.handoff.append",
-            "handoff_id": "codex",
+            "handoff_id": "motyga",
             "output_text": "client-selected speech",
         })
     );
@@ -1686,10 +1686,10 @@ async fn webrtc_v1_final_automatic_handoff_omits_silent_prefix() -> Result<()> {
     .await?;
 
     let started = harness
-        .start_webrtc_realtime_with_codex_response_routing(
+        .start_webrtc_realtime_with_motyga_response_routing(
             "v=offer\r\n",
             /*client_managed_handoffs*/ None,
-            /*codex_responses_as_items*/ None,
+            /*motyga_responses_as_items*/ None,
             Some(RESPONSE_HANDOFF_PREFIX),
         )
         .await?;
@@ -1750,7 +1750,7 @@ async fn webrtc_v1_handoff_request_delegates_context_and_manual_append_speaks() 
     .await?;
 
     let started = harness
-        .start_webrtc_realtime_with_codex_response_items("v=offer\r\n")
+        .start_webrtc_realtime_with_motyga_response_items("v=offer\r\n")
         .await?;
     assert_eq!(started.started.version, RealtimeConversationVersion::V1);
     assert_call_create_multipart(
@@ -1806,7 +1806,7 @@ async fn webrtc_v1_handoff_request_delegates_context_and_manual_append_speaks() 
         spoken_append,
         json!({
             "type": "conversation.handoff.append",
-            "handoff_id": "codex",
+            "handoff_id": "motyga",
             "output_text": "manual spoken v1 update",
         })
     );
@@ -1834,7 +1834,7 @@ async fn realtime_automatic_standalone_output_is_item_and_append_speaks() -> Res
     .await?;
 
     let started = harness
-        .start_websocket_realtime_with_codex_response_items()
+        .start_websocket_realtime_with_motyga_response_items()
         .await?;
     assert_eq!(started.version, RealtimeConversationVersion::V2);
     assert_eq!(
@@ -1917,7 +1917,7 @@ async fn realtime_automatic_handoff_output_is_item_and_append_speaks() -> Result
     .await?;
 
     let started = harness
-        .start_websocket_realtime_with_codex_response_items()
+        .start_websocket_realtime_with_motyga_response_items()
         .await?;
     assert_eq!(started.version, RealtimeConversationVersion::V2);
     assert_eq!(
@@ -2000,7 +2000,7 @@ async fn websocket_v2_assistant_output_without_handoff_reaches_realtime_context(
     .await?;
 
     let started = harness
-        .start_websocket_realtime_with_codex_response_items()
+        .start_websocket_realtime_with_motyga_response_items()
         .await?;
     assert_eq!(started.version, RealtimeConversationVersion::V2);
 
@@ -2425,7 +2425,7 @@ async fn websocket_v2_background_agent_steering_ack_requests_response_create() -
     // acknowledgement so it can surface that acknowledgement to the user.
     assert_v2_response_create(&harness.sideband_outbound_request(/*request_index*/ 2).await);
 
-    // Phase 4: release the gated delegated turn. Codex should then continue
+    // Phase 4: release the gated delegated turn. Motyga should then continue
     // the same run with the steering text included in the follow-up Responses
     // request, proving realtime did not merely acknowledge and drop it.
     let _ = gate_completed_tx.send(());
@@ -2674,16 +2674,16 @@ async fn realtime_webrtc_start_surfaces_backend_error() -> Result<()> {
         .await;
     let realtime_server = start_websocket_server(vec![vec![]]).await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         realtime_server.uri(),
         /*realtime_enabled*/ true,
         StartupContextConfig::Override("startup context"),
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     login_with_api_key(&mut mcp, "sk-test-key").await?;
 
@@ -2701,9 +2701,9 @@ async fn realtime_webrtc_start_surfaces_backend_error() -> Result<()> {
     let start_request_id = mcp
         .send_thread_realtime_start_request(ThreadRealtimeStartParams {
             client_managed_handoffs: None,
-            codex_responses_as_items: None,
-            codex_response_item_prefix: None,
-            codex_response_handoff_prefix: None,
+            motyga_responses_as_items: None,
+            motyga_response_item_prefix: None,
+            motyga_response_handoff_prefix: None,
             thread_id: thread_start.thread.id,
             model: None,
             output_modality: RealtimeOutputModality::Audio,
@@ -2742,16 +2742,16 @@ async fn realtime_conversation_requires_feature_flag() -> Result<()> {
     let responses_server = create_mock_responses_server_sequence_unchecked(Vec::new()).await;
     let realtime_server = start_websocket_server(vec![vec![]]).await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         realtime_server.uri(),
         /*realtime_enabled*/ false,
         StartupContextConfig::Generated,
     )?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let thread_start_request_id = mcp
@@ -2767,9 +2767,9 @@ async fn realtime_conversation_requires_feature_flag() -> Result<()> {
     let start_request_id = mcp
         .send_thread_realtime_start_request(ThreadRealtimeStartParams {
             client_managed_handoffs: None,
-            codex_responses_as_items: None,
-            codex_response_item_prefix: None,
-            codex_response_handoff_prefix: None,
+            motyga_responses_as_items: None,
+            motyga_response_item_prefix: None,
+            motyga_response_handoff_prefix: None,
             thread_id: thread_start.thread.id.clone(),
             model: None,
             output_modality: RealtimeOutputModality::Audio,
@@ -3036,24 +3036,24 @@ fn assert_call_create_multipart(
             .headers
             .get("content-type")
             .and_then(|value| value.to_str().ok()),
-        Some("multipart/form-data; boundary=codex-realtime-call-boundary")
+        Some("multipart/form-data; boundary=motyga-realtime-call-boundary")
     );
     let body = String::from_utf8(request.body).context("multipart body should be utf-8")?;
     let session = normalized_json_string(session)?;
     assert_eq!(
         body,
         format!(
-            "--codex-realtime-call-boundary\r\n\
+            "--motyga-realtime-call-boundary\r\n\
              Content-Disposition: form-data; name=\"sdp\"\r\n\
              Content-Type: application/sdp\r\n\
              \r\n\
              {offer_sdp}\r\n\
-             --codex-realtime-call-boundary\r\n\
+             --motyga-realtime-call-boundary\r\n\
              Content-Disposition: form-data; name=\"session\"\r\n\
              Content-Type: application/json\r\n\
              \r\n\
              {session}\r\n\
-             --codex-realtime-call-boundary--\r\n"
+             --motyga-realtime-call-boundary--\r\n"
         )
     );
     Ok(())
@@ -3064,14 +3064,14 @@ fn v1_session_create_json() -> &'static str {
 }
 
 fn create_config_toml(
-    codex_home: &Path,
+    motyga_home: &Path,
     responses_server_uri: &str,
     realtime_server_uri: &str,
     realtime_enabled: bool,
     startup_context: StartupContextConfig<'_>,
 ) -> std::io::Result<()> {
     create_config_toml_with_realtime_version(
-        codex_home,
+        motyga_home,
         responses_server_uri,
         realtime_server_uri,
         realtime_enabled,
@@ -3082,7 +3082,7 @@ fn create_config_toml(
 }
 
 fn create_config_toml_with_realtime_version(
-    codex_home: &Path,
+    motyga_home: &Path,
     responses_server_uri: &str,
     realtime_server_uri: &str,
     realtime_enabled: bool,
@@ -3105,7 +3105,7 @@ fn create_config_toml_with_realtime_version(
     };
 
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 model = "mock-model"

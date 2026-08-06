@@ -1,24 +1,24 @@
 use super::*;
-use codex_exec_server::ResolvedSelectedCapabilityRoot;
-use codex_mcp::ElicitationReviewRequest;
-use codex_mcp::ElicitationReviewer;
-use codex_mcp::ElicitationReviewerHandle;
-use codex_protocol::capabilities::CapabilityRootLocation;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::mcp_approval_meta::APPROVAL_KIND_KEY as MCP_ELICITATION_APPROVAL_KIND_KEY;
-use codex_protocol::mcp_approval_meta::APPROVAL_KIND_MCP_TOOL_CALL as MCP_ELICITATION_APPROVAL_KIND_MCP_TOOL_CALL;
-use codex_protocol::mcp_approval_meta::APPROVAL_KIND_TOOL_SUGGESTION as MCP_ELICITATION_APPROVAL_KIND_TOOL_SUGGESTION;
-use codex_protocol::mcp_approval_meta::APPROVALS_REVIEWER_KEY as MCP_ELICITATION_APPROVALS_REVIEWER_KEY;
-use codex_protocol::mcp_approval_meta::CONNECTOR_DESCRIPTION_KEY as MCP_ELICITATION_CONNECTOR_DESCRIPTION_KEY;
-use codex_protocol::mcp_approval_meta::CONNECTOR_ID_KEY as MCP_ELICITATION_CONNECTOR_ID_KEY;
-use codex_protocol::mcp_approval_meta::CONNECTOR_NAME_KEY as MCP_ELICITATION_CONNECTOR_NAME_KEY;
-use codex_protocol::mcp_approval_meta::REQUEST_TYPE_APPROVAL_REQUEST as MCP_ELICITATION_REQUEST_TYPE_APPROVAL_REQUEST;
-use codex_protocol::mcp_approval_meta::REQUEST_TYPE_KEY as MCP_ELICITATION_REQUEST_TYPE_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_DESCRIPTION_KEY as MCP_ELICITATION_TOOL_DESCRIPTION_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_NAME_KEY as MCP_ELICITATION_TOOL_NAME_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_PARAMS_KEY as MCP_ELICITATION_TOOL_PARAMS_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_TITLE_KEY as MCP_ELICITATION_TOOL_TITLE_KEY;
-use codex_rmcp_client::Elicitation;
+use motyga_exec_server::ResolvedSelectedCapabilityRoot;
+use motyga_mcp::ElicitationReviewRequest;
+use motyga_mcp::ElicitationReviewer;
+use motyga_mcp::ElicitationReviewerHandle;
+use motyga_protocol::capabilities::CapabilityRootLocation;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::mcp_approval_meta::APPROVAL_KIND_KEY as MCP_ELICITATION_APPROVAL_KIND_KEY;
+use motyga_protocol::mcp_approval_meta::APPROVAL_KIND_MCP_TOOL_CALL as MCP_ELICITATION_APPROVAL_KIND_MCP_TOOL_CALL;
+use motyga_protocol::mcp_approval_meta::APPROVAL_KIND_TOOL_SUGGESTION as MCP_ELICITATION_APPROVAL_KIND_TOOL_SUGGESTION;
+use motyga_protocol::mcp_approval_meta::APPROVALS_REVIEWER_KEY as MCP_ELICITATION_APPROVALS_REVIEWER_KEY;
+use motyga_protocol::mcp_approval_meta::CONNECTOR_DESCRIPTION_KEY as MCP_ELICITATION_CONNECTOR_DESCRIPTION_KEY;
+use motyga_protocol::mcp_approval_meta::CONNECTOR_ID_KEY as MCP_ELICITATION_CONNECTOR_ID_KEY;
+use motyga_protocol::mcp_approval_meta::CONNECTOR_NAME_KEY as MCP_ELICITATION_CONNECTOR_NAME_KEY;
+use motyga_protocol::mcp_approval_meta::REQUEST_TYPE_APPROVAL_REQUEST as MCP_ELICITATION_REQUEST_TYPE_APPROVAL_REQUEST;
+use motyga_protocol::mcp_approval_meta::REQUEST_TYPE_KEY as MCP_ELICITATION_REQUEST_TYPE_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_DESCRIPTION_KEY as MCP_ELICITATION_TOOL_DESCRIPTION_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_NAME_KEY as MCP_ELICITATION_TOOL_NAME_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_PARAMS_KEY as MCP_ELICITATION_TOOL_PARAMS_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_TITLE_KEY as MCP_ELICITATION_TOOL_TITLE_KEY;
+use motyga_rmcp_client::Elicitation;
 use rmcp::model::ElicitationAction;
 use rmcp::model::Meta;
 use serde_json::Map;
@@ -98,7 +98,7 @@ impl Session {
         &self,
         config: &Config,
     ) -> HashMap<String, McpServerConfig> {
-        codex_mcp::configured_mcp_servers(&self.runtime_mcp_config(config).await)
+        motyga_mcp::configured_mcp_servers(&self.runtime_mcp_config(config).await)
     }
 
     #[expect(
@@ -210,7 +210,7 @@ impl Session {
         {
             return McpServerElicitationOutcome {
                 response: Some(ElicitationResponse {
-                    action: codex_rmcp_client::ElicitationAction::Accept,
+                    action: motyga_rmcp_client::ElicitationAction::Accept,
                     content: Some(serde_json::json!({})),
                     meta: None,
                 }),
@@ -240,10 +240,10 @@ impl Session {
         }
         let id = match request_id {
             rmcp::model::NumberOrString::String(value) => {
-                codex_protocol::mcp::RequestId::String(value.to_string())
+                motyga_protocol::mcp::RequestId::String(value.to_string())
             }
             rmcp::model::NumberOrString::Number(value) => {
-                codex_protocol::mcp::RequestId::Integer(value)
+                motyga_protocol::mcp::RequestId::Integer(value)
             }
         };
         let event = EventMsg::ElicitationRequest(ElicitationRequestEvent {
@@ -316,7 +316,7 @@ impl Session {
     ) -> Arc<McpRuntimeSnapshot> {
         let auth = self.services.auth_manager.auth().await;
         let mcp_config = Arc::new(mcp_config);
-        let tool_plugin_provenance = codex_mcp::tool_plugin_provenance(&mcp_config);
+        let tool_plugin_provenance = motyga_mcp::tool_plugin_provenance(&mcp_config);
         let mcp_servers = effective_mcp_servers(&mcp_config, auth.as_ref());
         let environment_manager = self.services.turn_environments.environment_manager();
         // TODO(anp): Migrate MCP runtime cwd plumbing to PathUri so foreign environment cwd
@@ -358,9 +358,9 @@ impl Session {
             mcp_startup_cancellation_token,
             turn_context.permission_profile(),
             mcp_runtime_context.clone(),
-            mcp_config.codex_home.clone(),
-            self.services.mcp_manager.codex_apps_tools_cache(),
-            codex_apps_tools_cache_key(auth.as_ref()),
+            mcp_config.motyga_home.clone(),
+            self.services.mcp_manager.motyga_apps_tools_cache(),
+            motyga_apps_tools_cache_key(auth.as_ref()),
             mcp_config.prefix_mcp_tool_names,
             mcp_config.client_elicitation_capability.clone(),
             self.services
@@ -731,7 +731,7 @@ fn plugin_install_elicitation_telemetry_metadata(
     let EventMsg::ElicitationRequest(ElicitationRequestEvent { request, .. }) = event else {
         return None;
     };
-    let codex_protocol::approvals::ElicitationRequest::Form {
+    let motyga_protocol::approvals::ElicitationRequest::Form {
         meta: Some(Value::Object(meta)),
         ..
     } = request

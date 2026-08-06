@@ -13,25 +13,25 @@ use app_test_support::create_mock_responses_server_sequence;
 use app_test_support::create_mock_responses_server_sequence_unchecked;
 use app_test_support::create_shell_command_sse_response;
 use app_test_support::to_response;
-use codex_app_server_protocol::CommandAction;
-use codex_app_server_protocol::CommandExecutionApprovalDecision;
-use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
-use codex_app_server_protocol::CommandExecutionStatus;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::ItemStartedNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_features::FEATURES;
-use codex_features::Feature;
+use motyga_app_server_protocol::CommandAction;
+use motyga_app_server_protocol::CommandExecutionApprovalDecision;
+use motyga_app_server_protocol::CommandExecutionRequestApprovalResponse;
+use motyga_app_server_protocol::CommandExecutionStatus;
+use motyga_app_server_protocol::ItemCompletedNotification;
+use motyga_app_server_protocol::ItemStartedNotification;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnCompletedNotification;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_features::FEATURES;
+use motyga_features::Feature;
 use core_test_support::responses;
 use core_test_support::skip_if_no_network;
 use pretty_assertions::assert_eq;
@@ -51,8 +51,8 @@ async fn turn_start_shell_zsh_fork_executes_command_v2() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let motyga_home = tmp.path().join("motyga_home");
+    std::fs::create_dir(&motyga_home)?;
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
     let release_marker = workspace.join("interrupt-release");
@@ -87,7 +87,7 @@ async fn turn_start_shell_zsh_fork_executes_command_v2() -> Result<()> {
     let server =
         create_mock_responses_server_sequence_unchecked(vec![response, no_op_response]).await;
     create_config_toml(
-        &codex_home,
+        &motyga_home,
         &server.uri(),
         "never",
         &BTreeMap::from([
@@ -97,7 +97,7 @@ async fn turn_start_shell_zsh_fork_executes_command_v2() -> Result<()> {
         ]),
     )?;
 
-    let mut mcp = create_zsh_test_mcp_process(&codex_home, &workspace, &zsh_path).await?;
+    let mut mcp = create_zsh_test_mcp_process(&motyga_home, &workspace, &zsh_path).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -123,11 +123,11 @@ async fn turn_start_shell_zsh_fork_executes_command_v2() -> Result<()> {
                 text_elements: Vec::new(),
             }],
             cwd: Some(workspace.clone()),
-            approval_policy: Some(codex_app_server_protocol::AskForApproval::Never),
-            sandbox_policy: Some(codex_app_server_protocol::SandboxPolicy::DangerFullAccess),
+            approval_policy: Some(motyga_app_server_protocol::AskForApproval::Never),
+            sandbox_policy: Some(motyga_app_server_protocol::SandboxPolicy::DangerFullAccess),
             model: Some("mock-model".to_string()),
-            effort: Some(codex_protocol::openai_models::ReasoningEffort::Medium),
-            summary: Some(codex_protocol::config_types::ReasoningSummary::Auto),
+            effort: Some(motyga_protocol::openai_models::ReasoningEffort::Medium),
+            summary: Some(motyga_protocol::config_types::ReasoningSummary::Auto),
             ..Default::default()
         })
         .await?;
@@ -163,7 +163,7 @@ async fn turn_start_shell_zsh_fork_executes_command_v2() -> Result<()> {
     };
     assert_eq!(id, "call-zsh-fork");
     assert_eq!(status, CommandExecutionStatus::InProgress);
-    assert!(command.starts_with(&command_packaged_zsh_path(&codex_home).display().to_string()));
+    assert!(command.starts_with(&command_packaged_zsh_path(&motyga_home).display().to_string()));
     assert!(command.contains("/bin/sh -c"));
     assert!(command.contains("sleep 0.01"));
     assert!(command.contains(&release_marker.display().to_string()));
@@ -180,8 +180,8 @@ async fn turn_start_shell_zsh_fork_exec_approval_decline_v2() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let motyga_home = tmp.path().join("motyga_home");
+    std::fs::create_dir(&motyga_home)?;
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
 
@@ -206,7 +206,7 @@ async fn turn_start_shell_zsh_fork_exec_approval_decline_v2() -> Result<()> {
     ];
     let server = create_mock_responses_server_sequence(responses).await;
     create_config_toml(
-        &codex_home,
+        &motyga_home,
         &server.uri(),
         "untrusted",
         &BTreeMap::from([
@@ -216,7 +216,7 @@ async fn turn_start_shell_zsh_fork_exec_approval_decline_v2() -> Result<()> {
         ]),
     )?;
 
-    let mut mcp = create_zsh_test_mcp_process(&codex_home, &workspace, &zsh_path).await?;
+    let mut mcp = create_zsh_test_mcp_process(&motyga_home, &workspace, &zsh_path).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -316,8 +316,8 @@ async fn turn_start_shell_zsh_fork_exec_approval_cancel_v2() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let motyga_home = tmp.path().join("motyga_home");
+    std::fs::create_dir(&motyga_home)?;
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
 
@@ -339,7 +339,7 @@ async fn turn_start_shell_zsh_fork_exec_approval_cancel_v2() -> Result<()> {
     )?];
     let server = create_mock_responses_server_sequence(responses).await;
     create_config_toml(
-        &codex_home,
+        &motyga_home,
         &server.uri(),
         "untrusted",
         &BTreeMap::from([
@@ -349,7 +349,7 @@ async fn turn_start_shell_zsh_fork_exec_approval_cancel_v2() -> Result<()> {
         ]),
     )?;
 
-    let mut mcp = create_zsh_test_mcp_process(&codex_home, &workspace, &zsh_path).await?;
+    let mut mcp = create_zsh_test_mcp_process(&motyga_home, &workspace, &zsh_path).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -447,8 +447,8 @@ async fn turn_start_shell_zsh_fork_subcommand_decline_marks_parent_declined_v2()
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let motyga_home = tmp.path().join("motyga_home");
+    std::fs::create_dir(&motyga_home)?;
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
 
@@ -498,7 +498,7 @@ async fn turn_start_shell_zsh_fork_subcommand_decline_marks_parent_declined_v2()
     let server =
         create_mock_responses_server_sequence_unchecked(vec![response, no_op_response]).await;
     create_config_toml(
-        &codex_home,
+        &motyga_home,
         &server.uri(),
         "untrusted",
         &BTreeMap::from([
@@ -508,7 +508,7 @@ async fn turn_start_shell_zsh_fork_subcommand_decline_marks_parent_declined_v2()
         ]),
     )?;
 
-    let mut mcp = create_zsh_test_mcp_process(&codex_home, &workspace, &zsh_path).await?;
+    let mut mcp = create_zsh_test_mcp_process(&motyga_home, &workspace, &zsh_path).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -534,15 +534,15 @@ async fn turn_start_shell_zsh_fork_subcommand_decline_marks_parent_declined_v2()
                 text_elements: Vec::new(),
             }],
             cwd: Some(workspace.clone()),
-            approval_policy: Some(codex_app_server_protocol::AskForApproval::UnlessTrusted),
+            approval_policy: Some(motyga_app_server_protocol::AskForApproval::UnlessTrusted),
             // This test is about execve-intercept approval propagation, not
             // workspace sandboxing. Using full access avoids macOS sandbox
             // setup failures that can terminate the parent shell before the
             // second subcommand approval is observed.
-            sandbox_policy: Some(codex_app_server_protocol::SandboxPolicy::DangerFullAccess),
+            sandbox_policy: Some(motyga_app_server_protocol::SandboxPolicy::DangerFullAccess),
             model: Some("mock-model".to_string()),
-            effort: Some(codex_protocol::openai_models::ReasoningEffort::Medium),
-            summary: Some(codex_protocol::config_types::ReasoningSummary::Auto),
+            effort: Some(motyga_protocol::openai_models::ReasoningEffort::Medium),
+            summary: Some(motyga_protocol::config_types::ReasoningSummary::Auto),
             ..Default::default()
         })
         .await?;
@@ -604,7 +604,7 @@ async fn turn_start_shell_zsh_fork_subcommand_decline_marks_parent_declined_v2()
             approved_subcommand_strings.push(approval_command.to_string());
         }
         let is_parent_approval = approval_command
-            .contains(&command_packaged_zsh_path(&codex_home).display().to_string())
+            .contains(&command_packaged_zsh_path(&motyga_home).display().to_string())
             && (approval_command.contains(&shell_command)
                 || (has_first_file && has_second_file)
                 || approval_command.contains(&parent_shell_hint));
@@ -740,51 +740,51 @@ async fn turn_start_shell_zsh_fork_subcommand_decline_marks_parent_declined_v2()
 }
 
 async fn create_zsh_test_mcp_process(
-    codex_home: &Path,
+    motyga_home: &Path,
     zdotdir: &Path,
     zsh_path: &Path,
 ) -> Result<TestAppServer> {
-    let app_server = create_test_package_app_server(codex_home, zsh_path)?;
+    let app_server = create_test_package_app_server(motyga_home, zsh_path)?;
     let zdotdir = zdotdir.to_string_lossy().into_owned();
     TestAppServer::new_with_program_and_env(
-        codex_home,
+        motyga_home,
         &app_server,
         &[("ZDOTDIR", Some(zdotdir.as_str()))],
     )
     .await
 }
 
-fn create_test_package_app_server(codex_home: &Path, zsh_path: &Path) -> Result<PathBuf> {
-    let package_dir = codex_home.join("test-package");
+fn create_test_package_app_server(motyga_home: &Path, zsh_path: &Path) -> Result<PathBuf> {
+    let package_dir = motyga_home.join("test-package");
     let bin_dir = package_dir.join("bin");
-    let package_zsh_path = packaged_zsh_path(codex_home);
+    let package_zsh_path = packaged_zsh_path(motyga_home);
     let Some(zsh_bin_dir) = package_zsh_path.parent() else {
         anyhow::bail!("packaged zsh path should have parent");
     };
     std::fs::create_dir_all(&bin_dir)?;
     std::fs::create_dir_all(zsh_bin_dir)?;
-    std::fs::write(package_dir.join("codex-package.json"), "{}")?;
+    std::fs::write(package_dir.join("motyga-package.json"), "{}")?;
 
-    let app_server = bin_dir.join("codex-app-server");
+    let app_server = bin_dir.join("motyga-app-server");
     copy_with_permissions(
-        &codex_utils_cargo_bin::cargo_bin("codex-app-server")?,
+        &motyga_utils_cargo_bin::cargo_bin("motyga-app-server")?,
         &app_server,
     )?;
     copy_with_permissions(zsh_path, &package_zsh_path)?;
     Ok(app_server)
 }
 
-fn packaged_zsh_path(codex_home: &Path) -> PathBuf {
-    codex_home
+fn packaged_zsh_path(motyga_home: &Path) -> PathBuf {
+    motyga_home
         .join("test-package")
-        .join("codex-resources")
+        .join("motyga-resources")
         .join("zsh")
         .join("bin")
         .join("zsh")
 }
 
-fn command_packaged_zsh_path(codex_home: &Path) -> PathBuf {
-    let path = packaged_zsh_path(codex_home);
+fn command_packaged_zsh_path(motyga_home: &Path) -> PathBuf {
+    let path = packaged_zsh_path(motyga_home);
     std::fs::canonicalize(&path).unwrap_or(path)
 }
 
@@ -794,7 +794,7 @@ fn copy_with_permissions(source: &Path, destination: &Path) -> std::io::Result<(
 }
 
 fn create_config_toml(
-    codex_home: &Path,
+    motyga_home: &Path,
     server_uri: &str,
     approval_policy: &str,
     feature_flags: &BTreeMap<Feature, bool>,
@@ -815,7 +815,7 @@ fn create_config_toml(
         })
         .collect::<Vec<_>>()
         .join("\n");
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
@@ -841,7 +841,7 @@ stream_max_retries = 0
 }
 
 fn find_test_zsh_path() -> Result<Option<std::path::PathBuf>> {
-    let repo_root = codex_utils_cargo_bin::repo_root()?;
+    let repo_root = motyga_utils_cargo_bin::repo_root()?;
     let dotslash_zsh = repo_root.join("motyga-rs/app-server/tests/suite/zsh");
     if !dotslash_zsh.is_file() {
         eprintln!(

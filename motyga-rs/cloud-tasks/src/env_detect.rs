@@ -1,4 +1,4 @@
-use codex_client::build_reqwest_client_with_custom_ca;
+use motyga_client::build_reqwest_client_with_custom_ca;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::header::HeaderMap;
 use std::collections::HashMap;
@@ -40,7 +40,7 @@ pub async fn autodetect_environment_id(
                 )
             } else {
                 format!(
-                    "{}/api/codex/environments/by-repo/{}/{}/{}",
+                    "{}/api/motyga/environments/by-repo/{}/{}/{}",
                     base_url, "github", owner, repo
                 )
             };
@@ -70,7 +70,7 @@ pub async fn autodetect_environment_id(
     let list_url = if base_url.contains("/backend-api") {
         format!("{base_url}/wham/environments")
     } else {
-        format!("{base_url}/api/codex/environments")
+        format!("{base_url}/api/motyga/environments")
     };
     crate::append_error_log(format!("env: GET {list_url}"));
     // Fetch and log the full environments JSON for debugging
@@ -270,7 +270,7 @@ pub async fn list_environments(
                 )
             } else {
                 format!(
-                    "{}/api/codex/environments/by-repo/{}/{}/{}",
+                    "{}/api/motyga/environments/by-repo/{}/{}/{}",
                     base_url, "github", owner, repo
                 )
             };
@@ -310,7 +310,7 @@ pub async fn list_environments(
     let list_url = if base_url.contains("/backend-api") {
         format!("{base_url}/wham/environments")
     } else {
-        format!("{base_url}/api/codex/environments")
+        format!("{base_url}/api/motyga/environments")
     };
     match get_json::<Vec<CodeEnvironment>>(&list_url, headers).await {
         Ok(list) => {

@@ -1,86 +1,86 @@
 {
   "outputs": {
-    "codex": {
+    "motyga": {
       "platforms": {
         "macos-aarch64": {
-          "regex": "^codex-package-aarch64-apple-darwin\\.tar\\.zst$",
-          "path": "bin/codex"
+          "regex": "^motyga-package-aarch64-apple-darwin\\.tar\\.zst$",
+          "path": "bin/motyga"
         },
         "macos-x86_64": {
-          "regex": "^codex-package-x86_64-apple-darwin\\.tar\\.zst$",
-          "path": "bin/codex"
+          "regex": "^motyga-package-x86_64-apple-darwin\\.tar\\.zst$",
+          "path": "bin/motyga"
         },
         "linux-x86_64": {
-          "regex": "^codex-package-x86_64-unknown-linux-musl\\.tar\\.zst$",
-          "path": "bin/codex"
+          "regex": "^motyga-package-x86_64-unknown-linux-musl\\.tar\\.zst$",
+          "path": "bin/motyga"
         },
         "linux-aarch64": {
-          "regex": "^codex-package-aarch64-unknown-linux-musl\\.tar\\.zst$",
-          "path": "bin/codex"
+          "regex": "^motyga-package-aarch64-unknown-linux-musl\\.tar\\.zst$",
+          "path": "bin/motyga"
         },
         "windows-x86_64": {
-          "regex": "^codex-package-x86_64-pc-windows-msvc\\.tar\\.zst$",
-          "path": "bin/codex.exe"
+          "regex": "^motyga-package-x86_64-pc-windows-msvc\\.tar\\.zst$",
+          "path": "bin/motyga.exe"
         },
         "windows-aarch64": {
-          "regex": "^codex-package-aarch64-pc-windows-msvc\\.tar\\.zst$",
-          "path": "bin/codex.exe"
+          "regex": "^motyga-package-aarch64-pc-windows-msvc\\.tar\\.zst$",
+          "path": "bin/motyga.exe"
         }
       }
     },
-    "codex-app-server": {
+    "motyga-app-server": {
       "platforms": {
         "macos-aarch64": {
-          "regex": "^codex-app-server-package-aarch64-apple-darwin\\.tar\\.zst$",
-          "path": "bin/codex-app-server"
+          "regex": "^motyga-app-server-package-aarch64-apple-darwin\\.tar\\.zst$",
+          "path": "bin/motyga-app-server"
         },
         "macos-x86_64": {
-          "regex": "^codex-app-server-package-x86_64-apple-darwin\\.tar\\.zst$",
-          "path": "bin/codex-app-server"
+          "regex": "^motyga-app-server-package-x86_64-apple-darwin\\.tar\\.zst$",
+          "path": "bin/motyga-app-server"
         },
         "linux-x86_64": {
-          "regex": "^codex-app-server-package-x86_64-unknown-linux-musl\\.tar\\.zst$",
-          "path": "bin/codex-app-server"
+          "regex": "^motyga-app-server-package-x86_64-unknown-linux-musl\\.tar\\.zst$",
+          "path": "bin/motyga-app-server"
         },
         "linux-aarch64": {
-          "regex": "^codex-app-server-package-aarch64-unknown-linux-musl\\.tar\\.zst$",
-          "path": "bin/codex-app-server"
+          "regex": "^motyga-app-server-package-aarch64-unknown-linux-musl\\.tar\\.zst$",
+          "path": "bin/motyga-app-server"
         },
         "windows-x86_64": {
-          "regex": "^codex-app-server-package-x86_64-pc-windows-msvc\\.tar\\.zst$",
-          "path": "bin/codex-app-server.exe"
+          "regex": "^motyga-app-server-package-x86_64-pc-windows-msvc\\.tar\\.zst$",
+          "path": "bin/motyga-app-server.exe"
         },
         "windows-aarch64": {
-          "regex": "^codex-app-server-package-aarch64-pc-windows-msvc\\.tar\\.zst$",
-          "path": "bin/codex-app-server.exe"
+          "regex": "^motyga-app-server-package-aarch64-pc-windows-msvc\\.tar\\.zst$",
+          "path": "bin/motyga-app-server.exe"
         }
       }
     },
-    "codex-responses-api-proxy": {
+    "motyga-responses-api-proxy": {
       "platforms": {
         "macos-aarch64": {
-          "regex": "^codex-responses-api-proxy-aarch64-apple-darwin\\.zst$",
-          "path": "codex-responses-api-proxy"
+          "regex": "^motyga-responses-api-proxy-aarch64-apple-darwin\\.zst$",
+          "path": "motyga-responses-api-proxy"
         },
         "macos-x86_64": {
-          "regex": "^codex-responses-api-proxy-x86_64-apple-darwin\\.zst$",
-          "path": "codex-responses-api-proxy"
+          "regex": "^motyga-responses-api-proxy-x86_64-apple-darwin\\.zst$",
+          "path": "motyga-responses-api-proxy"
         },
         "linux-x86_64": {
-          "regex": "^codex-responses-api-proxy-x86_64-unknown-linux-musl\\.zst$",
-          "path": "codex-responses-api-proxy"
+          "regex": "^motyga-responses-api-proxy-x86_64-unknown-linux-musl\\.zst$",
+          "path": "motyga-responses-api-proxy"
         },
         "linux-aarch64": {
-          "regex": "^codex-responses-api-proxy-aarch64-unknown-linux-musl\\.zst$",
-          "path": "codex-responses-api-proxy"
+          "regex": "^motyga-responses-api-proxy-aarch64-unknown-linux-musl\\.zst$",
+          "path": "motyga-responses-api-proxy"
         },
         "windows-x86_64": {
-          "regex": "^codex-responses-api-proxy-x86_64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-responses-api-proxy.exe"
+          "regex": "^motyga-responses-api-proxy-x86_64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "motyga-responses-api-proxy.exe"
         },
         "windows-aarch64": {
-          "regex": "^codex-responses-api-proxy-aarch64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-responses-api-proxy.exe"
+          "regex": "^motyga-responses-api-proxy-aarch64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "motyga-responses-api-proxy.exe"
         }
       }
     },
@@ -96,27 +96,27 @@
         }
       }
     },
-    "codex-command-runner": {
+    "motyga-command-runner": {
       "platforms": {
         "windows-x86_64": {
-          "regex": "^codex-command-runner-x86_64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-command-runner.exe"
+          "regex": "^motyga-command-runner-x86_64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "motyga-command-runner.exe"
         },
         "windows-aarch64": {
-          "regex": "^codex-command-runner-aarch64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-command-runner.exe"
+          "regex": "^motyga-command-runner-aarch64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "motyga-command-runner.exe"
         }
       }
     },
-    "codex-windows-sandbox-setup": {
+    "motyga-windows-sandbox-setup": {
       "platforms": {
         "windows-x86_64": {
-          "regex": "^codex-windows-sandbox-setup-x86_64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-windows-sandbox-setup.exe"
+          "regex": "^motyga-windows-sandbox-setup-x86_64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "motyga-windows-sandbox-setup.exe"
         },
         "windows-aarch64": {
-          "regex": "^codex-windows-sandbox-setup-aarch64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-windows-sandbox-setup.exe"
+          "regex": "^motyga-windows-sandbox-setup-aarch64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "motyga-windows-sandbox-setup.exe"
         }
       }
     }

@@ -15,9 +15,9 @@ Remote executor tests currently require an x86_64 Linux host machine. There are 
 
 Individual test cases must opt-in to being run against a remote executor.
 
-### codex_core
+### motyga_core
 
-Use `TestCodexBuilder::build_with_auto_env()` to opt-in to remote execution in core integration
+Use `TestMotygaBuilder::build_with_auto_env()` to opt-in to remote execution in core integration
 tests unless the test needs more precise control over its executor.
 
 ### app-server
@@ -49,19 +49,19 @@ skill for the most common changes required to make tests compatible.
 ## Docker
 
 Docker container is built and initialized via ./scripts/test-remote-env.sh. Sourcing this script
-in bash also provides the `codex_remote_env_cleanup` function to use after testing.
+in bash also provides the `motyga_remote_env_cleanup` function to use after testing.
 
 To run core integration tests against a Docker remote executor:
 
 ```bash
 bash -c '
   set -euo pipefail
-  unset CODEX_TEST_REMOTE_EXEC_SERVER_URL
+  unset MOTYGA_TEST_REMOTE_EXEC_SERVER_URL
   source scripts/test-remote-env.sh
-  trap codex_remote_env_cleanup EXIT
+  trap motyga_remote_env_cleanup EXIT
 
   cd motyga-rs
-  just test -p codex-core --test all
+  just test -p motyga-core --test all
 '
 ```
 
@@ -70,12 +70,12 @@ To run app-server integration tests against a Docker remote executor:
 ```bash
 bash -c '
   set -euo pipefail
-  unset CODEX_TEST_REMOTE_EXEC_SERVER_URL
+  unset MOTYGA_TEST_REMOTE_EXEC_SERVER_URL
   source scripts/test-remote-env.sh
-  trap codex_remote_env_cleanup EXIT
+  trap motyga_remote_env_cleanup EXIT
 
   cd motyga-rs
-  just test -p codex-app-server --test all
+  just test -p motyga-app-server --test all
 '
 ```
 
@@ -100,7 +100,7 @@ bazel test //motyga-rs/app-server:app-server-all-wine-exec-test
 
 You can use a devbox to run these tests if you are running on a macOS machine.
 
-You can list devboxes via `applied_devbox ls`, pick the one with `codex` in the name.
+You can list devboxes via `applied_devbox ls`, pick the one with `motyga` in the name.
 Connect to devbox via `ssh <devbox_name>`.
-Reuse the same checkout of codex in `~/code/codex`. Reset files if needed. Multiple checkouts take longer to build and take up more space.
+Reuse the same checkout of motyga in `~/code/motyga`. Reset files if needed. Multiple checkouts take longer to build and take up more space.
 Check whether the SHA and modified files are in sync between remote and local.

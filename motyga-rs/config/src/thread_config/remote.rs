@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use std::num::NonZeroU64;
 use std::time::Duration;
 
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::WireApi;
-use codex_protocol::config_types::ModelProviderAuthInfo;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::WireApi;
+use motyga_protocol::config_types::ModelProviderAuthInfo;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 use super::SessionThreadConfig;
 use super::ThreadConfigContext;
@@ -18,7 +18,7 @@ use super::ThreadConfigSource;
 use super::UserThreadConfig;
 use proto::thread_config_loader_client::ThreadConfigLoaderClient;
 
-#[path = "proto/codex.thread_config.v1.rs"]
+#[path = "proto/motyga.thread_config.v1.rs"]
 mod proto;
 
 const REMOTE_THREAD_CONFIG_LOAD_TIMEOUT: Duration = Duration::from_secs(5);
@@ -306,10 +306,10 @@ mod tests {
     use std::collections::HashMap;
     use std::num::NonZeroU64;
 
-    use codex_model_provider_info::ModelProviderInfo;
-    use codex_model_provider_info::WireApi;
-    use codex_protocol::config_types::ModelProviderAuthInfo;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_model_provider_info::ModelProviderInfo;
+    use motyga_model_provider_info::WireApi;
+    use motyga_protocol::config_types::ModelProviderAuthInfo;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
     use tonic::Request;
     use tonic::Response;
@@ -437,7 +437,7 @@ mod tests {
                         model_providers: vec![proto::ModelProvider {
                             id: "local".to_string(),
                             name: "Local".to_string(),
-                            base_url: Some("http://127.0.0.1:8061/api/codex".to_string()),
+                            base_url: Some("http://127.0.0.1:8061/api/motyga".to_string()),
                             env_key: None,
                             env_key_instructions: None,
                             experimental_bearer_token: None,
@@ -506,7 +506,7 @@ mod tests {
     fn expected_provider() -> ModelProviderInfo {
         ModelProviderInfo {
             name: "Local".to_string(),
-            base_url: Some("http://127.0.0.1:8061/api/codex".to_string()),
+            base_url: Some("http://127.0.0.1:8061/api/motyga".to_string()),
             env_key: None,
             env_key_instructions: None,
             experimental_bearer_token: None,

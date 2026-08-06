@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
-use codex_tools::JsonSchema;
-use codex_tools::JsonToolOutput;
-use codex_tools::ResponsesApiTool;
-use codex_tools::ToolName;
-use codex_tools::ToolSpec;
+use motyga_tools::JsonSchema;
+use motyga_tools::JsonToolOutput;
+use motyga_tools::ResponsesApiTool;
+use motyga_tools::ToolName;
+use motyga_tools::ToolSpec;
 use serde::Deserialize;
 use serde_json::json;
 
@@ -52,7 +52,7 @@ impl ToolExecutor<ToolInvocation> for WaitForEnvironmentHandler {
         })
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(async move {
             let ToolInvocation {
                 payload,

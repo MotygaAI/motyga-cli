@@ -2,10 +2,10 @@ use std::io::IsTerminal;
 use std::path::Path;
 
 use clap::Parser;
-use codex_file_search::Cli;
-use codex_file_search::FileMatch;
-use codex_file_search::Reporter;
-use codex_file_search::run_main;
+use motyga_file_search::Cli;
+use motyga_file_search::FileMatch;
+use motyga_file_search::Reporter;
+use motyga_file_search::run_main;
 use serde_json::json;
 
 #[tokio::main]

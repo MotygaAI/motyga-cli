@@ -24,31 +24,31 @@ use chrono::Duration as ChronoDuration;
 use chrono::Local;
 use chrono::TimeZone;
 use chrono::Utc;
-use codex_app_server_protocol::AskForApproval;
-use codex_app_server_protocol::CreditsSnapshot;
-use codex_app_server_protocol::RateLimitSnapshot;
-use codex_app_server_protocol::RateLimitWindow;
-use codex_app_server_protocol::SpendControlLimitSnapshot;
-use codex_config::LoaderOverrides;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_model_provider_info::ModelProviderAwsAuthInfo;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_models_manager::test_support::construct_model_info_offline_for_tests;
-use codex_models_manager::test_support::get_model_offline_for_tests;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
-use codex_protocol::models::ManagedFileSystemPermissions;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::AskForApproval;
+use motyga_app_server_protocol::CreditsSnapshot;
+use motyga_app_server_protocol::RateLimitSnapshot;
+use motyga_app_server_protocol::RateLimitWindow;
+use motyga_app_server_protocol::SpendControlLimitSnapshot;
+use motyga_config::LoaderOverrides;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_model_provider_info::ModelProviderAwsAuthInfo;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_models_manager::test_support::construct_model_info_offline_for_tests;
+use motyga_models_manager::test_support::get_model_offline_for_tests;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
+use motyga_protocol::models::ManagedFileSystemPermissions;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use insta::assert_snapshot;
 use pretty_assertions::assert_eq;
 use ratatui::prelude::*;
@@ -59,7 +59,7 @@ use unicode_width::UnicodeWidthStr;
 fn stale_monthly_limit_marks_fresh_rolling_snapshot_stale() {
     let now = Local::now();
     let snapshot = RateLimitSnapshotDisplay {
-        limit_name: "codex".to_string(),
+        limit_name: "motyga".to_string(),
         captured_at: now,
         primary: Some(RateLimitWindowDisplay {
             used_percent: 20.0,
@@ -124,7 +124,7 @@ fn app_server_workspace_write_profile(network_enabled: bool) -> PermissionProfil
 
 async fn test_config(temp_home: &TempDir) -> Config {
     let mut config = ConfigBuilder::default()
-        .codex_home(temp_home.path().to_path_buf())
+        .motyga_home(temp_home.path().to_path_buf())
         .loader_overrides(LoaderOverrides::without_managed_config_for_tests())
         .build()
         .await
@@ -329,6 +329,11 @@ async fn status_snapshot_shows_chatgpt_plan_without_email() {
     let mut config = test_config(&temp_home).await;
     config.model = Some("gpt-5.1-codex-max".to_string());
     config.model_provider_id = "openai".to_string();
+    // `model_provider_id` is only a label; the app server resolves the account from
+    // the `model_provider` struct. The default provider is Motyga, whose
+    // `requires_openai_auth` is false, so setting the id alone left the ChatGPT
+    // account below invisible and the bootstrap returned no account display.
+    config.model_provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None);
     config.cli_auth_credentials_store_mode = AuthCredentialsStoreMode::File;
     set_workspace_cwd(&mut config, test_path_buf("/workspace/tests").abs());
 
@@ -1540,7 +1545,7 @@ async fn status_snapshot_uses_default_reasoning_when_config_empty() {
         .single()
         .expect("timestamp");
     let remote_connection = RemoteConnectionStatus {
-        address: "unix:///tmp/codex-home/app-server-control/app-server-control.sock".to_string(),
+        address: "unix:///tmp/motyga-home/app-server-control/app-server-control.sock".to_string(),
         version: "v0.133.0".to_string(),
     };
 

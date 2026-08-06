@@ -14,11 +14,11 @@ use chrono::DateTime;
 use chrono::Duration as ChronoDuration;
 use chrono::Local;
 use chrono::Utc;
-use codex_app_server_protocol::CreditsSnapshot as CoreCreditsSnapshot;
-use codex_app_server_protocol::RateLimitSnapshot;
-use codex_app_server_protocol::RateLimitWindow;
-use codex_app_server_protocol::SpendControlLimitSnapshot as CoreSpendControlLimitSnapshot;
-use codex_protocol::num_format::format_with_separators;
+use motyga_app_server_protocol::CreditsSnapshot as CoreCreditsSnapshot;
+use motyga_app_server_protocol::RateLimitSnapshot;
+use motyga_app_server_protocol::RateLimitWindow;
+use motyga_app_server_protocol::SpendControlLimitSnapshot as CoreSpendControlLimitSnapshot;
+use motyga_protocol::num_format::format_with_separators;
 
 const STATUS_LIMIT_BAR_SEGMENTS: usize = 20;
 const STATUS_LIMIT_BAR_FILLED: &str = "█";
@@ -93,7 +93,7 @@ impl RateLimitWindowDisplay {
 
 #[derive(Debug, Clone)]
 pub(crate) struct RateLimitSnapshotDisplay {
-    /// Canonical limit identifier (for example: `codex` or `codex_other`).
+    /// Canonical limit identifier (for example: `motyga` or `motyga_other`).
     pub limit_name: String,
     /// Local timestamp representing when this display snapshot was captured.
     pub captured_at: DateTime<Local>,
@@ -138,7 +138,7 @@ pub(crate) fn rate_limit_snapshot_display(
     snapshot: &RateLimitSnapshot,
     captured_at: DateTime<Local>,
 ) -> RateLimitSnapshotDisplay {
-    rate_limit_snapshot_display_for_limit(snapshot, "codex".to_string(), captured_at)
+    rate_limit_snapshot_display_for_limit(snapshot, "motyga".to_string(), captured_at)
 }
 
 pub(crate) fn rate_limit_snapshot_display_for_limit(
@@ -229,7 +229,7 @@ pub(crate) fn compose_rate_limit_data_many(
             .unwrap_or(false);
 
         let limit_bucket_label = snapshot.limit_name.clone();
-        let show_limit_prefix = !limit_bucket_label.eq_ignore_ascii_case("codex");
+        let show_limit_prefix = !limit_bucket_label.eq_ignore_ascii_case("motyga");
         let primary_label = snapshot
             .primary
             .as_ref()
@@ -244,9 +244,9 @@ pub(crate) fn compose_rate_limit_data_many(
             .map(|label| capitalize_first(&label));
         let window_count =
             usize::from(snapshot.primary.is_some()) + usize::from(snapshot.secondary.is_some());
-        let combine_non_codex_single_limit = show_limit_prefix && window_count == 1;
+        let combine_non_motyga_single_limit = show_limit_prefix && window_count == 1;
 
-        if show_limit_prefix && !combine_non_codex_single_limit {
+        if show_limit_prefix && !combine_non_motyga_single_limit {
             rows.push(StatusRateLimitRow {
                 label: format!("{limit_bucket_label} limit"),
                 value: StatusRateLimitValue::Text(String::new()),
@@ -254,7 +254,7 @@ pub(crate) fn compose_rate_limit_data_many(
         }
 
         if let Some(primary) = snapshot.primary.as_ref() {
-            let label = if combine_non_codex_single_limit {
+            let label = if combine_non_motyga_single_limit {
                 format!(
                     "{} {} limit",
                     limit_bucket_label,
@@ -281,7 +281,7 @@ pub(crate) fn compose_rate_limit_data_many(
         }
 
         if let Some(secondary) = snapshot.secondary.as_ref() {
-            let label = if combine_non_codex_single_limit {
+            let label = if combine_non_motyga_single_limit {
                 format!(
                     "{} {} limit",
                     limit_bucket_label,
@@ -428,10 +428,10 @@ mod tests {
     }
 
     #[test]
-    fn non_codex_single_limit_renders_combined_row() {
+    fn non_motyga_single_limit_renders_combined_row() {
         let now = Local::now();
-        let codex = RateLimitSnapshotDisplay {
-            limit_name: "codex".to_string(),
+        let motyga = RateLimitSnapshotDisplay {
+            limit_name: "motyga".to_string(),
             captured_at: now,
             primary: Some(window(/*used_percent*/ 10.0)),
             secondary: None,
@@ -443,7 +443,7 @@ mod tests {
             individual_limit: None,
         };
         let other = RateLimitSnapshotDisplay {
-            limit_name: "codex-other".to_string(),
+            limit_name: "motyga-other".to_string(),
             captured_at: now,
             primary: Some(window(/*used_percent*/ 20.0)),
             secondary: None,
@@ -455,7 +455,7 @@ mod tests {
             individual_limit: None,
         };
 
-        let rows = match compose_rate_limit_data_many(&[codex, other], now) {
+        let rows = match compose_rate_limit_data_many(&[motyga, other], now) {
             StatusRateLimitData::Available(rows) => rows,
             other => panic!("unexpected status: {other:?}"),
         };
@@ -466,7 +466,7 @@ mod tests {
             vec![
                 "5h limit".to_string(),
                 "Credits".to_string(),
-                "codex-other 5h limit".to_string(),
+                "motyga-other 5h limit".to_string(),
                 "Credits".to_string(),
             ]
         );
@@ -474,10 +474,10 @@ mod tests {
     }
 
     #[test]
-    fn non_codex_multi_limit_keeps_group_row() {
+    fn non_motyga_multi_limit_keeps_group_row() {
         let now = Local::now();
         let other = RateLimitSnapshotDisplay {
-            limit_name: "codex-other".to_string(),
+            limit_name: "motyga-other".to_string(),
             captured_at: now,
             primary: Some(RateLimitWindowDisplay {
                 used_percent: 20.0,
@@ -501,7 +501,7 @@ mod tests {
         assert_eq!(
             labels,
             vec![
-                "codex-other limit".to_string(),
+                "motyga-other limit".to_string(),
                 "Usage limit".to_string(),
                 "Secondary usage limit".to_string(),
             ]

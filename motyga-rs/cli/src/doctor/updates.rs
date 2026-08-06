@@ -1,4 +1,4 @@
-//! Diagnoses whether Codex update paths target the running installation.
+//! Diagnoses whether Motyga update paths target the running installation.
 //!
 //! Update diagnostics combine cached version metadata, install-channel hints,
 //! and bounded latest-version probes. For npm-managed launches, this module also
@@ -8,9 +8,9 @@
 
 use std::path::Path;
 
-use codex_core::config::Config;
-use codex_install_context::InstallContext;
-use codex_install_context::InstallMethod;
+use motyga_core::config::Config;
+use motyga_install_context::InstallContext;
+use motyga_install_context::InstallMethod;
 use serde::Deserialize;
 
 use super::CheckStatus;
@@ -41,7 +41,7 @@ pub(super) fn updates_check(config: &Config) -> DoctorCheck {
         ),
         format!("update action: {}", update_action_label(&install_context)),
     ];
-    let version_file = config.codex_home.join(VERSION_FILE_NAME);
+    let version_file = config.motyga_home.join(VERSION_FILE_NAME);
     push_cached_version_details(&mut details, &version_file);
 
     let mut status = CheckStatus::Ok;
@@ -74,7 +74,7 @@ pub(super) fn updates_check(config: &Config) -> DoctorCheck {
                 status = status.max(CheckStatus::Warning);
                 summary = "npm update target could not be proven".to_string();
                 remediation = Some(
-                    "Reinstall or update Motyga so the JS shim provides CODEX_MANAGED_PACKAGE_ROOT."
+                    "Reinstall or update Motyga so the JS shim provides MOTYGA_MANAGED_PACKAGE_ROOT."
                         .to_string(),
                 );
             }

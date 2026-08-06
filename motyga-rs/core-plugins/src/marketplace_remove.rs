@@ -1,8 +1,8 @@
 use crate::installed_marketplaces::marketplace_install_root;
-use codex_config::RemoveMarketplaceConfigOutcome;
-use codex_config::remove_user_marketplace_config;
-use codex_plugin::validate_plugin_segment;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_config::RemoveMarketplaceConfigOutcome;
+use motyga_config::remove_user_marketplace_config;
+use motyga_plugin::validate_plugin_segment;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -27,10 +27,10 @@ pub enum MarketplaceRemoveError {
 }
 
 pub async fn remove_marketplace(
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     request: MarketplaceRemoveRequest,
 ) -> Result<MarketplaceRemoveOutcome, MarketplaceRemoveError> {
-    tokio::task::spawn_blocking(move || remove_marketplace_sync(codex_home.as_path(), request))
+    tokio::task::spawn_blocking(move || remove_marketplace_sync(motyga_home.as_path(), request))
         .await
         .map_err(|err| {
             MarketplaceRemoveError::Internal(format!("failed to remove marketplace: {err}"))
@@ -38,16 +38,16 @@ pub async fn remove_marketplace(
 }
 
 fn remove_marketplace_sync(
-    codex_home: &Path,
+    motyga_home: &Path,
     request: MarketplaceRemoveRequest,
 ) -> Result<MarketplaceRemoveOutcome, MarketplaceRemoveError> {
     let marketplace_name = request.marketplace_name;
     validate_plugin_segment(&marketplace_name, "marketplace name")
         .map_err(MarketplaceRemoveError::InvalidRequest)?;
 
-    let destination = marketplace_install_root(codex_home).join(&marketplace_name);
+    let destination = marketplace_install_root(motyga_home).join(&marketplace_name);
     let config_outcome =
-        remove_user_marketplace_config(codex_home, &marketplace_name).map_err(|err| {
+        remove_user_marketplace_config(motyga_home, &marketplace_name).map_err(|err| {
             MarketplaceRemoveError::Internal(format!(
                 "failed to remove marketplace '{marketplace_name}' from user config.toml: {err}"
             ))
@@ -107,16 +107,16 @@ fn remove_marketplace_root(root: &Path) -> Result<Option<AbsolutePathBuf>, Marke
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_config::MarketplaceConfigUpdate;
-    use codex_config::record_user_marketplace;
+    use motyga_config::MarketplaceConfigUpdate;
+    use motyga_config::record_user_marketplace;
     use pretty_assertions::assert_eq;
     use tempfile::TempDir;
 
     #[test]
     fn remove_marketplace_sync_removes_config_and_installed_root() {
-        let codex_home = TempDir::new().unwrap();
+        let motyga_home = TempDir::new().unwrap();
         record_user_marketplace(
-            codex_home.path(),
+            motyga_home.path(),
             "debug",
             &MarketplaceConfigUpdate {
                 last_updated: "2026-04-13T00:00:00Z",
@@ -128,7 +128,7 @@ mod tests {
             },
         )
         .unwrap();
-        let installed_root = marketplace_install_root(codex_home.path()).join("debug");
+        let installed_root = marketplace_install_root(motyga_home.path()).join("debug");
         fs::create_dir_all(installed_root.join(".agents/plugins")).unwrap();
         fs::write(
             installed_root.join(".agents/plugins/marketplace.json"),
@@ -137,7 +137,7 @@ mod tests {
         .unwrap();
 
         let outcome = remove_marketplace_sync(
-            codex_home.path(),
+            motyga_home.path(),
             MarketplaceRemoveRequest {
                 marketplace_name: "debug".to_string(),
             },
@@ -150,17 +150,17 @@ mod tests {
             Some(AbsolutePathBuf::try_from(installed_root.clone()).unwrap())
         );
         let config =
-            fs::read_to_string(codex_home.path().join(codex_config::CONFIG_TOML_FILE)).unwrap();
+            fs::read_to_string(motyga_home.path().join(motyga_config::CONFIG_TOML_FILE)).unwrap();
         assert!(!config.contains("[marketplaces.debug]"));
         assert!(!installed_root.exists());
     }
 
     #[test]
     fn remove_marketplace_sync_rejects_unknown_marketplace() {
-        let codex_home = TempDir::new().unwrap();
+        let motyga_home = TempDir::new().unwrap();
 
         let err = remove_marketplace_sync(
-            codex_home.path(),
+            motyga_home.path(),
             MarketplaceRemoveRequest {
                 marketplace_name: "debug".to_string(),
             },
@@ -175,9 +175,9 @@ mod tests {
 
     #[test]
     fn remove_marketplace_sync_rejects_case_mismatched_configured_name() {
-        let codex_home = TempDir::new().unwrap();
+        let motyga_home = TempDir::new().unwrap();
         record_user_marketplace(
-            codex_home.path(),
+            motyga_home.path(),
             "debug",
             &MarketplaceConfigUpdate {
                 last_updated: "2026-04-13T00:00:00Z",
@@ -189,11 +189,11 @@ mod tests {
             },
         )
         .unwrap();
-        let installed_root = marketplace_install_root(codex_home.path()).join("debug");
+        let installed_root = marketplace_install_root(motyga_home.path()).join("debug");
         fs::create_dir_all(&installed_root).unwrap();
 
         let err = remove_marketplace_sync(
-            codex_home.path(),
+            motyga_home.path(),
             MarketplaceRemoveRequest {
                 marketplace_name: "Debug".to_string(),
             },
@@ -206,23 +206,23 @@ mod tests {
         );
         assert!(installed_root.exists());
         let config =
-            fs::read_to_string(codex_home.path().join(codex_config::CONFIG_TOML_FILE)).unwrap();
+            fs::read_to_string(motyga_home.path().join(motyga_config::CONFIG_TOML_FILE)).unwrap();
         assert!(config.contains("[marketplaces.debug]"));
     }
 
     #[test]
     fn remove_marketplace_sync_keeps_installed_root_when_config_removal_fails() {
-        let codex_home = TempDir::new().unwrap();
+        let motyga_home = TempDir::new().unwrap();
         fs::write(
-            codex_home.path().join(codex_config::CONFIG_TOML_FILE),
+            motyga_home.path().join(motyga_config::CONFIG_TOML_FILE),
             "[marketplaces.debug\n",
         )
         .unwrap();
-        let installed_root = marketplace_install_root(codex_home.path()).join("debug");
+        let installed_root = marketplace_install_root(motyga_home.path()).join("debug");
         fs::create_dir_all(&installed_root).unwrap();
 
         let err = remove_marketplace_sync(
-            codex_home.path(),
+            motyga_home.path(),
             MarketplaceRemoveRequest {
                 marketplace_name: "debug".to_string(),
             },
@@ -238,9 +238,9 @@ mod tests {
 
     #[test]
     fn remove_marketplace_sync_removes_file_installed_root() {
-        let codex_home = TempDir::new().unwrap();
+        let motyga_home = TempDir::new().unwrap();
         record_user_marketplace(
-            codex_home.path(),
+            motyga_home.path(),
             "debug",
             &MarketplaceConfigUpdate {
                 last_updated: "2026-04-13T00:00:00Z",
@@ -252,12 +252,12 @@ mod tests {
             },
         )
         .unwrap();
-        let installed_root = marketplace_install_root(codex_home.path()).join("debug");
+        let installed_root = marketplace_install_root(motyga_home.path()).join("debug");
         fs::create_dir_all(installed_root.parent().unwrap()).unwrap();
         fs::write(&installed_root, "corrupt install root").unwrap();
 
         let outcome = remove_marketplace_sync(
-            codex_home.path(),
+            motyga_home.path(),
             MarketplaceRemoveRequest {
                 marketplace_name: "debug".to_string(),
             },
@@ -275,25 +275,25 @@ mod tests {
         );
         assert!(!installed_root.exists());
         let config =
-            fs::read_to_string(codex_home.path().join(codex_config::CONFIG_TOML_FILE)).unwrap();
+            fs::read_to_string(motyga_home.path().join(motyga_config::CONFIG_TOML_FILE)).unwrap();
         assert!(!config.contains("[marketplaces.debug]"));
     }
 
     #[test]
     fn remove_marketplace_sync_removes_inline_config_entry() {
-        let codex_home = TempDir::new().unwrap();
+        let motyga_home = TempDir::new().unwrap();
         fs::write(
-            codex_home.path().join(codex_config::CONFIG_TOML_FILE),
+            motyga_home.path().join(motyga_config::CONFIG_TOML_FILE),
             r#"
 marketplaces = { debug = { source_type = "git", source = "https://github.com/owner/repo.git" } }
 "#,
         )
         .unwrap();
-        let installed_root = marketplace_install_root(codex_home.path()).join("debug");
+        let installed_root = marketplace_install_root(motyga_home.path()).join("debug");
         fs::create_dir_all(&installed_root).unwrap();
 
         let outcome = remove_marketplace_sync(
-            codex_home.path(),
+            motyga_home.path(),
             MarketplaceRemoveRequest {
                 marketplace_name: "debug".to_string(),
             },
@@ -307,7 +307,7 @@ marketplaces = { debug = { source_type = "git", source = "https://github.com/own
         );
         assert!(!installed_root.exists());
         let config =
-            fs::read_to_string(codex_home.path().join(codex_config::CONFIG_TOML_FILE)).unwrap();
+            fs::read_to_string(motyga_home.path().join(motyga_config::CONFIG_TOML_FILE)).unwrap();
         assert!(!config.contains("debug"));
     }
 }

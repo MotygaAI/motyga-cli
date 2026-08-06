@@ -2,7 +2,7 @@
 //!
 //! Remote compaction is a model-facing request with a different semantic role
 //! from normal sampling. Keeping the no-op capable trace handle in this crate
-//! lets `codex-core` record exact endpoint payloads without owning trace schema
+//! lets `motyga-core` record exact endpoint payloads without owning trace schema
 //! details.
 
 use std::fmt::Display;
@@ -10,14 +10,14 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 
-use codex_protocol::models::ResponseItem;
+use motyga_protocol::models::ResponseItem;
 use serde::Serialize;
 use serde_json::Value as JsonValue;
 use tracing::warn;
 
 use crate::inference::trace_response_item_json;
 use crate::model::AgentThreadId;
-use crate::model::CodexTurnId;
+use crate::model::MotygaTurnId;
 use crate::model::CompactionId;
 use crate::model::CompactionRequestId;
 use crate::payload::RawPayloadKind;
@@ -46,7 +46,7 @@ enum CompactionTraceContextState {
 struct EnabledCompactionTraceContext {
     writer: Arc<TraceWriter>,
     thread_id: AgentThreadId,
-    codex_turn_id: CodexTurnId,
+    motyga_turn_id: MotygaTurnId,
     compaction_id: CompactionId,
     model: String,
     provider_name: String,
@@ -98,7 +98,7 @@ impl CompactionTraceContext {
     pub fn enabled(
         writer: Arc<TraceWriter>,
         thread_id: AgentThreadId,
-        codex_turn_id: CodexTurnId,
+        motyga_turn_id: MotygaTurnId,
         compaction_id: CompactionId,
         model: String,
         provider_name: String,
@@ -107,7 +107,7 @@ impl CompactionTraceContext {
             state: CompactionTraceContextState::Enabled(EnabledCompactionTraceContext {
                 writer,
                 thread_id,
-                codex_turn_id,
+                motyga_turn_id,
                 compaction_id,
                 model,
                 provider_name,
@@ -152,7 +152,7 @@ impl CompactionTraceContext {
 
         let event_context = RawTraceEventContext {
             thread_id: Some(context.thread_id.clone()),
-            codex_turn_id: Some(context.codex_turn_id.clone()),
+            motyga_turn_id: Some(context.motyga_turn_id.clone()),
         };
         if let Err(err) = context.writer.append_with_context(
             event_context,
@@ -192,7 +192,7 @@ impl CompactionTraceAttempt {
                 compaction_id: attempt.context.compaction_id.clone(),
                 compaction_request_id: attempt.compaction_request_id.clone(),
                 thread_id: attempt.context.thread_id.clone(),
-                codex_turn_id: attempt.context.codex_turn_id.clone(),
+                motyga_turn_id: attempt.context.motyga_turn_id.clone(),
                 model: attempt.context.model.clone(),
                 provider_name: attempt.context.provider_name.clone(),
                 request_payload,
@@ -273,7 +273,7 @@ fn append_with_context_best_effort(
 ) {
     let event_context = RawTraceEventContext {
         thread_id: Some(context.thread_id.clone()),
-        codex_turn_id: Some(context.codex_turn_id.clone()),
+        motyga_turn_id: Some(context.motyga_turn_id.clone()),
     };
     let _ = context.writer.append_with_context(event_context, payload);
 }

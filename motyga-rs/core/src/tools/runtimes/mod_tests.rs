@@ -6,25 +6,25 @@ use crate::shell::ShellType;
 use crate::tools::sandboxing::SandboxAttempt;
 use crate::tools::sandboxing::managed_network_for_sandbox_permissions;
 #[cfg(target_os = "macos")]
-use codex_network_proxy::CODEX_PROXY_GIT_SSH_COMMAND_MARKER;
-use codex_network_proxy::CUSTOM_CA_ENV_KEYS;
-use codex_network_proxy::ConfigReloader;
-use codex_network_proxy::ConfigReloaderFuture;
-use codex_network_proxy::ConfigState;
-use codex_network_proxy::NetworkProxy;
-use codex_network_proxy::NetworkProxyConfig;
-use codex_network_proxy::NetworkProxyConstraints;
-use codex_network_proxy::NetworkProxyState;
-use codex_network_proxy::PROXY_ACTIVE_ENV_KEY;
-use codex_network_proxy::PROXY_ENV_KEYS;
+use motyga_network_proxy::MOTYGA_PROXY_GIT_SSH_COMMAND_MARKER;
+use motyga_network_proxy::CUSTOM_CA_ENV_KEYS;
+use motyga_network_proxy::ConfigReloader;
+use motyga_network_proxy::ConfigReloaderFuture;
+use motyga_network_proxy::ConfigState;
+use motyga_network_proxy::NetworkProxy;
+use motyga_network_proxy::NetworkProxyConfig;
+use motyga_network_proxy::NetworkProxyConstraints;
+use motyga_network_proxy::NetworkProxyState;
+use motyga_network_proxy::PROXY_ACTIVE_ENV_KEY;
+use motyga_network_proxy::PROXY_ENV_KEYS;
 #[cfg(target_os = "macos")]
-use codex_network_proxy::PROXY_GIT_SSH_COMMAND_ENV_KEY;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::PermissionProfile;
-use codex_sandboxing::SandboxManager;
-use codex_sandboxing::SandboxType;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_network_proxy::PROXY_GIT_SSH_COMMAND_ENV_KEY;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::PermissionProfile;
+use motyga_sandboxing::SandboxManager;
+use motyga_sandboxing::SandboxType;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathBufExt;
 use pretty_assertions::assert_eq;
 use std::path::PathBuf;
@@ -63,7 +63,7 @@ fn shell_with_snapshot(
 }
 
 async fn test_network_proxy() -> anyhow::Result<NetworkProxy> {
-    let state = codex_network_proxy::build_config_state(
+    let state = motyga_network_proxy::build_config_state(
         NetworkProxyConfig::default(),
         NetworkProxyConstraints::default(),
     )?;
@@ -72,7 +72,7 @@ async fn test_network_proxy() -> anyhow::Result<NetworkProxy> {
             state,
             Arc::new(StaticReloader),
         )))
-        .managed_by_codex(/*managed_by_codex*/ false)
+        .managed_by_motyga(/*managed_by_motyga*/ false)
         .http_addr("127.0.0.1:43128".parse()?)
         .socks_addr("127.0.0.1:48081".parse()?)
         .build()
@@ -113,7 +113,7 @@ async fn explicit_escalation_prepares_exec_without_managed_network() -> anyhow::
         manager: &manager,
         sandbox_cwd: &sandbox_policy_cwd,
         workspace_roots: std::slice::from_ref(&native_sandbox_policy_cwd),
-        codex_linux_sandbox_exe: None,
+        motyga_linux_sandbox_exe: None,
         use_legacy_landlock: false,
         windows_sandbox_level: WindowsSandboxLevel::Disabled,
         windows_sandbox_private_desktop: false,
@@ -178,16 +178,16 @@ fn runtime_path_prepends_records_runtime_path_prepend() {
     let mut env = HashMap::from([("PATH".to_string(), "/usr/bin:/bin".to_string())]);
     let mut runtime_path_prepends = RuntimePathPrepends::default();
 
-    runtime_path_prepends.prepend(&mut env, PathBuf::from("/package/codex-path").as_path());
+    runtime_path_prepends.prepend(&mut env, PathBuf::from("/package/motyga-path").as_path());
 
     assert_eq!(
         env.get("PATH").map(String::as_str),
-        Some("/package/codex-path:/usr/bin:/bin"),
+        Some("/package/motyga-path:/usr/bin:/bin"),
         "runtime PATH prepend should update the live exec environment"
     );
     assert_eq!(
         runtime_path_prepends.entries,
-        vec!["/package/codex-path"],
+        vec!["/package/motyga-path"],
         "runtime PATH prepend should be recorded for snapshot replay"
     );
 }
@@ -197,20 +197,20 @@ fn runtime_path_prepends_records_runtime_path_prepend() {
 fn runtime_path_prepends_drops_empty_path_entries() {
     let mut env = HashMap::from([(
         "PATH".to_string(),
-        ":/usr/bin:/package/codex-path::/bin:".to_string(),
+        ":/usr/bin:/package/motyga-path::/bin:".to_string(),
     )]);
     let mut runtime_path_prepends = RuntimePathPrepends::default();
 
-    runtime_path_prepends.prepend(&mut env, PathBuf::from("/package/codex-path").as_path());
+    runtime_path_prepends.prepend(&mut env, PathBuf::from("/package/motyga-path").as_path());
 
     assert_eq!(
         env.get("PATH").map(String::as_str),
-        Some("/package/codex-path:/usr/bin:/bin"),
+        Some("/package/motyga-path:/usr/bin:/bin"),
         "empty PATH entries should be dropped instead of preserving current-directory lookup"
     );
     assert_eq!(
         runtime_path_prepends.entries,
-        vec!["/package/codex-path"],
+        vec!["/package/motyga-path"],
         "deduped runtime PATH prepend should still be recorded once"
     );
 }
@@ -262,15 +262,15 @@ fn apply_zsh_fork_path_prepend_uses_shell_parent() {
     apply_zsh_fork_path_prepend(
         &mut env,
         &mut runtime_path_prepends,
-        PathBuf::from("/package/codex-resources/zsh/bin/zsh").as_path(),
+        PathBuf::from("/package/motyga-resources/zsh/bin/zsh").as_path(),
     );
 
-    let expected = "/package/codex-resources/zsh/bin:/usr/bin:/bin";
+    let expected = "/package/motyga-resources/zsh/bin:/usr/bin:/bin";
     assert_eq!(env.get("PATH").map(String::as_str), Some(expected));
     assert_eq!(
         runtime_path_prepends,
         RuntimePathPrepends {
-            entries: vec!["/package/codex-resources/zsh/bin".to_string()]
+            entries: vec!["/package/motyga-resources/zsh/bin".to_string()]
         }
     );
 }
@@ -280,7 +280,7 @@ fn apply_zsh_fork_path_prepend_uses_shell_parent() {
 fn apply_zsh_fork_path_prepend_moves_existing_shell_parent_to_front() {
     let mut env = HashMap::from([(
         "PATH".to_string(),
-        "/usr/bin:/package/codex-resources/zsh/bin:/bin:/package/codex-resources/zsh/bin"
+        "/usr/bin:/package/motyga-resources/zsh/bin:/bin:/package/motyga-resources/zsh/bin"
             .to_string(),
     )]);
     let mut runtime_path_prepends = RuntimePathPrepends::default();
@@ -288,23 +288,23 @@ fn apply_zsh_fork_path_prepend_moves_existing_shell_parent_to_front() {
     apply_zsh_fork_path_prepend(
         &mut env,
         &mut runtime_path_prepends,
-        PathBuf::from("/package/codex-resources/zsh/bin/zsh").as_path(),
+        PathBuf::from("/package/motyga-resources/zsh/bin/zsh").as_path(),
     );
 
     assert_eq!(
         env.get("PATH").map(String::as_str),
-        Some("/package/codex-resources/zsh/bin:/usr/bin:/bin")
+        Some("/package/motyga-resources/zsh/bin:/usr/bin:/bin")
     );
     assert_eq!(
         runtime_path_prepends,
         RuntimePathPrepends {
-            entries: vec!["/package/codex-resources/zsh/bin".to_string()]
+            entries: vec!["/package/motyga-resources/zsh/bin".to_string()]
         }
     );
 }
 
 #[test]
-fn explicit_escalation_keeps_user_proxy_env_without_codex_marker() {
+fn explicit_escalation_keeps_user_proxy_env_without_motyga_marker() {
     let env = HashMap::from([
         (
             "HTTP_PROXY".to_string(),
@@ -501,12 +501,12 @@ fn maybe_wrap_shell_lc_with_snapshot_restores_explicit_override_precedence() {
 }
 
 #[test]
-fn maybe_wrap_shell_lc_with_snapshot_restores_codex_thread_id_from_env() {
+fn maybe_wrap_shell_lc_with_snapshot_restores_motyga_thread_id_from_env() {
     let dir = tempdir().expect("create temp dir");
     let snapshot_path = dir.path().join("snapshot.sh");
     std::fs::write(
         &snapshot_path,
-        "# Snapshot file\nexport CODEX_THREAD_ID='parent-thread'\n",
+        "# Snapshot file\nexport MOTYGA_THREAD_ID='parent-thread'\n",
     )
     .expect("write snapshot");
     let (session_shell, shell_snapshot) =
@@ -514,19 +514,19 @@ fn maybe_wrap_shell_lc_with_snapshot_restores_codex_thread_id_from_env() {
     let command = vec![
         "/bin/bash".to_string(),
         "-lc".to_string(),
-        "printf '%s' \"$CODEX_THREAD_ID\"".to_string(),
+        "printf '%s' \"$MOTYGA_THREAD_ID\"".to_string(),
     ];
     let rewritten = maybe_wrap_shell_lc_with_snapshot(
         &command,
         &session_shell,
         Some(&shell_snapshot),
         &HashMap::new(),
-        &HashMap::from([("CODEX_THREAD_ID".to_string(), "nested-thread".to_string())]),
+        &HashMap::from([("MOTYGA_THREAD_ID".to_string(), "nested-thread".to_string())]),
         &RuntimePathPrepends::default(),
     );
     let output = Command::new(&rewritten[0])
         .args(&rewritten[1..])
-        .env("CODEX_THREAD_ID", "nested-thread")
+        .env("MOTYGA_THREAD_ID", "nested-thread")
         .output()
         .expect("run rewritten command");
 
@@ -540,7 +540,7 @@ fn maybe_wrap_shell_lc_with_snapshot_restores_permission_profile_from_env() {
     let snapshot_path = dir.path().join("snapshot.sh");
     std::fs::write(
         &snapshot_path,
-        "# Snapshot file\nexport CODEX_PERMISSION_PROFILE='parent-profile'\n",
+        "# Snapshot file\nexport MOTYGA_PERMISSION_PROFILE='parent-profile'\n",
     )
     .expect("write snapshot");
     let (session_shell, shell_snapshot) =
@@ -548,10 +548,10 @@ fn maybe_wrap_shell_lc_with_snapshot_restores_permission_profile_from_env() {
     let command = vec![
         "/bin/bash".to_string(),
         "-lc".to_string(),
-        "printenv CODEX_PERMISSION_PROFILE".to_string(),
+        "printenv MOTYGA_PERMISSION_PROFILE".to_string(),
     ];
     let env = HashMap::from([(
-        CODEX_PERMISSION_PROFILE_ENV_VAR.to_string(),
+        MOTYGA_PERMISSION_PROFILE_ENV_VAR.to_string(),
         "current-profile".to_string(),
     )]);
     let rewritten = maybe_wrap_shell_lc_with_snapshot(
@@ -564,7 +564,7 @@ fn maybe_wrap_shell_lc_with_snapshot_restores_permission_profile_from_env() {
     );
     let output = Command::new(&rewritten[0])
         .args(&rewritten[1..])
-        .env(CODEX_PERMISSION_PROFILE_ENV_VAR, "current-profile")
+        .env(MOTYGA_PERMISSION_PROFILE_ENV_VAR, "current-profile")
         .output()
         .expect("run rewritten command");
 
@@ -578,7 +578,7 @@ fn maybe_wrap_shell_lc_with_snapshot_unsets_absent_permission_profile() {
     let snapshot_path = dir.path().join("snapshot.sh");
     std::fs::write(
         &snapshot_path,
-        "# Snapshot file\nexport CODEX_PERMISSION_PROFILE='stale-profile'\n",
+        "# Snapshot file\nexport MOTYGA_PERMISSION_PROFILE='stale-profile'\n",
     )
     .expect("write snapshot");
     let (session_shell, shell_snapshot) =
@@ -586,7 +586,7 @@ fn maybe_wrap_shell_lc_with_snapshot_unsets_absent_permission_profile() {
     let command = vec![
         "/bin/bash".to_string(),
         "-lc".to_string(),
-        "printenv CODEX_PERMISSION_PROFILE".to_string(),
+        "printenv MOTYGA_PERMISSION_PROFILE".to_string(),
     ];
     let rewritten = maybe_wrap_shell_lc_with_snapshot(
         &command,
@@ -598,7 +598,7 @@ fn maybe_wrap_shell_lc_with_snapshot_unsets_absent_permission_profile() {
     );
     let output = Command::new(&rewritten[0])
         .args(&rewritten[1..])
-        .env_remove(CODEX_PERMISSION_PROFILE_ENV_VAR)
+        .env_remove(MOTYGA_PERMISSION_PROFILE_ENV_VAR)
         .output()
         .expect("run rewritten command");
 
@@ -657,14 +657,14 @@ fn maybe_wrap_shell_lc_with_snapshot_restores_proxy_env_from_process_env() {
 
 #[cfg(target_os = "macos")]
 #[test]
-fn maybe_wrap_shell_lc_with_snapshot_refreshes_codex_proxy_git_ssh_command() {
+fn maybe_wrap_shell_lc_with_snapshot_refreshes_motyga_proxy_git_ssh_command() {
     let dir = tempdir().expect("create temp dir");
     let snapshot_path = dir.path().join("snapshot.sh");
     let stale_command = format!(
-        "{CODEX_PROXY_GIT_SSH_COMMAND_MARKER}ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
+        "{MOTYGA_PROXY_GIT_SSH_COMMAND_MARKER}ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
     );
     let fresh_command = format!(
-        "{CODEX_PROXY_GIT_SSH_COMMAND_MARKER}ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:48081 %h %p'"
+        "{MOTYGA_PROXY_GIT_SSH_COMMAND_MARKER}ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:48081 %h %p'"
     );
     std::fs::write(
         &snapshot_path,
@@ -705,7 +705,7 @@ fn maybe_wrap_shell_lc_with_snapshot_restores_custom_git_ssh_command() {
     let dir = tempdir().expect("create temp dir");
     let snapshot_path = dir.path().join("snapshot.sh");
     let stale_command = format!(
-        "{CODEX_PROXY_GIT_SSH_COMMAND_MARKER}ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
+        "{MOTYGA_PROXY_GIT_SSH_COMMAND_MARKER}ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
     );
     let custom_command = "ssh -o ProxyCommand='tsh proxy ssh --cluster=dev %r@%h:%p'";
     std::fs::write(
@@ -743,11 +743,11 @@ fn maybe_wrap_shell_lc_with_snapshot_restores_custom_git_ssh_command() {
 
 #[cfg(target_os = "macos")]
 #[test]
-fn maybe_wrap_shell_lc_with_snapshot_clears_stale_codex_git_ssh_command_without_live_command() {
+fn maybe_wrap_shell_lc_with_snapshot_clears_stale_motyga_git_ssh_command_without_live_command() {
     let dir = tempdir().expect("create temp dir");
     let snapshot_path = dir.path().join("snapshot.sh");
     let stale_command = format!(
-        "{CODEX_PROXY_GIT_SSH_COMMAND_MARKER}ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
+        "{MOTYGA_PROXY_GIT_SSH_COMMAND_MARKER}ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
     );
     std::fs::write(
         &snapshot_path,
@@ -988,7 +988,7 @@ fn run_snapshot_path_probe_with_runtime_path_prepend(
         "-lc".to_string(),
         "printf '%s' \"$PATH\"".to_string(),
     ];
-    let package_path_dir = dir.path().join("codex-path");
+    let package_path_dir = dir.path().join("motyga-path");
     let mut env = HashMap::from([("PATH".to_string(), "/worktree/bin".to_string())]);
     let mut runtime_path_prepends = RuntimePathPrepends::default();
     runtime_path_prepends.prepend(&mut env, package_path_dir.as_path());
@@ -1034,7 +1034,7 @@ fn maybe_wrap_shell_lc_with_snapshot_preserves_zsh_fork_path_prepend() {
     ];
     let zsh_path = dir
         .path()
-        .join("codex-resources")
+        .join("motyga-resources")
         .join("zsh")
         .join("bin")
         .join("zsh");
@@ -1116,7 +1116,7 @@ fn maybe_wrap_shell_lc_with_snapshot_preserves_unset_override_variables() {
     let snapshot_path = dir.path().join("snapshot.sh");
     std::fs::write(
         &snapshot_path,
-        "# Snapshot file\nexport CODEX_TEST_UNSET_OVERRIDE='snapshot-value'\n",
+        "# Snapshot file\nexport MOTYGA_TEST_UNSET_OVERRIDE='snapshot-value'\n",
     )
     .expect("write snapshot");
     let (session_shell, shell_snapshot) =
@@ -1124,10 +1124,10 @@ fn maybe_wrap_shell_lc_with_snapshot_preserves_unset_override_variables() {
     let command = vec![
             "/bin/bash".to_string(),
             "-lc".to_string(),
-            "if [ \"${CODEX_TEST_UNSET_OVERRIDE+x}\" = x ]; then printf 'set:%s' \"$CODEX_TEST_UNSET_OVERRIDE\"; else printf 'unset'; fi".to_string(),
+            "if [ \"${MOTYGA_TEST_UNSET_OVERRIDE+x}\" = x ]; then printf 'set:%s' \"$MOTYGA_TEST_UNSET_OVERRIDE\"; else printf 'unset'; fi".to_string(),
         ];
     let explicit_env_overrides = HashMap::from([(
-        "CODEX_TEST_UNSET_OVERRIDE".to_string(),
+        "MOTYGA_TEST_UNSET_OVERRIDE".to_string(),
         "worktree-value".to_string(),
     )]);
     let rewritten = maybe_wrap_shell_lc_with_snapshot(
@@ -1141,7 +1141,7 @@ fn maybe_wrap_shell_lc_with_snapshot_preserves_unset_override_variables() {
 
     let output = Command::new(&rewritten[0])
         .args(&rewritten[1..])
-        .env_remove("CODEX_TEST_UNSET_OVERRIDE")
+        .env_remove("MOTYGA_TEST_UNSET_OVERRIDE")
         .output()
         .expect("run rewritten command");
     assert!(output.status.success(), "command failed: {output:?}");

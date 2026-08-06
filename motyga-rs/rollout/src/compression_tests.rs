@@ -5,15 +5,15 @@ use std::os::unix::fs::PermissionsExt;
 use std::time::Duration;
 use std::time::SystemTime;
 
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::UserMessageEvent;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::protocol::SessionMeta;
+use motyga_protocol::protocol::SessionMetaLine;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::UserMessageEvent;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use uuid::Uuid;
@@ -179,7 +179,7 @@ async fn worker_compresses_old_active_and_archived_rollouts() -> anyhow::Result<
 async fn resume_materializes_compressed_rollout_path() -> anyhow::Result<()> {
     let home = TempDir::new()?;
     let config = RolloutConfig {
-        codex_home: home.path().to_path_buf(),
+        motyga_home: home.path().to_path_buf(),
         sqlite_home: home.path().to_path_buf(),
         cwd: home.path().to_path_buf(),
         model_provider_id: "test-provider".to_string(),

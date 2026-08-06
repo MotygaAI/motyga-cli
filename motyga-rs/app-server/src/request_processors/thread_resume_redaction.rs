@@ -1,6 +1,6 @@
-use codex_app_server_protocol::McpToolCallResult;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::Turn;
+use motyga_app_server_protocol::McpToolCallResult;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::Turn;
 use serde_json::Value as JsonValue;
 
 // Temporary bandaid for remote clients: thread/resume can include large MCP and
@@ -8,7 +8,7 @@ use serde_json::Value as JsonValue;
 // history, model resume history, and other APIs stay unchanged.
 const REDACTED_PAYLOAD: &str = "[redacted]";
 const CHATGPT_REMOTE_CLIENT_NAMES: &[&str] =
-    &["codex_chatgpt_android_remote", "codex_chatgpt_ios_remote"];
+    &["motyga_chatgpt_android_remote", "motyga_chatgpt_ios_remote"];
 
 pub(super) fn should_redact_thread_resume_payloads(client_name: Option<&str>) -> bool {
     client_name.is_some_and(|client_name| CHATGPT_REMOTE_CLIENT_NAMES.contains(&client_name))
@@ -52,16 +52,16 @@ fn redacted_mcp_tool_call_result() -> McpToolCallResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_app_server_protocol::McpToolCallAppContext;
-    use codex_app_server_protocol::McpToolCallError;
-    use codex_app_server_protocol::McpToolCallStatus;
-    use codex_app_server_protocol::SessionSource;
-    use codex_app_server_protocol::Thread;
-    use codex_app_server_protocol::ThreadStatus;
-    use codex_app_server_protocol::TurnItemsView;
-    use codex_app_server_protocol::TurnStatus;
-    use codex_utils_absolute_path::test_support::PathBufExt;
-    use codex_utils_absolute_path::test_support::test_path_buf;
+    use motyga_app_server_protocol::McpToolCallAppContext;
+    use motyga_app_server_protocol::McpToolCallError;
+    use motyga_app_server_protocol::McpToolCallStatus;
+    use motyga_app_server_protocol::SessionSource;
+    use motyga_app_server_protocol::Thread;
+    use motyga_app_server_protocol::ThreadStatus;
+    use motyga_app_server_protocol::TurnItemsView;
+    use motyga_app_server_protocol::TurnStatus;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
+    use motyga_utils_absolute_path::test_support::test_path_buf;
     use pretty_assertions::assert_eq;
 
     #[test]

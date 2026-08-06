@@ -2,10 +2,10 @@ use std::collections::HashSet;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStackOrdering;
-use codex_core::config::Config;
-use codex_git_utils::get_git_repo_root;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_core::config::Config;
+use motyga_git_utils::get_git_repo_root;
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::CheckStatus;
@@ -135,7 +135,7 @@ fn terminal_title_item_id(item: &str) -> Option<&'static str> {
         "context-used" | "context-usage" => Some("context-used"),
         "five-hour-limit" => Some("five-hour-limit"),
         "weekly-limit" => Some("weekly-limit"),
-        "codex-version" => Some("codex-version"),
+        "motyga-version" => Some("motyga-version"),
         "used-tokens" => Some("used-tokens"),
         "total-input-tokens" => Some("total-input-tokens"),
         "total-output-tokens" => Some("total-output-tokens"),
@@ -177,7 +177,7 @@ fn terminal_title_project_root(config: &Config, cwd: &Path) -> Option<ProjectTit
         )
         .iter()
         .find_map(|layer| match &layer.name {
-            ConfigLayerSource::Project { dot_codex_folder } => dot_codex_folder
+            ConfigLayerSource::Project { dot_motyga_folder } => dot_motyga_folder
                 .as_path()
                 .parent()
                 .map(|root| ProjectTitleRoot {

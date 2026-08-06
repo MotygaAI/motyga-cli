@@ -2,12 +2,12 @@
 
 In the motyga-rs folder where the rust code lives:
 
-- Crate names are prefixed with `codex-`. For example, the `core` folder's crate is named `codex-core`
+- Crate names are prefixed with `motyga-`. For example, the `core` folder's crate is named `motyga-core`
 - When using format! and you can inline variables into {}, always do that.
 - Install any commands the repo relies on (for example `just`, `rg`, or `cargo-insta`) if they aren't already available before running instructions here.
-- Never add or modify any code related to `CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR` or `CODEX_SANDBOX_ENV_VAR`.
-  - You operate in a sandbox where `CODEX_SANDBOX_NETWORK_DISABLED=1` will be set whenever you use the `shell` tool. Any existing code that uses `CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR` was authored with this fact in mind. It is often used to early exit out of tests that the author knew you would not be able to run given your sandbox limitations.
-  - Similarly, when you spawn a process using Seatbelt (`/usr/bin/sandbox-exec`), `CODEX_SANDBOX=seatbelt` will be set on the child process. Integration tests that want to run Seatbelt themselves cannot be run under Seatbelt, so checks for `CODEX_SANDBOX=seatbelt` are also often used to early exit out of tests, as appropriate.
+- Never add or modify any code related to `MOTYGA_SANDBOX_NETWORK_DISABLED_ENV_VAR` or `MOTYGA_SANDBOX_ENV_VAR`.
+  - You operate in a sandbox where `MOTYGA_SANDBOX_NETWORK_DISABLED=1` will be set whenever you use the `shell` tool. Any existing code that uses `MOTYGA_SANDBOX_NETWORK_DISABLED_ENV_VAR` was authored with this fact in mind. It is often used to early exit out of tests that the author knew you would not be able to run given your sandbox limitations.
+  - Similarly, when you spawn a process using Seatbelt (`/usr/bin/sandbox-exec`), `MOTYGA_SANDBOX=seatbelt` will be set on the child process. Integration tests that want to run Seatbelt themselves cannot be run under Seatbelt, so checks for `MOTYGA_SANDBOX=seatbelt` are also often used to early exit out of tests, as appropriate.
 - Always collapse if statements per https://rust-lang.github.io/rust-clippy/master/index.html#collapsible_if
 - Always inline format! args when possible per https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
 - Use method references over closures when possible per https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure_for_method_calls
@@ -29,10 +29,10 @@ In the motyga-rs folder where the rust code lives:
 - When writing tests, prefer comparing the equality of entire objects over fields one by one.
 - Do not add tests for values that are statically defined.
 - Do not add negative tests for logic that was removed.
-- Do not add general product or user-facing documentation to the `docs/` folder. The official Codex documentation lives elsewhere. The exception is app-server API documentation, which is covered by the app-server guidance below.
+- Do not add general product or user-facing documentation to the `docs/` folder. The official Motyga documentation lives elsewhere. The exception is app-server API documentation, which is covered by the app-server guidance below.
 - Prefer private modules and explicitly exported public crate API.
 - If you change `ConfigToml` or nested config types, run `just write-config-schema` to update `motyga-rs/core/config.schema.json`.
-- When working with MCP tool calls, prefer using `motyga-rs/codex-mcp/src/mcp_connection_manager.rs` to handle mutation of tools and tool calls. Aim to minimize the footprint of changes and leverage existing abstractions rather than plumbing code through multiple levels of function calls.
+- When working with MCP tool calls, prefer using `motyga-rs/motyga-mcp/src/mcp_connection_manager.rs` to handle mutation of tools and tool calls. Aim to minimize the footprint of changes and leverage existing abstractions rather than plumbing code through multiple levels of function calls.
 - Do not call `reset_client_session` unnecessarily; let the incremental check logic decide whether to reuse the previous request.
 - If you change Rust dependencies (`Cargo.toml` or `Cargo.lock`), run `just bazel-lock-update` from the
   repo root to refresh `MODULE.bazel.lock`, and include that lockfile update in the same change. CI
@@ -64,23 +64,23 @@ In the motyga-rs folder where the rust code lives:
 Run `just fmt` (in the `motyga-rs` directory) automatically after you have finished making code changes anywhere in this repository; do not ask for approval to run it. Additionally, run the tests:
 
 1. Do not run `cargo test` directly. Use `just test` so test execution follows the repo defaults.
-2. Run the test for the specific project that was changed. For example, if changes were made in `motyga-rs/tui`, run `just test -p codex-tui`.
+2. Run the test for the specific project that was changed. For example, if changes were made in `motyga-rs/tui`, run `just test -p motyga-tui`.
 3. Once those pass, if any changes were made in common, core, or protocol, run the complete test suite with `just test`. Avoid `--all-features` for routine local runs because it expands the build matrix and can significantly increase `target/` disk usage; use it only when you specifically need full feature coverage. project-specific or individual tests can be run without asking the user, but do ask the user before running the complete test suite.
 
 Before finalizing a large change to `motyga-rs`, run `just fix -p <project>` (in `motyga-rs` directory) to fix any linter issues in the code. Prefer scoping with `-p` to avoid slow workspace‑wide Clippy builds; only run `just fix` without `-p` if you changed shared crates. Do not re-run tests after running `fix` or `fmt`.
 
-## The `codex-core` crate
+## The `motyga-core` crate
 
-Over time, the `codex-core` crate (defined in `motyga-rs/core/`) has become bloated because it is the largest crate, so it is often easier to add something new to `codex-core` rather than refactor out the library code you need so your new code neither takes a dependency on, nor contributes to the size of, `codex-core`.
+Over time, the `motyga-core` crate (defined in `motyga-rs/core/`) has become bloated because it is the largest crate, so it is often easier to add something new to `motyga-core` rather than refactor out the library code you need so your new code neither takes a dependency on, nor contributes to the size of, `motyga-core`.
 
-To that end: **resist adding code to codex-core**!
+To that end: **resist adding code to motyga-core**!
 
-Particularly when introducing a new concept/feature/API, before adding to `codex-core`, consider whether:
+Particularly when introducing a new concept/feature/API, before adding to `motyga-core`, consider whether:
 
-- There is an existing crate other than `codex-core` that is an appropriate place for your new code to live.
+- There is an existing crate other than `motyga-core` that is an appropriate place for your new code to live.
 - It is time to introduce a new crate to the Cargo workspace for your new functionality. Refactor existing code as necessary to make this happen.
 
-Likewise, when reviewing code, do not hesitate to push back on PRs that would unnecessarily add code to `codex-core`.
+Likewise, when reviewing code, do not hesitate to push back on PRs that would unnecessarily add code to `motyga-core`.
 
 ## Code Review Rules
 
@@ -90,7 +90,7 @@ Keep crate API surfaces as small as possible. Avoid proliferating test-only help
 
 ### Model visible context
 
-Codex maintains a context (history of messages) that is sent to the model in inference requests.
+Motyga maintains a context (history of messages) that is sent to the model in inference requests.
 
 1. No history rewrite - the context must be built up incrementally.
 2. Avoid frequent changes to context that cause cache misses.
@@ -111,7 +111,7 @@ Search for breaking changes in external integration surfaces:
 
 ### Test authoring guidance
 
-For agent changes prefer integration tests over unit tests. Integration tests are under `core/suite` and use `test_codex` to set up a test instance of codex.
+For agent changes prefer integration tests over unit tests. Integration tests are under `core/suite` and use `test_motyga` to set up a test instance of motyga.
 
 Features that change the agent logic MUST add an integration test:
 
@@ -189,13 +189,13 @@ is easy to review and future diffs stay visual.
 When UI or text output changes intentionally, update the snapshots as follows:
 
 - Run tests to generate any updated snapshots:
-  - `just test -p codex-tui`
+  - `just test -p motyga-tui`
 - Check what’s pending:
-  - `cargo insta pending-snapshots -p codex-tui`
+  - `cargo insta pending-snapshots -p motyga-tui`
 - Review changes by reading the generated `*.snap.new` files directly in the repo, or preview a specific file:
-  - `cargo insta show -p codex-tui path/to/file.snap.new`
+  - `cargo insta show -p motyga-tui path/to/file.snap.new`
 - Only if you intend to accept all new snapshots in this crate, run:
-  - `cargo insta accept -p codex-tui`
+  - `cargo insta accept -p motyga-tui`
 
 If you don’t have the tool:
 
@@ -215,16 +215,16 @@ Use `just bench-smoke` to dry-run the benchmark for a single iteration to ensure
 
 ### Spawning workspace binaries in tests (Cargo vs Bazel)
 
-- Prefer `codex_utils_cargo_bin::cargo_bin("...")` over `assert_cmd::Command::cargo_bin(...)` or `escargot` when tests need to spawn first-party binaries.
-  - Under Bazel, binaries and resources may live under runfiles; use `codex_utils_cargo_bin::cargo_bin` to resolve absolute paths that remain stable after `chdir`.
-- When locating fixture files or test resources under Bazel, avoid `env!("CARGO_MANIFEST_DIR")`. Prefer `codex_utils_cargo_bin::find_resource!` so paths resolve correctly under both Cargo and Bazel runfiles.
+- Prefer `motyga_utils_cargo_bin::cargo_bin("...")` over `assert_cmd::Command::cargo_bin(...)` or `escargot` when tests need to spawn first-party binaries.
+  - Under Bazel, binaries and resources may live under runfiles; use `motyga_utils_cargo_bin::cargo_bin` to resolve absolute paths that remain stable after `chdir`.
+- When locating fixture files or test resources under Bazel, avoid `env!("CARGO_MANIFEST_DIR")`. Prefer `motyga_utils_cargo_bin::find_resource!` so paths resolve correctly under both Cargo and Bazel runfiles.
 
 ### Integration tests
 
-#### codex_core integration testing
+#### motyga_core integration testing
 
-- Prefer the utilities in `core_test_support::responses` when writing end-to-end Codex tests.
-- Use `TestCodexBuilder::build_with_auto_env()` by default to ensure that new tests work with
+- Prefer the utilities in `core_test_support::responses` when writing end-to-end Motyga tests.
+- Use `TestMotygaBuilder::build_with_auto_env()` by default to ensure that new tests work with
   foreign app/exec OSes. See $remote-tests for details.
 - All `mount_sse*` helpers return a `ResponseMock`; hold onto it so you can assert against outbound `/responses` POST bodies.
 - Use `ResponseMock::single_request()` when a test should only issue one POST, or `ResponseMock::requests()` to inspect every captured `ResponsesRequest`.
@@ -242,7 +242,7 @@ Use `just bench-smoke` to dry-run the benchmark for a single iteration to ensure
       responses::ev_completed("resp-1"),
   ])).await;
 
-  codex.submit(Op::UserTurn { ... }).await?;
+  motyga.submit(Op::UserTurn { ... }).await?;
 
   // Assert request body if needed.
   let request = mock.single_request();
@@ -301,7 +301,7 @@ These guidelines apply to app-server protocol work in `motyga-rs`, especially:
 - Regenerate schema fixtures when API shapes change:
   `just write-app-server-schema`
   (and `just write-app-server-schema --experimental` when experimental API fixtures are affected).
-- Validate with `just test -p codex-app-server-protocol`.
+- Validate with `just test -p motyga-app-server-protocol`.
 - Avoid boilerplate tests that only assert experimental field markers for individual
   request fields in `common.rs`; rely on schema generation/tests and behavioral coverage instead.
 
@@ -318,5 +318,5 @@ closest `pyproject.toml`'s `requires-python` field to see what minimum runtime v
 
 Tests and features must support Linux, macOS and Windows unless feature is explicitly OS-specific.
 
-Codex supports running connected app-server and exec-server on different operating systems. See the
+Motyga supports running connected app-server and exec-server on different operating systems. See the
 `$remote-tests` skill for details about integration testing these configurations.

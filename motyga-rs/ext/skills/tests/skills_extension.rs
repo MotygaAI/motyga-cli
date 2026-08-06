@@ -4,53 +4,53 @@ use std::sync::Mutex;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 
-use codex_core_skills::HostSkillsSnapshot;
-use codex_core_skills::SKILLS_INTRO_WITH_ABSOLUTE_PATHS;
-use codex_core_skills::SkillLoadOutcome;
-use codex_core_skills::SkillMetadata;
-use codex_core_skills::injection::InjectedHostSkillPrompts;
-use codex_extension_api::ConversationHistory;
-use codex_extension_api::ExtensionData;
-use codex_extension_api::ExtensionEventSink;
-use codex_extension_api::ExtensionRegistryBuilder;
-use codex_extension_api::NoopTurnItemEmitter;
-use codex_extension_api::PreviousWorldStateSection;
-use codex_extension_api::ThreadStartInput;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolPayload;
-use codex_extension_api::TurnInputContext;
-use codex_extension_api::WorldStateContributionInput;
-use codex_protocol::capabilities::CapabilityRootLocation;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::SKILLS_INSTRUCTIONS_CLOSE_TAG;
-use codex_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SkillScope;
-use codex_protocol::protocol::TruncationPolicy;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_protocol::user_input::UserInput;
-use codex_skills_extension::SkillProviders;
-use codex_skills_extension::SkillsExtensionConfig;
-use codex_skills_extension::catalog::SkillAuthority;
-use codex_skills_extension::catalog::SkillCatalog;
-use codex_skills_extension::catalog::SkillCatalogEntry;
-use codex_skills_extension::catalog::SkillPackageId;
-use codex_skills_extension::catalog::SkillProviderError;
-use codex_skills_extension::catalog::SkillReadResult;
-use codex_skills_extension::catalog::SkillResourceId;
-use codex_skills_extension::catalog::SkillSearchResult;
-use codex_skills_extension::catalog::SkillSourceKind;
-use codex_skills_extension::install;
-use codex_skills_extension::install_with_providers;
-use codex_skills_extension::provider::SkillListQuery;
-use codex_skills_extension::provider::SkillProvider;
-use codex_skills_extension::provider::SkillProviderFuture;
-use codex_skills_extension::provider::SkillReadRequest;
-use codex_skills_extension::provider::SkillSearchRequest;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_core_skills::HostSkillsSnapshot;
+use motyga_core_skills::SKILLS_INTRO_WITH_ABSOLUTE_PATHS;
+use motyga_core_skills::SkillLoadOutcome;
+use motyga_core_skills::SkillMetadata;
+use motyga_core_skills::injection::InjectedHostSkillPrompts;
+use motyga_extension_api::ConversationHistory;
+use motyga_extension_api::ExtensionData;
+use motyga_extension_api::ExtensionEventSink;
+use motyga_extension_api::ExtensionRegistryBuilder;
+use motyga_extension_api::NoopTurnItemEmitter;
+use motyga_extension_api::PreviousWorldStateSection;
+use motyga_extension_api::ThreadStartInput;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolPayload;
+use motyga_extension_api::TurnInputContext;
+use motyga_extension_api::WorldStateContributionInput;
+use motyga_protocol::capabilities::CapabilityRootLocation;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::SKILLS_INSTRUCTIONS_CLOSE_TAG;
+use motyga_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SkillScope;
+use motyga_protocol::protocol::TruncationPolicy;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::user_input::UserInput;
+use motyga_skills_extension::SkillProviders;
+use motyga_skills_extension::SkillsExtensionConfig;
+use motyga_skills_extension::catalog::SkillAuthority;
+use motyga_skills_extension::catalog::SkillCatalog;
+use motyga_skills_extension::catalog::SkillCatalogEntry;
+use motyga_skills_extension::catalog::SkillPackageId;
+use motyga_skills_extension::catalog::SkillProviderError;
+use motyga_skills_extension::catalog::SkillReadResult;
+use motyga_skills_extension::catalog::SkillResourceId;
+use motyga_skills_extension::catalog::SkillSearchResult;
+use motyga_skills_extension::catalog::SkillSourceKind;
+use motyga_skills_extension::install;
+use motyga_skills_extension::install_with_providers;
+use motyga_skills_extension::provider::SkillListQuery;
+use motyga_skills_extension::provider::SkillProvider;
+use motyga_skills_extension::provider::SkillProviderFuture;
+use motyga_skills_extension::provider::SkillReadRequest;
+use motyga_skills_extension::provider::SkillSearchRequest;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use pretty_assertions::assert_eq;
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
@@ -61,8 +61,8 @@ const DEMO_SKILL_CONTENTS: &str =
 
 #[tokio::test]
 async fn installed_extension_uses_host_service_snapshot() -> TestResult {
-    let codex_home = test_codex_home();
-    let skill_path = codex_home.join("skills").join("demo").join("SKILL.md");
+    let motyga_home = test_motyga_home();
+    let skill_path = motyga_home.join("skills").join("demo").join("SKILL.md");
     std::fs::create_dir_all(
         skill_path
             .parent()
@@ -141,7 +141,7 @@ async fn installed_extension_uses_host_service_snapshot() -> TestResult {
         .ok_or("host skill prompt marker should be set")?;
     assert!(injected_host_skill_prompts.contains_path(&skill_path_string));
 
-    std::fs::remove_dir_all(codex_home)?;
+    std::fs::remove_dir_all(motyga_home)?;
     Ok(())
 }
 
@@ -202,7 +202,7 @@ async fn selected_executor_catalog_follows_step_availability_and_reuses_its_cach
     };
     let available_sections = registry.context_contributors()[0]
         .contribute_world_state(WorldStateContributionInput {
-            thread_id: codex_protocol::ThreadId::new(),
+            thread_id: motyga_protocol::ThreadId::new(),
             turn_id: "turn-1",
             environments: std::slice::from_ref(&turn_environment),
             ready_selected_capability_roots: &selected_roots,
@@ -254,7 +254,7 @@ async fn selected_executor_catalog_follows_step_availability_and_reuses_its_cach
     let unavailable_turn_store = ExtensionData::new("turn-2");
     let unavailable_sections = registry.context_contributors()[0]
         .contribute_world_state(WorldStateContributionInput {
-            thread_id: codex_protocol::ThreadId::new(),
+            thread_id: motyga_protocol::ThreadId::new(),
             turn_id: "turn-2",
             environments: &[],
             ready_selected_capability_roots: &[],
@@ -276,7 +276,7 @@ async fn selected_executor_catalog_follows_step_availability_and_reuses_its_cach
     let restored_turn_store = ExtensionData::new("turn-3");
     let restored_sections = registry.context_contributors()[0]
         .contribute_world_state(WorldStateContributionInput {
-            thread_id: codex_protocol::ThreadId::new(),
+            thread_id: motyga_protocol::ThreadId::new(),
             turn_id: "turn-3",
             environments: &[turn_environment],
             ready_selected_capability_roots: &selected_roots,
@@ -303,7 +303,7 @@ async fn selected_executor_catalog_follows_step_availability_and_reuses_its_cach
     let listing_disabled_turn_store = ExtensionData::new("turn-4");
     let listing_disabled_sections = registry.context_contributors()[0]
         .contribute_world_state(WorldStateContributionInput {
-            thread_id: codex_protocol::ThreadId::new(),
+            thread_id: motyga_protocol::ThreadId::new(),
             turn_id: "turn-4",
             environments: &[],
             ready_selected_capability_roots: &selected_roots,
@@ -340,7 +340,7 @@ async fn default_context_truncates_catalog_descriptions() -> TestResult {
     let description = "x".repeat(1_025);
     let mut entry = test_entry(
         SkillSourceKind::Orchestrator,
-        "codex_apps",
+        "motyga_apps",
         "orchestrator/long-description",
         "skill://orchestrator/long-description/SKILL.md",
     );
@@ -390,7 +390,7 @@ async fn skills_list_truncates_catalog_descriptions_in_tool_output() -> TestResu
     let description = "x".repeat(1_025);
     let mut entry = test_entry(
         SkillSourceKind::Orchestrator,
-        "codex_apps",
+        "motyga_apps",
         "orchestrator/long-description",
         "skill://orchestrator/long-description/SKILL.md",
     );
@@ -465,7 +465,7 @@ async fn orchestrator_catalog_snapshot_caches_failure() -> TestResult {
             catalog: SkillCatalog {
                 entries: vec![test_entry(
                     SkillSourceKind::Orchestrator,
-                    "codex_apps",
+                    "motyga_apps",
                     "orchestrator/first",
                     "skill://orchestrator/first/SKILL.md",
                 )],
@@ -588,7 +588,7 @@ async fn root_qualified_locator_selects_only_the_matching_executor_skill() -> Te
     let turn_store = ExtensionData::new("turn-1");
     registry.context_contributors()[0]
         .contribute_world_state(WorldStateContributionInput {
-            thread_id: codex_protocol::ThreadId::new(),
+            thread_id: motyga_protocol::ThreadId::new(),
             turn_id: "turn-1",
             environments: &[TurnEnvironmentSelection {
                 environment_id: "env-1".to_string(),
@@ -799,10 +799,10 @@ fn skills_extension_config(config: &TestConfig) -> SkillsExtensionConfig {
     }
 }
 
-fn test_codex_home() -> PathBuf {
+fn test_motyga_home() -> PathBuf {
     let id = NEXT_MOTYGA_HOME_ID.fetch_add(1, Ordering::Relaxed);
     std::env::temp_dir().join(format!(
-        "codex-skills-extension-test-{}-{id}",
+        "motyga-skills-extension-test-{}-{id}",
         std::process::id(),
     ))
 }

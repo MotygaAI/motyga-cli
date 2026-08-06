@@ -10,13 +10,13 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use codex_code_mode::CellId;
-use codex_code_mode::CodeModeNestedToolCall;
-use codex_code_mode::CodeModeSession;
-use codex_code_mode::CodeModeSessionProvider;
-use codex_code_mode::CodeModeToolKind;
-use codex_code_mode::RuntimeResponse;
-use codex_protocol::models::FunctionCallOutputContentItem;
+use motyga_code_mode::CellId;
+use motyga_code_mode::CodeModeNestedToolCall;
+use motyga_code_mode::CodeModeSession;
+use motyga_code_mode::CodeModeSessionProvider;
+use motyga_code_mode::CodeModeToolKind;
+use motyga_code_mode::RuntimeResponse;
+use motyga_protocol::models::FunctionCallOutputContentItem;
 use serde_json::Value as JsonValue;
 use tokio::sync::OnceCell;
 use tokio_util::sync::CancellationToken;
@@ -36,11 +36,11 @@ use crate::tools::parallel::ToolCallRuntime;
 use crate::tools::router::ToolCall;
 use crate::tools::router::ToolCallSource;
 use crate::unified_exec::resolve_max_tokens;
-use codex_protocol::openai_models::ToolMode;
-use codex_tools::ToolName;
-use codex_utils_output_truncation::TruncationPolicy;
-use codex_utils_output_truncation::formatted_truncate_text_content_items_with_policy;
-use codex_utils_output_truncation::truncate_function_output_items_with_policy;
+use motyga_protocol::openai_models::ToolMode;
+use motyga_tools::ToolName;
+use motyga_utils_output_truncation::TruncationPolicy;
+use motyga_utils_output_truncation::formatted_truncate_text_content_items_with_policy;
+use motyga_utils_output_truncation::truncate_function_output_items_with_policy;
 
 use delegate::CodeModeDispatchBroker;
 use delegate::CodeModeDispatchWorker;
@@ -48,9 +48,9 @@ pub(crate) use execute_handler::CodeModeExecuteHandler;
 use response_adapter::into_function_call_output_content_items;
 pub(crate) use wait_handler::CodeModeWaitHandler;
 
-pub(crate) const PUBLIC_TOOL_NAME: &str = codex_code_mode::PUBLIC_TOOL_NAME;
-pub(crate) const WAIT_TOOL_NAME: &str = codex_code_mode::WAIT_TOOL_NAME;
-pub(crate) const DEFAULT_WAIT_YIELD_TIME_MS: u64 = codex_code_mode::DEFAULT_WAIT_YIELD_TIME_MS;
+pub(crate) const PUBLIC_TOOL_NAME: &str = motyga_code_mode::PUBLIC_TOOL_NAME;
+pub(crate) const WAIT_TOOL_NAME: &str = motyga_code_mode::WAIT_TOOL_NAME;
+pub(crate) const DEFAULT_WAIT_YIELD_TIME_MS: u64 = motyga_code_mode::DEFAULT_WAIT_YIELD_TIME_MS;
 
 /// Returns true for the un-namespaced code-mode `exec` tool.
 pub(crate) fn is_exec_tool_name(tool_name: &ToolName) -> bool {
@@ -87,22 +87,22 @@ impl CodeModeService {
 
     pub(crate) async fn execute(
         &self,
-        request: codex_code_mode::ExecuteRequest,
-    ) -> Result<codex_code_mode::StartedCell, String> {
+        request: motyga_code_mode::ExecuteRequest,
+    ) -> Result<motyga_code_mode::StartedCell, String> {
         self.session().await?.execute(request).await
     }
 
     pub(crate) async fn wait(
         &self,
-        request: codex_code_mode::WaitRequest,
-    ) -> Result<codex_code_mode::WaitOutcome, String> {
+        request: motyga_code_mode::WaitRequest,
+    ) -> Result<motyga_code_mode::WaitOutcome, String> {
         self.session().await?.wait(request).await
     }
 
     pub(crate) async fn terminate(
         &self,
         cell_id: CellId,
-    ) -> Result<codex_code_mode::WaitOutcome, String> {
+    ) -> Result<motyga_code_mode::WaitOutcome, String> {
         self.session().await?.terminate(cell_id).await
     }
 
@@ -123,7 +123,7 @@ impl CodeModeService {
         }
     }
 
-    pub(crate) fn mark_cell_ready_for_dispatch(&self, cell_id: &codex_code_mode::CellId) {
+    pub(crate) fn mark_cell_ready_for_dispatch(&self, cell_id: &motyga_code_mode::CellId) {
         self.dispatch_broker.mark_cell_ready_for_dispatch(cell_id);
     }
 
@@ -365,11 +365,11 @@ mod tests {
     use super::build_nested_tool_payload;
     use super::truncate_code_mode_result;
     use crate::tools::context::ToolPayload;
-    use codex_code_mode::CodeModeToolKind;
-    use codex_code_mode::ExecuteRequest;
-    use codex_code_mode::ProcessOwnedCodeModeSessionProvider;
-    use codex_protocol::models::FunctionCallOutputContentItem;
-    use codex_tools::ToolName;
+    use motyga_code_mode::CodeModeToolKind;
+    use motyga_code_mode::ExecuteRequest;
+    use motyga_code_mode::ProcessOwnedCodeModeSessionProvider;
+    use motyga_protocol::models::FunctionCallOutputContentItem;
+    use motyga_tools::ToolName;
     use serde_json::json;
 
     #[test]
@@ -429,7 +429,7 @@ mod tests {
     async fn missing_process_host_is_reported_without_failing_service_creation() {
         let service = CodeModeService::new(Arc::new(
             ProcessOwnedCodeModeSessionProvider::with_host_program(
-                "codex-code-mode-host-does-not-exist".into(),
+                "motyga-code-mode-host-does-not-exist".into(),
             ),
         ));
 

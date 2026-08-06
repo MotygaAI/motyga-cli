@@ -1,11 +1,11 @@
 use std::path::Path;
 
-use codex_app_server_protocol::ServerNotification;
-use codex_core::config::Config;
-use codex_protocol::protocol::SessionConfiguredEvent;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_core::config::Config;
+use motyga_protocol::protocol::SessionConfiguredEvent;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CodexStatus {
+pub enum MotygaStatus {
     Running,
     InitiateShutdown,
 }
@@ -20,10 +20,10 @@ pub(crate) trait EventProcessor {
     );
 
     /// Handle a single typed app-server notification emitted by the agent.
-    fn process_server_notification(&mut self, notification: ServerNotification) -> CodexStatus;
+    fn process_server_notification(&mut self, notification: ServerNotification) -> MotygaStatus;
 
     /// Handle a local exec warning that is not represented as an app-server notification.
-    fn process_warning(&mut self, message: String) -> CodexStatus;
+    fn process_warning(&mut self, message: String) -> MotygaStatus;
 
     fn print_final_output(&mut self) {}
 }

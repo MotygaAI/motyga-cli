@@ -1,9 +1,9 @@
-use codex_shell_command::bash::extract_bash_command;
-use codex_shell_command::bash::parse_shell_lc_plain_commands;
-use codex_shell_command::powershell::extract_powershell_command;
+use motyga_shell_command::bash::extract_bash_command;
+use motyga_shell_command::bash::parse_shell_lc_plain_commands;
+use motyga_shell_command::powershell::extract_powershell_command;
 
-const CANONICAL_BASH_SCRIPT_PREFIX: &str = "__codex_shell_script__";
-const CANONICAL_POWERSHELL_SCRIPT_PREFIX: &str = "__codex_powershell_script__";
+const CANONICAL_BASH_SCRIPT_PREFIX: &str = "__motyga_shell_script__";
+const CANONICAL_POWERSHELL_SCRIPT_PREFIX: &str = "__motyga_powershell_script__";
 
 /// Canonicalize command argv for approval-cache matching.
 ///

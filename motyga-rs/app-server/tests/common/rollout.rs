@@ -1,14 +1,14 @@
 use anyhow::Result;
-use codex_protocol::SessionId;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::GitInfo;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::TokenCountEvent;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::protocol::TokenUsageInfo;
+use motyga_protocol::SessionId;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::GitInfo;
+use motyga_protocol::protocol::SessionMeta;
+use motyga_protocol::protocol::SessionMetaLine;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::TokenCountEvent;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::protocol::TokenUsageInfo;
 use serde_json::json;
 use std::fs;
 use std::fs::FileTimes;
@@ -16,11 +16,11 @@ use std::path::Path;
 use std::path::PathBuf;
 use uuid::Uuid;
 
-pub fn rollout_path(codex_home: &Path, filename_ts: &str, thread_id: &str) -> PathBuf {
+pub fn rollout_path(motyga_home: &Path, filename_ts: &str, thread_id: &str) -> PathBuf {
     let year = &filename_ts[0..4];
     let month = &filename_ts[5..7];
     let day = &filename_ts[8..10];
-    codex_home
+    motyga_home
         .join("sessions")
         .join(year)
         .join(month)
@@ -37,7 +37,7 @@ pub fn rollout_path(codex_home: &Path, filename_ts: &str, thread_id: &str) -> Pa
 ///
 /// Returns the generated conversation/session UUID as a string.
 pub fn create_fake_rollout(
-    codex_home: &Path,
+    motyga_home: &Path,
     filename_ts: &str,
     meta_rfc3339: &str,
     preview: &str,
@@ -45,7 +45,7 @@ pub fn create_fake_rollout(
     git_info: Option<GitInfo>,
 ) -> Result<String> {
     create_fake_rollout_with_source(
-        codex_home,
+        motyga_home,
         filename_ts,
         meta_rfc3339,
         preview,
@@ -62,14 +62,14 @@ pub fn create_fake_rollout(
 /// non-zero and asymmetric so assertions catch swapped total/last fields and
 /// dropped cached or reasoning counters.
 pub fn create_fake_rollout_with_token_usage(
-    codex_home: &Path,
+    motyga_home: &Path,
     filename_ts: &str,
     meta_rfc3339: &str,
     preview: &str,
     model_provider: Option<&str>,
 ) -> Result<String> {
     let thread_id = create_fake_rollout(
-        codex_home,
+        motyga_home,
         filename_ts,
         meta_rfc3339,
         preview,
@@ -96,7 +96,7 @@ pub fn create_fake_rollout_with_token_usage(
         }),
         rate_limits: None,
     }))?;
-    let file_path = rollout_path(codex_home, filename_ts, &thread_id);
+    let file_path = rollout_path(motyga_home, filename_ts, &thread_id);
     let line = json!({
         "timestamp": meta_rfc3339,
         "type": "event_msg",
@@ -112,7 +112,7 @@ pub fn create_fake_rollout_with_token_usage(
 
 /// Create a minimal rollout file with an explicit session source.
 pub fn create_fake_rollout_with_source(
-    codex_home: &Path,
+    motyga_home: &Path,
     filename_ts: &str,
     meta_rfc3339: &str,
     preview: &str,
@@ -121,7 +121,7 @@ pub fn create_fake_rollout_with_source(
     source: SessionSource,
 ) -> Result<String> {
     create_fake_rollout_with_source_and_parent_thread_id(
-        codex_home,
+        motyga_home,
         filename_ts,
         meta_rfc3339,
         preview,
@@ -136,7 +136,7 @@ pub fn create_fake_rollout_with_source(
 /// Create a minimal rollout file with an explicit root session and control parent.
 #[allow(clippy::too_many_arguments)]
 pub fn create_fake_parented_rollout_with_source(
-    codex_home: &Path,
+    motyga_home: &Path,
     filename_ts: &str,
     meta_rfc3339: &str,
     preview: &str,
@@ -147,7 +147,7 @@ pub fn create_fake_parented_rollout_with_source(
     parent_thread_id: ThreadId,
 ) -> Result<String> {
     create_fake_rollout_with_source_and_parent_thread_id(
-        codex_home,
+        motyga_home,
         filename_ts,
         meta_rfc3339,
         preview,
@@ -161,7 +161,7 @@ pub fn create_fake_parented_rollout_with_source(
 
 #[allow(clippy::too_many_arguments)]
 fn create_fake_rollout_with_source_and_parent_thread_id(
-    codex_home: &Path,
+    motyga_home: &Path,
     filename_ts: &str,
     meta_rfc3339: &str,
     preview: &str,
@@ -176,7 +176,7 @@ fn create_fake_rollout_with_source_and_parent_thread_id(
     let conversation_id = ThreadId::from_string(&uuid_str)?;
     let session_id = session_id.unwrap_or_else(|| conversation_id.into());
 
-    let file_path = rollout_path(codex_home, filename_ts, &uuid_str);
+    let file_path = rollout_path(motyga_home, filename_ts, &uuid_str);
     let dir = file_path
         .parent()
         .ok_or_else(|| anyhow::anyhow!("missing rollout parent directory"))?;
@@ -190,7 +190,7 @@ fn create_fake_rollout_with_source_and_parent_thread_id(
         parent_thread_id,
         timestamp: meta_rfc3339.to_string(),
         cwd: PathBuf::from("/"),
-        originator: "codex".to_string(),
+        originator: "motyga".to_string(),
         cli_version: "0.0.0".to_string(),
         source,
         thread_source: None,
@@ -251,7 +251,7 @@ fn create_fake_rollout_with_source_and_parent_thread_id(
 }
 
 pub fn create_fake_rollout_with_text_elements(
-    codex_home: &Path,
+    motyga_home: &Path,
     filename_ts: &str,
     meta_rfc3339: &str,
     preview: &str,
@@ -267,7 +267,7 @@ pub fn create_fake_rollout_with_text_elements(
     let year = &filename_ts[0..4];
     let month = &filename_ts[5..7];
     let day = &filename_ts[8..10];
-    let dir = codex_home.join("sessions").join(year).join(month).join(day);
+    let dir = motyga_home.join("sessions").join(year).join(month).join(day);
     fs::create_dir_all(&dir)?;
 
     let file_path = dir.join(format!("rollout-{filename_ts}-{uuid}.jsonl"));
@@ -280,7 +280,7 @@ pub fn create_fake_rollout_with_text_elements(
         parent_thread_id: None,
         timestamp: meta_rfc3339.to_string(),
         cwd: PathBuf::from("/"),
-        originator: "codex".to_string(),
+        originator: "motyga".to_string(),
         cli_version: "0.0.0".to_string(),
         source: SessionSource::Cli,
         thread_source: None,

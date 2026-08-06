@@ -18,7 +18,7 @@ use crate::environment_provider::EnvironmentDefault;
 use crate::environment_provider::EnvironmentProvider;
 use crate::environment_provider::EnvironmentProviderSnapshot;
 use crate::environment_provider::normalize_exec_server_url;
-use crate::environment_toml::environment_provider_from_codex_home;
+use crate::environment_toml::environment_provider_from_motyga_home;
 use crate::local_file_system::LocalFileSystem;
 use crate::local_process::LocalProcess;
 use crate::process::ExecBackend;
@@ -28,22 +28,22 @@ use crate::remote_file_system::RemoteFileSystem;
 use crate::remote_process::RemoteProcess;
 use tokio_util::task::AbortOnDropHandle;
 
-pub const CODEX_EXEC_SERVER_URL_ENV_VAR: &str = "CODEX_EXEC_SERVER_URL";
-pub const CODEX_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR: &str =
-    "CODEX_EXEC_SERVER_NOISE_REGISTRY_URL";
-pub const CODEX_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR: &str =
-    "CODEX_EXEC_SERVER_NOISE_ENVIRONMENT_ID";
-pub const CODEX_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR: &str = "CODEX_EXEC_SERVER_NOISE_AUTH_TOKEN";
-pub const CODEX_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID_ENV_VAR: &str =
-    "CODEX_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID";
+pub const MOTYGA_EXEC_SERVER_URL_ENV_VAR: &str = "MOTYGA_EXEC_SERVER_URL";
+pub const MOTYGA_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR: &str =
+    "MOTYGA_EXEC_SERVER_NOISE_REGISTRY_URL";
+pub const MOTYGA_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR: &str =
+    "MOTYGA_EXEC_SERVER_NOISE_ENVIRONMENT_ID";
+pub const MOTYGA_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR: &str = "MOTYGA_EXEC_SERVER_NOISE_AUTH_TOKEN";
+pub const MOTYGA_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID_ENV_VAR: &str =
+    "MOTYGA_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID";
 
-/// Owns the execution/filesystem environments available to the Codex runtime.
+/// Owns the execution/filesystem environments available to the Motyga runtime.
 ///
 /// `EnvironmentManager` is a shared registry for concrete environments. Its
-/// default constructor preserves the legacy `CODEX_EXEC_SERVER_URL` behavior
+/// default constructor preserves the legacy `MOTYGA_EXEC_SERVER_URL` behavior
 /// while configured construction accepts a provider-supplied snapshot.
 ///
-/// Setting `CODEX_EXEC_SERVER_URL=none` disables environment access by leaving
+/// Setting `MOTYGA_EXEC_SERVER_URL=none` disables environment access by leaving
 /// the default environment unset and omitting the local environment. Callers
 /// use `default_environment().is_some()` as the signal for model-facing
 /// shell/filesystem tool availability.
@@ -99,15 +99,15 @@ impl EnvironmentManager {
     ///
     /// If `MOTYGA_HOME/environments.toml` is present, it defines the configured
     /// environments. Otherwise this preserves the legacy
-    /// `CODEX_EXEC_SERVER_URL` behavior.
-    pub async fn from_codex_home(
-        codex_home: impl AsRef<std::path::Path>,
+    /// `MOTYGA_EXEC_SERVER_URL` behavior.
+    pub async fn from_motyga_home(
+        motyga_home: impl AsRef<std::path::Path>,
         local_runtime_paths: Option<ExecServerRuntimePaths>,
     ) -> Result<Self, ExecServerError> {
         if let Some(config) = noise_environment_config_from_env()? {
             return Self::from_noise_environment_config(config, local_runtime_paths);
         }
-        let provider = environment_provider_from_codex_home(codex_home.as_ref())?;
+        let provider = environment_provider_from_motyga_home(motyga_home.as_ref())?;
         Self::from_snapshot(provider.snapshot().await?, local_runtime_paths)
     }
 
@@ -362,10 +362,10 @@ impl EnvironmentManager {
 fn noise_environment_config_from_env()
 -> Result<Option<NoiseRendezvousEnvironmentConfig>, ExecServerError> {
     noise_environment_config_from_values(
-        optional_environment_value(CODEX_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR),
-        optional_environment_value(CODEX_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR),
-        optional_environment_value(CODEX_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR),
-        optional_environment_value(CODEX_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID_ENV_VAR),
+        optional_environment_value(MOTYGA_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR),
+        optional_environment_value(MOTYGA_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR),
+        optional_environment_value(MOTYGA_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR),
+        optional_environment_value(MOTYGA_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID_ENV_VAR),
     )
 }
 
@@ -383,9 +383,9 @@ fn noise_environment_config_from_values(
             }
             _ => {
                 return Err(ExecServerError::EnvironmentRegistryConfig(format!(
-                    "Noise environment requires {CODEX_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR}, \
-{CODEX_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR}, and \
-{CODEX_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR}"
+                    "Noise environment requires {MOTYGA_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR}, \
+{MOTYGA_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR}, and \
+{MOTYGA_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR}"
                 )));
             }
         };
@@ -446,7 +446,7 @@ impl std::fmt::Debug for Environment {
 }
 
 impl Environment {
-    /// Builds an environment from the raw `CODEX_EXEC_SERVER_URL` value.
+    /// Builds an environment from the raw `MOTYGA_EXEC_SERVER_URL` value.
     pub fn create(
         exec_server_url: Option<String>,
         local_runtime_paths: ExecServerRuntimePaths,
@@ -459,7 +459,7 @@ impl Environment {
         Self::create_inner(exec_server_url, /*local_runtime_paths*/ None)
     }
 
-    /// Builds an environment from the raw `CODEX_EXEC_SERVER_URL` value and
+    /// Builds an environment from the raw `MOTYGA_EXEC_SERVER_URL` value and
     /// local runtime paths used when creating local filesystem helpers.
     fn create_inner(
         exec_server_url: Option<String>,
@@ -638,7 +638,7 @@ mod tests {
     use crate::client_api::StdioExecServerCommand;
     use crate::environment_provider::EnvironmentDefault;
     use crate::environment_provider::EnvironmentProviderSnapshot;
-    use codex_utils_path_uri::PathUri;
+    use motyga_utils_path_uri::PathUri;
     use pretty_assertions::assert_eq;
     use tokio::net::TcpListener;
     use tokio::time::timeout;
@@ -646,7 +646,7 @@ mod tests {
     fn test_runtime_paths() -> ExecServerRuntimePaths {
         ExecServerRuntimePaths::new(
             std::env::current_exe().expect("current exe"),
-            /*codex_linux_sandbox_exe*/ None,
+            /*motyga_linux_sandbox_exe*/ None,
         )
         .expect("runtime paths")
     }
@@ -1058,7 +1058,7 @@ mod tests {
         let environment = Environment::remote_with_transport(
             ExecServerTransportParams::StdioCommand {
                 command: StdioExecServerCommand {
-                    program: "codex-missing-exec-server-for-test".to_string(),
+                    program: "motyga-missing-exec-server-for-test".to_string(),
                     args: Vec::new(),
                     env: HashMap::new(),
                     cwd: None,
@@ -1195,7 +1195,7 @@ mod tests {
             .to_abs_path()
             .expect_err("sandbox cwd should not be native to this host");
         let sandbox = crate::FileSystemSandboxContext::from_permission_profile_with_cwd(
-            codex_protocol::models::PermissionProfile::workspace_write(),
+            motyga_protocol::models::PermissionProfile::workspace_write(),
             sandbox_cwd.clone(),
         );
 
@@ -1233,15 +1233,15 @@ mod tests {
     #[tokio::test]
     async fn test_environment_rejects_sandboxed_filesystem_without_runtime_paths() {
         let environment = Environment::default_for_tests();
-        let path = codex_utils_absolute_path::AbsolutePathBuf::from_absolute_path(
+        let path = motyga_utils_absolute_path::AbsolutePathBuf::from_absolute_path(
             std::env::current_exe().expect("current exe").as_path(),
         )
         .expect("absolute current exe");
-        let path = codex_utils_path_uri::PathUri::from_abs_path(&path);
+        let path = motyga_utils_path_uri::PathUri::from_abs_path(&path);
         let sandbox = crate::FileSystemSandboxContext::from_permission_profile(
-            codex_protocol::models::PermissionProfile::from_runtime_permissions(
-                &codex_protocol::permissions::FileSystemSandboxPolicy::restricted(Vec::new()),
-                codex_protocol::permissions::NetworkSandboxPolicy::Restricted,
+            motyga_protocol::models::PermissionProfile::from_runtime_permissions(
+                &motyga_protocol::permissions::FileSystemSandboxPolicy::restricted(Vec::new()),
+                motyga_protocol::permissions::NetworkSandboxPolicy::Restricted,
             ),
         );
 

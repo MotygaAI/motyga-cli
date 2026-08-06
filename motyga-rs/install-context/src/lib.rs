@@ -3,13 +3,13 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 const BIN_DIRNAME: &str = "bin";
-const PACKAGE_METADATA_FILENAME: &str = "codex-package.json";
-const PATH_DIRNAME: &str = "codex-path";
+const PACKAGE_METADATA_FILENAME: &str = "motyga-package.json";
+const PATH_DIRNAME: &str = "motyga-path";
 const RELEASES_DIRNAME: &str = "releases";
-const RESOURCES_DIRNAME: &str = "codex-resources";
+const RESOURCES_DIRNAME: &str = "motyga-resources";
 const STANDALONE_PACKAGES_DIRNAME: &str = "standalone";
 const ZSH_DIRNAME: &str = "zsh";
 static INSTALL_CONTEXT: OnceLock<InstallContext> = OnceLock::new();
@@ -21,10 +21,10 @@ pub enum StandalonePlatform {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CodexPackageLayout {
+pub struct MotygaPackageLayout {
     /// The package root that contains the metadata file and layout directories.
     pub package_dir: AbsolutePathBuf,
-    /// Directory containing the Codex entrypoint executable.
+    /// Directory containing the Motyga entrypoint executable.
     pub bin_dir: AbsolutePathBuf,
     /// Directory containing managed helper binaries and data files, when present.
     pub resources_dir: Option<AbsolutePathBuf>,
@@ -35,7 +35,7 @@ pub struct CodexPackageLayout {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InstallContext {
     pub method: InstallMethod,
-    pub package_layout: Option<CodexPackageLayout>,
+    pub package_layout: Option<MotygaPackageLayout>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -45,23 +45,23 @@ pub enum InstallMethod {
         /// such as
         /// `~/.motyga/packages/standalone/releases/0.111.0-x86_64-unknown-linux-musl`.
         /// Package-layout installs use the package root that contains `bin/`,
-        /// `codex-resources/`, and `codex-path/`.
+        /// `motyga-resources/`, and `motyga-path/`.
         release_dir: AbsolutePathBuf,
         /// The bundled resource directory for managed dependencies.
         resources_dir: Option<AbsolutePathBuf>,
         /// The platform of the standalone release, either `Unix` or `Windows`.
         platform: StandalonePlatform,
     },
-    /// A Codex binary launched through the npm-managed `codex.js` shim.
+    /// A Motyga binary launched through the npm-managed `motyga.js` shim.
     Npm,
-    /// A Codex binary launched through the bun-managed `codex.js` shim.
+    /// A Motyga binary launched through the bun-managed `motyga.js` shim.
     Bun,
-    /// A Codex binary that appears to come from a Homebrew install prefix.
+    /// A Motyga binary that appears to come from a Homebrew install prefix.
     Brew,
     /// Any other execution environment.
     ///
-    /// This commonly covers `cargo run`, app-bundled Codex binaries, custom
-    /// internal launchers, and tests that execute Codex from an arbitrary path.
+    /// This commonly covers `cargo run`, app-bundled Motyga binaries, custom
+    /// internal launchers, and tests that execute Motyga from an arbitrary path.
     Other,
 }
 
@@ -72,30 +72,30 @@ impl InstallContext {
         managed_by_npm: bool,
         managed_by_bun: bool,
     ) -> Self {
-        let codex_home = codex_utils_home_dir::find_codex_home().ok();
-        Self::from_exe_with_codex_home(
+        let motyga_home = motyga_utils_home_dir::find_motyga_home().ok();
+        Self::from_exe_with_motyga_home(
             is_macos,
             current_exe,
             managed_by_npm,
             managed_by_bun,
-            codex_home.as_deref(),
+            motyga_home.as_deref(),
         )
     }
 
-    fn from_exe_with_codex_home(
+    fn from_exe_with_motyga_home(
         is_macos: bool,
         current_exe: Option<&Path>,
         managed_by_npm: bool,
         managed_by_bun: bool,
-        codex_home: Option<&Path>,
+        motyga_home: Option<&Path>,
     ) -> Self {
-        let package_layout = current_exe.and_then(CodexPackageLayout::from_exe);
+        let package_layout = current_exe.and_then(MotygaPackageLayout::from_exe);
         let method = if managed_by_npm {
             InstallMethod::Npm
         } else if managed_by_bun {
             InstallMethod::Bun
         } else if let Some(exe_path) = current_exe {
-            install_method_from_exe(exe_path, codex_home, package_layout.as_ref(), is_macos)
+            install_method_from_exe(exe_path, motyga_home, package_layout.as_ref(), is_macos)
         } else {
             InstallMethod::Other
         };
@@ -109,8 +109,8 @@ impl InstallContext {
     pub fn current() -> &'static Self {
         INSTALL_CONTEXT.get_or_init(|| {
             let current_exe = std::env::current_exe().ok();
-            let managed_by_npm = std::env::var_os("CODEX_MANAGED_BY_NPM").is_some();
-            let managed_by_bun = std::env::var_os("CODEX_MANAGED_BY_BUN").is_some();
+            let managed_by_npm = std::env::var_os("MOTYGA_MANAGED_BY_NPM").is_some();
+            let managed_by_bun = std::env::var_os("MOTYGA_MANAGED_BY_BUN").is_some();
             Self::from_exe(
                 cfg!(target_os = "macos"),
                 current_exe.as_deref(),
@@ -181,7 +181,7 @@ impl InstallContext {
     }
 }
 
-impl CodexPackageLayout {
+impl MotygaPackageLayout {
     fn from_exe(exe_path: &Path) -> Option<Self> {
         let canonical_exe = canonical_absolute_path(exe_path)?;
         let exe_dir = canonical_exe.parent()?;
@@ -208,11 +208,11 @@ impl CodexPackageLayout {
 
 fn install_method_from_exe(
     exe_path: &Path,
-    codex_home: Option<&Path>,
-    package_layout: Option<&CodexPackageLayout>,
+    motyga_home: Option<&Path>,
+    package_layout: Option<&MotygaPackageLayout>,
     is_macos: bool,
 ) -> InstallMethod {
-    if let Some(standalone_method) = standalone_install_method(exe_path, codex_home, package_layout)
+    if let Some(standalone_method) = standalone_install_method(exe_path, motyga_home, package_layout)
     {
         return standalone_method;
     }
@@ -226,16 +226,16 @@ fn install_method_from_exe(
 
 fn standalone_install_method(
     exe_path: &Path,
-    codex_home: Option<&Path>,
-    package_layout: Option<&CodexPackageLayout>,
+    motyga_home: Option<&Path>,
+    package_layout: Option<&MotygaPackageLayout>,
 ) -> Option<InstallMethod> {
-    let canonical_codex_home = canonical_absolute_path(codex_home?)?;
+    let canonical_motyga_home = canonical_absolute_path(motyga_home?)?;
     let release_dir = if let Some(package_layout) = package_layout {
         package_layout.package_dir.clone()
     } else {
         canonical_absolute_path(exe_path)?.parent()?
     };
-    let releases_root = canonical_codex_home
+    let releases_root = canonical_motyga_home
         .join("packages")
         .join(STANDALONE_PACKAGES_DIRNAME)
         .join(RELEASES_DIRNAME);
@@ -286,17 +286,17 @@ mod tests {
     use pretty_assertions::assert_eq;
     use std::fs;
 
-    const TEST_RESOURCE_NAME: &str = "codex-test-helper";
+    const TEST_RESOURCE_NAME: &str = "motyga-test-helper";
 
     #[test]
     fn detects_standalone_install_from_release_layout() -> std::io::Result<()> {
-        let codex_home = tempfile::tempdir()?;
-        let release_dir = codex_home
+        let motyga_home = tempfile::tempdir()?;
+        let release_dir = motyga_home
             .path()
             .join("packages/standalone/releases/1.2.3-x86_64-unknown-linux-musl");
         let resources_dir = release_dir.join(RESOURCES_DIRNAME);
         fs::create_dir_all(&resources_dir)?;
-        let exe_path = release_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = release_dir.join(if cfg!(windows) { "motyga.exe" } else { "motyga" });
         fs::write(&exe_path, "")?;
         fs::write(resources_dir.join(default_rg_command()), "")?;
         fs::write(resources_dir.join(TEST_RESOURCE_NAME), "")?;
@@ -305,12 +305,12 @@ mod tests {
         let canonical_resources_dir =
             AbsolutePathBuf::from_absolute_path(resources_dir.canonicalize()?)?;
 
-        let context = InstallContext::from_exe_with_codex_home(
+        let context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ false,
             /*current_exe*/ Some(&exe_path),
             /*managed_by_npm*/ false,
             /*managed_by_bun*/ false,
-            /*codex_home*/ Some(codex_home.path()),
+            /*motyga_home*/ Some(motyga_home.path()),
         );
         assert_eq!(
             context,
@@ -332,20 +332,20 @@ mod tests {
 
     #[test]
     fn standalone_rg_falls_back_when_resources_are_missing() -> std::io::Result<()> {
-        let codex_home = tempfile::tempdir()?;
-        let release_dir = codex_home
+        let motyga_home = tempfile::tempdir()?;
+        let release_dir = motyga_home
             .path()
             .join("packages/standalone/releases/1.2.3-x86_64-unknown-linux-musl");
         fs::create_dir_all(&release_dir)?;
-        let exe_path = release_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = release_dir.join(if cfg!(windows) { "motyga.exe" } else { "motyga" });
         fs::write(&exe_path, "")?;
 
-        let context = InstallContext::from_exe_with_codex_home(
+        let context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ false,
             /*current_exe*/ Some(&exe_path),
             /*managed_by_npm*/ false,
             /*managed_by_bun*/ false,
-            /*codex_home*/ Some(codex_home.path()),
+            /*motyga_home*/ Some(motyga_home.path()),
         );
         assert_eq!(context.rg_command(), default_rg_command());
         Ok(())
@@ -361,7 +361,7 @@ mod tests {
         fs::create_dir_all(&resources_dir)?;
         fs::create_dir_all(&path_dir)?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "motyga.exe" } else { "motyga" });
         fs::write(&exe_path, "")?;
         fs::write(resources_dir.join(TEST_RESOURCE_NAME), "")?;
         fs::write(path_dir.join(default_rg_command()), "")?;
@@ -376,19 +376,19 @@ mod tests {
         let canonical_resources_dir =
             AbsolutePathBuf::from_absolute_path(resources_dir.canonicalize()?)?;
         let canonical_path_dir = AbsolutePathBuf::from_absolute_path(path_dir.canonicalize()?)?;
-        let package_layout = CodexPackageLayout {
+        let package_layout = MotygaPackageLayout {
             package_dir: canonical_package_dir,
             bin_dir: canonical_bin_dir,
             resources_dir: Some(canonical_resources_dir.clone()),
             path_dir: Some(canonical_path_dir.clone()),
         };
 
-        let context = InstallContext::from_exe_with_codex_home(
+        let context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ false,
             /*current_exe*/ Some(&exe_path),
             /*managed_by_npm*/ false,
             /*managed_by_bun*/ false,
-            /*codex_home*/ None,
+            /*motyga_home*/ None,
         );
         assert_eq!(
             context,
@@ -425,8 +425,8 @@ mod tests {
 
     #[test]
     fn standalone_package_layout_keeps_standalone_install_method() -> std::io::Result<()> {
-        let codex_home = tempfile::tempdir()?;
-        let package_dir = codex_home
+        let motyga_home = tempfile::tempdir()?;
+        let package_dir = motyga_home
             .path()
             .join("packages/standalone/releases/1.2.3-x86_64-unknown-linux-musl");
         let bin_dir = package_dir.join(BIN_DIRNAME);
@@ -436,7 +436,7 @@ mod tests {
         fs::create_dir_all(&resources_dir)?;
         fs::create_dir_all(&path_dir)?;
         fs::write(package_dir.join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "motyga.exe" } else { "motyga" });
         fs::write(&exe_path, "")?;
         fs::write(resources_dir.join(TEST_RESOURCE_NAME), "")?;
         fs::write(path_dir.join(default_rg_command()), "")?;
@@ -447,12 +447,12 @@ mod tests {
             AbsolutePathBuf::from_absolute_path(resources_dir.canonicalize()?)?;
         let canonical_path_dir = AbsolutePathBuf::from_absolute_path(path_dir.canonicalize()?)?;
 
-        let context = InstallContext::from_exe_with_codex_home(
+        let context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ false,
             /*current_exe*/ Some(&exe_path),
             /*managed_by_npm*/ false,
             /*managed_by_bun*/ false,
-            /*codex_home*/ Some(codex_home.path()),
+            /*motyga_home*/ Some(motyga_home.path()),
         );
         assert_eq!(
             context,
@@ -462,7 +462,7 @@ mod tests {
                     resources_dir: Some(canonical_resources_dir.clone()),
                     platform: standalone_platform(),
                 },
-                package_layout: Some(CodexPackageLayout {
+                package_layout: Some(MotygaPackageLayout {
                     package_dir: canonical_package_dir,
                     bin_dir: canonical_bin_dir,
                     resources_dir: Some(canonical_resources_dir.clone()),
@@ -491,17 +491,17 @@ mod tests {
         fs::create_dir_all(&bin_dir)?;
         fs::create_dir_all(&path_dir)?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "motyga.exe" } else { "motyga" });
         fs::write(&exe_path, "")?;
         fs::write(path_dir.join(default_rg_command()), "")?;
         let canonical_path_dir = AbsolutePathBuf::from_absolute_path(path_dir.canonicalize()?)?;
 
-        let context = InstallContext::from_exe_with_codex_home(
+        let context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ false,
             /*current_exe*/ Some(&exe_path),
             /*managed_by_npm*/ true,
             /*managed_by_bun*/ false,
-            /*codex_home*/ None,
+            /*motyga_home*/ None,
         );
         assert_eq!(context.method, InstallMethod::Npm);
         assert!(context.package_layout.is_some());
@@ -515,20 +515,20 @@ mod tests {
     }
 
     #[test]
-    fn standalone_package_rg_falls_back_when_codex_path_is_missing() -> std::io::Result<()> {
+    fn standalone_package_rg_falls_back_when_motyga_path_is_missing() -> std::io::Result<()> {
         let package_dir = tempfile::tempdir()?;
         let bin_dir = package_dir.path().join(BIN_DIRNAME);
         fs::create_dir_all(&bin_dir)?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "motyga.exe" } else { "motyga" });
         fs::write(&exe_path, "")?;
 
-        let context = InstallContext::from_exe_with_codex_home(
+        let context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ false,
             /*current_exe*/ Some(&exe_path),
             /*managed_by_npm*/ false,
             /*managed_by_bun*/ false,
-            /*codex_home*/ None,
+            /*motyga_home*/ None,
         );
         assert_eq!(context.rg_command(), default_rg_command());
         Ok(())
@@ -544,15 +544,15 @@ mod tests {
         fs::create_dir_all(resources_dir.join(TEST_RESOURCE_NAME))?;
         fs::create_dir_all(path_dir.join(default_rg_command()))?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "motyga.exe" } else { "motyga" });
         fs::write(&exe_path, "")?;
 
-        let context = InstallContext::from_exe_with_codex_home(
+        let context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ false,
             /*current_exe*/ Some(&exe_path),
             /*managed_by_npm*/ false,
             /*managed_by_bun*/ false,
-            /*codex_home*/ None,
+            /*motyga_home*/ None,
         );
         assert_eq!(context.rg_command(), default_rg_command());
         assert_eq!(context.bundled_resource(TEST_RESOURCE_NAME), None);
@@ -561,12 +561,12 @@ mod tests {
 
     #[test]
     fn npm_and_bun_take_precedence() {
-        let npm_context = InstallContext::from_exe_with_codex_home(
+        let npm_context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ false,
-            /*current_exe*/ Some(Path::new("/tmp/codex")),
+            /*current_exe*/ Some(Path::new("/tmp/motyga")),
             /*managed_by_npm*/ true,
             /*managed_by_bun*/ false,
-            /*codex_home*/ None,
+            /*motyga_home*/ None,
         );
         assert_eq!(
             npm_context,
@@ -576,12 +576,12 @@ mod tests {
             }
         );
 
-        let bun_context = InstallContext::from_exe_with_codex_home(
+        let bun_context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ false,
-            /*current_exe*/ Some(Path::new("/tmp/codex")),
+            /*current_exe*/ Some(Path::new("/tmp/motyga")),
             /*managed_by_npm*/ false,
             /*managed_by_bun*/ true,
-            /*codex_home*/ None,
+            /*motyga_home*/ None,
         );
         assert_eq!(
             bun_context,
@@ -594,12 +594,12 @@ mod tests {
 
     #[test]
     fn brew_is_detected_on_macos_prefixes() {
-        let context = InstallContext::from_exe_with_codex_home(
+        let context = InstallContext::from_exe_with_motyga_home(
             /*is_macos*/ true,
-            /*current_exe*/ Some(Path::new("/opt/homebrew/bin/codex")),
+            /*current_exe*/ Some(Path::new("/opt/homebrew/bin/motyga")),
             /*managed_by_npm*/ false,
             /*managed_by_bun*/ false,
-            /*codex_home*/ None,
+            /*motyga_home*/ None,
         );
         assert_eq!(
             context,

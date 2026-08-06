@@ -47,7 +47,7 @@ pub(crate) use picker::PET_PICKER_VIEW_ID;
 pub(crate) use picker::build_pet_picker_params;
 pub(crate) use preview::PetPickerPreviewState;
 
-pub(crate) const DEFAULT_PET_ID: &str = "codex";
+pub(crate) const DEFAULT_PET_ID: &str = "motyga";
 pub(crate) const DISABLED_PET_ID: &str = "disabled";
 
 /// Ensure that a selected built-in pet has a locally cached spritesheet.
@@ -59,10 +59,10 @@ pub(crate) const DISABLED_PET_ID: &str = "disabled";
 /// asset-fetch boundary.
 pub(crate) fn ensure_builtin_pack_for_pet(
     pet_id: &str,
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
 ) -> Result<()> {
     if let Some(pet) = catalog::builtin_pet(pet_id) {
-        asset_pack::ensure_builtin_pet(codex_home, pet)?;
+        asset_pack::ensure_builtin_pet(motyga_home, pet)?;
     }
     Ok(())
 }
@@ -321,9 +321,12 @@ mod tests {
 
     #[test]
     fn kitty_local_file_pet_image_uses_file_reference_without_inline_payload() {
+        use base64::Engine as _;
+
         let dir = tempfile::tempdir().unwrap();
         let frame = dir.path().join("frame.png");
         std::fs::write(&frame, b"png").unwrap();
+        let canonical_frame = frame.canonicalize().unwrap();
         let request = AmbientPetDraw {
             frame,
             protocol: ImageProtocol::KittyLocalFile,
@@ -344,7 +347,16 @@ mod tests {
         assert!(output.contains("a=d,d=I,i=49374,q=2;"));
         assert!(output.contains("\x1b[4;3H"));
         assert!(output.contains("a=T,t=f,f=100,c=4,r=2,q=2,i=49374;"));
-        assert!(!output.contains("cG5n"));
+        // `t=f` transmits the base64 of the PATH, not of the file bytes. Assert on
+        // that exact payload: the previous check for the absence of base64("png")
+        // was a proxy that misfires whenever the path length is a multiple of three,
+        // because then the trailing ".png" encodes to a chunk containing it.
+        let expected_payload = base64::engine::general_purpose::STANDARD
+            .encode(canonical_frame.to_string_lossy().as_bytes());
+        assert!(
+            output.contains(&expected_payload),
+            "expected the file path as payload, got: {output:?}"
+        );
         assert!(output.contains("\x1b8"));
     }
 

@@ -7,7 +7,7 @@
     }
   },
   "properties": {
-    "codexHome": {
+    "motygaHome": {
       "allOf": [
         {
           "$ref": "#/definitions/AbsolutePathBuf"
@@ -28,7 +28,7 @@
     }
   },
   "required": [
-    "codexHome",
+    "motygaHome",
     "platformFamily",
     "platformOs",
     "userAgent"

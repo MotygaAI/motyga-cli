@@ -1,8 +1,8 @@
-use codex_otel::MetricsClient;
+use motyga_otel::MetricsClient;
 
 use crate::MEMORY_TOOLS_NAMESPACE;
 
-pub(crate) const MEMORIES_TOOL_CALL_METRIC: &str = "codex.memories.tool.call";
+pub(crate) const MEMORIES_TOOL_CALL_METRIC: &str = "motyga.memories.tool.call";
 
 pub(crate) fn record_tool_call(
     metrics_client: Option<&MetricsClient>,

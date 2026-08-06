@@ -87,7 +87,7 @@
     "ApplyPatchApprovalParams": {
       "properties": {
         "callId": {
-          "description": "Use to correlate this with [codex_protocol::protocol::PatchApplyBeginEvent] and [codex_protocol::protocol::PatchApplyEndEvent].",
+          "description": "Use to correlate this with [motyga_protocol::protocol::PatchApplyBeginEvent] and [motyga_protocol::protocol::PatchApplyEndEvent].",
           "type": "string"
         },
         "conversationId": {
@@ -127,7 +127,7 @@
     "ChatgptAuthTokensRefreshParams": {
       "properties": {
         "previousAccountId": {
-          "description": "Workspace/account identifier that Codex was previously using.\n\nClients that manage multiple accounts/workspaces can use this as a hint to refresh the token for the correct workspace.\n\nThis may be `null` when the prior auth state did not include a workspace identifier (`chatgpt_account_id`).",
+          "description": "Workspace/account identifier that Motyga was previously using.\n\nClients that manage multiple accounts/workspaces can use this as a hint to refresh the token for the correct workspace.\n\nThis may be `null` when the prior auth state did not include a workspace identifier (`chatgpt_account_id`).",
           "type": [
             "string",
             "null"
@@ -145,7 +145,7 @@
     "ChatgptAuthTokensRefreshReason": {
       "oneOf": [
         {
-          "description": "Codex attempted a backend request and received `401 Unauthorized`.",
+          "description": "Motyga attempted a backend request and received `401 Unauthorized`.",
           "enum": [
             "unauthorized"
           ],
@@ -489,7 +489,7 @@
           ]
         },
         "callId": {
-          "description": "Use to correlate this with [codex_protocol::protocol::ExecCommandBeginEvent] and [codex_protocol::protocol::ExecCommandEndEvent].",
+          "description": "Use to correlate this with [motyga_protocol::protocol::ExecCommandBeginEvent] and [motyga_protocol::protocol::ExecCommandEndEvent].",
           "type": "string"
         },
         "command": {
@@ -1447,7 +1447,7 @@
           "type": "string"
         },
         "turnId": {
-          "description": "Active Codex turn when this elicitation was observed, if app-server could correlate one.\n\nThis is nullable because MCP models elicitation as a standalone server-to-client request identified by the MCP server request id. It may be triggered during a turn, but turn context is app-server correlation rather than part of the protocol identity of the elicitation itself.",
+          "description": "Active Motyga turn when this elicitation was observed, if app-server could correlate one.\n\nThis is nullable because MCP models elicitation as a standalone server-to-client request identified by the MCP server request id. It may be triggered during a turn, but turn context is app-server correlation rather than part of the protocol identity of the elicitation itself.",
           "type": [
             "string",
             "null"

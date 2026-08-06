@@ -1,8 +1,8 @@
-use codex_connectors::parse_plugin_app_config;
-use codex_core_plugins::ResolvedExecutorPlugin;
-use codex_plugin::AppDeclaration;
-use codex_plugin::PluginResourceLocator;
-use codex_utils_path_uri::PathUri;
+use motyga_connectors::parse_plugin_app_config;
+use motyga_core_plugins::ResolvedExecutorPlugin;
+use motyga_plugin::AppDeclaration;
+use motyga_plugin::PluginResourceLocator;
+use motyga_utils_path_uri::PathUri;
 use std::io;
 use thiserror::Error;
 

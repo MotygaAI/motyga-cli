@@ -17,16 +17,16 @@ use std::time::Duration;
 use std::time::Instant;
 
 use anyhow::Context as _;
-use codex_config::types::AuthKeyringBackendKind;
-use codex_config::types::OAuthCredentialsStoreMode;
-use codex_exec_server::Environment;
-use codex_exec_server::ExecServerClient;
-use codex_exec_server::HttpClient;
-use codex_exec_server::RemoteExecServerConnectArgs;
-use codex_rmcp_client::ElicitationAction;
-use codex_rmcp_client::ElicitationResponse;
-use codex_rmcp_client::RmcpClient;
-use codex_utils_cargo_bin::CargoBinError;
+use motyga_config::types::AuthKeyringBackendKind;
+use motyga_config::types::OAuthCredentialsStoreMode;
+use motyga_exec_server::Environment;
+use motyga_exec_server::ExecServerClient;
+use motyga_exec_server::HttpClient;
+use motyga_exec_server::RemoteExecServerConnectArgs;
+use motyga_rmcp_client::ElicitationAction;
+use motyga_rmcp_client::ElicitationResponse;
+use motyga_rmcp_client::RmcpClient;
+use motyga_utils_cargo_bin::CargoBinError;
 use futures::FutureExt as _;
 use pretty_assertions::assert_eq;
 use rmcp::model::CallToolResult;
@@ -51,7 +51,7 @@ const INITIALIZED_NOTIFICATION_POST_FAILURE_CONTROL_PATH: &str =
     "/test/control/initialized-notification-post-failure";
 
 fn streamable_http_server_bin() -> Result<PathBuf, CargoBinError> {
-    codex_utils_cargo_bin::cargo_bin("test_streamable_http_server")
+    motyga_utils_cargo_bin::cargo_bin("test_streamable_http_server")
 }
 
 fn init_params() -> InitializeRequestParams {
@@ -64,7 +64,7 @@ fn init_params() -> InitializeRequestParams {
     });
     InitializeRequestParams::new(
         capabilities,
-        Implementation::new("codex-test", "0.0.0-test").with_title("Codex rmcp recovery test"),
+        Implementation::new("motyga-test", "0.0.0-test").with_title("Motyga rmcp recovery test"),
     )
     .with_protocol_version(ProtocolVersion::V_2025_06_18)
 }
@@ -317,7 +317,7 @@ pub(crate) async fn spawn_streamable_http_server() -> anyhow::Result<(Child, Str
 
 /// Owns the exec-server process used by the remote-client integration test.
 pub(crate) struct ExecServerProcess {
-    _codex_home: TempDir,
+    _motyga_home: TempDir,
     child: Child,
     pub(crate) client: ExecServerClient,
 }
@@ -331,14 +331,14 @@ impl Drop for ExecServerProcess {
 
 /// Starts a local exec-server and connects an initialized `ExecServerClient`.
 pub(crate) async fn spawn_exec_server() -> anyhow::Result<ExecServerProcess> {
-    let codex_home = TempDir::new()?;
-    let mut child = Command::new(codex_utils_cargo_bin::cargo_bin("motyga")?)
+    let motyga_home = TempDir::new()?;
+    let mut child = Command::new(motyga_utils_cargo_bin::cargo_bin("motyga")?)
         .args(["exec-server", "--listen", "ws://127.0.0.1:0"])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .kill_on_drop(true)
-        .env("MOTYGA_HOME", codex_home.path())
+        .env("MOTYGA_HOME", motyga_home.path())
         .spawn()?;
 
     let websocket_url = read_exec_server_listen_url(&mut child).await?;
@@ -349,13 +349,13 @@ pub(crate) async fn spawn_exec_server() -> anyhow::Result<ExecServerProcess> {
     .await?;
 
     Ok(ExecServerProcess {
-        _codex_home: codex_home,
+        _motyga_home: motyga_home,
         child,
         client,
     })
 }
 
-/// Reads the websocket URL printed by `codex exec-server --listen`.
+/// Reads the websocket URL printed by `motyga exec-server --listen`.
 async fn read_exec_server_listen_url(child: &mut Child) -> anyhow::Result<String> {
     let stdout = child
         .stdout

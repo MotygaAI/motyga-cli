@@ -4,7 +4,7 @@ use crate::app_mcp_routing::apply_app_mcp_routing_policy;
 use crate::installed_marketplaces::installed_marketplace_roots_from_layer_stack;
 use crate::is_openai_curated_marketplace_name;
 use crate::loader::PluginHookLoadOutcome;
-use crate::loader::configured_curated_plugin_ids_from_codex_home;
+use crate::loader::configured_curated_plugin_ids_from_motyga_home;
 use crate::loader::curated_plugin_cache_version;
 use crate::loader::load_plugin_apps_from_manifest;
 use crate::loader::load_plugin_hooks;
@@ -56,35 +56,35 @@ use crate::store::PluginInstallResult as StorePluginInstallResult;
 use crate::store::PluginStore;
 use crate::store::PluginStoreError;
 use crate::tool_suggest_metadata::ToolSuggestMetadataCache;
-use codex_analytics::AnalyticsEventsClient;
-use codex_config::ConfigLayerStack;
-use codex_config::clear_user_plugin;
-use codex_config::set_user_plugin_enabled;
-use codex_config::types::PluginConfig;
-use codex_config::types::ToolSuggestDisabledTool;
-use codex_config::types::ToolSuggestDiscoverableType;
-use codex_core_skills::PluginSkillSnapshots;
-use codex_core_skills::SkillMetadata;
-use codex_core_skills::config_rules::SkillConfigRules;
-use codex_core_skills::config_rules::skill_config_rules_from_stack;
-use codex_hooks::plugin_hook_declarations;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_plugin::AppConnectorId;
-use codex_plugin::PluginCapabilitySummary;
-use codex_plugin::PluginId;
-use codex_plugin::PluginIdError;
-use codex_plugin::PluginTelemetryMetadata;
-use codex_plugin::app_connector_ids_from_declarations;
-use codex_plugin::prompt_safe_plugin_description;
-use codex_protocol::auth::AuthMode;
-use codex_protocol::protocol::HookEventName;
-use codex_protocol::protocol::Product;
-use codex_tools::DiscoverablePluginInfo;
-use codex_tools::DiscoverableTool;
-use codex_tools::filter_request_plugin_install_discoverable_tools_for_client;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_plugins::PluginSkillRoot;
+use motyga_analytics::AnalyticsEventsClient;
+use motyga_config::ConfigLayerStack;
+use motyga_config::clear_user_plugin;
+use motyga_config::set_user_plugin_enabled;
+use motyga_config::types::PluginConfig;
+use motyga_config::types::ToolSuggestDisabledTool;
+use motyga_config::types::ToolSuggestDiscoverableType;
+use motyga_core_skills::PluginSkillSnapshots;
+use motyga_core_skills::SkillMetadata;
+use motyga_core_skills::config_rules::SkillConfigRules;
+use motyga_core_skills::config_rules::skill_config_rules_from_stack;
+use motyga_hooks::plugin_hook_declarations;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_plugin::AppConnectorId;
+use motyga_plugin::PluginCapabilitySummary;
+use motyga_plugin::PluginId;
+use motyga_plugin::PluginIdError;
+use motyga_plugin::PluginTelemetryMetadata;
+use motyga_plugin::app_connector_ids_from_declarations;
+use motyga_plugin::prompt_safe_plugin_description;
+use motyga_protocol::auth::AuthMode;
+use motyga_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::Product;
+use motyga_tools::DiscoverablePluginInfo;
+use motyga_tools::DiscoverableTool;
+use motyga_tools::filter_request_plugin_install_discoverable_tools_for_client;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_plugins::PluginSkillRoot;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::Path;
@@ -131,7 +131,7 @@ impl PluginsConfigInput {
 pub struct RecommendedPluginCandidatesInput<'a> {
     pub plugins_config: &'a PluginsConfigInput,
     pub loaded_plugins: &'a PluginLoadOutcome,
-    pub auth: Option<&'a CodexAuth>,
+    pub auth: Option<&'a MotygaAuth>,
     pub disabled_tools: &'a [ToolSuggestDisabledTool],
     pub app_server_client_name: Option<&'a str>,
 }
@@ -158,7 +158,7 @@ struct CachedFeaturedPluginIds {
 
 struct RemoteInstalledPluginsCacheRefreshRequest {
     service_config: RemotePluginServiceConfig,
-    auth: Option<CodexAuth>,
+    auth: Option<MotygaAuth>,
     notify: RemoteInstalledPluginsCacheRefreshNotify,
     // App-server attaches side effects such as skills metadata invalidation and MCP refreshes when
     // remote installed state changes.
@@ -182,7 +182,7 @@ struct RemoteInstalledPluginsCacheRefreshState {
 
 struct GlobalRemoteCatalogCacheRefreshRequest {
     service_config: RemotePluginServiceConfig,
-    auth: Option<CodexAuth>,
+    auth: Option<MotygaAuth>,
 }
 
 #[derive(Default)]
@@ -229,13 +229,13 @@ fn remote_plugin_service_config(config: &PluginsConfigInput) -> RemotePluginServ
 
 fn featured_plugin_ids_cache_key(
     config: &PluginsConfigInput,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
 ) -> FeaturedPluginIdsCacheKey {
     FeaturedPluginIdsCacheKey {
         chatgpt_base_url: config.chatgpt_base_url.clone(),
-        account_id: auth.and_then(CodexAuth::get_account_id),
-        chatgpt_user_id: auth.and_then(CodexAuth::get_chatgpt_user_id),
-        is_workspace_account: auth.is_some_and(CodexAuth::is_workspace_account),
+        account_id: auth.and_then(MotygaAuth::get_account_id),
+        chatgpt_user_id: auth.and_then(MotygaAuth::get_chatgpt_user_id),
+        is_workspace_account: auth.is_some_and(MotygaAuth::is_workspace_account),
     }
 }
 
@@ -352,7 +352,7 @@ impl From<PluginDetail> for PluginCapabilitySummary {
 }
 
 pub struct PluginsManager {
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     store: PluginStore,
     featured_plugin_ids_cache: RwLock<Option<CachedFeaturedPluginIds>>,
     recommended_plugins_cache: RwLock<HashMap<RecommendedPluginsCacheKey, RecommendedPluginsMode>>,
@@ -395,13 +395,13 @@ struct PluginLoadCacheKey {
 impl PluginLoadCacheKey {
     fn from_config(
         config: &PluginsConfigInput,
-        codex_home: &Path,
+        motyga_home: &Path,
         remote_global_catalog_active: bool,
     ) -> Self {
         Self {
             configured_plugins: configured_plugins_from_stack(
                 &config.config_layer_stack,
-                codex_home,
+                motyga_home,
             ),
             skill_config_rules: skill_config_rules_from_stack(&config.config_layer_stack),
             remote_global_catalog_active,
@@ -410,12 +410,12 @@ impl PluginLoadCacheKey {
 }
 
 impl PluginsManager {
-    pub fn new(codex_home: PathBuf) -> Self {
-        Self::new_with_options(codex_home, Some(Product::Codex), /*auth_mode*/ None)
+    pub fn new(motyga_home: PathBuf) -> Self {
+        Self::new_with_options(motyga_home, Some(Product::Motyga), /*auth_mode*/ None)
     }
 
     pub fn new_with_options(
-        codex_home: PathBuf,
+        motyga_home: PathBuf,
         restriction_product: Option<Product>,
         auth_mode: Option<AuthMode>,
     ) -> Self {
@@ -427,8 +427,8 @@ impl PluginsManager {
         //
         // This assumes a single MOTYGA_HOME is only used by one product.
         Self {
-            codex_home: codex_home.clone(),
-            store: PluginStore::new(codex_home),
+            motyga_home: motyga_home.clone(),
+            store: PluginStore::new(motyga_home),
             featured_plugin_ids_cache: RwLock::new(None),
             recommended_plugins_cache: RwLock::new(HashMap::new()),
             recommended_plugins_refreshes: RwLock::new(HashMap::new()),
@@ -472,7 +472,7 @@ impl PluginsManager {
     }
 
     fn remote_global_catalog_active(&self, config: &PluginsConfigInput) -> bool {
-        config.remote_plugin_enabled && self.auth_mode().is_some_and(AuthMode::uses_codex_backend)
+        config.remote_plugin_enabled && self.auth_mode().is_some_and(AuthMode::uses_motyga_backend)
     }
 
     pub fn set_analytics_events_client(&self, analytics_events_client: AnalyticsEventsClient) {
@@ -508,7 +508,7 @@ impl PluginsManager {
         }
         let key = PluginLoadCacheKey::from_config(
             config,
-            self.codex_home.as_path(),
+            self.motyga_home.as_path(),
             self.remote_global_catalog_active(config),
         );
         self.loaded_plugins_cache
@@ -542,7 +542,7 @@ impl PluginsManager {
         let remote_global_catalog_active = self.remote_global_catalog_active(config);
         let cache_key = PluginLoadCacheKey::from_config(
             config,
-            self.codex_home.as_path(),
+            self.motyga_home.as_path(),
             remote_global_catalog_active,
         );
         if !force_reload && let Some(plugins) = self.cached_loaded_plugins(&cache_key) {
@@ -844,12 +844,12 @@ impl PluginsManager {
     pub fn cached_global_remote_discoverable_plugins_for_config(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&CodexAuth>,
+        auth: Option<&MotygaAuth>,
     ) -> Vec<crate::remote::RemoteDiscoverablePlugin> {
         if !config.plugins_enabled || !config.remote_plugin_enabled {
             return Vec::new();
         }
-        let Some(auth) = auth.filter(|auth| auth.uses_codex_backend()) else {
+        let Some(auth) = auth.filter(|auth| auth.uses_motyga_backend()) else {
             return Vec::new();
         };
         let Some(account_id) = auth.get_account_id() else {
@@ -860,7 +860,7 @@ impl PluginsManager {
         }
 
         crate::remote::cached_global_remote_discoverable_plugins(
-            self.codex_home.as_path(),
+            self.motyga_home.as_path(),
             &remote_plugin_service_config(config),
             auth,
         )
@@ -869,7 +869,7 @@ impl PluginsManager {
     pub async fn build_and_cache_remote_installed_plugin_marketplaces(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&CodexAuth>,
+        auth: Option<&MotygaAuth>,
         visible_marketplaces: &[&str],
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) -> Result<Vec<crate::remote::RemoteMarketplace>, RemotePluginCatalogError> {
@@ -920,7 +920,7 @@ impl PluginsManager {
     pub fn maybe_start_remote_plugin_caches_refresh(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<CodexAuth>,
+        auth: Option<MotygaAuth>,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) {
         self.maybe_start_remote_installed_plugins_cache_refresh_with_notify(
@@ -942,7 +942,7 @@ impl PluginsManager {
     pub fn maybe_start_remote_installed_plugins_cache_refresh_after_mutation(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<CodexAuth>,
+        auth: Option<MotygaAuth>,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) {
         self.maybe_start_remote_installed_plugins_cache_refresh_with_notify(
@@ -956,7 +956,7 @@ impl PluginsManager {
     fn maybe_start_remote_installed_plugins_cache_refresh_with_notify(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<CodexAuth>,
+        auth: Option<MotygaAuth>,
         notify: RemoteInstalledPluginsCacheRefreshNotify,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) {
@@ -977,7 +977,7 @@ impl PluginsManager {
     pub fn maybe_start_remote_installed_plugin_bundle_sync(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<CodexAuth>,
+        auth: Option<MotygaAuth>,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) {
         if !config.plugins_enabled {
@@ -996,7 +996,7 @@ impl PluginsManager {
         });
 
         crate::remote::maybe_start_remote_installed_plugin_bundle_sync(
-            self.codex_home.clone(),
+            self.motyga_home.clone(),
             remote_plugin_service_config(config),
             auth,
             Some(on_local_cache_changed),
@@ -1006,7 +1006,7 @@ impl PluginsManager {
     fn maybe_start_global_remote_catalog_cache_refresh(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<CodexAuth>,
+        auth: Option<MotygaAuth>,
     ) {
         if !config.plugins_enabled || !config.remote_plugin_enabled {
             return;
@@ -1021,7 +1021,7 @@ impl PluginsManager {
     pub fn maybe_start_plugin_list_background_tasks_for_config(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<CodexAuth>,
+        auth: Option<MotygaAuth>,
         roots: &[AbsolutePathBuf],
         options: PluginListBackgroundTaskOptions,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
@@ -1093,7 +1093,7 @@ impl PluginsManager {
     pub async fn featured_plugin_ids_for_config(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&CodexAuth>,
+        auth: Option<&MotygaAuth>,
     ) -> Result<Vec<String>, RemotePluginFetchError> {
         if !config.plugins_enabled {
             return Ok(Vec::new());
@@ -1124,11 +1124,11 @@ impl PluginsManager {
     pub async fn recommended_plugins_mode_for_config(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&CodexAuth>,
+        auth: Option<&MotygaAuth>,
     ) -> RecommendedPluginsMode {
         if !config.plugins_enabled
             || !config.remote_plugin_enabled
-            || !auth.is_some_and(CodexAuth::uses_codex_backend)
+            || !auth.is_some_and(MotygaAuth::uses_motyga_backend)
         {
             return RecommendedPluginsMode::Legacy;
         }
@@ -1310,7 +1310,7 @@ impl PluginsManager {
             MarketplacePolicy::from_requirements(config_layer_stack.requirements())
                 .validate_install(
                     config_layer_stack,
-                    self.codex_home.as_path(),
+                    self.motyga_home.as_path(),
                     &request.marketplace_path,
                     &resolved.plugin_id.marketplace_name,
                 )
@@ -1328,7 +1328,7 @@ impl PluginsManager {
     pub async fn install_plugin_with_remote_sync(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&CodexAuth>,
+        auth: Option<&MotygaAuth>,
         request: PluginInstallRequest,
     ) -> Result<PluginInstallOutcome, PluginInstallError> {
         let resolved = self.resolve_installable_plugin(&config.config_layer_stack, &request)?;
@@ -1425,7 +1425,7 @@ impl PluginsManager {
         let auth_policy = resolved.policy.authentication;
         let plugin_version =
             if is_openai_curated_marketplace_name(&resolved.plugin_id.marketplace_name) {
-                let curated_plugin_version = read_curated_plugins_sha(self.codex_home.as_path())
+                let curated_plugin_version = read_curated_plugins_sha(self.motyga_home.as_path())
                     .ok_or_else(|| {
                         PluginStoreError::Invalid(
                             "local curated marketplace sha is not available".to_string(),
@@ -1436,14 +1436,14 @@ impl PluginsManager {
                 None
             };
         let store = self.store.clone();
-        let codex_home = self.codex_home.clone();
+        let motyga_home = self.motyga_home.clone();
         let manifest_fallback_contents = resolved
             .manifest_fallback
             .contents_if_has_metadata()
             .map(str::to_string);
         let result: StorePluginInstallResult = tokio::task::spawn_blocking(move || {
             let materialized =
-                materialize_marketplace_plugin_source(codex_home.as_path(), &resolved.source)
+                materialize_marketplace_plugin_source(motyga_home.as_path(), &resolved.source)
                     .map_err(PluginStoreError::Invalid)?;
             let source_path = materialized.path;
             match (plugin_version, manifest_fallback_contents.as_deref()) {
@@ -1469,7 +1469,7 @@ impl PluginsManager {
         .map_err(PluginInstallError::join)??;
 
         set_user_plugin_enabled(
-            &self.codex_home,
+            &self.motyga_home,
             result.plugin_id.as_key(),
             /*enabled*/ true,
         )
@@ -1503,7 +1503,7 @@ impl PluginsManager {
     pub async fn uninstall_plugin_with_remote_sync(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&CodexAuth>,
+        auth: Option<&MotygaAuth>,
         plugin_id: String,
     ) -> Result<(), PluginUninstallError> {
         // TODO: Remove this legacy remote-sync path once remote plugins have
@@ -1536,7 +1536,7 @@ impl PluginsManager {
             .await
             .map_err(PluginUninstallError::join)??;
 
-        clear_user_plugin(&self.codex_home, plugin_id.as_key())
+        clear_user_plugin(&self.motyga_home, plugin_id.as_key())
             .await
             .map_err(anyhow::Error::from)?;
 
@@ -1689,7 +1689,7 @@ impl PluginsManager {
         MarketplacePolicy::from_requirements(config.config_layer_stack.requirements())
             .validate_install(
                 &config.config_layer_stack,
-                self.codex_home.as_path(),
+                self.motyga_home.as_path(),
                 &request.marketplace_path,
                 &plugin.plugin_id.marketplace_name,
             )
@@ -1804,10 +1804,10 @@ impl PluginsManager {
                 ))
             })?
         } else {
-            let codex_home = self.codex_home.clone();
+            let motyga_home = self.motyga_home.clone();
             let source = plugin.source.clone();
             let materialized = tokio::task::spawn_blocking(move || {
-                materialize_marketplace_plugin_source(codex_home.as_path(), &source)
+                materialize_marketplace_plugin_source(motyga_home.as_path(), &source)
             })
             .await
             .map_err(|err| {
@@ -1824,7 +1824,7 @@ impl PluginsManager {
             ));
         }
         let manifest =
-            if codex_utils_plugins::find_plugin_manifest_path(source_path.as_path()).is_some() {
+            if motyga_utils_plugins::find_plugin_manifest_path(source_path.as_path()).is_some() {
                 load_plugin_manifest(source_path.as_path())
             } else {
                 plugin
@@ -1849,7 +1849,7 @@ impl PluginsManager {
             &plugin_id,
             &manifest,
             self.restriction_product,
-            &codex_core_skills::config_rules::skill_config_rules_from_stack(
+            &motyga_core_skills::config_rules::skill_config_rules_from_stack(
                 &config.config_layer_stack,
             ),
             /*plugin_skill_snapshots*/ None,
@@ -1925,7 +1925,7 @@ impl PluginsManager {
     ) {
         if config.plugins_enabled {
             let use_remote_global_catalog =
-                config.remote_plugin_enabled && auth_manager.current_auth_uses_codex_backend();
+                config.remote_plugin_enabled && auth_manager.current_auth_uses_motyga_backend();
             if !use_remote_global_catalog {
                 self.start_curated_repo_sync();
             }
@@ -1998,7 +1998,7 @@ impl PluginsManager {
                 );
                 if config_for_remote_sync.remote_plugin_enabled {
                     match crate::remote::fetch_and_cache_global_remote_plugin_catalog(
-                        manager.codex_home.as_path(),
+                        manager.motyga_home.as_path(),
                         &remote_plugin_service_config(&config_for_remote_sync),
                         auth.as_ref(),
                     )
@@ -2042,7 +2042,7 @@ impl PluginsManager {
         marketplace_name: Option<&str>,
     ) -> Result<ConfiguredMarketplaceUpgradeOutcome, String> {
         let mut outcome = upgrade_configured_git_marketplaces(
-            self.codex_home.as_path(),
+            self.motyga_home.as_path(),
             &config.config_layer_stack,
             marketplace_name,
         );
@@ -2056,13 +2056,13 @@ impl PluginsManager {
         if !outcome.upgraded_roots.is_empty() {
             let mut configured_plugin_keys = configured_plugins_from_stack(
                 &config.config_layer_stack,
-                self.codex_home.as_path(),
+                self.motyga_home.as_path(),
             )
             .into_keys()
             .collect::<Vec<_>>();
             configured_plugin_keys.sort_unstable();
             match refresh_non_curated_plugin_cache_force_reinstall_detailed(
-                self.codex_home.as_path(),
+                self.motyga_home.as_path(),
                 &outcome.upgraded_roots,
                 &configured_plugin_keys,
             ) {
@@ -2199,7 +2199,7 @@ impl PluginsManager {
             .filter_map(|marketplace| {
                 match policy.validate_install(
                     &config.config_layer_stack,
-                    self.codex_home.as_path(),
+                    self.motyga_home.as_path(),
                     &marketplace.path,
                     &marketplace.name,
                 ) {
@@ -2219,7 +2219,7 @@ impl PluginsManager {
         roots.sort_unstable();
         roots.dedup();
         let mut configured_plugin_keys =
-            configured_plugins_from_stack(&config.config_layer_stack, self.codex_home.as_path())
+            configured_plugins_from_stack(&config.config_layer_stack, self.motyga_home.as_path())
                 .into_keys()
                 .collect::<Vec<_>>();
         configured_plugin_keys.sort_unstable();
@@ -2288,16 +2288,16 @@ impl PluginsManager {
             return;
         }
         let manager = Arc::clone(self);
-        let codex_home = self.codex_home.clone();
+        let motyga_home = self.motyga_home.clone();
         if let Err(err) = std::thread::Builder::new()
             .name("plugins-curated-repo-sync".to_string())
             .spawn(
-                move || match sync_openai_plugins_repo(codex_home.as_path()) {
+                move || match sync_openai_plugins_repo(motyga_home.as_path()) {
                     Ok(curated_plugin_version) => {
                         let configured_curated_plugin_ids =
-                            configured_curated_plugin_ids_from_codex_home(codex_home.as_path());
+                            configured_curated_plugin_ids_from_motyga_home(motyga_home.as_path());
                         match refresh_curated_plugin_cache(
-                            codex_home.as_path(),
+                            motyga_home.as_path(),
                             &curated_plugin_version,
                             &configured_curated_plugin_ids,
                         ) {
@@ -2401,7 +2401,7 @@ impl PluginsManager {
             };
 
             match crate::remote::fetch_and_cache_global_remote_plugin_catalog(
-                self.codex_home.as_path(),
+                self.motyga_home.as_path(),
                 &request.service_config,
                 request.auth.as_ref(),
             )
@@ -2444,14 +2444,14 @@ impl PluginsManager {
             let refresh_result = match request.mode {
                 NonCuratedCacheRefreshMode::IfVersionChanged => {
                     refresh_non_curated_plugin_cache_detailed(
-                        self.codex_home.as_path(),
+                        self.motyga_home.as_path(),
                         &request.roots,
                         &request.configured_plugin_keys,
                     )
                 }
                 NonCuratedCacheRefreshMode::ForceReinstall => {
                     refresh_non_curated_plugin_cache_force_reinstall_detailed(
-                        self.codex_home.as_path(),
+                        self.motyga_home.as_path(),
                         &request.roots,
                         &request.configured_plugin_keys,
                     )
@@ -2498,7 +2498,7 @@ impl PluginsManager {
         config: &PluginsConfigInput,
     ) -> (HashSet<String>, HashSet<String>) {
         let configured_plugins =
-            configured_plugins_from_stack(&config.config_layer_stack, self.codex_home.as_path());
+            configured_plugins_from_stack(&config.config_layer_stack, self.motyga_home.as_path());
         let installed_plugins = configured_plugins
             .keys()
             .filter(|plugin_key| {
@@ -2526,7 +2526,7 @@ impl PluginsManager {
         let mut roots = additional_roots.to_vec();
         roots.extend(installed_marketplace_roots_from_layer_stack(
             &config.config_layer_stack,
-            self.codex_home.as_path(),
+            self.motyga_home.as_path(),
         ));
         let curated_marketplace_path = if include_openai_curated {
             if matches!(
@@ -2534,12 +2534,12 @@ impl PluginsManager {
                 Some(AuthMode::ApiKey | AuthMode::BedrockApiKey)
             ) {
                 let api_marketplace_path =
-                    curated_plugins_api_marketplace_path(self.codex_home.as_path());
+                    curated_plugins_api_marketplace_path(self.motyga_home.as_path());
                 api_marketplace_path
                     .is_file()
                     .then_some(api_marketplace_path)
             } else {
-                let curated_repo_root = curated_plugins_repo_path(self.codex_home.as_path());
+                let curated_repo_root = curated_plugins_repo_path(self.motyga_home.as_path());
                 curated_repo_root.is_dir().then_some(curated_repo_root)
             }
         } else {
@@ -2568,7 +2568,7 @@ impl PluginsManager {
         }
         let allowed_marketplace_names = allowed_configured_marketplace_names(
             &config.config_layer_stack,
-            self.codex_home.as_path(),
+            self.motyga_home.as_path(),
         );
         outcome.marketplaces.retain(|marketplace| {
             is_openai_curated_marketplace_name(&marketplace.name)

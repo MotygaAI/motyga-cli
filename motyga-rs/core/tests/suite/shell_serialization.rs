@@ -1,7 +1,7 @@
 #![cfg(not(target_os = "windows"))]
 
 use anyhow::Result;
-use codex_protocol::models::PermissionProfile;
+use motyga_protocol::models::PermissionProfile;
 use core_test_support::assert_regex_match;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -12,7 +12,7 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_target_windows;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use pretty_assertions::assert_eq;
 use regex_lite::Regex;
 use serde_json::Value;
@@ -62,7 +62,7 @@ async fn shell_output_preserves_fixture_json_as_freeform() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("test-gpt-5-codex");
+    let mut builder = test_motyga().with_model("test-gpt-5-codex");
     let test = builder.build(&server).await?;
 
     let fixture_path = test.cwd.path().join("fixture.json");
@@ -113,7 +113,7 @@ async fn shell_output_records_duration() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("test-gpt-5-codex");
+    let mut builder = test_motyga().with_model("test-gpt-5-codex");
     let test = builder.build(&server).await?;
 
     let call_id = "shell-freeform";
@@ -272,7 +272,7 @@ async fn shell_output_is_freeform_for_nonzero_exit() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.4");
+    let mut builder = test_motyga().with_model("gpt-5.4");
     let test = builder.build(&server).await?;
 
     let call_id = "shell-nonzero-exit";
@@ -306,7 +306,7 @@ async fn shell_command_output_is_freeform() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build(&server).await?;
 
     let call_id = "shell-command";
@@ -358,7 +358,7 @@ async fn shell_command_output_is_not_truncated_under_10k_bytes() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.4");
+    let mut builder = test_motyga().with_model("gpt-5.4");
     let test = builder.build(&server).await?;
 
     let call_id = "shell-command";
@@ -409,7 +409,7 @@ async fn shell_command_output_is_not_truncated_over_10k_bytes() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.2");
+    let mut builder = test_motyga().with_model("gpt-5.2");
     let test = builder.build(&server).await?;
 
     let call_id = "shell-command";

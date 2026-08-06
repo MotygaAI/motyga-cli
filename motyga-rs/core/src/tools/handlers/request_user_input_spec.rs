@@ -1,8 +1,8 @@
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::request_user_input::RequestUserInputArgs;
-use codex_tools::JsonSchema;
-use codex_tools::ResponsesApiTool;
-use codex_tools::ToolSpec;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::request_user_input::RequestUserInputArgs;
+use motyga_tools::JsonSchema;
+use motyga_tools::ResponsesApiTool;
+use motyga_tools::ToolSpec;
 use std::collections::BTreeMap;
 
 pub const REQUEST_USER_INPUT_TOOL_NAME: &str = "request_user_input";

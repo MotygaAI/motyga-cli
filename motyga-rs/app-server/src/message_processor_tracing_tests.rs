@@ -9,29 +9,29 @@ use crate::transport::AppServerTransport;
 use anyhow::Result;
 use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::write_mock_responses_config_toml;
-use codex_analytics::AppServerRpcTransport;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::InitializeResponse;
-use codex_app_server_protocol::JSONRPCRequest;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput;
-use codex_arg0::Arg0DispatchPaths;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::LoaderOverrides;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_exec_server::EnvironmentManager;
-use codex_feedback::CodexFeedback;
-use codex_login::AuthManager;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::W3cTraceContext;
+use motyga_analytics::AppServerRpcTransport;
+use motyga_app_server_protocol::ClientInfo;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::InitializeCapabilities;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::InitializeResponse;
+use motyga_app_server_protocol::JSONRPCRequest;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::LoaderOverrides;
+use motyga_core::config::Config;
+use motyga_core::config::ConfigBuilder;
+use motyga_exec_server::EnvironmentManager;
+use motyga_feedback::MotygaFeedback;
+use motyga_login::AuthManager;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::W3cTraceContext;
 use opentelemetry::global;
 use opentelemetry::trace::SpanId;
 use opentelemetry::trace::SpanKind;
@@ -90,7 +90,7 @@ fn init_test_tracing() -> &'static TestTracing {
         let provider = SdkTracerProvider::builder()
             .with_simple_exporter(exporter.clone())
             .build();
-        let tracer = provider.tracer("codex-app-server-message-processor-tests");
+        let tracer = provider.tracer("motyga-app-server-message-processor-tests");
         global::set_text_map_propagator(TraceContextPropagator::new());
         let subscriber =
             tracing_subscriber::registry().with(tracing_opentelemetry::layer().with_tracer(tracer));
@@ -107,7 +107,7 @@ fn request_from_client_request(request: ClientRequest) -> JSONRPCRequest {
 
 struct TracingHarness {
     _server: MockServer,
-    _codex_home: TempDir,
+    _motyga_home: TempDir,
     processor: Arc<MessageProcessor>,
     outgoing_rx: mpsc::Receiver<crate::outgoing_message::OutgoingEnvelope>,
     session: Arc<ConnectionSessionState>,
@@ -117,15 +117,15 @@ struct TracingHarness {
 impl TracingHarness {
     async fn new() -> Result<Self> {
         let server = create_mock_responses_server_repeating_assistant("Done").await;
-        let codex_home = TempDir::new()?;
-        let config = Arc::new(build_test_config(codex_home.path(), &server.uri()).await?);
+        let motyga_home = TempDir::new()?;
+        let config = Arc::new(build_test_config(motyga_home.path(), &server.uri()).await?);
         let (processor, outgoing_rx) = build_test_processor(config).await;
         let tracing = init_test_tracing();
         tracing.exporter.reset();
         tracing::callsite::rebuild_interest_cache();
         let mut harness = Self {
             _server: server,
-            _codex_home: codex_home,
+            _motyga_home: motyga_home,
             processor,
             outgoing_rx,
             session: Arc::new(ConnectionSessionState::new()),
@@ -138,7 +138,7 @@ impl TracingHarness {
                     request_id: RequestId::Integer(1),
                     params: InitializeParams {
                         client_info: ClientInfo {
-                            name: "codex-app-server-tests".to_string(),
+                            name: "motyga-app-server-tests".to_string(),
                             title: None,
                             version: "0.1.0".to_string(),
                         },
@@ -209,9 +209,9 @@ impl TracingHarness {
     }
 }
 
-async fn build_test_config(codex_home: &Path, server_uri: &str) -> Result<Config> {
+async fn build_test_config(motyga_home: &Path, server_uri: &str) -> Result<Config> {
     write_mock_responses_config_toml(
-        codex_home,
+        motyga_home,
         server_uri,
         &BTreeMap::new(),
         /*auto_compact_limit*/ 8_192,
@@ -221,7 +221,7 @@ async fn build_test_config(codex_home: &Path, server_uri: &str) -> Result<Config
     )?;
 
     Ok(ConfigBuilder::default()
-        .codex_home(codex_home.to_path_buf())
+        .motyga_home(motyga_home.to_path_buf())
         .build()
         .await?)
 }
@@ -234,15 +234,15 @@ async fn build_test_processor(
 ) {
     let (outgoing_tx, outgoing_rx) = mpsc::channel(16);
     let auth_manager =
-        AuthManager::shared_from_config(config.as_ref(), /*enable_codex_api_key_env*/ false).await;
+        AuthManager::shared_from_config(config.as_ref(), /*enable_motyga_api_key_env*/ false).await;
     let config_manager = ConfigManager::new(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
         Vec::new(),
         LoaderOverrides::default(),
         /*strict_config*/ false,
         CloudConfigBundleLoader::default(),
         Arg0DispatchPaths::default(),
-        Arc::new(codex_config::NoopThreadConfigLoader),
+        Arc::new(motyga_config::NoopThreadConfigLoader),
     );
     let analytics_events_client =
         analytics_events_client_from_config(Arc::clone(&auth_manager), config.as_ref());
@@ -257,7 +257,7 @@ async fn build_test_processor(
         config,
         config_manager,
         environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
-        feedback: CodexFeedback::new(),
+        feedback: MotygaFeedback::new(),
         log_db: None,
         state_db: None,
         config_warnings: Vec::new(),
@@ -478,7 +478,7 @@ async fn read_thread_started_notification(
                 };
                 if matches!(
                     notification,
-                    codex_app_server_protocol::ServerNotification::ThreadStarted(_)
+                    motyga_app_server_protocol::ServerNotification::ThreadStarted(_)
                 ) {
                     return;
                 }
@@ -491,7 +491,7 @@ async fn read_thread_started_notification(
                 };
                 if matches!(
                     notification,
-                    codex_app_server_protocol::ServerNotification::ThreadStarted(_)
+                    motyga_app_server_protocol::ServerNotification::ThreadStarted(_)
                 ) {
                     return;
                 }
@@ -685,7 +685,7 @@ async fn turn_start_jsonrpc_span_parents_core_turn_spans() -> Result<()> {
                 && span_attr(span, "rpc.method") == Some("turn/start")
                 && span.span_context.trace_id() == remote_trace_id
         }) && spans.iter().any(|span| {
-            span_attr(span, "codex.op") == Some("user_input")
+            span_attr(span, "motyga.op") == Some("user_input")
                 && span.span_context.trace_id() == remote_trace_id
         })
     })
@@ -694,8 +694,8 @@ async fn turn_start_jsonrpc_span_parents_core_turn_spans() -> Result<()> {
     let server_request_span =
         find_rpc_span_with_trace(&spans, SpanKind::Server, "turn/start", remote_trace_id);
     let core_turn_span =
-        find_span_with_trace(&spans, remote_trace_id, "codex.op=user_input", |span| {
-            span_attr(span, "codex.op") == Some("user_input")
+        find_span_with_trace(&spans, remote_trace_id, "motyga.op=user_input", |span| {
+            span_attr(span, "motyga.op") == Some("user_input")
         });
 
     assert_eq!(server_request_span.parent_span_id, remote_parent_span_id);

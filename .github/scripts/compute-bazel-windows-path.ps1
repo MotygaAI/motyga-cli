@@ -9,7 +9,7 @@ toolchain entries Bazel-backed CI tasks need: MSVC and Windows SDK paths,
 MinGW runtime DLL paths for gnullvm-built tests, Git, PowerShell, Node, Python,
 DotSlash, and the standard Windows system directories.
 `setup-bazel-ci` runs this after exporting the MSVC environment, and the script
-publishes the result via `GITHUB_ENV` as `CODEX_BAZEL_WINDOWS_PATH` so later
+publishes the result via `GITHUB_ENV` as `MOTYGA_BAZEL_WINDOWS_PATH` so later
 steps can pass that explicit PATH to Bazel.
 #>
 
@@ -106,8 +106,8 @@ if ([string]::IsNullOrWhiteSpace($env:GITHUB_ENV)) {
 }
 
 $stablePath = $stablePathEntries -join ';'
-Write-Host 'Derived CODEX_BAZEL_WINDOWS_PATH entries:'
+Write-Host 'Derived MOTYGA_BAZEL_WINDOWS_PATH entries:'
 foreach ($pathEntry in $stablePathEntries) {
   Write-Host "  $pathEntry"
 }
-"CODEX_BAZEL_WINDOWS_PATH=$stablePath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+"MOTYGA_BAZEL_WINDOWS_PATH=$stablePath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append

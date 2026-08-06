@@ -24,8 +24,8 @@
       ],
       "type": "object"
     },
-    "CodexErrorInfo": {
-      "description": "This translation layer make sure that we expose codex error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `codexErrorInfo` variant.",
+    "MotygaErrorInfo": {
+      "description": "This translation layer make sure that we expose motyga error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `motygaErrorInfo` variant.",
       "oneOf": [
         {
           "enum": [
@@ -63,7 +63,7 @@
           "required": [
             "httpConnectionFailed"
           ],
-          "title": "HttpConnectionFailedCodexErrorInfo",
+          "title": "HttpConnectionFailedMotygaErrorInfo",
           "type": "object"
         },
         {
@@ -87,7 +87,7 @@
           "required": [
             "responseStreamConnectionFailed"
           ],
-          "title": "ResponseStreamConnectionFailedCodexErrorInfo",
+          "title": "ResponseStreamConnectionFailedMotygaErrorInfo",
           "type": "object"
         },
         {
@@ -111,7 +111,7 @@
           "required": [
             "responseStreamDisconnected"
           ],
-          "title": "ResponseStreamDisconnectedCodexErrorInfo",
+          "title": "ResponseStreamDisconnectedMotygaErrorInfo",
           "type": "object"
         },
         {
@@ -135,7 +135,7 @@
           "required": [
             "responseTooManyFailedAttempts"
           ],
-          "title": "ResponseTooManyFailedAttemptsCodexErrorInfo",
+          "title": "ResponseTooManyFailedAttemptsMotygaErrorInfo",
           "type": "object"
         },
         {
@@ -157,7 +157,7 @@
           "required": [
             "activeTurnNotSteerable"
           ],
-          "title": "ActiveTurnNotSteerableCodexErrorInfo",
+          "title": "ActiveTurnNotSteerableMotygaErrorInfo",
           "type": "object"
         }
       ]
@@ -1457,7 +1457,7 @@
           "description": "Only populated when the Turn's status is failed."
         },
         "id": {
-          "description": "Identifier for this turn. Codex-generated turn IDs are UUIDv7.",
+          "description": "Identifier for this turn. Motyga-generated turn IDs are UUIDv7.",
           "type": "string"
         },
         "items": {
@@ -1504,10 +1504,10 @@
             "null"
           ]
         },
-        "codexErrorInfo": {
+        "motygaErrorInfo": {
           "anyOf": [
             {
-              "$ref": "#/definitions/CodexErrorInfo"
+              "$ref": "#/definitions/MotygaErrorInfo"
             },
             {
               "type": "null"

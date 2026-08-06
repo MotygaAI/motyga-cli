@@ -1,10 +1,10 @@
 use crate::manifest::PluginManifest;
 use crate::manifest::load_plugin_manifest;
 use crate::manifest::parse_plugin_manifest;
-use codex_plugin::PluginId;
-use codex_plugin::validate_plugin_segment;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_plugins::find_plugin_manifest_path;
+use motyga_plugin::PluginId;
+use motyga_plugin::validate_plugin_segment;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_plugins::find_plugin_manifest_path;
 use semver::Version;
 use serde::Deserialize;
 use serde::Serialize;
@@ -19,7 +19,7 @@ use std::path::PathBuf;
 pub const DEFAULT_PLUGIN_VERSION: &str = "local";
 pub const PLUGINS_CACHE_DIR: &str = "plugins/cache";
 pub const PLUGINS_DATA_DIR: &str = "plugins/data";
-const REMOTE_PLUGIN_INSTALL_METADATA_FILE: &str = ".codex-remote-plugin-install.json";
+const REMOTE_PLUGIN_INSTALL_METADATA_FILE: &str = ".motyga-remote-plugin-install.json";
 const REMOTE_PLUGIN_INSTALL_METADATA_SCHEMA_VERSION: u8 = 1;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -37,7 +37,7 @@ pub struct PluginInstallResult {
 
 #[derive(Debug, Clone)]
 pub struct PluginStore {
-    codex_home: AbsolutePathBuf,
+    motyga_home: AbsolutePathBuf,
     root: AbsolutePathBuf,
     data_root: AbsolutePathBuf,
 }
@@ -49,22 +49,22 @@ enum InstallManifest<'a> {
 }
 
 impl PluginStore {
-    pub fn new(codex_home: PathBuf) -> Self {
-        Self::try_new(codex_home)
+    pub fn new(motyga_home: PathBuf) -> Self {
+        Self::try_new(motyga_home)
             .unwrap_or_else(|err| panic!("plugin cache root should be absolute: {err}"))
     }
 
-    pub fn try_new(codex_home: PathBuf) -> Result<Self, PluginStoreError> {
-        let root = AbsolutePathBuf::from_absolute_path_checked(codex_home.join(PLUGINS_CACHE_DIR))
+    pub fn try_new(motyga_home: PathBuf) -> Result<Self, PluginStoreError> {
+        let root = AbsolutePathBuf::from_absolute_path_checked(motyga_home.join(PLUGINS_CACHE_DIR))
             .map_err(|err| PluginStoreError::io("failed to resolve plugin cache root", err))?;
         let data_root =
-            AbsolutePathBuf::from_absolute_path_checked(codex_home.join(PLUGINS_DATA_DIR))
+            AbsolutePathBuf::from_absolute_path_checked(motyga_home.join(PLUGINS_DATA_DIR))
                 .map_err(|err| PluginStoreError::io("failed to resolve plugin data root", err))?;
-        let codex_home = AbsolutePathBuf::from_absolute_path_checked(codex_home)
+        let motyga_home = AbsolutePathBuf::from_absolute_path_checked(motyga_home)
             .map_err(|err| PluginStoreError::io("failed to resolve Motyga home", err))?;
 
         Ok(Self {
-            codex_home,
+            motyga_home,
             root,
             data_root,
         })
@@ -74,8 +74,8 @@ impl PluginStore {
         &self.root
     }
 
-    pub(crate) fn codex_home(&self) -> &AbsolutePathBuf {
-        &self.codex_home
+    pub(crate) fn motyga_home(&self) -> &AbsolutePathBuf {
+        &self.motyga_home
     }
 
     pub fn plugin_base_root(&self, plugin_id: &PluginId) -> AbsolutePathBuf {

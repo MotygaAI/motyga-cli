@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
-use codex_file_system::FileSystemSandboxContext;
-pub use codex_file_system::WalkOptions;
-pub use codex_file_system::WalkOutcome;
-use codex_network_proxy::ManagedNetworkSandboxContext;
-use codex_protocol::config_types::ShellEnvironmentPolicyInherit;
-use codex_shell_command::shell_detect::DetectedShell;
-use codex_utils_path_uri::PathUri;
+use motyga_file_system::FileSystemSandboxContext;
+pub use motyga_file_system::WalkOptions;
+pub use motyga_file_system::WalkOutcome;
+use motyga_network_proxy::ManagedNetworkSandboxContext;
+use motyga_protocol::config_types::ShellEnvironmentPolicyInherit;
+use motyga_shell_command::shell_detect::DetectedShell;
+use motyga_utils_path_uri::PathUri;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -85,7 +85,7 @@ impl EnvironmentInfo {
     /// Returns information about the current local exec-server process.
     pub fn local() -> Self {
         Self {
-            shell: codex_shell_command::shell_detect::default_user_shell().into(),
+            shell: motyga_shell_command::shell_detect::default_user_shell().into(),
             cwd: std::env::current_dir()
                 .ok()
                 .and_then(|cwd| PathUri::from_host_native_path(cwd).ok()),
@@ -129,7 +129,7 @@ pub struct ExecParams {
     /// Keep non-tty stdin writable through `process/write`.
     #[serde(default)]
     pub pipe_stdin: bool,
-    /// Optional process-visible argv0 override. Values such as `codex-linux-sandbox` are command
+    /// Optional process-visible argv0 override. Values such as `motyga-linux-sandbox` are command
     /// names rather than paths, so this is not a [`PathUri`].
     pub arg0: Option<String>,
     /// Portable sandbox intent. Concrete wrapper argv is resolved by the exec-server.
@@ -572,10 +572,10 @@ mod tests {
     use super::HttpRequestParams;
     use super::ProcessId;
     use super::ShellInfo;
-    use codex_file_system::FileSystemSandboxContext;
-    use codex_network_proxy::ManagedNetworkSandboxContext;
-    use codex_protocol::models::PermissionProfile;
-    use codex_utils_path_uri::PathUri;
+    use motyga_file_system::FileSystemSandboxContext;
+    use motyga_network_proxy::ManagedNetworkSandboxContext;
+    use motyga_protocol::models::PermissionProfile;
+    use motyga_utils_path_uri::PathUri;
     use pretty_assertions::assert_eq;
     use std::collections::HashMap;
 

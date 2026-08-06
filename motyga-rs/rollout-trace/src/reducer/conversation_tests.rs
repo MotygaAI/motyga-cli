@@ -1082,7 +1082,7 @@ fn tool_call_links_model_call_and_followup_output_items() -> anyhow::Result<()> 
 }
 
 #[test]
-fn inference_start_rejects_unknown_codex_turn() -> anyhow::Result<()> {
+fn inference_start_rejects_unknown_motyga_turn() -> anyhow::Result<()> {
     let temp = TempDir::new()?;
     let writer = create_started_writer(&temp)?;
 
@@ -1094,5 +1094,5 @@ fn inference_start_rejects_unknown_codex_turn() -> anyhow::Result<()> {
     )?;
     append_inference_start(&writer, "inference-1", "turn-missing", request)?;
 
-    expect_replay_error(&temp, "referenced unknown codex turn turn-missing")
+    expect_replay_error(&temp, "referenced unknown motyga turn turn-missing")
 }

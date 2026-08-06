@@ -1,5 +1,5 @@
-use codex_app_server_protocol::GetWorkspaceMessagesResponse;
-use codex_app_server_protocol::WorkspaceMessageType;
+use motyga_app_server_protocol::GetWorkspaceMessagesResponse;
+use motyga_app_server_protocol::WorkspaceMessageType;
 use std::time::Duration;
 
 pub(crate) const WORKSPACE_HEADLINE_REFRESH_INTERVAL: Duration = Duration::from_secs(5 * 60);

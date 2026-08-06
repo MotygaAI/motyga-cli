@@ -1,1 +1,1 @@
-pub use codex_utils_path::*;
+pub use motyga_utils_path::*;

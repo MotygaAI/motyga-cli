@@ -4,8 +4,8 @@ ARG TZ
 ARG DEBIAN_FRONTEND=noninteractive
 ARG NODE_MAJOR=22
 ARG RUST_TOOLCHAIN=1.95.0
-# Keep this in sync with .devcontainer/codex-install/package.json and pnpm-lock.yaml.
-ARG CODEX_NPM_VERSION=0.121.0
+# Keep this in sync with .devcontainer/motyga-install/package.json and pnpm-lock.yaml.
+ARG MOTYGA_NPM_VERSION=0.121.0
 
 ENV TZ="$TZ"
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
@@ -45,18 +45,18 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY .devcontainer/codex-install/package.json \
-     .devcontainer/codex-install/pnpm-lock.yaml \
-     .devcontainer/codex-install/pnpm-workspace.yaml \
-     /opt/codex-install/
+COPY .devcontainer/motyga-install/package.json \
+     .devcontainer/motyga-install/pnpm-lock.yaml \
+     .devcontainer/motyga-install/pnpm-workspace.yaml \
+     /opt/motyga-install/
 
 RUN curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - \
     && apt-get update \
     && apt-get install -y --no-install-recommends nodejs \
-    && test "$(node -p "require('/opt/codex-install/package.json').dependencies['@openai/codex']")" = "${CODEX_NPM_VERSION}" \
-    && cd /opt/codex-install \
+    && test "$(node -p "require('/opt/motyga-install/package.json').dependencies['@motyga/cli']")" = "${MOTYGA_NPM_VERSION}" \
+    && cd /opt/motyga-install \
     && corepack pnpm install --prod --frozen-lockfile \
-    && ln -s /opt/codex-install/node_modules/.bin/codex /usr/local/bin/codex \
+    && ln -s /opt/motyga-install/node_modules/.bin/motyga /usr/local/bin/motyga \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

@@ -2,21 +2,21 @@ use crate::app_mcp_routing::apply_app_mcp_routing_policy;
 use crate::loader::plugin_app_declarations_from_value;
 use crate::store::PLUGINS_CACHE_DIR;
 use crate::store::PluginStore;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::PluginAuthPolicy;
-use codex_app_server_protocol::PluginAvailability;
-use codex_app_server_protocol::PluginInstallPolicy;
-use codex_app_server_protocol::PluginInterface;
-use codex_app_server_protocol::SkillInterface;
-use codex_login::CodexAuth;
-use codex_login::default_client::build_reqwest_client;
-use codex_plugin::AppConnectorId;
-use codex_plugin::AppDeclaration;
-use codex_plugin::PluginCapabilitySummary;
-use codex_plugin::PluginId;
-use codex_plugin::app_connector_ids_from_declarations;
-use codex_plugin::prompt_safe_plugin_description;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::PluginAuthPolicy;
+use motyga_app_server_protocol::PluginAvailability;
+use motyga_app_server_protocol::PluginInstallPolicy;
+use motyga_app_server_protocol::PluginInterface;
+use motyga_app_server_protocol::SkillInterface;
+use motyga_login::MotygaAuth;
+use motyga_login::default_client::build_reqwest_client;
+use motyga_plugin::AppConnectorId;
+use motyga_plugin::AppDeclaration;
+use motyga_plugin::PluginCapabilitySummary;
+use motyga_plugin::PluginId;
+use motyga_plugin::app_connector_ids_from_declarations;
+use motyga_plugin::prompt_safe_plugin_description;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use reqwest::RequestBuilder;
 use serde::Deserialize;
 use serde::Serialize;
@@ -80,7 +80,7 @@ pub const REMOTE_WORKSPACE_SHARED_WITH_ME_UNLISTED_MARKETPLACE_DISPLAY_NAME: &st
 
 const OPENAI_CURATED_REMOTE_COLLECTION_KEY: &str = "vertical";
 const OAI_PRODUCT_SKU_HEADER: &str = "OAI-Product-Sku";
-const CODEX_PRODUCT_SKU: &str = "codex";
+const MOTYGA_PRODUCT_SKU: &str = "motyga";
 const REMOTE_PLUGIN_CATALOG_TIMEOUT: Duration = Duration::from_secs(30);
 const RECOMMENDED_PLUGINS_TIMEOUT: Duration = Duration::from_secs(5);
 const REMOTE_PLUGIN_LIST_PAGE_LIMIT: u32 = 200;
@@ -644,7 +644,7 @@ pub struct RemotePluginInstallResult {
 
 pub async fn fetch_remote_marketplaces(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     sources: &[RemoteMarketplaceSource],
     global_catalog_cache_path: Option<&Path>,
 ) -> Result<Vec<RemoteMarketplace>, RemotePluginCatalogError> {
@@ -666,10 +666,10 @@ pub async fn fetch_remote_marketplaces(
         match source {
             RemoteMarketplaceSource::Global => {
                 let scope = RemotePluginScope::Global;
-                if let Some(codex_home) = global_catalog_cache_path
+                if let Some(motyga_home) = global_catalog_cache_path
                     && let Some(directory_plugins) =
                         catalog_cache::load_cached_global_directory_plugins(
-                            codex_home, config, auth,
+                            motyga_home, config, auth,
                         )
                 {
                     let installed_plugins =
@@ -700,11 +700,11 @@ pub async fn fetch_remote_marketplaces(
                 )? {
                     marketplaces.push(marketplace);
                 }
-                if let (Some(codex_home), Some(directory_plugins)) =
+                if let (Some(motyga_home), Some(directory_plugins)) =
                     (global_catalog_cache_path, directory_plugins_for_cache)
                 {
                     catalog_cache::write_cached_global_directory_plugins(
-                        codex_home,
+                        motyga_home,
                         config,
                         auth,
                         &directory_plugins,
@@ -806,21 +806,21 @@ pub async fn fetch_remote_marketplaces(
 }
 
 pub async fn fetch_and_cache_global_remote_plugin_catalog(
-    codex_home: &Path,
+    motyga_home: &Path,
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
 ) -> Result<(), RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let plugins =
         fetch_directory_plugins_for_scope(config, auth, RemotePluginScope::Global).await?;
-    catalog_cache::write_cached_global_directory_plugins(codex_home, config, auth, &plugins);
+    catalog_cache::write_cached_global_directory_plugins(motyga_home, config, auth, &plugins);
     Ok(())
 }
 
 #[instrument(level = "trace", skip_all)]
 pub async fn fetch_recommended_plugins(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
 ) -> Result<RecommendedPluginsMode, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let base_url = config.chatgpt_base_url.trim_end_matches('/');
@@ -899,22 +899,22 @@ fn recommended_plugins_mode(response: RecommendedPluginsResponse) -> Recommended
 }
 
 pub fn has_cached_global_remote_plugin_catalog(
-    codex_home: &Path,
+    motyga_home: &Path,
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
 ) -> bool {
     let Ok(auth) = ensure_chatgpt_auth(auth) else {
         return false;
     };
-    catalog_cache::load_cached_global_directory_plugins(codex_home, config, auth).is_some()
+    catalog_cache::load_cached_global_directory_plugins(motyga_home, config, auth).is_some()
 }
 
 pub fn cached_global_remote_discoverable_plugins(
-    codex_home: &Path,
+    motyga_home: &Path,
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
 ) -> Vec<RemoteDiscoverablePlugin> {
-    catalog_cache::load_cached_global_directory_plugins(codex_home, config, auth)
+    catalog_cache::load_cached_global_directory_plugins(motyga_home, config, auth)
         .unwrap_or_default()
         .into_iter()
         .filter_map(|plugin| match remote_discoverable_plugin_from_directory_item(&plugin) {
@@ -929,7 +929,7 @@ pub fn cached_global_remote_discoverable_plugins(
 
 pub async fn fetch_openai_curated_remote_collection_marketplace(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
 ) -> Result<Option<RemoteMarketplace>, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let scope = RemotePluginScope::Global;
@@ -991,7 +991,7 @@ fn build_remote_marketplace(
 
 pub(crate) async fn fetch_remote_installed_plugins(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
 ) -> Result<Vec<RemoteInstalledPlugin>, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let global = async {
@@ -1074,7 +1074,7 @@ pub fn group_remote_installed_plugins_by_marketplaces(
 
 pub async fn fetch_remote_plugin_detail(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     marketplace_name: &str,
     plugin_id: &str,
 ) -> Result<RemotePluginDetail, RemotePluginCatalogError> {
@@ -1090,7 +1090,7 @@ pub async fn fetch_remote_plugin_detail(
 
 pub async fn fetch_remote_plugin_share_context(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     plugin_id: &str,
 ) -> Result<Option<RemotePluginShareContext>, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
@@ -1103,7 +1103,7 @@ pub async fn fetch_remote_plugin_share_context(
 
 pub async fn fetch_remote_plugin_detail_with_download_urls(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     marketplace_name: &str,
     plugin_id: &str,
 ) -> Result<RemotePluginDetail, RemotePluginCatalogError> {
@@ -1119,7 +1119,7 @@ pub async fn fetch_remote_plugin_detail_with_download_urls(
 
 pub async fn fetch_remote_plugin_skill_detail(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     marketplace_name: &str,
     plugin_id: &str,
     skill_name: &str,
@@ -1155,7 +1155,7 @@ pub async fn fetch_remote_plugin_skill_detail(
 
 async fn fetch_remote_plugin_detail_with_download_url_option(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     _marketplace_name: &str,
     plugin_id: &str,
     include_download_urls: bool,
@@ -1173,7 +1173,7 @@ async fn fetch_remote_plugin_detail_with_download_url_option(
 
 async fn build_remote_plugin_detail(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     scope: RemotePluginScope,
     marketplace_name: String,
     plugin_id: &str,
@@ -1278,7 +1278,7 @@ fn app_declarations_from_remote_app_ids(app_ids: &[String]) -> Vec<AppDeclaratio
 
 pub async fn install_remote_plugin(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     _marketplace_name: &str,
     plugin_id: &str,
 ) -> Result<RemotePluginInstallResult, RemotePluginCatalogError> {
@@ -1317,7 +1317,7 @@ pub async fn install_remote_plugin(
 
 pub async fn resolve_remote_plugin_uninstall_target(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     remote_plugin_id: &str,
 ) -> Result<RemotePluginUninstallTarget, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
@@ -1366,8 +1366,8 @@ pub async fn resolve_remote_plugin_uninstall_target(
 
 pub async fn uninstall_remote_plugin(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
-    codex_home: PathBuf,
+    auth: Option<&MotygaAuth>,
+    motyga_home: PathBuf,
     target: RemotePluginUninstallTarget,
 ) -> Result<(), RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
@@ -1400,7 +1400,7 @@ pub async fn uninstall_remote_plugin(
 
     let legacy_plugin_id = response.id;
     tokio::task::spawn_blocking(move || {
-        remove_remote_plugin_cache(codex_home, marketplace_name, plugin_name, legacy_plugin_id)
+        remove_remote_plugin_cache(motyga_home, marketplace_name, plugin_name, legacy_plugin_id)
     })
     .await
     .map_err(|err| {
@@ -1414,12 +1414,12 @@ pub async fn uninstall_remote_plugin(
 }
 
 fn remove_remote_plugin_cache(
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     marketplace_name: String,
     plugin_name: String,
     legacy_plugin_id: String,
 ) -> Result<(), String> {
-    let store = PluginStore::try_new(codex_home.clone())
+    let store = PluginStore::try_new(motyga_home.clone())
         .map_err(|err| format!("failed to resolve remote plugin cache root: {err}"))?;
     let plugin_id =
         PluginId::new(plugin_name.clone(), marketplace_name.clone()).map_err(|err| {
@@ -1435,7 +1435,7 @@ fn remove_remote_plugin_cache(
         )
     })?;
 
-    let legacy_remote_plugin_cache_root = codex_home
+    let legacy_remote_plugin_cache_root = motyga_home
         .join(PLUGINS_CACHE_DIR)
         .join(marketplace_name)
         .join(legacy_plugin_id);
@@ -1683,7 +1683,7 @@ fn normalize_remote_default_prompt(prompt: &str) -> Option<String> {
 
 async fn fetch_directory_plugins_for_scope(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     scope: RemotePluginScope,
 ) -> Result<Vec<RemotePluginDirectoryItem>, RemotePluginCatalogError> {
     fetch_directory_plugins_for_scope_with_optional_collection(
@@ -1694,7 +1694,7 @@ async fn fetch_directory_plugins_for_scope(
 
 async fn fetch_directory_plugins_for_scope_with_collection(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     scope: RemotePluginScope,
     collection: &str,
 ) -> Result<Vec<RemotePluginDirectoryItem>, RemotePluginCatalogError> {
@@ -1709,7 +1709,7 @@ async fn fetch_directory_plugins_for_scope_with_collection(
 
 async fn fetch_directory_plugins_for_scope_with_optional_collection(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     scope: RemotePluginScope,
     collection: Option<&str>,
 ) -> Result<Vec<RemotePluginDirectoryItem>, RemotePluginCatalogError> {
@@ -1730,7 +1730,7 @@ async fn fetch_directory_plugins_for_scope_with_optional_collection(
 
 async fn fetch_shared_workspace_plugins(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
 ) -> Result<Vec<RemotePluginDirectoryItem>, RemotePluginCatalogError> {
     let mut plugins = Vec::new();
     let mut page_token = None;
@@ -1748,7 +1748,7 @@ async fn fetch_shared_workspace_plugins(
 
 async fn fetch_installed_plugins_for_scope(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     scope: RemotePluginScope,
 ) -> Result<Vec<RemotePluginInstalledItem>, RemotePluginCatalogError> {
     fetch_installed_plugins_for_scope_with_download_url(
@@ -1759,7 +1759,7 @@ async fn fetch_installed_plugins_for_scope(
 
 async fn fetch_installed_plugins_for_scope_with_download_url(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     scope: RemotePluginScope,
     include_download_urls: bool,
 ) -> Result<Vec<RemotePluginInstalledItem>, RemotePluginCatalogError> {
@@ -1785,7 +1785,7 @@ async fn fetch_installed_plugins_for_scope_with_download_url(
 
 async fn get_remote_plugin_list_page(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     scope: RemotePluginScope,
     page_token: Option<&str>,
     collection: Option<&str>,
@@ -1807,7 +1807,7 @@ async fn get_remote_plugin_list_page(
 
 async fn get_remote_shared_workspace_plugins_page(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     page_token: Option<&str>,
 ) -> Result<RemotePluginListResponse, RemotePluginCatalogError> {
     let base_url = config.chatgpt_base_url.trim_end_matches('/');
@@ -1823,7 +1823,7 @@ async fn get_remote_shared_workspace_plugins_page(
 
 async fn get_remote_plugin_installed_page(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     scope: RemotePluginScope,
     page_token: Option<&str>,
     include_download_urls: bool,
@@ -1844,7 +1844,7 @@ async fn get_remote_plugin_installed_page(
 
 async fn fetch_plugin_detail(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     plugin_id: &str,
     include_download_urls: bool,
 ) -> Result<RemotePluginDirectoryItem, RemotePluginCatalogError> {
@@ -1879,11 +1879,11 @@ fn remote_plugin_skill_detail_url(
     Ok(url.to_string())
 }
 
-fn ensure_chatgpt_auth(auth: Option<&CodexAuth>) -> Result<&CodexAuth, RemotePluginCatalogError> {
+fn ensure_chatgpt_auth(auth: Option<&MotygaAuth>) -> Result<&MotygaAuth, RemotePluginCatalogError> {
     let Some(auth) = auth else {
         return Err(RemotePluginCatalogError::AuthRequired);
     };
-    if !auth.uses_codex_backend() {
+    if !auth.uses_motyga_backend() {
         return Err(RemotePluginCatalogError::UnsupportedAuthMode);
     }
     Ok(auth)
@@ -1891,12 +1891,12 @@ fn ensure_chatgpt_auth(auth: Option<&CodexAuth>) -> Result<&CodexAuth, RemotePlu
 
 fn authenticated_request(
     request: RequestBuilder,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
 ) -> Result<RequestBuilder, RemotePluginCatalogError> {
     Ok(request
         .timeout(REMOTE_PLUGIN_CATALOG_TIMEOUT)
-        .headers(codex_model_provider::auth_provider_from_auth(auth).to_auth_headers())
-        .header(OAI_PRODUCT_SKU_HEADER, CODEX_PRODUCT_SKU))
+        .headers(motyga_model_provider::auth_provider_from_auth(auth).to_auth_headers())
+        .header(OAI_PRODUCT_SKU_HEADER, MOTYGA_PRODUCT_SKU))
 }
 
 async fn send_and_decode<T: for<'de> Deserialize<'de>>(

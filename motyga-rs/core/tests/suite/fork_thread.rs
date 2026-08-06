@@ -1,21 +1,21 @@
 use std::sync::Arc;
 
-use codex_core::ForkSnapshot;
-use codex_core::NewThread;
-use codex_core::parse_turn_item;
-use codex_protocol::items::TurnItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ResumedHistory;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::user_input::UserInput;
+use motyga_core::ForkSnapshot;
+use motyga_core::NewThread;
+use motyga_core::parse_turn_item;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ResumedHistory;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use wiremock::Mock;
 use wiremock::MockServer;
@@ -42,15 +42,15 @@ async fn fork_thread_twice_drops_to_first_message() {
         .mount(&server)
         .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
     let thread_manager = test.thread_manager.clone();
     let config_for_fork = test.config.clone();
 
     // Send three user messages; wait for three completed turns.
     for text in ["first", "second", "third"] {
-        codex
+        motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: text.to_string(),
@@ -63,11 +63,11 @@ async fn fork_thread_twice_drops_to_first_message() {
             })
             .await
             .unwrap();
-        let _ = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+        let _ = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     }
 
     // Request history from the base conversation to obtain rollout path.
-    let base_path = codex.rollout_path().expect("rollout path");
+    let base_path = motyga.rollout_path().expect("rollout path");
 
     // GetHistory flushes before returning the path; no wait needed.
 
@@ -97,7 +97,7 @@ async fn fork_thread_twice_drops_to_first_message() {
 
     // Fork once with n=1 → drops the last user input and everything after.
     let NewThread {
-        thread: codex_fork1,
+        thread: motyga_fork1,
         ..
     } = thread_manager
         .fork_thread(
@@ -110,7 +110,7 @@ async fn fork_thread_twice_drops_to_first_message() {
         .await
         .expect("fork 1");
 
-    let fork1_path = codex_fork1.rollout_path().expect("rollout path");
+    let fork1_path = motyga_fork1.rollout_path().expect("rollout path");
 
     // GetHistory on fork1 flushed; the file is ready.
     let fork1_items = read_rollout_items(&fork1_path);
@@ -121,7 +121,7 @@ async fn fork_thread_twice_drops_to_first_message() {
 
     // Fork again with n=0 → drops the (new) last user message, leaving only the first.
     let NewThread {
-        thread: codex_fork2,
+        thread: motyga_fork2,
         ..
     } = thread_manager
         .fork_thread(
@@ -134,7 +134,7 @@ async fn fork_thread_twice_drops_to_first_message() {
         .await
         .expect("fork 2");
 
-    let fork2_path = codex_fork2.rollout_path().expect("rollout path");
+    let fork2_path = motyga_fork2.rollout_path().expect("rollout path");
     // GetHistory on fork2 flushed; the file is ready.
     let fork1_items = read_rollout_items(&fork1_path);
     let fork1_user_inputs = find_user_input_positions(&fork1_items);
@@ -167,12 +167,12 @@ async fn fork_thread_from_history_does_not_require_source_rollout_path() {
         .mount(&server)
         .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let motyga = test.motyga.clone();
     let thread_manager = test.thread_manager.clone();
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "fork me from stored history".to_string(),
@@ -185,9 +185,9 @@ async fn fork_thread_from_history_does_not_require_source_rollout_path() {
         })
         .await
         .unwrap();
-    let _ = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _ = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    let source_path = codex.rollout_path().expect("source rollout path");
+    let source_path = motyga.rollout_path().expect("source rollout path");
     let source_items = read_rollout_items(&source_path);
     let NewThread {
         thread: forked_thread,

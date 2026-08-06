@@ -1,54 +1,54 @@
 use super::*;
 use crate::ServerNotification;
-use codex_protocol::approvals::ElicitationRequest as CoreElicitationRequest;
-use codex_protocol::config_types::MultiAgentMode;
-use codex_protocol::items::AgentMessageContent;
-use codex_protocol::items::AgentMessageItem;
-use codex_protocol::items::CollabAgentTool as CoreCollabAgentTool;
-use codex_protocol::items::CollabAgentToolCallItem;
-use codex_protocol::items::CollabAgentToolCallStatus as CoreCollabAgentToolCallStatus;
-use codex_protocol::items::CommandExecutionItem;
-use codex_protocol::items::CommandExecutionStatus as CoreCommandExecutionStatus;
-use codex_protocol::items::DynamicToolCallItem;
-use codex_protocol::items::DynamicToolCallStatus as CoreDynamicToolCallStatus;
-use codex_protocol::items::FileChangeItem;
-use codex_protocol::items::ImageViewItem;
-use codex_protocol::items::McpToolCallItem;
-use codex_protocol::items::McpToolCallStatus as CoreMcpToolCallStatus;
-use codex_protocol::items::ReasoningItem;
-use codex_protocol::items::SubAgentActivityItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::items::UserMessageItem;
-use codex_protocol::items::WebSearchItem;
-use codex_protocol::mcp::CallToolResult;
-use codex_protocol::mcp::McpServerInfo;
-use codex_protocol::memory_citation::MemoryCitation as CoreMemoryCitation;
-use codex_protocol::memory_citation::MemoryCitationEntry as CoreMemoryCitationEntry;
-use codex_protocol::models::AdditionalPermissionProfile as CoreAdditionalPermissionProfile;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
-use codex_protocol::models::FileSystemPermissions as CoreFileSystemPermissions;
-use codex_protocol::models::ImageDetail;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::models::NetworkPermissions as CoreNetworkPermissions;
-use codex_protocol::models::WebSearchAction as CoreWebSearchAction;
-use codex_protocol::permissions::FileSystemAccessMode as CoreFileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath as CoreFileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry as CoreFileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSpecialPath as CoreFileSystemSpecialPath;
-use codex_protocol::protocol::AgentStatus as CoreAgentStatus;
-use codex_protocol::protocol::AskForApproval as CoreAskForApproval;
-use codex_protocol::protocol::ConversationTextRole;
-use codex_protocol::protocol::ExecCommandSource as CoreExecCommandSource;
-use codex_protocol::protocol::GranularApprovalConfig as CoreGranularApprovalConfig;
-use codex_protocol::protocol::NetworkAccess as CoreNetworkAccess;
-use codex_protocol::protocol::SubAgentActivityKind as CoreSubAgentActivityKind;
-use codex_protocol::request_permissions::RequestPermissionProfile as CoreRequestPermissionProfile;
-use codex_protocol::user_input::UserInput as CoreUserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_absolute_path::test_support::PathBufExt;
-use codex_utils_absolute_path::test_support::test_path_buf;
-use codex_utils_path_uri::LegacyAppPathString;
-use codex_utils_path_uri::PathUri;
+use motyga_protocol::approvals::ElicitationRequest as CoreElicitationRequest;
+use motyga_protocol::config_types::MultiAgentMode;
+use motyga_protocol::items::AgentMessageContent;
+use motyga_protocol::items::AgentMessageItem;
+use motyga_protocol::items::CollabAgentTool as CoreCollabAgentTool;
+use motyga_protocol::items::CollabAgentToolCallItem;
+use motyga_protocol::items::CollabAgentToolCallStatus as CoreCollabAgentToolCallStatus;
+use motyga_protocol::items::CommandExecutionItem;
+use motyga_protocol::items::CommandExecutionStatus as CoreCommandExecutionStatus;
+use motyga_protocol::items::DynamicToolCallItem;
+use motyga_protocol::items::DynamicToolCallStatus as CoreDynamicToolCallStatus;
+use motyga_protocol::items::FileChangeItem;
+use motyga_protocol::items::ImageViewItem;
+use motyga_protocol::items::McpToolCallItem;
+use motyga_protocol::items::McpToolCallStatus as CoreMcpToolCallStatus;
+use motyga_protocol::items::ReasoningItem;
+use motyga_protocol::items::SubAgentActivityItem;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::items::UserMessageItem;
+use motyga_protocol::items::WebSearchItem;
+use motyga_protocol::mcp::CallToolResult;
+use motyga_protocol::mcp::McpServerInfo;
+use motyga_protocol::memory_citation::MemoryCitation as CoreMemoryCitation;
+use motyga_protocol::memory_citation::MemoryCitationEntry as CoreMemoryCitationEntry;
+use motyga_protocol::models::AdditionalPermissionProfile as CoreAdditionalPermissionProfile;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
+use motyga_protocol::models::FileSystemPermissions as CoreFileSystemPermissions;
+use motyga_protocol::models::ImageDetail;
+use motyga_protocol::models::MessagePhase;
+use motyga_protocol::models::NetworkPermissions as CoreNetworkPermissions;
+use motyga_protocol::models::WebSearchAction as CoreWebSearchAction;
+use motyga_protocol::permissions::FileSystemAccessMode as CoreFileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath as CoreFileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry as CoreFileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSpecialPath as CoreFileSystemSpecialPath;
+use motyga_protocol::protocol::AgentStatus as CoreAgentStatus;
+use motyga_protocol::protocol::AskForApproval as CoreAskForApproval;
+use motyga_protocol::protocol::ConversationTextRole;
+use motyga_protocol::protocol::ExecCommandSource as CoreExecCommandSource;
+use motyga_protocol::protocol::GranularApprovalConfig as CoreGranularApprovalConfig;
+use motyga_protocol::protocol::NetworkAccess as CoreNetworkAccess;
+use motyga_protocol::protocol::SubAgentActivityKind as CoreSubAgentActivityKind;
+use motyga_protocol::request_permissions::RequestPermissionProfile as CoreRequestPermissionProfile;
+use motyga_protocol::user_input::UserInput as CoreUserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::test_support::PathBufExt;
+use motyga_utils_absolute_path::test_support::test_path_buf;
+use motyga_utils_path_uri::LegacyAppPathString;
+use motyga_utils_path_uri::PathUri;
 use pretty_assertions::assert_eq;
 use serde_json::Value as JsonValue;
 use serde_json::json;
@@ -91,7 +91,7 @@ fn thread_sources_round_trip_as_scalar_labels() {
             source
         );
 
-        let core_source: codex_protocol::protocol::ThreadSource = source.clone().into();
+        let core_source: motyga_protocol::protocol::ThreadSource = source.clone().into();
         assert_eq!(ThreadSource::from(core_source), source);
     }
 }
@@ -1596,7 +1596,7 @@ fn sandbox_policy_round_trips_external_sandbox_network_access() {
     let core_policy = v2_policy.to_core();
     assert_eq!(
         core_policy,
-        codex_protocol::protocol::SandboxPolicy::ExternalSandbox {
+        motyga_protocol::protocol::SandboxPolicy::ExternalSandbox {
             network_access: CoreNetworkAccess::Enabled,
         }
     );
@@ -1614,7 +1614,7 @@ fn sandbox_policy_round_trips_read_only_network_access() {
     let core_policy = v2_policy.to_core();
     assert_eq!(
         core_policy,
-        codex_protocol::protocol::SandboxPolicy::ReadOnly {
+        motyga_protocol::protocol::SandboxPolicy::ReadOnly {
             network_access: true,
         }
     );
@@ -2289,7 +2289,7 @@ fn sandbox_policy_round_trips_workspace_write_access() {
     let core_policy = v2_policy.to_core();
     assert_eq!(
         core_policy,
-        codex_protocol::protocol::SandboxPolicy::WorkspaceWrite {
+        motyga_protocol::protocol::SandboxPolicy::WorkspaceWrite {
             writable_roots: vec![],
             network_access: true,
             exclude_tmpdir_env_var: false,
@@ -2647,7 +2647,7 @@ fn core_turn_item_into_thread_item_converts_supported_variants() {
         process_id: Some("pid-1".to_string()),
         command: vec!["echo".to_string(), "done".to_string()],
         cwd: PathUri::from_abs_path(&test_path_buf("/tmp").abs()),
-        parsed_cmd: vec![codex_protocol::parse_command::ParsedCommand::Unknown {
+        parsed_cmd: vec![motyga_protocol::parse_command::ParsedCommand::Unknown {
             cmd: "echo done".to_string(),
         }],
         source: CoreExecCommandSource::Agent,
@@ -2686,7 +2686,7 @@ fn core_turn_item_into_thread_item_converts_supported_variants() {
         arguments: json!({"id": "123"}),
         status: CoreDynamicToolCallStatus::Completed,
         content_items: Some(vec![
-            codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputText {
+            motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputText {
                 text: "ok".to_string(),
             },
         ]),
@@ -2711,8 +2711,8 @@ fn core_turn_item_into_thread_item_converts_supported_variants() {
         }
     );
 
-    let sender_thread_id = codex_protocol::ThreadId::default();
-    let receiver_thread_id = codex_protocol::ThreadId::default();
+    let sender_thread_id = motyga_protocol::ThreadId::default();
+    let receiver_thread_id = motyga_protocol::ThreadId::default();
     let collab_item = TurnItem::CollabAgentToolCall(CollabAgentToolCallItem {
         id: "collab-1".to_string(),
         tool: CoreCollabAgentTool::SendInput,
@@ -2755,7 +2755,7 @@ fn core_turn_item_into_thread_item_converts_supported_variants() {
         id: "activity-1".to_string(),
         kind: CoreSubAgentActivityKind::Interrupted,
         agent_thread_id: receiver_thread_id,
-        agent_path: codex_protocol::AgentPath::root()
+        agent_path: motyga_protocol::AgentPath::root()
             .join("worker")
             .expect("worker path"),
     });
@@ -2808,13 +2808,13 @@ fn core_turn_item_into_thread_item_converts_supported_variants() {
         id: "patch-1".to_string(),
         changes: [(
             PathBuf::from("README.md"),
-            codex_protocol::protocol::FileChange::Add {
+            motyga_protocol::protocol::FileChange::Add {
                 content: "hello\n".to_string(),
             },
         )]
         .into_iter()
         .collect(),
-        status: Some(codex_protocol::protocol::PatchApplyStatus::Completed),
+        status: Some(motyga_protocol::protocol::PatchApplyStatus::Completed),
         auto_approved: None,
         stdout: Some("Done!".to_string()),
         stderr: Some(String::new()),
@@ -2924,7 +2924,7 @@ fn core_turn_item_into_thread_item_converts_supported_variants() {
 fn mcp_tool_call_app_context_serializes_connector_id() {
     let item = ThreadItem::McpToolCall {
         id: "mcp-1".to_string(),
-        server: "codex_apps".to_string(),
+        server: "motyga_apps".to_string(),
         tool: "calendar.create_event".to_string(),
         status: McpToolCallStatus::InProgress,
         arguments: json!({}),
@@ -2948,7 +2948,7 @@ fn mcp_tool_call_app_context_serializes_connector_id() {
         json!({
             "type": "mcpToolCall",
             "id": "mcp-1",
-            "server": "codex_apps",
+            "server": "motyga_apps",
             "tool": "calendar.create_event",
             "status": "inProgress",
             "arguments": {},
@@ -3602,20 +3602,20 @@ fn plugin_share_params_and_response_serialization_use_camel_case_fields() {
     assert_eq!(
         serde_json::to_value(PluginShareCheckoutResponse {
             remote_plugin_id: "plugins~Plugin_00000000000000000000000000000000".to_string(),
-            plugin_id: "gmail@codex-curated".to_string(),
+            plugin_id: "gmail@motyga-curated".to_string(),
             plugin_name: "gmail".to_string(),
             plugin_path,
-            marketplace_name: "codex-curated".to_string(),
+            marketplace_name: "motyga-curated".to_string(),
             marketplace_path,
             remote_version: Some("1.2.3".to_string()),
         })
         .unwrap(),
         json!({
             "remotePluginId": "plugins~Plugin_00000000000000000000000000000000",
-            "pluginId": "gmail@codex-curated",
+            "pluginId": "gmail@motyga-curated",
             "pluginName": "gmail",
             "pluginPath": plugin_path_json,
-            "marketplaceName": "codex-curated",
+            "marketplaceName": "motyga-curated",
             "marketplacePath": marketplace_path_json,
             "remoteVersion": "1.2.3",
         }),
@@ -3822,8 +3822,8 @@ fn marketplace_upgrade_response_serializes_camel_case_fields() {
 }
 
 #[test]
-fn codex_error_info_serializes_http_status_code_in_camel_case() {
-    let value = CodexErrorInfo::ResponseTooManyFailedAttempts {
+fn motyga_error_info_serializes_http_status_code_in_camel_case() {
+    let value = MotygaErrorInfo::ResponseTooManyFailedAttempts {
         http_status_code: Some(401),
     };
 
@@ -3838,16 +3838,16 @@ fn codex_error_info_serializes_http_status_code_in_camel_case() {
 }
 
 #[test]
-fn codex_error_info_serializes_cyber_policy_in_camel_case() {
+fn motyga_error_info_serializes_cyber_policy_in_camel_case() {
     assert_eq!(
-        serde_json::to_value(CodexErrorInfo::CyberPolicy).unwrap(),
+        serde_json::to_value(MotygaErrorInfo::CyberPolicy).unwrap(),
         json!("cyberPolicy")
     );
 }
 
 #[test]
-fn codex_error_info_serializes_active_turn_not_steerable_turn_kind_in_camel_case() {
-    let value = CodexErrorInfo::ActiveTurnNotSteerable {
+fn motyga_error_info_serializes_active_turn_not_steerable_turn_kind_in_camel_case() {
+    let value = MotygaErrorInfo::ActiveTurnNotSteerable {
         turn_kind: NonSteerableTurnKind::Review,
     };
 
@@ -4091,7 +4091,7 @@ fn turn_start_params_round_trip_multi_agent_mode() {
 
     assert_eq!(
         params.multi_agent_mode,
-        Some(codex_protocol::config_types::MultiAgentMode::Proactive)
+        Some(motyga_protocol::config_types::MultiAgentMode::Proactive)
     );
     assert_eq!(
         crate::experimental_api::ExperimentalApi::experimental_reason(&params),
@@ -4112,7 +4112,7 @@ fn thread_start_params_round_trip_multi_agent_mode() {
 
     assert_eq!(
         params.multi_agent_mode,
-        Some(codex_protocol::config_types::MultiAgentMode::Proactive)
+        Some(motyga_protocol::config_types::MultiAgentMode::Proactive)
     );
     assert_eq!(
         crate::experimental_api::ExperimentalApi::experimental_reason(&params),
@@ -4179,9 +4179,9 @@ fn thread_settings_update_params_preserve_field_level_experimental_gates() {
 
     let collaboration_mode = ThreadSettingsUpdateParams {
         thread_id: "thread_123".to_string(),
-        collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-            mode: codex_protocol::config_types::ModeKind::Plan,
-            settings: codex_protocol::config_types::Settings {
+        collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+            mode: motyga_protocol::config_types::ModeKind::Plan,
+            settings: motyga_protocol::config_types::Settings {
                 model: "mock-model".to_string(),
                 reasoning_effort: None,
                 developer_instructions: None,

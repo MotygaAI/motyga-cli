@@ -1,22 +1,22 @@
 use std::sync::Arc;
 
-use codex_prompts::render_review_exit_interrupted;
-use codex_prompts::render_review_exit_success;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::AgentMessageContentDeltaEvent;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExitedReviewModeEvent;
-use codex_protocol::protocol::ItemCompletedEvent;
-use codex_protocol::protocol::ReviewOutputEvent;
-use codex_protocol::protocol::SubAgentSource;
+use motyga_prompts::render_review_exit_interrupted;
+use motyga_prompts::render_review_exit_success;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::AgentMessageContentDeltaEvent;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExitedReviewModeEvent;
+use motyga_protocol::protocol::ItemCompletedEvent;
+use motyga_protocol::protocol::ReviewOutputEvent;
+use motyga_protocol::protocol::SubAgentSource;
 use tokio_util::sync::CancellationToken;
 
-use crate::codex_delegate::run_codex_thread_one_shot;
+use crate::motyga_delegate::run_motyga_thread_one_shot;
 use crate::config::Constrained;
 use crate::review_format::format_review_findings_block;
 use crate::review_format::render_review_output_text;
@@ -24,8 +24,8 @@ use crate::session::TurnInput;
 use crate::session::session::Session;
 use crate::session::turn_context::TurnContext;
 use crate::state::TaskKind;
-use codex_features::Feature;
-use codex_protocol::user_input::UserInput;
+use motyga_features::Feature;
+use motyga_protocol::user_input::UserInput;
 
 use super::SessionTask;
 use super::SessionTaskContext;
@@ -57,7 +57,7 @@ impl SessionTask for ReviewTask {
         cancellation_token: CancellationToken,
     ) -> SessionTaskResult {
         session.session.services.session_telemetry.counter(
-            "codex.task.review",
+            "motyga.task.review",
             /*inc*/ 1,
             &[],
         );
@@ -70,7 +70,7 @@ impl SessionTask for ReviewTask {
             }
         }
 
-        // Start sub-codex conversation and get the receiver for events.
+        // Start sub-motyga conversation and get the receiver for events.
         let output = match start_review_conversation(
             session.clone(),
             ctx.clone(),
@@ -122,7 +122,7 @@ async fn start_review_conversation(
         .clone()
         .unwrap_or_else(|| ctx.model_info.slug.clone());
     sub_agent_config.model = Some(model);
-    (run_codex_thread_one_shot(
+    (run_motyga_thread_one_shot(
         sub_agent_config,
         session.auth_manager(),
         session.models_manager(),

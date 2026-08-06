@@ -1,5 +1,5 @@
 use super::*;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
 
 impl ChatWidget {
     pub(super) fn open_permission_profiles_popup(&mut self) {

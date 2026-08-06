@@ -16,7 +16,7 @@ export async function createOutputSchemaFile(schema: unknown): Promise<OutputSch
     throw new Error("outputSchema must be a plain JSON object");
   }
 
-  const schemaDir = await fs.mkdtemp(path.join(os.tmpdir(), "codex-output-schema-"));
+  const schemaDir = await fs.mkdtemp(path.join(os.tmpdir(), "motyga-output-schema-"));
   const schemaPath = path.join(schemaDir, "schema.json");
   const cleanup = async () => {
     try {

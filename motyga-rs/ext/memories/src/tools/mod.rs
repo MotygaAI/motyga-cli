@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use codex_extension_api::FunctionCallError;
-use codex_extension_api::ResponsesApiTool;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolExecutor;
-use codex_extension_api::ToolName;
-use codex_extension_api::ToolSpec;
-use codex_extension_api::parse_tool_input_schema;
-use codex_otel::MetricsClient;
-use codex_tools::ResponsesApiNamespace;
-use codex_tools::ResponsesApiNamespaceTool;
-use codex_tools::default_namespace_description;
+use motyga_extension_api::FunctionCallError;
+use motyga_extension_api::ResponsesApiTool;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolExecutor;
+use motyga_extension_api::ToolName;
+use motyga_extension_api::ToolSpec;
+use motyga_extension_api::parse_tool_input_schema;
+use motyga_otel::MetricsClient;
+use motyga_tools::ResponsesApiNamespace;
+use motyga_tools::ResponsesApiNamespaceTool;
+use motyga_tools::default_namespace_description;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::Value;

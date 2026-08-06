@@ -1,15 +1,15 @@
 [package]
-name = "codex-mcp-server"
+name = "motyga-mcp-server"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "codex-mcp-server"
+name = "motyga-mcp-server"
 path = "src/main.rs"
 
 [lib]
-name = "codex_mcp_server"
+name = "motyga_mcp_server"
 path = "src/lib.rs"
 doctest = false
 
@@ -18,16 +18,16 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-codex-arg0 = { workspace = true }
-codex-config = { workspace = true }
-codex-core = { workspace = true }
-codex-home = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-extension-api = { workspace = true }
-codex-login = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-cli = { workspace = true }
-codex-utils-json-to-toml = { workspace = true }
+motyga-arg0 = { workspace = true }
+motyga-config = { workspace = true }
+motyga-core = { workspace = true }
+motyga-home = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-extension-api = { workspace = true }
+motyga-login = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-cli = { workspace = true }
+motyga-utils-json-to-toml = { workspace = true }
 rmcp = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -44,8 +44,8 @@ tracing = { workspace = true, features = ["log"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [dev-dependencies]
-codex-utils-absolute-path = { workspace = true }
-codex-shell-command = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-shell-command = { workspace = true }
 core_test_support = { workspace = true }
 mcp_test_support = { workspace = true }
 os_info = { workspace = true }

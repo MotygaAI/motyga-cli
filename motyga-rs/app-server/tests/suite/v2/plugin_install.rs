@@ -21,18 +21,18 @@ use axum::http::StatusCode;
 use axum::http::Uri;
 use axum::http::header::AUTHORIZATION;
 use axum::routing::get;
-use codex_app_server_protocol::AppInfo;
-use codex_app_server_protocol::AppSummary;
-use codex_app_server_protocol::AppsListParams;
-use codex_app_server_protocol::AppsListResponse;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::PluginAuthPolicy;
-use codex_app_server_protocol::PluginAvailability;
-use codex_app_server_protocol::PluginInstallParams;
-use codex_app_server_protocol::PluginInstallResponse;
-use codex_app_server_protocol::RequestId;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::AppInfo;
+use motyga_app_server_protocol::AppSummary;
+use motyga_app_server_protocol::AppsListParams;
+use motyga_app_server_protocol::AppsListResponse;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::PluginAuthPolicy;
+use motyga_app_server_protocol::PluginAvailability;
+use motyga_app_server_protocol::PluginInstallParams;
+use motyga_app_server_protocol::PluginInstallResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use flate2::Compression;
 use flate2::write::GzEncoder;
 use pretty_assertions::assert_eq;
@@ -67,12 +67,12 @@ use wiremock::matchers::query_param;
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 const REMOTE_PLUGIN_ID: &str = "plugins~Plugin_00000000000000000000000000000000";
 const TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS: &str =
-    "CODEX_TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS";
+    "MOTYGA_TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS";
 
 #[tokio::test]
 async fn plugin_install_rejects_relative_marketplace_paths() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -98,8 +98,8 @@ async fn plugin_install_rejects_relative_marketplace_paths() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_install_rejects_missing_install_source() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -127,14 +127,14 @@ async fn plugin_install_rejects_missing_install_source() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_install_rejects_multiple_install_sources() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
         .send_plugin_install_request(PluginInstallParams {
             marketplace_path: Some(AbsolutePathBuf::try_from(
-                codex_home.path().join("marketplace.json"),
+                motyga_home.path().join("marketplace.json"),
             )?),
             remote_marketplace_name: Some("openai-curated-remote".to_string()),
             plugin_name: "sample-plugin".to_string(),
@@ -158,14 +158,14 @@ async fn plugin_install_rejects_multiple_install_sources() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_install_rejects_remote_marketplace_when_plugins_are_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"[features]
 plugins = false
 "#,
     )?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -193,9 +193,9 @@ plugins = false
 
 #[tokio::test]
 async fn plugin_install_writes_remote_plugin_to_cloud_and_cache() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    let installed_path = codex_home
+    let installed_path = motyga_home
         .path()
         .join("plugins/cache/openai-curated-remote/linear/1.2.3");
     let remote_app_manifest = json!({
@@ -214,7 +214,7 @@ async fn plugin_install_writes_remote_plugin_to_cloud_and_cache() -> Result<()> 
         )?,
     )
     .await;
-    configure_remote_plugin_test(codex_home.path(), &server)?;
+    configure_remote_plugin_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail_with_app_manifest(
         &server,
         REMOTE_PLUGIN_ID,
@@ -232,7 +232,7 @@ async fn plugin_install_writes_remote_plugin_to_cloud_and_cache() -> Result<()> 
     .await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -278,7 +278,7 @@ async fn plugin_install_writes_remote_plugin_to_cloud_and_cache() -> Result<()> 
     assert_eq!(installed_app_manifest, remote_app_manifest);
     assert!(installed_path.join("skills/plan-work/SKILL.md").is_file());
     assert!(
-        !codex_home
+        !motyga_home
             .path()
             .join(format!(
                 "plugins/cache/openai-curated-remote/{REMOTE_PLUGIN_ID}/1.2.3"
@@ -290,7 +290,7 @@ async fn plugin_install_writes_remote_plugin_to_cloud_and_cache() -> Result<()> 
 
 #[tokio::test]
 async fn plugin_install_uses_remote_apps_needing_auth_response() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     let remote_app_manifest = json!({
         "apps": {
@@ -306,7 +306,7 @@ async fn plugin_install_uses_remote_apps_needing_auth_response() -> Result<()> {
         remote_plugin_bundle_tar_gz_bytes("linear")?,
     )
     .await;
-    configure_remote_plugin_with_apps_test(codex_home.path(), &server)?;
+    configure_remote_plugin_with_apps_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail_with_app_manifest(
         &server,
         REMOTE_PLUGIN_ID,
@@ -319,7 +319,7 @@ async fn plugin_install_uses_remote_apps_needing_auth_response() -> Result<()> {
     mount_remote_plugin_install_with_apps_needing_auth(&server, REMOTE_PLUGIN_ID, &["alpha"]).await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -358,9 +358,9 @@ async fn plugin_install_uses_remote_apps_needing_auth_response() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_install_rejects_missing_remote_bundle_url() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    configure_remote_plugin_test(codex_home.path(), &server)?;
+    configure_remote_plugin_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail(
         &server,
         REMOTE_PLUGIN_ID,
@@ -370,7 +370,7 @@ async fn plugin_install_rejects_missing_remote_bundle_url() -> Result<()> {
     .await;
     mount_empty_remote_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = send_remote_plugin_install_request(&mut mcp, REMOTE_PLUGIN_ID).await?;
@@ -394,7 +394,7 @@ async fn plugin_install_rejects_missing_remote_bundle_url() -> Result<()> {
     )
     .await?;
     assert!(
-        !codex_home
+        !motyga_home
             .path()
             .join("plugins/cache/openai-curated-remote/linear")
             .exists()
@@ -404,14 +404,14 @@ async fn plugin_install_rejects_missing_remote_bundle_url() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_install_rejects_plain_http_remote_bundle_url() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     let bundle_url = format!("{}/bundles/linear.tar.gz", server.uri());
-    configure_remote_plugin_test(codex_home.path(), &server)?;
+    configure_remote_plugin_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail(&server, REMOTE_PLUGIN_ID, "1.2.3", Some(&bundle_url)).await;
     mount_empty_remote_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = send_remote_plugin_install_request(&mut mcp, REMOTE_PLUGIN_ID).await?;
@@ -435,7 +435,7 @@ async fn plugin_install_rejects_plain_http_remote_bundle_url() -> Result<()> {
     )
     .await?;
     assert!(
-        !codex_home
+        !motyga_home
             .path()
             .join("plugins/cache/openai-curated-remote/linear")
             .exists()
@@ -445,9 +445,9 @@ async fn plugin_install_rejects_plain_http_remote_bundle_url() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_install_rejects_invalid_remote_release_version() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    configure_remote_plugin_test(codex_home.path(), &server)?;
+    configure_remote_plugin_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail(
         &server,
         REMOTE_PLUGIN_ID,
@@ -457,7 +457,7 @@ async fn plugin_install_rejects_invalid_remote_release_version() -> Result<()> {
     .await;
     mount_empty_remote_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = send_remote_plugin_install_request(&mut mcp, REMOTE_PLUGIN_ID).await?;
@@ -477,7 +477,7 @@ async fn plugin_install_rejects_invalid_remote_release_version() -> Result<()> {
     )
     .await?;
     assert!(
-        !codex_home
+        !motyga_home
             .path()
             .join("plugins/cache/openai-curated-remote/linear")
             .exists()
@@ -487,9 +487,9 @@ async fn plugin_install_rejects_invalid_remote_release_version() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_install_rejects_invalid_remote_plugin_name() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    write_remote_plugin_catalog_config(codex_home.path(), "https://example.invalid/backend-api/")?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    write_remote_plugin_catalog_config(motyga_home.path(), "https://example.invalid/backend-api/")?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -513,13 +513,13 @@ async fn plugin_install_rejects_invalid_remote_plugin_name() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_install_tracks_analytics_when_remote_detail_fetch_fails() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    configure_remote_plugin_test(codex_home.path(), &server)?;
+    configure_remote_plugin_test(motyga_home.path(), &server)?;
     mount_empty_remote_installed_plugins(&server).await;
     mount_backend_analytics_events(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = send_remote_plugin_install_request(&mut mcp, REMOTE_PLUGIN_ID).await?;
@@ -536,7 +536,7 @@ async fn plugin_install_tracks_analytics_when_remote_detail_fetch_fails() -> Res
     let event_params = &payload["events"][0]["event_params"];
     assert_eq!(
         payload["events"][0]["event_type"],
-        "codex_plugin_install_failed"
+        "motyga_plugin_install_failed"
     );
     assert_eq!(event_params["plugin_id"], json!(null));
     assert_eq!(event_params["remote_plugin_id"], REMOTE_PLUGIN_ID);
@@ -551,7 +551,7 @@ async fn plugin_install_tracks_analytics_when_remote_detail_fetch_fails() -> Res
 
 #[tokio::test]
 async fn plugin_install_rejects_remote_plugin_disabled_by_admin_before_download() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     let bundle_url = mount_remote_plugin_bundle(
         &server,
@@ -559,7 +559,7 @@ async fn plugin_install_rejects_remote_plugin_disabled_by_admin_before_download(
         remote_plugin_bundle_tar_gz_bytes("linear")?,
     )
     .await;
-    configure_remote_plugin_test(codex_home.path(), &server)?;
+    configure_remote_plugin_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail_with_status(
         &server,
         REMOTE_PLUGIN_ID,
@@ -571,7 +571,7 @@ async fn plugin_install_rejects_remote_plugin_disabled_by_admin_before_download(
     mount_empty_remote_installed_plugins(&server).await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -601,7 +601,7 @@ async fn plugin_install_rejects_remote_plugin_disabled_by_admin_before_download(
     )
     .await?;
     assert!(
-        !codex_home
+        !motyga_home
             .path()
             .join("plugins/cache/openai-curated-remote/linear")
             .exists()
@@ -611,9 +611,9 @@ async fn plugin_install_rejects_remote_plugin_disabled_by_admin_before_download(
 
 #[tokio::test]
 async fn plugin_install_rejects_remote_plugin_not_available() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    configure_remote_plugin_test(codex_home.path(), &server)?;
+    configure_remote_plugin_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail_with_install_policy(
         &server,
         REMOTE_PLUGIN_ID,
@@ -623,7 +623,7 @@ async fn plugin_install_rejects_remote_plugin_not_available() -> Result<()> {
     .await;
     mount_empty_remote_installed_plugins(&server).await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = send_remote_plugin_install_request(&mut mcp, REMOTE_PLUGIN_ID).await?;
@@ -646,16 +646,16 @@ async fn plugin_install_rejects_remote_plugin_not_available() -> Result<()> {
 }
 
 #[tokio::test]
-async fn plugin_install_rejects_when_workspace_codex_plugins_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+async fn plugin_install_rejects_when_workspace_motyga_plugins_disabled() -> Result<()> {
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     let server = MockServer::start().await;
     write_plugins_enabled_config_with_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -686,7 +686,7 @@ async fn plugin_install_rejects_when_workspace_codex_plugins_disabled() -> Resul
         .mount(&server)
         .await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -714,14 +714,14 @@ async fn plugin_install_rejects_when_workspace_codex_plugins_disabled() -> Resul
 
 #[tokio::test]
 async fn plugin_install_returns_invalid_request_for_missing_marketplace_file() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
         .send_plugin_install_request(PluginInstallParams {
             marketplace_path: Some(AbsolutePathBuf::try_from(
-                codex_home.path().join("missing-marketplace.json"),
+                motyga_home.path().join("missing-marketplace.json"),
             )?),
             remote_marketplace_name: None,
             plugin_name: "missing-plugin".to_string(),
@@ -742,7 +742,7 @@ async fn plugin_install_returns_invalid_request_for_missing_marketplace_file() -
 
 #[tokio::test]
 async fn plugin_install_returns_invalid_request_for_not_available_plugin() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     write_plugin_marketplace(
         repo_root.path(),
@@ -756,7 +756,7 @@ async fn plugin_install_returns_invalid_request_for_not_available_plugin() -> Re
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -780,7 +780,7 @@ async fn plugin_install_returns_invalid_request_for_not_available_plugin() -> Re
 
 #[tokio::test]
 async fn plugin_install_returns_invalid_request_for_disallowed_product_plugin() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let repo_root = TempDir::new()?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
     std::fs::write(
@@ -806,7 +806,7 @@ async fn plugin_install_returns_invalid_request_for_disallowed_product_plugin() 
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
     let mut mcp =
-        TestAppServer::new_with_args(codex_home.path(), &["--session-source", "atlas"]).await?;
+        TestAppServer::new_with_args(motyga_home.path(), &["--session-source", "atlas"]).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -831,10 +831,10 @@ async fn plugin_install_returns_invalid_request_for_disallowed_product_plugin() 
 #[tokio::test]
 async fn plugin_install_tracks_analytics_event() -> Result<()> {
     let analytics_server = start_analytics_events_server().await?;
-    let codex_home = TempDir::new()?;
-    write_analytics_config(codex_home.path(), &analytics_server.uri())?;
+    let motyga_home = TempDir::new()?;
+    write_analytics_config(motyga_home.path(), &analytics_server.uri())?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -855,7 +855,7 @@ async fn plugin_install_tracks_analytics_event() -> Result<()> {
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -878,7 +878,7 @@ async fn plugin_install_tracks_analytics_event() -> Result<()> {
         payload,
         json!({
             "events": [{
-                "event_type": "codex_plugin_installed",
+                "event_type": "motyga_plugin_installed",
                 "event_params": {
                     "plugin_id": "sample-plugin@debug",
                     "remote_plugin_id": null,
@@ -898,10 +898,10 @@ async fn plugin_install_tracks_analytics_event() -> Result<()> {
 #[tokio::test]
 async fn plugin_install_failure_tracks_analytics_event() -> Result<()> {
     let analytics_server = start_analytics_events_server().await?;
-    let codex_home = TempDir::new()?;
-    write_analytics_config(codex_home.path(), &analytics_server.uri())?;
+    let motyga_home = TempDir::new()?;
+    write_analytics_config(motyga_home.path(), &analytics_server.uri())?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -921,7 +921,7 @@ async fn plugin_install_failure_tracks_analytics_event() -> Result<()> {
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -942,7 +942,7 @@ async fn plugin_install_failure_tracks_analytics_event() -> Result<()> {
     let event_params = &payload["events"][0]["event_params"];
     assert_eq!(
         payload["events"][0]["event_type"],
-        "codex_plugin_install_failed"
+        "motyga_plugin_install_failed"
     );
     assert_eq!(event_params["plugin_id"], "sample-plugin@debug");
     assert_eq!(event_params["remote_plugin_id"], json!(null));
@@ -958,7 +958,7 @@ async fn plugin_install_failure_tracks_analytics_event() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_install_tracks_remote_plugin_analytics_event() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     let bundle_url = mount_remote_plugin_bundle(
         &server,
@@ -966,14 +966,14 @@ async fn plugin_install_tracks_remote_plugin_analytics_event() -> Result<()> {
         remote_plugin_bundle_tar_gz_bytes("linear")?,
     )
     .await;
-    configure_remote_plugin_test(codex_home.path(), &server)?;
+    configure_remote_plugin_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail(&server, REMOTE_PLUGIN_ID, "1.2.3", Some(&bundle_url)).await;
     mount_empty_remote_installed_plugins(&server).await;
     mount_remote_plugin_install(&server, REMOTE_PLUGIN_ID).await;
     mount_backend_analytics_events(&server).await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -993,7 +993,7 @@ async fn plugin_install_tracks_remote_plugin_analytics_event() -> Result<()> {
         payload,
         json!({
             "events": [{
-                "event_type": "codex_plugin_installed",
+                "event_type": "motyga_plugin_installed",
                 "event_params": {
                     "plugin_id": "linear@openai-curated-remote",
                     "remote_plugin_id": REMOTE_PLUGIN_ID,
@@ -1013,18 +1013,18 @@ async fn plugin_install_tracks_remote_plugin_analytics_event() -> Result<()> {
 #[tokio::test]
 async fn plugin_install_preserves_status_when_remote_bundle_error_body_is_too_large() -> Result<()>
 {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     let bundle_url =
         mount_remote_plugin_bundle(&server, /*status_code*/ 503, vec![b'x'; 8 * 1024 + 1]).await;
-    configure_remote_plugin_test(codex_home.path(), &server)?;
+    configure_remote_plugin_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail(&server, REMOTE_PLUGIN_ID, "1.2.3", Some(&bundle_url)).await;
     mount_empty_remote_installed_plugins(&server).await;
     mount_remote_plugin_install(&server, REMOTE_PLUGIN_ID).await;
     mount_backend_analytics_events(&server).await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -1071,14 +1071,14 @@ async fn plugin_install_preserves_status_when_remote_bundle_error_body_is_too_la
     let event_params = &payload["events"][0]["event_params"];
     assert_eq!(
         payload["events"][0]["event_type"],
-        "codex_plugin_install_failed"
+        "motyga_plugin_install_failed"
     );
     assert_eq!(event_params["plugin_id"], "linear@openai-curated-remote");
     assert_eq!(event_params["remote_plugin_id"], REMOTE_PLUGIN_ID);
     assert_eq!(event_params["marketplace_name"], "openai-curated-remote");
     assert_eq!(event_params["error_type"], "remote_bundle_download_status");
     assert!(
-        !codex_home
+        !motyga_home
             .path()
             .join("plugins/cache/openai-curated-remote/linear")
             .exists()
@@ -1127,10 +1127,10 @@ async fn plugin_install_returns_apps_needing_auth() -> Result<()> {
     let tools = vec![connector_tool("beta", "Beta App")?];
     let (server_url, server_handle, server_control) = start_apps_server(connectors, tools).await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1151,7 +1151,7 @@ async fn plugin_install_returns_apps_needing_auth() -> Result<()> {
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let directory_requests_before_install = server_control.directory_request_count();
 
@@ -1213,10 +1213,10 @@ async fn plugin_install_skips_mcp_oauth_for_chatgpt_dual_surface_plugin() -> Res
         start_apps_server(connectors, Vec::new()).await?;
     let oauth_server = MockServer::start().await;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &apps_server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &apps_server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1238,7 +1238,7 @@ async fn plugin_install_skips_mcp_oauth_for_chatgpt_dual_surface_plugin() -> Res
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1269,10 +1269,10 @@ async fn plugin_install_starts_mcp_oauth_with_formerly_disallowed_plugin_app() -
         start_apps_server(Vec::new(), Vec::new()).await?;
     let oauth_server = MockServer::start().await;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &apps_server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &apps_server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1298,7 +1298,7 @@ async fn plugin_install_starts_mcp_oauth_with_formerly_disallowed_plugin_app() -
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1376,9 +1376,9 @@ async fn plugin_install_starts_mcp_oauth_through_protected_resource_metadata() -
         .mount(&authorization_server)
         .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         "[features]\nplugins = true\n",
     )?;
     let repo_root = TempDir::new()?;
@@ -1395,7 +1395,7 @@ async fn plugin_install_starts_mcp_oauth_through_protected_resource_metadata() -
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1432,9 +1432,9 @@ async fn plugin_install_starts_mcp_oauth_through_protected_resource_metadata() -
 #[tokio::test]
 async fn plugin_install_starts_mcp_oauth_for_api_key_dual_surface_plugin() -> Result<()> {
     let oauth_server = MockServer::start().await;
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"
 mcp_oauth_credentials_store = "file"
 
@@ -1459,7 +1459,7 @@ connectors = true
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[("OPENAI_API_KEY", Some("test-api-key"))],
     )
     .await?;
@@ -1486,7 +1486,7 @@ connectors = true
 
 #[tokio::test]
 async fn plugin_install_starts_remote_mcp_oauth_for_install_response_only_app() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     let oauth_server = MockServer::start().await;
     let bundle_url = mount_remote_plugin_bundle(
@@ -1495,13 +1495,13 @@ async fn plugin_install_starts_remote_mcp_oauth_for_install_response_only_app() 
         remote_plugin_bundle_tar_gz_bytes_with_mcp_config("linear", &oauth_server.uri())?,
     )
     .await;
-    configure_remote_plugin_with_apps_test(codex_home.path(), &server)?;
+    configure_remote_plugin_with_apps_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail(&server, REMOTE_PLUGIN_ID, "1.2.3", Some(&bundle_url)).await;
     mount_empty_remote_installed_plugins(&server).await;
     mount_remote_plugin_install_with_apps_needing_auth(&server, REMOTE_PLUGIN_ID, &["alpha"]).await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -1534,7 +1534,7 @@ async fn plugin_install_starts_remote_mcp_oauth_for_install_response_only_app() 
 
 #[tokio::test]
 async fn plugin_install_skips_remote_mcp_oauth_for_bundled_same_name_app() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     let oauth_server = MockServer::start().await;
     let bundle_url = mount_remote_plugin_bundle(
@@ -1547,13 +1547,13 @@ async fn plugin_install_skips_remote_mcp_oauth_for_bundled_same_name_app() -> Re
         )?,
     )
     .await;
-    configure_remote_plugin_with_apps_test(codex_home.path(), &server)?;
+    configure_remote_plugin_with_apps_test(motyga_home.path(), &server)?;
     mount_remote_plugin_detail(&server, REMOTE_PLUGIN_ID, "1.2.3", Some(&bundle_url)).await;
     mount_empty_remote_installed_plugins(&server).await;
     mount_remote_plugin_install_with_apps_needing_auth(&server, REMOTE_PLUGIN_ID, &["alpha"]).await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
     .await?;
@@ -1606,10 +1606,10 @@ async fn plugin_install_includes_formerly_disallowed_apps_needing_auth() -> Resu
     let (server_url, server_handle, server_control) =
         start_apps_server(connectors, Vec::new()).await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let motyga_home = TempDir::new()?;
+    write_connectors_config(motyga_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1634,7 +1634,7 @@ async fn plugin_install_includes_formerly_disallowed_apps_needing_auth() -> Resu
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let directory_requests_before_install =
         warm_app_directory_cache(&mut mcp, &server_control, "Alpha").await?;
@@ -1689,9 +1689,9 @@ async fn plugin_install_includes_formerly_disallowed_apps_needing_auth() -> Resu
 
 #[tokio::test]
 async fn plugin_install_makes_bundled_mcp_servers_available_to_followup_requests() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         "[features]\nplugins = true\n",
     )?;
     let repo_root = TempDir::new()?;
@@ -1717,7 +1717,7 @@ async fn plugin_install_makes_bundled_mcp_servers_available_to_followup_requests
     let marketplace_path =
         AbsolutePathBuf::try_from(repo_root.path().join(".agents/plugins/marketplace.json"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1734,7 +1734,7 @@ async fn plugin_install_makes_bundled_mcp_servers_available_to_followup_requests
     .await??;
     let response: PluginInstallResponse = to_response(response)?;
     assert_eq!(response.apps_needing_auth, Vec::<AppSummary>::new());
-    let config = std::fs::read_to_string(codex_home.path().join("config.toml"))?;
+    let config = std::fs::read_to_string(motyga_home.path().join("config.toml"))?;
     assert!(!config.contains("[mcp_servers.sample-mcp]"));
     assert!(!config.contains("command = \"echo\""));
 
@@ -1873,7 +1873,7 @@ async fn start_apps_server(
             get(list_directory_connectors),
         )
         .with_state(state)
-        .nest_service("/api/codex/ps/mcp", mcp_service);
+        .nest_service("/api/motyga/ps/mcp", mcp_service);
 
     let handle = tokio::spawn(async move {
         let _ = axum::serve(listener, router).await;
@@ -1936,9 +1936,9 @@ fn connector_tool(connector_id: &str, connector_name: &str) -> Result<Tool> {
     Ok(tool)
 }
 
-fn write_connectors_config(codex_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
+fn write_connectors_config(motyga_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{base_url}"
@@ -1952,11 +1952,11 @@ connectors = true
 }
 
 fn write_plugins_enabled_config_with_base_url(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     base_url: &str,
 ) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"chatgpt_base_url = "{base_url}"
 
@@ -1967,9 +1967,9 @@ plugins = true
     )
 }
 
-fn write_analytics_config(codex_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
+fn write_analytics_config(motyga_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!("chatgpt_base_url = \"{base_url}\"\n"),
     )
 }
@@ -1994,7 +1994,7 @@ async fn wait_for_plugin_analytics_payload(server: &MockServer) -> Result<serde_
                     && request
                         .url
                         .path()
-                        .ends_with("/codex/analytics-events/events")
+                        .ends_with("/motyga/analytics-events/events")
             }) {
                 return serde_json::from_slice(&request.body)
                     .map_err(|err| anyhow::anyhow!("invalid analytics payload: {err}"));
@@ -2016,11 +2016,11 @@ async fn oauth_discovery_request_count(server: &MockServer) -> usize {
 }
 
 fn write_remote_plugin_catalog_config(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     base_url: &str,
 ) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{base_url}"
@@ -2032,10 +2032,10 @@ plugins = true
     )
 }
 
-fn configure_remote_plugin_test(codex_home: &std::path::Path, server: &MockServer) -> Result<()> {
-    write_remote_plugin_catalog_config(codex_home, &format!("{}/backend-api/", server.uri()))?;
+fn configure_remote_plugin_test(motyga_home: &std::path::Path, server: &MockServer) -> Result<()> {
+    write_remote_plugin_catalog_config(motyga_home, &format!("{}/backend-api/", server.uri()))?;
     write_chatgpt_auth(
-        codex_home,
+        motyga_home,
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -2045,11 +2045,11 @@ fn configure_remote_plugin_test(codex_home: &std::path::Path, server: &MockServe
 }
 
 fn configure_remote_plugin_with_apps_test(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     server: &MockServer,
 ) -> Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{}/backend-api/"
@@ -2062,7 +2062,7 @@ connectors = true
         ),
     )?;
     write_chatgpt_auth(
-        codex_home,
+        motyga_home,
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")

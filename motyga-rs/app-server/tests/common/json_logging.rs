@@ -10,21 +10,21 @@ use serde_json::json;
 pub fn app_server_json_shutdown_event(
     binary: &str,
     args: &[&str],
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> Result<Value> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         "[features]\nplugins = false\n",
     )?;
-    let output = Command::new(codex_utils_cargo_bin::cargo_bin(binary)?)
+    let output = Command::new(motyga_utils_cargo_bin::cargo_bin(binary)?)
         .stdin(Stdio::null())
-        .env("MOTYGA_HOME", codex_home)
+        .env("MOTYGA_HOME", motyga_home)
         .env(
-            "CODEX_APP_SERVER_MANAGED_CONFIG_PATH",
-            codex_home.join("managed_config.toml"),
+            "MOTYGA_APP_SERVER_MANAGED_CONFIG_PATH",
+            motyga_home.join("managed_config.toml"),
         )
         .env("LOG_FORMAT", "json")
-        .env("RUST_LOG", "codex_app_server=info")
+        .env("RUST_LOG", "motyga_app_server=info")
         .args(args)
         .output()?;
 

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_plugins::PluginSkillRoot;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_plugins::PluginSkillRoot;
 
 use crate::AppConnectorId;
 use crate::AppDeclaration;
@@ -192,7 +192,7 @@ impl<M: Clone> PluginLoadOutcome<M> {
     }
 }
 
-/// Implemented by [`PluginLoadOutcome`] so callers (e.g. skills) can depend on `codex-plugin`
+/// Implemented by [`PluginLoadOutcome`] so callers (e.g. skills) can depend on `motyga-plugin`
 /// without naming the MCP config type parameter.
 pub trait EffectiveSkillRoots {
     fn effective_skill_roots(&self) -> Vec<AbsolutePathBuf>;

@@ -1,15 +1,15 @@
 use crate::config::Config;
 use crate::config::edit::ConfigEditsBuilder;
-use codex_config::config_toml::ConfigToml;
-use codex_config::types::WindowsSandboxModeToml;
-use codex_features::Feature;
-use codex_features::Features;
-use codex_features::FeaturesToml;
-use codex_login::default_client::originator;
-use codex_otel::sanitize_metric_tag_value;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::PermissionProfile;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_config::config_toml::ConfigToml;
+use motyga_config::types::WindowsSandboxModeToml;
+use motyga_features::Feature;
+use motyga_features::Features;
+use motyga_features::FeaturesToml;
+use motyga_login::default_client::originator;
+use motyga_otel::sanitize_metric_tag_value;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::PermissionProfile;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::path::Path;
@@ -103,20 +103,20 @@ pub fn legacy_windows_sandbox_mode_from_entries(
 }
 
 #[cfg(target_os = "windows")]
-pub fn sandbox_setup_is_complete(codex_home: &Path) -> bool {
-    codex_windows_sandbox::sandbox_setup_is_complete(codex_home)
+pub fn sandbox_setup_is_complete(motyga_home: &Path) -> bool {
+    motyga_windows_sandbox::sandbox_setup_is_complete(motyga_home)
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn sandbox_setup_is_complete(_codex_home: &Path) -> bool {
+pub fn sandbox_setup_is_complete(_motyga_home: &Path) -> bool {
     false
 }
 
 #[cfg(target_os = "windows")]
 pub fn elevated_setup_failure_details(err: &anyhow::Error) -> Option<(String, String)> {
-    let failure = codex_windows_sandbox::extract_setup_failure(err)?;
+    let failure = motyga_windows_sandbox::extract_setup_failure(err)?;
     let code = failure.code.as_str().to_string();
-    let message = codex_windows_sandbox::sanitize_setup_metric_tag_value(&failure.message);
+    let message = motyga_windows_sandbox::sanitize_setup_metric_tag_value(&failure.message);
     Some((code, message))
 }
 
@@ -127,15 +127,15 @@ pub fn elevated_setup_failure_details(_err: &anyhow::Error) -> Option<(String, S
 
 #[cfg(target_os = "windows")]
 pub fn elevated_setup_failure_metric_name(err: &anyhow::Error) -> &'static str {
-    if codex_windows_sandbox::extract_setup_failure(err).is_some_and(|failure| {
+    if motyga_windows_sandbox::extract_setup_failure(err).is_some_and(|failure| {
         matches!(
             failure.code,
-            codex_windows_sandbox::SetupErrorCode::OrchestratorHelperLaunchCanceled
+            motyga_windows_sandbox::SetupErrorCode::OrchestratorHelperLaunchCanceled
         )
     }) {
-        "codex.windows_sandbox.elevated_setup_canceled"
+        "motyga.windows_sandbox.elevated_setup_canceled"
     } else {
-        "codex.windows_sandbox.elevated_setup_failure"
+        "motyga.windows_sandbox.elevated_setup_failure"
     }
 }
 
@@ -150,28 +150,28 @@ pub fn run_elevated_setup(
     workspace_roots: &[AbsolutePathBuf],
     command_cwd: &Path,
     env_map: &HashMap<String, String>,
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> anyhow::Result<()> {
     let permissions =
-        codex_windows_sandbox::ResolvedWindowsSandboxPermissions::try_from_permission_profile_for_workspace_roots(
+        motyga_windows_sandbox::ResolvedWindowsSandboxPermissions::try_from_permission_profile_for_workspace_roots(
             permission_profile,
             workspace_roots,
         )?;
-    codex_windows_sandbox::run_elevated_setup(
-        codex_windows_sandbox::SandboxSetupRequest {
+    motyga_windows_sandbox::run_elevated_setup(
+        motyga_windows_sandbox::SandboxSetupRequest {
             permissions: &permissions,
             command_cwd,
             env_map,
-            codex_home,
+            motyga_home,
             proxy_enforced: false,
         },
-        codex_windows_sandbox::SetupRootOverrides::default(),
+        motyga_windows_sandbox::SetupRootOverrides::default(),
     )
 }
 
 #[cfg(target_os = "windows")]
-pub fn run_elevated_provisioning_setup(codex_home: &Path, real_user: &str) -> anyhow::Result<()> {
-    codex_windows_sandbox::run_elevated_provisioning_setup(codex_home, real_user)
+pub fn run_elevated_provisioning_setup(motyga_home: &Path, real_user: &str) -> anyhow::Result<()> {
+    motyga_windows_sandbox::run_elevated_provisioning_setup(motyga_home, real_user)
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -180,13 +180,13 @@ pub fn run_elevated_setup(
     _workspace_roots: &[AbsolutePathBuf],
     _command_cwd: &Path,
     _env_map: &HashMap<String, String>,
-    _codex_home: &Path,
+    _motyga_home: &Path,
 ) -> anyhow::Result<()> {
     anyhow::bail!("elevated Windows sandbox setup is only supported on Windows")
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn run_elevated_provisioning_setup(_codex_home: &Path, _real_user: &str) -> anyhow::Result<()> {
+pub fn run_elevated_provisioning_setup(_motyga_home: &Path, _real_user: &str) -> anyhow::Result<()> {
     anyhow::bail!("elevated Windows sandbox setup is only supported on Windows")
 }
 
@@ -196,12 +196,12 @@ pub fn run_legacy_setup_preflight(
     workspace_roots: &[AbsolutePathBuf],
     command_cwd: &Path,
     env_map: &HashMap<String, String>,
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> anyhow::Result<()> {
-    codex_windows_sandbox::run_windows_sandbox_legacy_preflight(
+    motyga_windows_sandbox::run_windows_sandbox_legacy_preflight(
         permission_profile,
         workspace_roots,
-        codex_home,
+        motyga_home,
         command_cwd,
         env_map,
     )
@@ -213,15 +213,15 @@ pub fn run_setup_refresh_with_extra_read_roots(
     workspace_roots: &[AbsolutePathBuf],
     command_cwd: &Path,
     env_map: &HashMap<String, String>,
-    codex_home: &Path,
+    motyga_home: &Path,
     extra_read_roots: Vec<PathBuf>,
 ) -> anyhow::Result<()> {
-    codex_windows_sandbox::run_setup_refresh_with_extra_read_roots(
+    motyga_windows_sandbox::run_setup_refresh_with_extra_read_roots(
         permission_profile,
         workspace_roots,
         command_cwd,
         env_map,
-        codex_home,
+        motyga_home,
         extra_read_roots,
         /*proxy_enforced*/ false,
     )
@@ -233,7 +233,7 @@ pub fn run_legacy_setup_preflight(
     _workspace_roots: &[AbsolutePathBuf],
     _command_cwd: &Path,
     _env_map: &HashMap<String, String>,
-    _codex_home: &Path,
+    _motyga_home: &Path,
 ) -> anyhow::Result<()> {
     anyhow::bail!("legacy Windows sandbox setup is only supported on Windows")
 }
@@ -244,7 +244,7 @@ pub fn run_setup_refresh_with_extra_read_roots(
     _workspace_roots: &[AbsolutePathBuf],
     _command_cwd: &Path,
     _env_map: &HashMap<String, String>,
-    _codex_home: &Path,
+    _motyga_home: &Path,
     _extra_read_roots: Vec<PathBuf>,
 ) -> anyhow::Result<()> {
     anyhow::bail!("Windows sandbox read-root refresh is only supported on Windows")
@@ -263,7 +263,7 @@ pub struct WindowsSandboxSetupRequest {
     pub workspace_roots: Vec<AbsolutePathBuf>,
     pub command_cwd: PathBuf,
     pub env_map: HashMap<String, String>,
-    pub codex_home: PathBuf,
+    pub motyga_home: PathBuf,
 }
 
 pub async fn run_windows_sandbox_setup(request: WindowsSandboxSetupRequest) -> anyhow::Result<()> {
@@ -301,19 +301,19 @@ async fn run_windows_sandbox_setup_and_persist(
     let workspace_roots = request.workspace_roots;
     let command_cwd = request.command_cwd;
     let env_map = request.env_map;
-    let codex_home = request.codex_home;
-    let setup_codex_home = codex_home.clone();
+    let motyga_home = request.motyga_home;
+    let setup_motyga_home = motyga_home.clone();
 
     let setup_result = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
         match mode {
             WindowsSandboxSetupMode::Elevated => {
-                if !sandbox_setup_is_complete(setup_codex_home.as_path()) {
+                if !sandbox_setup_is_complete(setup_motyga_home.as_path()) {
                     run_elevated_setup(
                         &permission_profile,
                         workspace_roots.as_slice(),
                         command_cwd.as_path(),
                         &env_map,
-                        setup_codex_home.as_path(),
+                        setup_motyga_home.as_path(),
                     )?;
                 }
             }
@@ -323,7 +323,7 @@ async fn run_windows_sandbox_setup_and_persist(
                     workspace_roots.as_slice(),
                     command_cwd.as_path(),
                     &env_map,
-                    setup_codex_home.as_path(),
+                    setup_motyga_home.as_path(),
                 )?;
             }
         }
@@ -334,7 +334,7 @@ async fn run_windows_sandbox_setup_and_persist(
 
     setup_result?;
 
-    ConfigEditsBuilder::new(codex_home.as_path())
+    ConfigEditsBuilder::new(motyga_home.as_path())
         .set_windows_sandbox_mode(windows_sandbox_setup_mode_tag(mode))
         .clear_legacy_windows_sandbox_keys()
         .apply()
@@ -347,12 +347,12 @@ fn emit_windows_sandbox_setup_success_metrics(
     originator_tag: &str,
     duration: std::time::Duration,
 ) {
-    let Some(metrics) = codex_otel::global() else {
+    let Some(metrics) = motyga_otel::global() else {
         return;
     };
     let mode_tag = windows_sandbox_setup_mode_tag(mode);
     let _ = metrics.record_duration(
-        "codex.windows_sandbox.setup_duration_ms",
+        "motyga.windows_sandbox.setup_duration_ms",
         duration,
         &[
             ("result", "success"),
@@ -361,7 +361,7 @@ fn emit_windows_sandbox_setup_success_metrics(
         ],
     );
     let _ = metrics.counter(
-        "codex.windows_sandbox.setup_success",
+        "motyga.windows_sandbox.setup_success",
         /*inc*/ 1,
         &[("originator", originator_tag), ("mode", mode_tag)],
     );
@@ -373,12 +373,12 @@ fn emit_windows_sandbox_setup_failure_metrics(
     duration: std::time::Duration,
     _err: &anyhow::Error,
 ) {
-    let Some(metrics) = codex_otel::global() else {
+    let Some(metrics) = motyga_otel::global() else {
         return;
     };
     let mode_tag = windows_sandbox_setup_mode_tag(mode);
     let _ = metrics.record_duration(
-        "codex.windows_sandbox.setup_duration_ms",
+        "motyga.windows_sandbox.setup_duration_ms",
         duration,
         &[
             ("result", "failure"),
@@ -387,7 +387,7 @@ fn emit_windows_sandbox_setup_failure_metrics(
         ],
     );
     let _ = metrics.counter(
-        "codex.windows_sandbox.setup_failure",
+        "motyga.windows_sandbox.setup_failure",
         /*inc*/ 1,
         &[("originator", originator_tag), ("mode", mode_tag)],
     );
@@ -416,7 +416,7 @@ fn emit_windows_sandbox_setup_failure_metrics(
         }
     } else {
         let _ = metrics.counter(
-            "codex.windows_sandbox.legacy_setup_preflight_failed",
+            "motyga.windows_sandbox.legacy_setup_preflight_failed",
             /*inc*/ 1,
             &[("originator", originator_tag)],
         );

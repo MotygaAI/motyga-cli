@@ -10,14 +10,14 @@ use bm25::Document;
 use bm25::Language;
 use bm25::SearchEngine;
 use bm25::SearchEngineBuilder;
-use codex_tools::LoadableToolSpec;
-use codex_tools::TOOL_SEARCH_DEFAULT_LIMIT;
-use codex_tools::TOOL_SEARCH_TOOL_NAME;
-use codex_tools::ToolName;
-use codex_tools::ToolSearchEntry;
-use codex_tools::ToolSearchInfo;
-use codex_tools::ToolSpec;
-use codex_tools::coalesce_loadable_tool_specs;
+use motyga_tools::LoadableToolSpec;
+use motyga_tools::TOOL_SEARCH_DEFAULT_LIMIT;
+use motyga_tools::TOOL_SEARCH_TOOL_NAME;
+use motyga_tools::ToolName;
+use motyga_tools::ToolSearchEntry;
+use motyga_tools::ToolSearchInfo;
+use motyga_tools::ToolSpec;
+use motyga_tools::coalesce_loadable_tool_specs;
 use std::sync::Arc;
 use std::sync::Mutex;
 use tracing::instrument;
@@ -107,7 +107,7 @@ impl ToolExecutor<ToolInvocation> for ToolSearchHandler {
         true
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(invocation))
     }
 }
@@ -185,12 +185,12 @@ mod tests {
     use super::*;
     use crate::tools::handlers::DynamicToolHandler;
     use crate::tools::handlers::McpHandler;
-    use codex_mcp::ToolInfo;
-    use codex_protocol::dynamic_tools::DynamicToolFunctionSpec;
-    use codex_protocol::dynamic_tools::DynamicToolNamespaceSpec;
-    use codex_tools::ResponsesApiNamespace;
-    use codex_tools::ResponsesApiNamespaceTool;
-    use codex_tools::ResponsesApiTool;
+    use motyga_mcp::ToolInfo;
+    use motyga_protocol::dynamic_tools::DynamicToolFunctionSpec;
+    use motyga_protocol::dynamic_tools::DynamicToolNamespaceSpec;
+    use motyga_tools::ResponsesApiNamespace;
+    use motyga_tools::ResponsesApiNamespaceTool;
+    use motyga_tools::ResponsesApiTool;
     use pretty_assertions::assert_eq;
     use rmcp::model::Tool;
     use std::sync::Arc;
@@ -221,8 +221,8 @@ mod tests {
     #[test]
     fn mixed_search_results_coalesce_mcp_namespaces() {
         let dynamic_namespace = DynamicToolNamespaceSpec {
-            name: "codex_app".to_string(),
-            description: "Tools in the codex_app namespace.".to_string(),
+            name: "motyga_app".to_string(),
+            description: "Tools in the motyga_app namespace.".to_string(),
             tools: Vec::new(),
         };
         let dynamic_tools = [DynamicToolFunctionSpec {
@@ -280,7 +280,7 @@ mod tests {
                             description: "Create events desktop tool".to_string(),
                             strict: false,
                             defer_loading: Some(true),
-                            parameters: codex_tools::JsonSchema::object(
+                            parameters: motyga_tools::JsonSchema::object(
                                 Default::default(),
                                 /*required*/ None,
                                 Some(false.into()),
@@ -292,7 +292,7 @@ mod tests {
                             description: "List events desktop tool".to_string(),
                             strict: false,
                             defer_loading: Some(true),
-                            parameters: codex_tools::JsonSchema::object(
+                            parameters: motyga_tools::JsonSchema::object(
                                 Default::default(),
                                 /*required*/ None,
                                 Some(false.into()),
@@ -302,18 +302,18 @@ mod tests {
                     ],
                 }),
                 LoadableToolSpec::Namespace(ResponsesApiNamespace {
-                    name: "codex_app".to_string(),
-                    description: "Tools in the codex_app namespace.".to_string(),
+                    name: "motyga_app".to_string(),
+                    description: "Tools in the motyga_app namespace.".to_string(),
                     tools: vec![ResponsesApiNamespaceTool::Function(ResponsesApiTool {
                         name: "automation_update".to_string(),
                         description: "Create, update, view, or delete recurring automations."
                             .to_string(),
                         strict: false,
                         defer_loading: Some(true),
-                        parameters: codex_tools::JsonSchema::object(
+                        parameters: motyga_tools::JsonSchema::object(
                             std::collections::BTreeMap::from([(
                                 "mode".to_string(),
-                                codex_tools::JsonSchema::string(/*description*/ None),
+                                motyga_tools::JsonSchema::string(/*description*/ None),
                             )]),
                             Some(vec!["mode".to_string()]),
                             Some(false.into()),

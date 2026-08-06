@@ -1,20 +1,20 @@
 use super::*;
 use crate::environment_selection::TurnEnvironmentSnapshot;
 use crate::shell_snapshot::ShellSnapshotFile;
-use codex_core_skills::HostSkillsSnapshot;
-use codex_file_system::FileSystemSandboxContext;
-use codex_model_provider::SharedModelProvider;
-use codex_model_provider::create_model_provider;
-use codex_protocol::SessionId;
-use codex_protocol::ThreadId;
-use codex_protocol::models::AdditionalPermissionProfile;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_sandboxing::compatibility_sandbox_policy_for_permission_profile;
-use codex_sandboxing::policy_transforms::effective_file_system_sandbox_policy;
-use codex_sandboxing::policy_transforms::effective_network_sandbox_policy;
-use codex_utils_path_uri::PathUri;
+use motyga_core_skills::HostSkillsSnapshot;
+use motyga_file_system::FileSystemSandboxContext;
+use motyga_model_provider::SharedModelProvider;
+use motyga_model_provider::create_model_provider;
+use motyga_protocol::SessionId;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::AdditionalPermissionProfile;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_sandboxing::compatibility_sandbox_policy_for_permission_profile;
+use motyga_sandboxing::policy_transforms::effective_file_system_sandbox_policy;
+use motyga_sandboxing::policy_transforms::effective_network_sandbox_policy;
+use motyga_utils_path_uri::PathUri;
 use futures::FutureExt;
 use futures::future::BoxFuture;
 use futures::future::Shared;
@@ -135,7 +135,7 @@ pub struct TurnContext {
     pub(crate) final_output_json_schema: Option<Value>,
     pub(crate) dynamic_tools: Vec<DynamicToolSpec>,
     pub(crate) turn_metadata_state: Arc<TurnMetadataState>,
-    pub(crate) extension_data: Arc<codex_extension_api::ExtensionData>,
+    pub(crate) extension_data: Arc<motyga_extension_api::ExtensionData>,
     pub(crate) turn_skills: TurnSkillsContext,
     pub(crate) turn_timing_state: Arc<TurnTimingState>,
     pub(crate) terminal_error: Arc<Mutex<Option<String>>>,
@@ -195,13 +195,13 @@ impl TurnContext {
     }
 
     pub(crate) fn apps_enabled(&self) -> bool {
-        let uses_codex_backend = self
+        let uses_motyga_backend = self
             .auth_manager
             .as_deref()
-            .is_some_and(AuthManager::current_auth_uses_codex_backend);
+            .is_some_and(AuthManager::current_auth_uses_motyga_backend);
         self.config
             .features
-            .apps_enabled_for_auth(uses_codex_backend)
+            .apps_enabled_for_auth(uses_motyga_backend)
             && self.config.orchestrator_mcp_enabled
     }
 
@@ -388,12 +388,12 @@ impl TurnContext {
             allowed_domains: network
                 .domains
                 .as_ref()
-                .and_then(codex_config::NetworkDomainPermissionsToml::allowed_domains)
+                .and_then(motyga_config::NetworkDomainPermissionsToml::allowed_domains)
                 .unwrap_or_default(),
             denied_domains: network
                 .domains
                 .as_ref()
-                .and_then(codex_config::NetworkDomainPermissionsToml::denied_domains)
+                .and_then(motyga_config::NetworkDomainPermissionsToml::denied_domains)
                 .unwrap_or_default(),
         })
     }
@@ -499,7 +499,7 @@ impl Session {
         let session_telemetry_for_context = session_telemetry;
         let available_models = models_manager.try_list_models().unwrap_or_default();
         let unified_exec_shell_mode = UnifiedExecShellMode::for_session(
-            codex_tools::unified_exec_feature_mode_for_features(per_turn_config.features.get()),
+            motyga_tools::unified_exec_feature_mode_for_features(per_turn_config.features.get()),
             crate::tools::tool_user_shell_type(user_shell),
             shell_zsh_path,
             main_execve_wrapper_exe,
@@ -526,7 +526,7 @@ impl Session {
             network.is_some(),
         ));
         let (current_date, timezone) = local_time_context();
-        let extension_data = Arc::new(codex_extension_api::ExtensionData::new(sub_id.clone()));
+        let extension_data = Arc::new(motyga_extension_api::ExtensionData::new(sub_id.clone()));
         extension_data.insert(skills_snapshot.clone());
         TurnContext {
             sub_id,
@@ -574,9 +574,9 @@ impl Session {
         &self,
         sub_id: String,
         updates: SessionSettingsUpdate,
-    ) -> CodexResult<Arc<TurnContext>> {
+    ) -> MotygaResult<Arc<TurnContext>> {
         let notify_config_contributors = !self.services.extensions.config_contributors().is_empty();
-        let update_result: CodexResult<_> = {
+        let update_result: MotygaResult<_> = {
             let mut state = self.state.lock().await;
             match state.session_configuration.clone().apply(&updates) {
                 Ok(next) => {
@@ -603,7 +603,7 @@ impl Session {
                         new_config,
                     ))
                 }
-                Err(err) => Err(CodexErr::InvalidRequest(err.to_string())),
+                Err(err) => Err(MotygaErr::InvalidRequest(err.to_string())),
             }
         };
 
@@ -616,11 +616,11 @@ impl Session {
                         id: sub_id.clone(),
                         msg: EventMsg::Error(ErrorEvent {
                             message: message.clone(),
-                            codex_error_info: Some(CodexErrorInfo::BadRequest),
+                            motyga_error_info: Some(MotygaErrorInfo::BadRequest),
                         }),
                     })
                     .await;
-                    return Err(CodexErr::InvalidRequest(message));
+                    return Err(MotygaErr::InvalidRequest(message));
                 }
             };
         self.emit_config_changed_contributors(previous_config.as_ref(), new_config.as_ref());

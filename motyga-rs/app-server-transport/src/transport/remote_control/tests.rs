@@ -18,26 +18,26 @@ use crate::transport::CHANNEL_CAPACITY;
 use crate::transport::ConnectionOrigin;
 use crate::transport::TransportEvent;
 use base64::Engine;
-use codex_app_server_protocol::ConfigWarningNotification;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::RemoteControlConnectionStatus;
-use codex_app_server_protocol::RemoteControlPairingStartParams;
-use codex_app_server_protocol::RemoteControlPairingStatusParams;
-use codex_app_server_protocol::RemoteControlStatusChangedNotification;
-use codex_app_server_protocol::ServerNotification;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_core::test_support::auth_manager_from_auth;
-use codex_core::test_support::auth_manager_from_auth_with_home;
-use codex_login::AuthDotJson;
-use codex_login::AuthKeyringBackendKind;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::save_auth;
-use codex_login::token_data::TokenData;
-use codex_login::token_data::parse_chatgpt_jwt_claims;
-use codex_protocol::auth::AuthMode;
-use codex_state::RemoteControlEnrollmentRecord;
-use codex_state::StateRuntime;
+use motyga_app_server_protocol::ConfigWarningNotification;
+use motyga_app_server_protocol::JSONRPCMessage;
+use motyga_app_server_protocol::RemoteControlConnectionStatus;
+use motyga_app_server_protocol::RemoteControlPairingStartParams;
+use motyga_app_server_protocol::RemoteControlPairingStatusParams;
+use motyga_app_server_protocol::RemoteControlStatusChangedNotification;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_core::test_support::auth_manager_from_auth;
+use motyga_core::test_support::auth_manager_from_auth_with_home;
+use motyga_login::AuthDotJson;
+use motyga_login::AuthKeyringBackendKind;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::save_auth;
+use motyga_login::token_data::TokenData;
+use motyga_login::token_data::parse_chatgpt_jwt_claims;
+use motyga_protocol::auth::AuthMode;
+use motyga_state::RemoteControlEnrollmentRecord;
+use motyga_state::StateRuntime;
 use futures::SinkExt;
 use futures::StreamExt;
 use gethostname::gethostname;
@@ -74,13 +74,13 @@ const TEST_REFRESHED_REMOTE_CONTROL_SERVER_TOKEN: &str = "Refreshed Remote Contr
 const TEST_REMOTE_CONTROL_SERVER_TOKEN_EXPIRES_AT: &str = "2999-01-01T00:00:00Z";
 
 fn remote_control_auth_manager() -> Arc<AuthManager> {
-    auth_manager_from_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    auth_manager_from_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
 }
 
-fn remote_control_auth_manager_with_home(codex_home: &TempDir) -> Arc<AuthManager> {
+fn remote_control_auth_manager_with_home(motyga_home: &TempDir) -> Arc<AuthManager> {
     auth_manager_from_auth_with_home(
-        CodexAuth::create_dummy_chatgpt_auth_for_testing(),
-        codex_home.path().to_path_buf(),
+        MotygaAuth::create_dummy_chatgpt_auth_for_testing(),
+        motyga_home.path().to_path_buf(),
     )
 }
 
@@ -124,8 +124,8 @@ fn remote_control_auth_dot_json(account_id: Option<&str>) -> AuthDotJson {
     }
 }
 
-async fn remote_control_state_runtime(codex_home: &TempDir) -> Arc<StateRuntime> {
-    StateRuntime::init(codex_home.path().to_path_buf(), "test-provider".to_string())
+async fn remote_control_state_runtime(motyga_home: &TempDir) -> Arc<StateRuntime> {
+    StateRuntime::init(motyga_home.path().to_path_buf(), "test-provider".to_string())
         .await
         .expect("state runtime should initialize")
 }
@@ -138,8 +138,8 @@ async fn plain_start_resolves_persisted_remote_control_preference() {
         ("unset", Some(None)),
         ("missing", None),
     ];
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let remote_control_target = normalize_remote_control_url(TEST_REMOTE_CONTROL_URL)
         .expect("remote control target should normalize");
     for (name, stored_preference) in cases {
@@ -206,8 +206,8 @@ async fn plain_start_resolves_persisted_remote_control_preference() {
 
 #[tokio::test]
 async fn explicit_disabled_start_ignores_persisted_enable() {
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let remote_control_target = normalize_remote_control_url(TEST_REMOTE_CONTROL_URL)
         .expect("remote control target should normalize");
     let enrollment = RemoteControlEnrollmentRecord {
@@ -268,8 +268,8 @@ async fn managed_disable_overrides_startup_and_persisted_enablement() {
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let remote_control_target = normalize_remote_control_url(&remote_control_url)
         .expect("remote control target should normalize");
     let enrollment = RemoteControlEnrollmentRecord {
@@ -420,12 +420,12 @@ pub(super) fn remote_control_handle_with_current_enrollment(
 
 #[tokio::test]
 async fn ephemeral_enable_preserves_durable_preference() {
-    let codex_home = TempDir::new().expect("temp dir should create");
+    let motyga_home = TempDir::new().expect("temp dir should create");
     let mut remote_handle = remote_control_handle_with_current_enrollment(
         TEST_REMOTE_CONTROL_URL,
         remote_control_auth_manager(),
     );
-    remote_handle.state_db = Some(remote_control_state_runtime(&codex_home).await);
+    remote_handle.state_db = Some(remote_control_state_runtime(&motyga_home).await);
     remote_handle
         .desired_state_tx
         .send_replace(RemoteControlDesiredState::Enabled {
@@ -523,8 +523,8 @@ async fn remote_control_transport_manages_virtual_clients_and_routes_messages() 
     let remote_control_url = remote_control_url_for_listener(&listener);
     let remote_control_target = normalize_remote_control_url(&remote_control_url)
         .expect("remote control target should normalize");
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let (transport_event_tx, mut transport_event_rx) =
         mpsc::channel::<TransportEvent>(CHANNEL_CAPACITY);
     let shutdown_token = CancellationToken::new();
@@ -603,7 +603,7 @@ async fn remote_control_transport_manages_virtual_clients_and_routes_messages() 
         ClientEnvelope {
             event: ClientEvent::ClientMessage {
                 message: JSONRPCMessage::Notification(
-                    codex_app_server_protocol::JSONRPCNotification {
+                    motyga_app_server_protocol::JSONRPCNotification {
                         method: "initialized".to_string(),
                         params: None,
                     },
@@ -623,8 +623,8 @@ async fn remote_control_transport_manages_virtual_clients_and_routes_messages() 
         "non-initialize client messages should be ignored before connection creation"
     );
 
-    let initialize_message = JSONRPCMessage::Request(codex_app_server_protocol::JSONRPCRequest {
-        id: codex_app_server_protocol::RequestId::Integer(1),
+    let initialize_message = JSONRPCMessage::Request(motyga_app_server_protocol::JSONRPCRequest {
+        id: motyga_app_server_protocol::RequestId::Integer(1),
         method: "initialize".to_string(),
         params: Some(json!({
             "clientInfo": {
@@ -681,7 +681,7 @@ async fn remote_control_transport_manages_virtual_clients_and_routes_messages() 
     }
 
     let followup_message =
-        JSONRPCMessage::Notification(codex_app_server_protocol::JSONRPCNotification {
+        JSONRPCMessage::Notification(motyga_app_server_protocol::JSONRPCNotification {
             method: "initialized".to_string(),
             params: None,
         });
@@ -818,7 +818,7 @@ async fn remote_control_transport_reconnects_after_disconnect() {
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
+    let motyga_home = TempDir::new().expect("temp dir should create");
     let (transport_event_tx, mut transport_event_rx) =
         mpsc::channel::<TransportEvent>(CHANNEL_CAPACITY);
     let shutdown_token = CancellationToken::new();
@@ -828,7 +828,7 @@ async fn remote_control_transport_reconnects_after_disconnect() {
             installation_id: TEST_INSTALLATION_ID.to_string(),
             policy: RemoteControlPolicy::Allowed,
         },
-        Some(remote_control_state_runtime(&codex_home).await),
+        Some(remote_control_state_runtime(&motyga_home).await),
         remote_control_auth_manager(),
         transport_event_tx,
         shutdown_token.clone(),
@@ -881,8 +881,8 @@ async fn remote_control_transport_reconnects_after_disconnect() {
         &mut second_websocket,
         ClientEnvelope {
             event: ClientEvent::ClientMessage {
-                message: JSONRPCMessage::Request(codex_app_server_protocol::JSONRPCRequest {
-                    id: codex_app_server_protocol::RequestId::Integer(2),
+                message: JSONRPCMessage::Request(motyga_app_server_protocol::JSONRPCRequest {
+                    id: motyga_app_server_protocol::RequestId::Integer(2),
                     method: "initialize".to_string(),
                     params: Some(json!({
                         "clientInfo": {
@@ -920,7 +920,7 @@ async fn remote_control_transport_refreshes_server_token_after_websocket_unautho
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
+    let motyga_home = TempDir::new().expect("temp dir should create");
     let (transport_event_tx, _transport_event_rx) =
         mpsc::channel::<TransportEvent>(CHANNEL_CAPACITY);
     let shutdown_token = CancellationToken::new();
@@ -930,7 +930,7 @@ async fn remote_control_transport_refreshes_server_token_after_websocket_unautho
             installation_id: TEST_INSTALLATION_ID.to_string(),
             policy: RemoteControlPolicy::Allowed,
         },
-        Some(remote_control_state_runtime(&codex_home).await),
+        Some(remote_control_state_runtime(&motyga_home).await),
         remote_control_auth_manager(),
         transport_event_tx,
         shutdown_token.clone(),
@@ -1034,10 +1034,10 @@ async fn remote_control_start_allows_missing_auth_when_enabled() {
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
+    let motyga_home = TempDir::new().expect("temp dir should create");
     let auth_manager = AuthManager::shared(
-        codex_home.path().to_path_buf(),
-        /*enable_codex_api_key_env*/ false,
+        motyga_home.path().to_path_buf(),
+        /*enable_motyga_api_key_env*/ false,
         AuthCredentialsStoreMode::File,
         /*forced_chatgpt_workspace_id*/ None,
         /*chatgpt_base_url*/ None,
@@ -1054,7 +1054,7 @@ async fn remote_control_start_allows_missing_auth_when_enabled() {
             installation_id: TEST_INSTALLATION_ID.to_string(),
             policy: RemoteControlPolicy::Allowed,
         },
-        Some(remote_control_state_runtime(&codex_home).await),
+        Some(remote_control_state_runtime(&motyga_home).await),
         auth_manager,
         transport_event_tx,
         shutdown_token.clone(),
@@ -1140,7 +1140,7 @@ async fn remote_control_handle_enable_disable_stops_and_restarts_connections() {
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
+    let motyga_home = TempDir::new().expect("temp dir should create");
     let (transport_event_tx, _transport_event_rx) =
         mpsc::channel::<TransportEvent>(CHANNEL_CAPACITY);
     let shutdown_token = CancellationToken::new();
@@ -1150,7 +1150,7 @@ async fn remote_control_handle_enable_disable_stops_and_restarts_connections() {
             installation_id: TEST_INSTALLATION_ID.to_string(),
             policy: RemoteControlPolicy::Allowed,
         },
-        Some(remote_control_state_runtime(&codex_home).await),
+        Some(remote_control_state_runtime(&motyga_home).await),
         remote_control_auth_manager(),
         transport_event_tx,
         shutdown_token.clone(),
@@ -1260,7 +1260,7 @@ async fn remote_control_transport_clears_outgoing_buffer_when_backend_acks() {
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
+    let motyga_home = TempDir::new().expect("temp dir should create");
     let (transport_event_tx, mut transport_event_rx) =
         mpsc::channel::<TransportEvent>(CHANNEL_CAPACITY);
     let shutdown_token = CancellationToken::new();
@@ -1270,7 +1270,7 @@ async fn remote_control_transport_clears_outgoing_buffer_when_backend_acks() {
             installation_id: TEST_INSTALLATION_ID.to_string(),
             policy: RemoteControlPolicy::Allowed,
         },
-        Some(remote_control_state_runtime(&codex_home).await),
+        Some(remote_control_state_runtime(&motyga_home).await),
         remote_control_auth_manager(),
         transport_event_tx,
         shutdown_token.clone(),
@@ -1300,8 +1300,8 @@ async fn remote_control_transport_clears_outgoing_buffer_when_backend_acks() {
     .await;
 
     let client_id = ClientId("client-1".to_string());
-    let initialize_message = JSONRPCMessage::Request(codex_app_server_protocol::JSONRPCRequest {
-        id: codex_app_server_protocol::RequestId::Integer(1),
+    let initialize_message = JSONRPCMessage::Request(motyga_app_server_protocol::JSONRPCRequest {
+        id: motyga_app_server_protocol::RequestId::Integer(1),
         method: "initialize".to_string(),
         params: Some(json!({
             "clientInfo": {
@@ -1442,7 +1442,7 @@ async fn remote_control_http_mode_enrolls_before_connecting() {
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
+    let motyga_home = TempDir::new().expect("temp dir should create");
     let (transport_event_tx, mut transport_event_rx) =
         mpsc::channel::<TransportEvent>(CHANNEL_CAPACITY);
     let expected_server_name = gethostname().to_string_lossy().trim().to_string();
@@ -1453,7 +1453,7 @@ async fn remote_control_http_mode_enrolls_before_connecting() {
             installation_id: TEST_INSTALLATION_ID.to_string(),
             policy: RemoteControlPolicy::Allowed,
         },
-        Some(remote_control_state_runtime(&codex_home).await),
+        Some(remote_control_state_runtime(&motyga_home).await),
         remote_control_auth_manager(),
         transport_event_tx,
         shutdown_token.clone(),
@@ -1550,8 +1550,8 @@ async fn remote_control_http_mode_enrolls_before_connecting() {
     let backend_client_id = ClientId("backend-test-client".to_string());
     let writer = {
         let initialize_message =
-            JSONRPCMessage::Request(codex_app_server_protocol::JSONRPCRequest {
-                id: codex_app_server_protocol::RequestId::Integer(11),
+            JSONRPCMessage::Request(motyga_app_server_protocol::JSONRPCRequest {
+                id: motyga_app_server_protocol::RequestId::Integer(11),
                 method: "initialize".to_string(),
                 params: Some(json!({
                     "clientInfo": {
@@ -1609,9 +1609,9 @@ async fn remote_control_http_mode_enrolls_before_connecting() {
     writer
         .send(QueuedOutgoingMessage::new(OutgoingMessage::Response(
             crate::outgoing_message::OutgoingResponse {
-                id: codex_app_server_protocol::RequestId::Integer(11),
+                id: motyga_app_server_protocol::RequestId::Integer(11),
                 result: json!({
-                    "userAgent": "codex-test-agent"
+                    "userAgent": "motyga-test-agent"
                 }),
             },
         )))
@@ -1626,7 +1626,7 @@ async fn remote_control_http_mode_enrolls_before_connecting() {
             "message": {
                 "id": 11,
                 "result": {
-                    "userAgent": "codex-test-agent",
+                    "userAgent": "motyga-test-agent",
                 }
             }
         })
@@ -1671,8 +1671,8 @@ async fn remote_control_http_mode_refreshes_persisted_enrollment_before_connecti
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let remote_control_target =
         normalize_remote_control_url(&remote_control_url).expect("target should parse");
     let persisted_enrollment = RemoteControlEnrollment {
@@ -1706,7 +1706,7 @@ async fn remote_control_http_mode_refreshes_persisted_enrollment_before_connecti
             policy: RemoteControlPolicy::Allowed,
         },
         Some(state_db.clone()),
-        remote_control_auth_manager_with_home(&codex_home),
+        remote_control_auth_manager_with_home(&motyga_home),
         transport_event_tx,
         shutdown_token.clone(),
         /*app_server_client_name_rx*/ None,
@@ -1791,8 +1791,8 @@ async fn remote_control_stdio_mode_waits_for_client_name_before_connecting() {
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let remote_control_target =
         normalize_remote_control_url(&remote_control_url).expect("target should parse");
     let app_server_client_name = "stdio-client";
@@ -1828,7 +1828,7 @@ async fn remote_control_stdio_mode_waits_for_client_name_before_connecting() {
             policy: RemoteControlPolicy::Allowed,
         },
         Some(state_db.clone()),
-        remote_control_auth_manager_with_home(&codex_home),
+        remote_control_auth_manager_with_home(&motyga_home),
         transport_event_tx,
         shutdown_token.clone(),
         Some(app_server_client_name_rx),
@@ -1872,18 +1872,18 @@ async fn remote_control_waits_for_account_id_before_enrolling() {
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
+    let motyga_home = TempDir::new().expect("temp dir should create");
     save_auth(
-        codex_home.path(),
+        motyga_home.path(),
         &remote_control_auth_dot_json(/*account_id*/ None),
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
     )
     .expect("auth without account id should save");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let auth_manager = AuthManager::shared(
-        codex_home.path().to_path_buf(),
-        /*enable_codex_api_key_env*/ false,
+        motyga_home.path().to_path_buf(),
+        /*enable_motyga_api_key_env*/ false,
         AuthCredentialsStoreMode::File,
         /*forced_chatgpt_workspace_id*/ None,
         /*chatgpt_base_url*/ None,
@@ -1929,7 +1929,7 @@ async fn remote_control_waits_for_account_id_before_enrolling() {
         .expect_err("remote control should wait for account id before enrolling");
 
     save_auth(
-        codex_home.path(),
+        motyga_home.path(),
         &remote_control_auth_dot_json(Some("account_id")),
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
@@ -1970,18 +1970,18 @@ async fn persisted_enable_does_not_follow_auth_to_an_account_without_a_preferenc
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
+    let motyga_home = TempDir::new().expect("temp dir should create");
     save_auth(
-        codex_home.path(),
+        motyga_home.path(),
         &remote_control_auth_dot_json(Some("account_a")),
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
     )
     .expect("account A auth should save");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let auth_manager = AuthManager::shared(
-        codex_home.path().to_path_buf(),
-        /*enable_codex_api_key_env*/ false,
+        motyga_home.path().to_path_buf(),
+        /*enable_motyga_api_key_env*/ false,
         AuthCredentialsStoreMode::File,
         /*forced_chatgpt_workspace_id*/ None,
         /*chatgpt_base_url*/ None,
@@ -2049,7 +2049,7 @@ async fn persisted_enable_does_not_follow_auth_to_an_account_without_a_preferenc
         accept_remote_control_backend_connection(&listener).await;
 
     save_auth(
-        codex_home.path(),
+        motyga_home.path(),
         &remote_control_auth_dot_json(Some("account_b")),
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
@@ -2094,8 +2094,8 @@ async fn remote_control_http_mode_reenrolls_when_refresh_reports_stale_enrollmen
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let remote_control_target =
         normalize_remote_control_url(&remote_control_url).expect("target should parse");
     let expected_server_name = gethostname().to_string_lossy().trim().to_string();
@@ -2140,7 +2140,7 @@ async fn remote_control_http_mode_reenrolls_when_refresh_reports_stale_enrollmen
             policy: RemoteControlPolicy::Allowed,
         },
         Some(state_db.clone()),
-        remote_control_auth_manager_with_home(&codex_home),
+        remote_control_auth_manager_with_home(&motyga_home),
         transport_event_tx,
         shutdown_token.clone(),
         /*app_server_client_name_rx*/ None,
@@ -2219,8 +2219,8 @@ async fn remote_control_http_mode_reenrolls_after_explicit_missing_server_404() 
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let remote_control_target =
         normalize_remote_control_url(&remote_control_url).expect("target should parse");
     let expected_server_name = gethostname().to_string_lossy().trim().to_string();
@@ -2265,7 +2265,7 @@ async fn remote_control_http_mode_reenrolls_after_explicit_missing_server_404() 
             policy: RemoteControlPolicy::Allowed,
         },
         Some(state_db.clone()),
-        remote_control_auth_manager_with_home(&codex_home),
+        remote_control_auth_manager_with_home(&motyga_home),
         transport_event_tx,
         shutdown_token.clone(),
         /*app_server_client_name_rx*/ None,
@@ -2368,8 +2368,8 @@ async fn remote_control_http_mode_preserves_stale_enrollment_when_reenrollment_f
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let remote_control_target =
         normalize_remote_control_url(&remote_control_url).expect("target should parse");
     let stale_enrollment = RemoteControlEnrollment {
@@ -2403,7 +2403,7 @@ async fn remote_control_http_mode_preserves_stale_enrollment_when_reenrollment_f
             policy: RemoteControlPolicy::Allowed,
         },
         Some(state_db.clone()),
-        remote_control_auth_manager_with_home(&codex_home),
+        remote_control_auth_manager_with_home(&motyga_home),
         transport_event_tx,
         shutdown_token.clone(),
         /*app_server_client_name_rx*/ None,
@@ -2490,8 +2490,8 @@ async fn remote_control_http_mode_preserves_enrollment_after_generic_websocket_4
         .await
         .expect("listener should bind");
     let remote_control_url = remote_control_url_for_listener(&listener);
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let remote_control_target =
         normalize_remote_control_url(&remote_control_url).expect("target should parse");
     let stale_enrollment = RemoteControlEnrollment {
@@ -2525,7 +2525,7 @@ async fn remote_control_http_mode_preserves_enrollment_after_generic_websocket_4
             policy: RemoteControlPolicy::Allowed,
         },
         Some(state_db.clone()),
-        remote_control_auth_manager_with_home(&codex_home),
+        remote_control_auth_manager_with_home(&motyga_home),
         transport_event_tx,
         shutdown_token.clone(),
         /*app_server_client_name_rx*/ None,

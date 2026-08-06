@@ -49,7 +49,7 @@ fi
 
 zig_target="${TARGET/-unknown-linux-musl/-linux-musl}"
 runner_temp="${RUNNER_TEMP:-/tmp}"
-tool_root="${runner_temp}/codex-musl-tools-${TARGET}"
+tool_root="${runner_temp}/motyga-musl-tools-${TARGET}"
 mkdir -p "${tool_root}"
 
 libcap_root="${tool_root}/libcap-${libcap_version}"

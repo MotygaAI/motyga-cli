@@ -1,37 +1,37 @@
 use crate::config::Config;
 use crate::session::session::Session;
 use crate::session::turn_context::TurnContext;
-use codex_analytics::InvocationType;
-use codex_analytics::SkillInvocation;
-use codex_analytics::build_track_events_context;
-use codex_protocol::protocol::SkillScope;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_plugins::PluginSkillRoot;
+use motyga_analytics::InvocationType;
+use motyga_analytics::SkillInvocation;
+use motyga_analytics::build_track_events_context;
+use motyga_protocol::protocol::SkillScope;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_plugins::PluginSkillRoot;
 
-pub use codex_core_skills::SkillError;
-pub use codex_core_skills::SkillLoadOutcome;
-pub use codex_core_skills::SkillMetadata;
-pub use codex_core_skills::SkillPolicy;
-pub use codex_core_skills::SkillRenderReport;
-pub use codex_core_skills::SkillsLoadInput;
-pub use codex_core_skills::SkillsService;
-pub use codex_core_skills::build_available_skills;
-pub use codex_core_skills::build_skill_name_counts;
-pub use codex_core_skills::config_rules;
-pub use codex_core_skills::default_skill_metadata_budget;
-pub use codex_core_skills::detect_implicit_skill_invocation_for_command;
-pub use codex_core_skills::filter_skill_load_outcome_for_product;
-pub use codex_core_skills::injection;
-pub use codex_core_skills::injection::SkillInjections;
-pub use codex_core_skills::injection::build_skill_injections;
-pub use codex_core_skills::injection::collect_explicit_skill_mentions;
-pub use codex_core_skills::loader;
-pub use codex_core_skills::model;
-pub use codex_core_skills::remote;
-pub use codex_core_skills::render;
-pub use codex_core_skills::render::SkillRenderSideEffects;
-pub use codex_core_skills::service;
-pub use codex_core_skills::system;
+pub use motyga_core_skills::SkillError;
+pub use motyga_core_skills::SkillLoadOutcome;
+pub use motyga_core_skills::SkillMetadata;
+pub use motyga_core_skills::SkillPolicy;
+pub use motyga_core_skills::SkillRenderReport;
+pub use motyga_core_skills::SkillsLoadInput;
+pub use motyga_core_skills::SkillsService;
+pub use motyga_core_skills::build_available_skills;
+pub use motyga_core_skills::build_skill_name_counts;
+pub use motyga_core_skills::config_rules;
+pub use motyga_core_skills::default_skill_metadata_budget;
+pub use motyga_core_skills::detect_implicit_skill_invocation_for_command;
+pub use motyga_core_skills::filter_skill_load_outcome_for_product;
+pub use motyga_core_skills::injection;
+pub use motyga_core_skills::injection::SkillInjections;
+pub use motyga_core_skills::injection::build_skill_injections;
+pub use motyga_core_skills::injection::collect_explicit_skill_mentions;
+pub use motyga_core_skills::loader;
+pub use motyga_core_skills::model;
+pub use motyga_core_skills::remote;
+pub use motyga_core_skills::render;
+pub use motyga_core_skills::render::SkillRenderSideEffects;
+pub use motyga_core_skills::service;
+pub use motyga_core_skills::system;
 
 pub(crate) fn skills_load_input_from_config(
     config: &Config,
@@ -87,7 +87,7 @@ pub(crate) async fn maybe_emit_implicit_skill_invocation(
     }
 
     turn_context.session_telemetry.counter(
-        "codex.skill.injected",
+        "motyga.skill.injected",
         /*inc*/ 1,
         &[
             ("status", "ok"),

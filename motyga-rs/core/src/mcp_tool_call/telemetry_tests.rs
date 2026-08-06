@@ -90,7 +90,7 @@ fn mcp_call_metric_outcome_reads_auth_error_code_from_meta() {
         structured_content: None,
         is_error: Some(true),
         meta: Some(serde_json::json!({
-            MCP_TOOL_CODEX_APPS_META_KEY: {
+            MCP_TOOL_MOTYGA_APPS_META_KEY: {
                 "connector_auth_failure": {
                     "is_auth_failure": true,
                     "error_code": "UNAUTHORIZED",

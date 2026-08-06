@@ -9,7 +9,7 @@ use std::sync::atomic::Ordering;
 use std::time::Duration;
 
 use arc_swap::ArcSwap;
-use codex_exec_server_protocol::JSONRPCNotification;
+use motyga_exec_server_protocol::JSONRPCNotification;
 use futures::FutureExt;
 use futures::future::BoxFuture;
 use serde_json::Value;
@@ -117,7 +117,7 @@ const PROCESS_EVENT_RETAINED_BYTES: usize = 1024 * 1024;
 impl Default for ExecServerClientConnectOptions {
     fn default() -> Self {
         Self {
-            client_name: "codex-core".to_string(),
+            client_name: "motyga-core".to_string(),
             initialize_timeout: INITIALIZE_TIMEOUT,
             resume_session_id: None,
         }
@@ -1205,10 +1205,10 @@ async fn handle_server_notification(
 
 #[cfg(test)]
 mod tests {
-    use codex_exec_server_protocol::JSONRPCMessage;
-    use codex_exec_server_protocol::JSONRPCNotification;
-    use codex_exec_server_protocol::JSONRPCResponse;
-    use codex_utils_path_uri::PathUri;
+    use motyga_exec_server_protocol::JSONRPCMessage;
+    use motyga_exec_server_protocol::JSONRPCNotification;
+    use motyga_exec_server_protocol::JSONRPCResponse;
+    use motyga_utils_path_uri::PathUri;
     use futures::SinkExt;
     use futures::StreamExt;
     use opentelemetry::trace::TracerProvider as _;
@@ -1364,12 +1364,12 @@ mod tests {
         let subscriber = tracing_subscriber::registry().with(
             tracing_opentelemetry::layer()
                 .with_tracer(tracer)
-                .with_filter(filter_fn(codex_otel::OtelProvider::trace_export_filter)),
+                .with_filter(filter_fn(motyga_otel::OtelProvider::trace_export_filter)),
         );
         let _subscriber_guard = tracing::subscriber::set_default(subscriber);
         tracing::callsite::rebuild_interest_cache();
         let parent_span = tracing::info_span!("process-start-parent");
-        let expected_trace = codex_otel::span_w3c_trace_context(&parent_span)
+        let expected_trace = motyga_otel::span_w3c_trace_context(&parent_span)
             .expect("parent span should have trace context");
         let process_id = ProcessId::from("trace-process");
 
@@ -2195,7 +2195,7 @@ mod tests {
     async fn terminal_stdio_startup_failure_is_remembered() {
         let client = LazyRemoteExecServerClient::new(ExecServerTransportParams::StdioCommand {
             command: StdioExecServerCommand {
-                program: "codex-missing-exec-server-for-test".to_string(),
+                program: "motyga-missing-exec-server-for-test".to_string(),
                 args: Vec::new(),
                 env: HashMap::new(),
                 cwd: None,

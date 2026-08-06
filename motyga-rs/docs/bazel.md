@@ -12,11 +12,11 @@ As of 6/1/2026, this setup is still experimental as we stabilize it.
 - `rules_rs` imports third-party crates from `motyga-rs/Cargo.toml` and
   `motyga-rs/Cargo.lock` via `crate.from_cargo(...)` and exposes them under
   `@crates`.
-- `../defs.bzl` provides `codex_rust_crate`, which wraps `rust_library`,
+- `../defs.bzl` provides `motyga_rust_crate`, which wraps `rust_library`,
   `rust_binary`, and `rust_test` so Bazel targets line up with Cargo conventions.
   It provides a sane set of defaults that work for most first-party crates, but may
   need tweaks in some cases.
-- Each crate in `motyga-rs/*/BUILD.bazel` typically uses `codex_rust_crate` and
+- Each crate in `motyga-rs/*/BUILD.bazel` typically uses `motyga_rust_crate` and
   makes some adjustments if the crate needs additional compile-time or runtime data,
   or other customizations.
 
@@ -34,7 +34,7 @@ build event upload, downloads, and remote execution are opt-in configurations.
 
 ## BuildBuddy
 
-Codex uses BuildBuddy for a shared Bazel cache and remoted builds and tests. To use it
+Motyga uses BuildBuddy for a shared Bazel cache and remoted builds and tests. To use it
 to speed up your builds and tests you'll need to provide an API key and select a
 configuration.
 
@@ -125,9 +125,9 @@ CI configurations determine whether builds and tests execute remotely:
 To exercise the generic remote configuration with your key:
 
 ```bash
-BUILDBUDDY_API_KEY=... GITHUB_REPOSITORY=my-fork/codex \
+BUILDBUDDY_API_KEY=... GITHUB_REPOSITORY=my-fork/motyga \
   ./.github/scripts/run_bazel_with_buildbuddy.py \
-  build --config=ci-linux //motyga-rs/cli:codex
+  build --config=ci-linux //motyga-rs/cli:motyga
 ```
 
 The wrapper selects the OpenAI host only inside GitHub Actions for a trusted
@@ -160,11 +160,11 @@ feel free to ping zbarsky or mbolin.
 When you add a new crate or binary:
 
 1. Add it to the Cargo workspace as usual.
-2. Create a `BUILD.bazel` that calls `codex_rust_crate` (see nearby crates for
+2. Create a `BUILD.bazel` that calls `motyga_rust_crate` (see nearby crates for
    examples).
 3. If a dependency needs special handling (compile/runtime data, additional binaries
    for integration tests, env vars, etc) you may need to adjust the parameters to
-   `codex_rust_crate` to configure it.
+   `motyga_rust_crate` to configure it.
    One common customization is setting `test_tags = ["no-sandbox]` to run the test
    unsandboxed. Prefer to avoid it, but it is necessary in some cases such as when the
    test itself uses Seatbelt (the sandbox does as well, and it cannot be nested).

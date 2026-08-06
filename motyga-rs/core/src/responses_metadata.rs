@@ -1,26 +1,26 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 
-use codex_analytics::CompactionImplementation;
-use codex_analytics::CompactionPhase;
-use codex_analytics::CompactionReason;
-use codex_analytics::CompactionStrategy;
-use codex_analytics::CompactionTrigger;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::InternalSessionSource;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::ThreadSource;
-use codex_utils_string::to_ascii_json_string;
+use motyga_analytics::CompactionImplementation;
+use motyga_analytics::CompactionPhase;
+use motyga_analytics::CompactionReason;
+use motyga_analytics::CompactionStrategy;
+use motyga_analytics::CompactionTrigger;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::InternalSessionSource;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_utils_string::to_ascii_json_string;
 use http::HeaderMap as ApiHeaderMap;
 use http::HeaderValue;
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::client::X_CODEX_INSTALLATION_ID_HEADER;
-use crate::client::X_CODEX_PARENT_THREAD_ID_HEADER;
-use crate::client::X_CODEX_TURN_METADATA_HEADER;
-use crate::client::X_CODEX_WINDOW_ID_HEADER;
+use crate::client::X_MOTYGA_INSTALLATION_ID_HEADER;
+use crate::client::X_MOTYGA_PARENT_THREAD_ID_HEADER;
+use crate::client::X_MOTYGA_TURN_METADATA_HEADER;
+use crate::client::X_MOTYGA_WINDOW_ID_HEADER;
 use crate::client::X_OPENAI_SUBAGENT_HEADER;
 
 pub(crate) const INSTALLATION_ID_KEY: &str = "installation_id";
@@ -43,14 +43,14 @@ pub(crate) const WORKSPACES_KEY: &str = "workspaces";
 // when submitting a turn, but they must not override fields owned by core.
 const RESERVED_METADATA_KEYS: &[&str] = &[
     INSTALLATION_ID_KEY,
-    X_CODEX_INSTALLATION_ID_HEADER,
+    X_MOTYGA_INSTALLATION_ID_HEADER,
     SESSION_ID_KEY,
     THREAD_ID_KEY,
     TURN_ID_KEY,
     WINDOW_ID_KEY,
-    X_CODEX_WINDOW_ID_HEADER,
-    X_CODEX_TURN_METADATA_HEADER,
-    X_CODEX_PARENT_THREAD_ID_HEADER,
+    X_MOTYGA_WINDOW_ID_HEADER,
+    X_MOTYGA_TURN_METADATA_HEADER,
+    X_MOTYGA_PARENT_THREAD_ID_HEADER,
     X_OPENAI_SUBAGENT_HEADER,
     REQUEST_KIND_KEY,
     COMPACTION_KEY,
@@ -96,25 +96,25 @@ impl CompactionTurnMetadata {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) enum CodexResponsesRequestKind {
+pub(crate) enum MotygaResponsesRequestKind {
     Turn,
     Prewarm,
     Compaction(CompactionTurnMetadata),
     Memory,
 }
 
-impl CodexResponsesRequestKind {
+impl MotygaResponsesRequestKind {
     fn metadata(self) -> (&'static str, Option<CompactionTurnMetadata>) {
         match self {
-            CodexResponsesRequestKind::Turn => ("turn", None),
-            CodexResponsesRequestKind::Prewarm => ("prewarm", None),
-            CodexResponsesRequestKind::Compaction(metadata) => ("compaction", Some(metadata)),
-            CodexResponsesRequestKind::Memory => ("memory", None),
+            MotygaResponsesRequestKind::Turn => ("turn", None),
+            MotygaResponsesRequestKind::Prewarm => ("prewarm", None),
+            MotygaResponsesRequestKind::Compaction(metadata) => ("compaction", Some(metadata)),
+            MotygaResponsesRequestKind::Memory => ("memory", None),
         }
     }
 
     fn has_turn_identity(self) -> bool {
-        !matches!(self, CodexResponsesRequestKind::Memory)
+        !matches!(self, MotygaResponsesRequestKind::Memory)
     }
 }
 
@@ -128,20 +128,20 @@ pub(crate) struct TurnMetadataWorkspace {
     pub(crate) has_changes: Option<bool>,
 }
 
-/// Caller-owned snapshot of Codex metadata sent to ResponsesAPI.
+/// Caller-owned snapshot of Motyga metadata sent to ResponsesAPI.
 ///
-/// The full Codex turn metadata blob is transported canonically as
+/// The full Motyga turn metadata blob is transported canonically as
 /// `client_metadata["x-codex-turn-metadata"]`. Flat `client_metadata` keys and direct HTTP/ws
 /// headers are generated compatibility projections of this snapshot, not separate sources of
 /// truth.
 #[derive(Clone, Debug)]
-pub struct CodexResponsesMetadata {
+pub struct MotygaResponsesMetadata {
     pub(crate) installation_id: String,
     pub(crate) session_id: String,
     pub(crate) thread_id: String,
     pub(crate) turn_id: Option<String>,
     pub(crate) window_id: String,
-    pub(crate) request_kind: Option<CodexResponsesRequestKind>,
+    pub(crate) request_kind: Option<MotygaResponsesRequestKind>,
     pub(crate) forked_from_thread_id: Option<ThreadId>,
     pub(crate) parent_thread_id: Option<ThreadId>,
     pub(crate) subagent_header: Option<String>,
@@ -153,7 +153,7 @@ pub struct CodexResponsesMetadata {
     pub(crate) extra: BTreeMap<String, String>,
 }
 
-impl CodexResponsesMetadata {
+impl MotygaResponsesMetadata {
     pub(crate) fn new(
         installation_id: String,
         session_id: String,
@@ -194,12 +194,12 @@ impl CodexResponsesMetadata {
     pub(crate) fn client_metadata(&self) -> HashMap<String, String> {
         let mut client_metadata = HashMap::from([
             (
-                X_CODEX_INSTALLATION_ID_HEADER.to_string(),
+                X_MOTYGA_INSTALLATION_ID_HEADER.to_string(),
                 self.installation_id.clone(),
             ),
             (SESSION_ID_KEY.to_string(), self.session_id.clone()),
             (THREAD_ID_KEY.to_string(), self.thread_id.clone()),
-            (X_CODEX_WINDOW_ID_HEADER.to_string(), self.window_id.clone()),
+            (X_MOTYGA_WINDOW_ID_HEADER.to_string(), self.window_id.clone()),
         ]);
         if let Some(turn_id) = &self.turn_id {
             client_metadata.insert(TURN_ID_KEY.to_string(), turn_id.clone());
@@ -212,21 +212,21 @@ impl CodexResponsesMetadata {
         }
         if let Some(parent_thread_id) = self.parent_thread_id {
             client_metadata.insert(
-                X_CODEX_PARENT_THREAD_ID_HEADER.to_string(),
+                X_MOTYGA_PARENT_THREAD_ID_HEADER.to_string(),
                 parent_thread_id.to_string(),
             );
         }
         if self.has_turn_metadata()
             && let Some(turn_metadata_json) = self.turn_metadata_json()
         {
-            client_metadata.insert(X_CODEX_TURN_METADATA_HEADER.to_string(), turn_metadata_json);
+            client_metadata.insert(X_MOTYGA_TURN_METADATA_HEADER.to_string(), turn_metadata_json);
         }
         client_metadata
     }
 
     pub(crate) fn compatibility_headers(&self) -> ApiHeaderMap {
         let mut headers = ApiHeaderMap::new();
-        insert_header(&mut headers, X_CODEX_WINDOW_ID_HEADER, &self.window_id);
+        insert_header(&mut headers, X_MOTYGA_WINDOW_ID_HEADER, &self.window_id);
         // Direct x-codex-turn-metadata is compatibility output. New per-request consumers should
         // prefer client_metadata["x-codex-turn-metadata"], which is rendered from this same object.
         if self.has_turn_metadata()
@@ -234,14 +234,14 @@ impl CodexResponsesMetadata {
         {
             insert_header(
                 &mut headers,
-                X_CODEX_TURN_METADATA_HEADER,
+                X_MOTYGA_TURN_METADATA_HEADER,
                 &turn_metadata_json,
             );
         }
         if let Some(parent_thread_id) = self.parent_thread_id {
             insert_header(
                 &mut headers,
-                X_CODEX_PARENT_THREAD_ID_HEADER,
+                X_MOTYGA_PARENT_THREAD_ID_HEADER,
                 &parent_thread_id.to_string(),
             );
         }
@@ -251,17 +251,17 @@ impl CodexResponsesMetadata {
         headers
     }
 
-    fn turn_metadata_payload(&self) -> CodexTurnMetadataPayload<'_> {
+    fn turn_metadata_payload(&self) -> MotygaTurnMetadataPayload<'_> {
         let request_kind = self.request_kind;
         let (request_kind_value, compaction) = request_kind.map_or((None, None), |request_kind| {
             let (request_kind, compaction) = request_kind.metadata();
             (Some(request_kind), compaction)
         });
         let has_turn_identity =
-            request_kind.is_none_or(CodexResponsesRequestKind::has_turn_identity);
+            request_kind.is_none_or(MotygaResponsesRequestKind::has_turn_identity);
         let has_request_identity =
-            request_kind.is_some_and(CodexResponsesRequestKind::has_turn_identity);
-        CodexTurnMetadataPayload {
+            request_kind.is_some_and(MotygaResponsesRequestKind::has_turn_identity);
+        MotygaTurnMetadataPayload {
             installation_id: has_request_identity.then_some(self.installation_id.as_str()),
             session_id: has_turn_identity.then_some(self.session_id.as_str()),
             thread_id: has_turn_identity.then_some(self.thread_id.as_str()),
@@ -278,8 +278,8 @@ impl CodexResponsesMetadata {
             workspaces: non_empty_workspaces(&self.workspaces),
             turn_started_at_unix_ms: self.turn_started_at_unix_ms,
             compaction,
-            // responsesapi_client_metadata enriches the Codex turn metadata blob, not literal
-            // top-level Responses client_metadata. Reserved Codex-owned keys are filtered when
+            // responsesapi_client_metadata enriches the Motyga turn metadata blob, not literal
+            // top-level Responses client_metadata. Reserved Motyga-owned keys are filtered when
             // these extras enter turn state.
             extra: &self.extra,
         }
@@ -340,7 +340,7 @@ fn non_empty_workspaces(
 }
 
 #[derive(Serialize)]
-struct CodexTurnMetadataPayload<'a> {
+struct MotygaTurnMetadataPayload<'a> {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     installation_id: Option<&'a str>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

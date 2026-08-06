@@ -2,19 +2,19 @@
 #![cfg(unix)]
 
 use anyhow::Result;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExecApprovalRequestEvent;
-use codex_protocol::protocol::GranularApprovalConfig;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExecApprovalRequestEvent;
+use motyga_protocol::protocol::GranularApprovalConfig;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::mount_function_call_agent_response;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use core_test_support::zsh_fork::build_zsh_fork_test;
@@ -39,14 +39,14 @@ fn shell_command_arguments(command: &str) -> Result<String> {
 }
 
 async fn submit_turn_with_policies(
-    test: &TestCodex,
+    test: &TestMotyga,
     prompt: &str,
     approval_policy: AskForApproval,
     permission_profile: PermissionProfile,
 ) -> Result<()> {
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.cwd_path());
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.to_string(),
@@ -55,14 +55,14 @@ async fn submit_turn_with_policies(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(approval_policy),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -106,17 +106,17 @@ description: {name} skill
     Ok(script_path)
 }
 
-fn skill_script_command(test: &TestCodex, script_name: &str) -> Result<String> {
+fn skill_script_command(test: &TestMotyga, script_name: &str) -> Result<String> {
     let script_path = fs::canonicalize(
-        test.codex_home_path()
+        test.motyga_home_path()
             .join("skills/mbolin-test-skill/scripts")
             .join(script_name),
     )?;
     Ok(shlex::try_join([script_path.to_string_lossy().as_ref()])?)
 }
 
-async fn wait_for_exec_approval_request(test: &TestCodex) -> Option<ExecApprovalRequestEvent> {
-    wait_for_event_match(test.codex.as_ref(), |event| match event {
+async fn wait_for_exec_approval_request(test: &TestMotyga) -> Option<ExecApprovalRequestEvent> {
+    wait_for_event_match(test.motyga.as_ref(), |event| match event {
         EventMsg::ExecApprovalRequest(request) => Some(Some(request.clone())),
         EventMsg::TurnComplete(_) => Some(None),
         _ => None,
@@ -124,8 +124,8 @@ async fn wait_for_exec_approval_request(test: &TestCodex) -> Option<ExecApproval
     .await
 }
 
-async fn wait_for_turn_complete(test: &TestCodex) {
-    wait_for_event(test.codex.as_ref(), |event| {
+async fn wait_for_turn_complete(test: &TestMotyga) {
+    wait_for_event(test.motyga.as_ref(), |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

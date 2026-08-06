@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 
-use codex_protocol::approvals::GuardianAssessmentAction;
-use codex_protocol::approvals::GuardianAssessmentEvent;
-use codex_protocol::approvals::GuardianAssessmentStatus;
+use motyga_protocol::approvals::GuardianAssessmentAction;
+use motyga_protocol::approvals::GuardianAssessmentEvent;
+use motyga_protocol::approvals::GuardianAssessmentStatus;
 
 const MAX_RECENT_DENIALS: usize = 10;
 
@@ -76,9 +76,9 @@ pub(crate) fn action_summary(action: &GuardianAssessmentAction) -> String {
 
 #[cfg(test)]
 mod tests {
-    use codex_protocol::approvals::GuardianCommandSource;
-    use codex_utils_absolute_path::test_support::PathBufExt;
-    use codex_utils_absolute_path::test_support::test_path_buf;
+    use motyga_protocol::approvals::GuardianCommandSource;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
+    use motyga_utils_absolute_path::test_support::test_path_buf;
     use pretty_assertions::assert_eq;
 
     use super::*;

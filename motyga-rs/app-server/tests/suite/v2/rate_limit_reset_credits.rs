@@ -5,15 +5,15 @@ use app_test_support::ChatGptAuthFixture;
 use app_test_support::TestAppServer;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditOutcome;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditParams;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
-use codex_app_server_protocol::GetAccountParams;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::LoginAccountResponse;
-use codex_app_server_protocol::RequestId;
-use codex_config::types::AuthCredentialsStoreMode;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditOutcome;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditParams;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
+use motyga_app_server_protocol::GetAccountParams;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::LoginAccountResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_config::types::AuthCredentialsStoreMode;
 use pretty_assertions::assert_eq;
 use serde::de::DeserializeOwned;
 use serde_json::json;
@@ -29,7 +29,7 @@ use wiremock::matchers::path;
 
 const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(/*secs*/ 10);
 const RATE_LIMIT_RESET_REQUEST_TIMEOUT_ENV_VAR: &str =
-    "CODEX_TEST_RATE_LIMIT_RESET_REQUEST_TIMEOUT_MS";
+    "MOTYGA_TEST_RATE_LIMIT_RESET_REQUEST_TIMEOUT_MS";
 const SERVER_TIMEOUT_READ_TIMEOUT: std::time::Duration =
     std::time::Duration::from_secs(/*secs*/ 15);
 const INVALID_REQUEST_ERROR_CODE: i64 = -32600;
@@ -37,8 +37,8 @@ const INTERNAL_ERROR_CODE: i64 = -32603;
 
 #[tokio::test]
 async fn consume_rate_limit_reset_credit_requires_chatgpt_auth() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = initialized_app_server(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut mcp = initialized_app_server(motyga_home.path()).await?;
 
     let consume_id = mcp
         .send_consume_account_rate_limit_reset_credit_request(
@@ -51,7 +51,7 @@ async fn consume_rate_limit_reset_credit_requires_chatgpt_auth() -> Result<()> {
     assert_eq!(consume_error.error.code, INVALID_REQUEST_ERROR_CODE);
     assert_eq!(
         consume_error.error.message,
-        "codex account authentication required for rate limit reset credits"
+        "motyga account authentication required for rate limit reset credits"
     );
 
     login_with_api_key(&mut mcp, "sk-test-key").await?;
@@ -67,7 +67,7 @@ async fn consume_rate_limit_reset_credit_requires_chatgpt_auth() -> Result<()> {
 
 #[tokio::test]
 async fn consume_account_rate_limit_reset_credit_maps_backend_outcomes() -> Result<()> {
-    let (codex_home, server) = chatgpt_test_context().await?;
+    let (motyga_home, server) = chatgpt_test_context().await?;
     let cases = [
         (
             "request-reset",
@@ -96,7 +96,7 @@ async fn consume_account_rate_limit_reset_credit_maps_backend_outcomes() -> Resu
     ];
     for (idempotency_key, backend_code, _, windows_reset) in cases {
         Mock::given(method("POST"))
-            .and(path("/api/codex/rate-limit-reset-credits/consume"))
+            .and(path("/api/motyga/rate-limit-reset-credits/consume"))
             .and(header("authorization", "Bearer chatgpt-token"))
             .and(header("chatgpt-account-id", "account-123"))
             .and(body_json(json!({ "redeem_request_id": idempotency_key })))
@@ -108,7 +108,7 @@ async fn consume_account_rate_limit_reset_credit_maps_backend_outcomes() -> Resu
             .await;
     }
 
-    let mut mcp = initialized_app_server(codex_home.path()).await?;
+    let mut mcp = initialized_app_server(motyga_home.path()).await?;
     for (idempotency_key, _, expected_outcome, _) in cases {
         assert_eq!(
             consume_reset_credit(&mut mcp, idempotency_key).await?,
@@ -122,8 +122,8 @@ async fn consume_account_rate_limit_reset_credit_maps_backend_outcomes() -> Resu
 
 #[tokio::test]
 async fn consume_account_rate_limit_reset_credit_rejects_empty_idempotency_key() -> Result<()> {
-    let (codex_home, _server) = chatgpt_test_context().await?;
-    let mut mcp = initialized_app_server(codex_home.path()).await?;
+    let (motyga_home, _server) = chatgpt_test_context().await?;
+    let mut mcp = initialized_app_server(motyga_home.path()).await?;
 
     let request_id = mcp
         .send_consume_account_rate_limit_reset_credit_request(
@@ -141,14 +141,14 @@ async fn consume_account_rate_limit_reset_credit_rejects_empty_idempotency_key()
 
 #[tokio::test]
 async fn consume_account_rate_limit_reset_credit_surfaces_backend_failure() -> Result<()> {
-    let (codex_home, server) = chatgpt_test_context().await?;
+    let (motyga_home, server) = chatgpt_test_context().await?;
     Mock::given(method("POST"))
-        .and(path("/api/codex/rate-limit-reset-credits/consume"))
+        .and(path("/api/motyga/rate-limit-reset-credits/consume"))
         .respond_with(ResponseTemplate::new(500).set_body_string("boom"))
         .mount(&server)
         .await;
 
-    let mut mcp = initialized_app_server(codex_home.path()).await?;
+    let mut mcp = initialized_app_server(motyga_home.path()).await?;
     let request_id = send_consume_reset_credit(&mut mcp, "request-1").await?;
     let error = read_error_response(&mut mcp, request_id).await?;
 
@@ -166,9 +166,9 @@ async fn consume_account_rate_limit_reset_credit_surfaces_backend_failure() -> R
 
 #[tokio::test]
 async fn consume_timeout_releases_account_auth_queue() -> Result<()> {
-    let (codex_home, server) = chatgpt_test_context().await?;
+    let (motyga_home, server) = chatgpt_test_context().await?;
     Mock::given(method("POST"))
-        .and(path("/api/codex/rate-limit-reset-credits/consume"))
+        .and(path("/api/motyga/rate-limit-reset-credits/consume"))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_delay(std::time::Duration::from_secs(/*secs*/ 1))
@@ -178,7 +178,7 @@ async fn consume_timeout_releases_account_auth_queue() -> Result<()> {
         .await;
 
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("OPENAI_API_KEY", None),
             (RATE_LIMIT_RESET_REQUEST_TIMEOUT_ENV_VAR, Some("100")),
@@ -213,21 +213,21 @@ async fn consume_timeout_releases_account_auth_queue() -> Result<()> {
 }
 
 async fn chatgpt_test_context() -> Result<(TempDir, MockServer)> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .plan_type("pro"),
         AuthCredentialsStoreMode::File,
     )?;
     let server = MockServer::start().await;
-    write_chatgpt_base_url(codex_home.path(), &server.uri())?;
-    Ok((codex_home, server))
+    write_chatgpt_base_url(motyga_home.path(), &server.uri())?;
+    Ok((motyga_home, server))
 }
 
-async fn initialized_app_server(codex_home: &Path) -> Result<TestAppServer> {
-    let mut mcp = TestAppServer::new_with_env(codex_home, &[("OPENAI_API_KEY", None)]).await?;
+async fn initialized_app_server(motyga_home: &Path) -> Result<TestAppServer> {
+    let mut mcp = TestAppServer::new_with_env(motyga_home, &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
     Ok(mcp)
 }
@@ -279,9 +279,9 @@ async fn login_with_api_key(mcp: &mut TestAppServer, api_key: &str) -> Result<()
     Ok(())
 }
 
-fn write_chatgpt_base_url(codex_home: &Path, base_url: &str) -> std::io::Result<()> {
+fn write_chatgpt_base_url(motyga_home: &Path, base_url: &str) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!("chatgpt_base_url = \"{base_url}\"\n"),
     )
 }

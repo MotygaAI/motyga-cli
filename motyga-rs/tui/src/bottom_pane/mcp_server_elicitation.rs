@@ -4,24 +4,24 @@ use std::path::PathBuf;
 
 #[cfg(test)]
 use crate::app_command::AppCommand as Op;
-use codex_app_server_protocol::McpElicitationEnumSchema;
-use codex_app_server_protocol::McpElicitationPrimitiveSchema;
-use codex_app_server_protocol::McpElicitationSingleSelectEnumSchema;
-use codex_app_server_protocol::McpServerElicitationAction;
-use codex_app_server_protocol::McpServerElicitationRequest;
-use codex_app_server_protocol::McpServerElicitationRequestParams;
-use codex_app_server_protocol::RequestId as AppServerRequestId;
-use codex_protocol::ThreadId;
-use codex_protocol::mcp_approval_meta::APPROVAL_KIND_KEY as APPROVAL_META_KIND_KEY;
-use codex_protocol::mcp_approval_meta::APPROVAL_KIND_MCP_TOOL_CALL as APPROVAL_META_KIND_MCP_TOOL_CALL;
-use codex_protocol::mcp_approval_meta::APPROVAL_KIND_TOOL_SUGGESTION as APPROVAL_META_KIND_TOOL_SUGGESTION;
-use codex_protocol::mcp_approval_meta::PERSIST_ALWAYS as APPROVAL_PERSIST_ALWAYS_VALUE;
-use codex_protocol::mcp_approval_meta::PERSIST_KEY as APPROVAL_PERSIST_KEY;
-use codex_protocol::mcp_approval_meta::PERSIST_SESSION as APPROVAL_PERSIST_SESSION_VALUE;
-use codex_protocol::mcp_approval_meta::TOOL_NAME_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_PARAMS_DISPLAY_KEY as APPROVAL_TOOL_PARAMS_DISPLAY_KEY;
-use codex_protocol::mcp_approval_meta::TOOL_PARAMS_KEY as APPROVAL_TOOL_PARAMS_KEY;
-use codex_protocol::user_input::TextElement;
+use motyga_app_server_protocol::McpElicitationEnumSchema;
+use motyga_app_server_protocol::McpElicitationPrimitiveSchema;
+use motyga_app_server_protocol::McpElicitationSingleSelectEnumSchema;
+use motyga_app_server_protocol::McpServerElicitationAction;
+use motyga_app_server_protocol::McpServerElicitationRequest;
+use motyga_app_server_protocol::McpServerElicitationRequestParams;
+use motyga_app_server_protocol::RequestId as AppServerRequestId;
+use motyga_protocol::ThreadId;
+use motyga_protocol::mcp_approval_meta::APPROVAL_KIND_KEY as APPROVAL_META_KIND_KEY;
+use motyga_protocol::mcp_approval_meta::APPROVAL_KIND_MCP_TOOL_CALL as APPROVAL_META_KIND_MCP_TOOL_CALL;
+use motyga_protocol::mcp_approval_meta::APPROVAL_KIND_TOOL_SUGGESTION as APPROVAL_META_KIND_TOOL_SUGGESTION;
+use motyga_protocol::mcp_approval_meta::PERSIST_ALWAYS as APPROVAL_PERSIST_ALWAYS_VALUE;
+use motyga_protocol::mcp_approval_meta::PERSIST_KEY as APPROVAL_PERSIST_KEY;
+use motyga_protocol::mcp_approval_meta::PERSIST_SESSION as APPROVAL_PERSIST_SESSION_VALUE;
+use motyga_protocol::mcp_approval_meta::TOOL_NAME_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_PARAMS_DISPLAY_KEY as APPROVAL_TOOL_PARAMS_DISPLAY_KEY;
+use motyga_protocol::mcp_approval_meta::TOOL_PARAMS_KEY as APPROVAL_TOOL_PARAMS_KEY;
+use motyga_protocol::user_input::TextElement;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -2042,7 +2042,7 @@ mod tests {
                 "Suggest Google Calendar",
                 empty_object_schema(),
                 Some(serde_json::json!({
-                    "codex_approval_kind": "tool_suggestion",
+                    "motyga_approval_kind": "tool_suggestion",
                     "tool_type": "connector",
                     "suggest_type": "install",
                     "suggest_reason": "Plan and reference events from your calendar",
@@ -2075,7 +2075,7 @@ mod tests {
                 "Suggest Slack",
                 empty_object_schema(),
                 Some(serde_json::json!({
-                    "codex_approval_kind": "tool_suggestion",
+                    "motyga_approval_kind": "tool_suggestion",
                     "tool_type": "plugin",
                     "suggest_type": "install",
                     "suggest_reason": "Install the Slack plugin to search messages",

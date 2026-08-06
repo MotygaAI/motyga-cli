@@ -7,17 +7,17 @@ use crate::diagnostics::config_error_from_toml;
 use crate::diagnostics::io_error_from_config_error;
 use crate::state::LoaderOverrides;
 use crate::strict_config::config_error_from_ignored_toml_value_fields;
-use codex_file_system::ExecutorFileSystem;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_absolute_path::AbsolutePathBufGuard;
-use codex_utils_path_uri::PathUri;
+use motyga_file_system::ExecutorFileSystem;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBufGuard;
+use motyga_utils_path_uri::PathUri;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 use toml::Value as TomlValue;
 
 #[cfg(unix)]
-const CODEX_MANAGED_CONFIG_SYSTEM_PATH: &str = "/etc/codex/managed_config.toml";
+const MOTYGA_MANAGED_CONFIG_SYSTEM_PATH: &str = "/etc/motyga/managed_config.toml";
 
 #[derive(Debug, Clone)]
 pub(super) struct MangedConfigFromFile {
@@ -33,7 +33,7 @@ pub(super) struct ManagedConfigFromMdm {
 
 #[derive(Debug, Clone)]
 pub(super) struct LoadedConfigLayers {
-    /// If present, data read from a file such as `/etc/codex/managed_config.toml`.
+    /// If present, data read from a file such as `/etc/motyga/managed_config.toml`.
     pub managed_config: Option<MangedConfigFromFile>,
     /// If present, data read from managed preferences (macOS only).
     pub managed_config_from_mdm: Option<ManagedConfigFromMdm>,
@@ -41,7 +41,7 @@ pub(super) struct LoadedConfigLayers {
 
 pub(super) async fn load_config_layers_internal(
     fs: &dyn ExecutorFileSystem,
-    codex_home: &Path,
+    motyga_home: &Path,
     overrides: LoaderOverrides,
     strict_config: bool,
 ) -> io::Result<LoadedConfigLayers> {
@@ -59,7 +59,7 @@ pub(super) async fn load_config_layers_internal(
     } = overrides;
 
     let managed_config_path = AbsolutePathBuf::from_absolute_path(
-        managed_config_path.unwrap_or_else(|| managed_config_default_path(codex_home)),
+        managed_config_path.unwrap_or_else(|| managed_config_default_path(motyga_home)),
     )?;
 
     let managed_config = read_config_from_path(
@@ -78,7 +78,7 @@ pub(super) async fn load_config_layers_internal(
     let managed_preferences = load_managed_admin_config_layer(
         managed_preferences_base64.as_deref(),
         strict_config,
-        codex_home,
+        motyga_home,
     )
     .await?
     .map(map_managed_admin_layer);
@@ -169,15 +169,15 @@ fn validate_config_toml_strictly(
 }
 
 /// Return the default managed config path.
-pub(super) fn managed_config_default_path(codex_home: &Path) -> PathBuf {
+pub(super) fn managed_config_default_path(motyga_home: &Path) -> PathBuf {
     #[cfg(unix)]
     {
-        let _ = codex_home;
-        PathBuf::from(CODEX_MANAGED_CONFIG_SYSTEM_PATH)
+        let _ = motyga_home;
+        PathBuf::from(MOTYGA_MANAGED_CONFIG_SYSTEM_PATH)
     }
 
     #[cfg(not(unix))]
     {
-        codex_home.join("managed_config.toml")
+        motyga_home.join("managed_config.toml")
     }
 }

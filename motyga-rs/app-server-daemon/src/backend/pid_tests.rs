@@ -3,7 +3,7 @@ use std::time::Duration;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 
-use codex_app_server_transport::REMOTE_CONTROL_DISABLED_ENV_VAR;
+use motyga_app_server_transport::REMOTE_CONTROL_DISABLED_ENV_VAR;
 
 use super::PidBackend;
 use super::PidCommandKind;
@@ -22,7 +22,7 @@ async fn locked_empty_pid_file_is_treated_as_active_reservation() {
         .await
         .expect("write pid file");
     let backend = PidBackend::new(
-        temp_dir.path().join("codex"),
+        temp_dir.path().join("motyga"),
         pid_file.clone(),
         /*remote_control_enabled*/ false,
     );
@@ -50,7 +50,7 @@ async fn unlocked_empty_pid_file_is_treated_as_stale_reservation() {
         .await
         .expect("write pid file");
     let backend = PidBackend::new(
-        temp_dir.path().join("codex"),
+        temp_dir.path().join("motyga"),
         pid_file.clone(),
         /*remote_control_enabled*/ false,
     );
@@ -70,7 +70,7 @@ async fn stop_waits_for_live_reservation_to_resolve() {
         .await
         .expect("write pid file");
     let backend = PidBackend::new(
-        temp_dir.path().join("codex"),
+        temp_dir.path().join("motyga"),
         pid_file.clone(),
         /*remote_control_enabled*/ false,
     );
@@ -102,7 +102,7 @@ async fn start_retries_stale_empty_pid_file_under_its_own_lock() {
         .await
         .expect("write pid file");
     let backend = PidBackend::new(
-        temp_dir.path().join("missing-codex"),
+        temp_dir.path().join("missing-motyga"),
         pid_file,
         /*remote_control_enabled*/ false,
     );
@@ -119,7 +119,7 @@ async fn stale_record_cleanup_preserves_replacement_record() {
     let temp_dir = TempDir::new().expect("temp dir");
     let pid_file = temp_dir.path().join("app-server.pid");
     let backend = PidBackend::new(
-        temp_dir.path().join("codex"),
+        temp_dir.path().join("motyga"),
         pid_file.clone(),
         /*remote_control_enabled*/ false,
     );
@@ -150,7 +150,7 @@ async fn stale_record_cleanup_preserves_replacement_record() {
 #[test]
 fn update_loop_uses_hidden_app_server_subcommand() {
     let backend = PidBackend {
-        codex_bin: "codex".into(),
+        motyga_bin: "motyga".into(),
         pid_file: "updater.pid".into(),
         lock_file: "updater.pid.lock".into(),
         command_kind: PidCommandKind::UpdateLoop,
@@ -165,7 +165,7 @@ fn update_loop_uses_hidden_app_server_subcommand() {
 #[test]
 fn app_server_remote_control_uses_runtime_flag() {
     let backend = PidBackend::new(
-        "codex".into(),
+        "motyga".into(),
         "app-server.pid".into(),
         /*remote_control_enabled*/ true,
     );
@@ -179,7 +179,7 @@ fn app_server_remote_control_uses_runtime_flag() {
 #[test]
 fn app_server_disabled_remote_control_uses_compatible_args_and_runtime_env() {
     let backend = PidBackend::new(
-        "codex".into(),
+        "motyga".into(),
         "app-server.pid".into(),
         /*remote_control_enabled*/ false,
     );

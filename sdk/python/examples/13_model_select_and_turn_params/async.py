@@ -11,11 +11,11 @@ ensure_local_sdk_src()
 
 import asyncio
 
-from openai_codex import (
-    AsyncCodex,
+from motyga_sdk import (
+    AsyncMotyga,
     Sandbox,
 )
-from openai_codex.types import (
+from motyga_sdk.types import (
     Personality,
     ReasoningEffort,
     ReasoningSummary,
@@ -69,15 +69,15 @@ OUTPUT_SCHEMA = {
 
 
 async def main() -> None:
-    async with AsyncCodex(config=runtime_config()) as codex:
-        models = await codex.models(include_hidden=True)
+    async with AsyncMotyga(config=runtime_config()) as motyga:
+        models = await motyga.models(include_hidden=True)
         selected_model = _pick_highest_model(models.data)
         selected_effort = _pick_highest_turn_effort(selected_model)
 
         print("selected.model:", selected_model.model)
         print("selected.effort:", selected_effort.value)
 
-        thread = await codex.thread_start(
+        thread = await motyga.thread_start(
             model=selected_model.model,
             config={"model_reasoning_effort": selected_effort.value},
         )

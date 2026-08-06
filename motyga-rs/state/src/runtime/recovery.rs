@@ -1,6 +1,6 @@
-//! Backup-and-rebuild support for Codex runtime SQLite databases.
+//! Backup-and-rebuild support for Motyga runtime SQLite databases.
 //!
-//! Codex keeps several independent runtime SQLite databases under one SQLite
+//! Motyga keeps several independent runtime SQLite databases under one SQLite
 //! home. When SQLite reports that one of them is corrupt, automatic recovery
 //! moves only that database file and its sidecars into a backup folder so the
 //! other databases keep their data.
@@ -66,7 +66,7 @@ impl std::error::Error for RuntimeDbInitError {
     }
 }
 
-/// Move one Codex runtime SQLite database out of the way so that database can
+/// Move one Motyga runtime SQLite database out of the way so that database can
 /// be recreated without discarding unrelated runtime databases.
 pub async fn backup_runtime_db_for_fresh_start(
     db_path: &Path,

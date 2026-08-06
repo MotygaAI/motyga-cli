@@ -3,43 +3,43 @@ use std::io;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
-use codex_api::ImageBackground;
-use codex_api::ImageEditRequest;
-use codex_api::ImageGenerationRequest;
-use codex_api::ImageQuality;
-use codex_api::ImageUrl;
-use codex_core::context::extension_image_generation_output_hint;
-use codex_core::image_generation_artifact_path;
-use codex_exec_server::CreateDirectoryOptions;
-use codex_exec_server::ExecutorFileSystem;
-use codex_exec_server::LOCAL_FS;
-use codex_extension_api::ExtensionTurnItem;
-use codex_extension_api::FunctionCallError;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolEnvironment;
-use codex_extension_api::ToolExecutor;
-use codex_extension_api::ToolName;
-use codex_extension_api::ToolOutput;
-use codex_extension_api::ToolPayload;
-use codex_extension_api::ToolSpec;
-use codex_extension_api::parse_tool_input_schema;
-use codex_protocol::items::ImageGenerationItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::DEFAULT_IMAGE_DETAIL;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputContentItem;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
-use codex_tools::ResponsesApiNamespace;
-use codex_tools::ResponsesApiNamespaceTool;
-use codex_tools::ResponsesApiTool;
-use codex_tools::ToolExposure;
-use codex_tools::default_namespace_description;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_image::PromptImageMode;
-use codex_utils_image::load_for_prompt_bytes;
-use codex_utils_path_uri::PathUri;
+use motyga_api::ImageBackground;
+use motyga_api::ImageEditRequest;
+use motyga_api::ImageGenerationRequest;
+use motyga_api::ImageQuality;
+use motyga_api::ImageUrl;
+use motyga_core::context::extension_image_generation_output_hint;
+use motyga_core::image_generation_artifact_path;
+use motyga_exec_server::CreateDirectoryOptions;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_exec_server::LOCAL_FS;
+use motyga_extension_api::ExtensionTurnItem;
+use motyga_extension_api::FunctionCallError;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolEnvironment;
+use motyga_extension_api::ToolExecutor;
+use motyga_extension_api::ToolName;
+use motyga_extension_api::ToolOutput;
+use motyga_extension_api::ToolPayload;
+use motyga_extension_api::ToolSpec;
+use motyga_extension_api::parse_tool_input_schema;
+use motyga_protocol::items::ImageGenerationItem;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::DEFAULT_IMAGE_DETAIL;
+use motyga_protocol::models::FunctionCallOutputBody;
+use motyga_protocol::models::FunctionCallOutputContentItem;
+use motyga_protocol::models::FunctionCallOutputPayload;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_tools::ResponsesApiNamespace;
+use motyga_tools::ResponsesApiNamespaceTool;
+use motyga_tools::ResponsesApiTool;
+use motyga_tools::ToolExposure;
+use motyga_tools::default_namespace_description;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_image::PromptImageMode;
+use motyga_utils_image::load_for_prompt_bytes;
+use motyga_utils_path_uri::PathUri;
 use schemars::JsonSchema;
 use schemars::r#gen::SchemaSettings;
 use serde::Deserialize;
@@ -48,7 +48,7 @@ use serde_json::Value;
 
 use crate::IMAGE_GEN_NAMESPACE;
 use crate::IMAGEGEN_TOOL_NAME;
-use crate::backend::CodexImagesBackend;
+use crate::backend::MotygaImagesBackend;
 
 const IMAGE_MODEL: &str = "gpt-image-2";
 const MAX_EDIT_IMAGES: usize = 5;
@@ -56,7 +56,7 @@ const IMAGEGEN_DESCRIPTION: &str = include_str!("../imagegen_description.md");
 
 #[derive(Clone)]
 pub(crate) struct ImageGenerationTool {
-    backend: CodexImagesBackend,
+    backend: MotygaImagesBackend,
     save_root: Option<AbsolutePathBuf>,
     thread_id: String,
 }
@@ -64,7 +64,7 @@ pub(crate) struct ImageGenerationTool {
 impl ImageGenerationTool {
     /// Creates an image-generation tool backed by an image API executor.
     pub(crate) fn new(
-        backend: CodexImagesBackend,
+        backend: MotygaImagesBackend,
         save_root: Option<AbsolutePathBuf>,
         thread_id: String,
     ) -> Self {
@@ -103,7 +103,7 @@ impl ToolExecutor<ToolCall> for ImageGenerationTool {
     }
 
     /// Executes the selected image operation and returns the completed image result.
-    fn handle(&self, call: ToolCall) -> codex_extension_api::ToolExecutorFuture<'_> {
+    fn handle(&self, call: ToolCall) -> motyga_extension_api::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(call))
     }
 }

@@ -8,11 +8,11 @@ from app_server_harness import (
 )
 from app_server_helpers import agent_message_texts
 
-from openai_codex import Codex
-from openai_codex._goal import _GoalNotificationStream
-from openai_codex._run import _collect_turn_result
-from openai_codex.generated.notification_registry import notification_turn_id
-from openai_codex.generated.v2_all import TurnStatus
+from motyga_sdk import Motyga
+from motyga_sdk._goal import _GoalNotificationStream
+from motyga_sdk._run import _collect_turn_result
+from motyga_sdk.generated.notification_registry import notification_turn_id
+from motyga_sdk.generated.v2_all import TurnStatus
 
 
 def test_private_goal_operation_coalesces_runtime_continuations(tmp_path) -> None:
@@ -45,21 +45,21 @@ def test_private_goal_operation_coalesces_runtime_continuations(tmp_path) -> Non
             )
         )
 
-        with Codex(config=harness.app_server_config()) as codex:
-            thread = codex.thread_start()
-            state, turn_id = codex._client.start_goal_operation(  # noqa: SLF001
+        with Motyga(config=harness.app_server_config()) as motyga:
+            thread = motyga.thread_start()
+            state, turn_id = motyga._client.start_goal_operation(  # noqa: SLF001
                 thread.id,
                 "Improve benchmark coverage",
             )
             stream = _GoalNotificationStream(
                 state,
                 state.next_notification,
-                lambda: codex._client.unregister_goal_operation(state),  # noqa: SLF001
-                lambda: codex._client.cancel_goal_operation(state),  # noqa: SLF001
+                lambda: motyga._client.unregister_goal_operation(state),  # noqa: SLF001
+                lambda: motyga._client.cancel_goal_operation(state),  # noqa: SLF001
             )
             events = list(stream)
             result = _collect_turn_result(iter(events), turn_id=turn_id)
-            routes = codex._client._router._goal_operations.copy()  # noqa: SLF001
+            routes = motyga._client._router._goal_operations.copy()  # noqa: SLF001
             requests = harness.responses.wait_for_requests(3)
 
     lifecycle = [event.method for event in events if event.method.startswith("turn/")]

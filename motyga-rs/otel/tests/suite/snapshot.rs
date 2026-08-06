@@ -1,12 +1,12 @@
 use crate::harness::attributes_to_map;
 use crate::harness::find_metric;
-use codex_otel::MetricsClient;
-use codex_otel::MetricsConfig;
-use codex_otel::Result;
-use codex_otel::SessionTelemetry;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::SessionSource;
+use motyga_otel::MetricsClient;
+use motyga_otel::MetricsConfig;
+use motyga_otel::Result;
+use motyga_otel::SessionTelemetry;
+use motyga_otel::TelemetryAuthMode;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::SessionSource;
 use opentelemetry_sdk::metrics::InMemoryMetricExporter;
 use opentelemetry_sdk::metrics::data::AggregatedMetrics;
 use opentelemetry_sdk::metrics::data::MetricData;
@@ -18,23 +18,23 @@ fn snapshot_collects_metrics_without_shutdown() -> Result<()> {
     let exporter = InMemoryMetricExporter::default();
     let config = MetricsConfig::in_memory(
         "test",
-        "codex-cli",
+        "motyga-cli",
         env!("CARGO_PKG_VERSION"),
         exporter.clone(),
     )
-    .with_tag("service", "codex-cli")?
+    .with_tag("service", "motyga-cli")?
     .with_runtime_reader();
     let metrics = MetricsClient::new(config)?;
 
     metrics.counter(
-        "codex.tool.call",
+        "motyga.tool.call",
         /*inc*/ 1,
         &[("tool", "shell"), ("success", "true")],
     )?;
 
     let snapshot = metrics.snapshot()?;
 
-    let metric = find_metric(&snapshot, "codex.tool.call").expect("counter metric missing");
+    let metric = find_metric(&snapshot, "motyga.tool.call").expect("counter metric missing");
     let attrs = match metric.data() {
         AggregatedMetrics::U64(data) => match data {
             MetricData::Sum(sum) => {
@@ -48,7 +48,7 @@ fn snapshot_collects_metrics_without_shutdown() -> Result<()> {
     };
 
     let expected = BTreeMap::from([
-        ("service".to_string(), "codex-cli".to_string()),
+        ("service".to_string(), "motyga-cli".to_string()),
         ("success".to_string(), "true".to_string()),
         ("tool".to_string(), "shell".to_string()),
     ]);
@@ -65,18 +65,18 @@ fn snapshot_collects_metrics_without_shutdown() -> Result<()> {
 #[test]
 fn observable_gauge_is_collected_on_every_delta_snapshot() -> Result<()> {
     let exporter = InMemoryMetricExporter::default();
-    let config = MetricsConfig::in_memory("test", "codex-cli", env!("CARGO_PKG_VERSION"), exporter)
+    let config = MetricsConfig::in_memory("test", "motyga-cli", env!("CARGO_PKG_VERSION"), exporter)
         .with_runtime_reader();
     let metrics = MetricsClient::new(config)?;
     metrics.register_observable_gauge_with_description(
-        "codex.active",
+        "motyga.active",
         "Number of active operations.",
         || 1,
         &[("component", "test")],
     )?;
 
     for snapshot in [metrics.snapshot()?, metrics.snapshot()?] {
-        let gauge = find_metric(&snapshot, "codex.active").expect("gauge metric missing");
+        let gauge = find_metric(&snapshot, "motyga.active").expect("gauge metric missing");
         let point = match gauge.data() {
             AggregatedMetrics::I64(MetricData::Gauge(gauge)) => {
                 gauge.data_points().next().expect("gauge point")
@@ -97,8 +97,8 @@ fn observable_gauge_is_collected_on_every_delta_snapshot() -> Result<()> {
 #[test]
 fn manager_snapshot_metrics_collects_without_shutdown() -> Result<()> {
     let exporter = InMemoryMetricExporter::default();
-    let config = MetricsConfig::in_memory("test", "codex-cli", env!("CARGO_PKG_VERSION"), exporter)
-        .with_tag("service", "codex-cli")?
+    let config = MetricsConfig::in_memory("test", "motyga-cli", env!("CARGO_PKG_VERSION"), exporter)
+        .with_tag("service", "motyga-cli")?
         .with_runtime_reader();
     let metrics = MetricsClient::new(config)?;
     let manager = SessionTelemetry::new(
@@ -116,13 +116,13 @@ fn manager_snapshot_metrics_collects_without_shutdown() -> Result<()> {
     .with_metrics(metrics);
 
     manager.counter(
-        "codex.tool.call",
+        "motyga.tool.call",
         /*inc*/ 1,
         &[("tool", "shell"), ("success", "true")],
     );
 
     let snapshot = manager.snapshot_metrics()?;
-    let metric = find_metric(&snapshot, "codex.tool.call").expect("counter metric missing");
+    let metric = find_metric(&snapshot, "motyga.tool.call").expect("counter metric missing");
     let attrs = match metric.data() {
         AggregatedMetrics::U64(data) => match data {
             MetricData::Sum(sum) => {
@@ -146,7 +146,7 @@ fn manager_snapshot_metrics_collects_without_shutdown() -> Result<()> {
         ),
         ("model".to_string(), "gpt-5.1".to_string()),
         ("originator".to_string(), "test_originator".to_string()),
-        ("service".to_string(), "codex-cli".to_string()),
+        ("service".to_string(), "motyga-cli".to_string()),
         ("session_source".to_string(), "cli".to_string()),
         ("success".to_string(), "true".to_string()),
         ("tool".to_string(), "shell".to_string()),

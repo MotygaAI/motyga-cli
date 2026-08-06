@@ -10,8 +10,8 @@ use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::SecondsFormat;
 use chrono::Utc;
-use codex_protocol::auth::PlanType as AuthPlanType;
-use codex_protocol::protocol::SessionSource;
+use motyga_protocol::auth::PlanType as AuthPlanType;
+use motyga_protocol::protocol::SessionSource;
 use crypto_box::SecretKey as Curve25519SecretKey;
 use ed25519_dalek::Signer as _;
 use ed25519_dalek::SigningKey;
@@ -34,13 +34,13 @@ use sha2::Sha512;
 
 const AGENT_TASK_REGISTRATION_TIMEOUT: Duration = Duration::from_secs(30);
 const AGENT_IDENTITY_JWKS_TIMEOUT: Duration = Duration::from_secs(10);
-const AGENT_IDENTITY_JWT_AUDIENCE: &str = "codex-app-server";
-const AGENT_IDENTITY_JWT_ISSUER: &str = "https://api.motyga.com/codex-backend/agent-identity";
+const AGENT_IDENTITY_JWT_AUDIENCE: &str = "motyga-app-server";
+const AGENT_IDENTITY_JWT_ISSUER: &str = "https://api.motyga.com/motyga-backend/agent-identity";
 const AGENT_REGISTRATION_TIMEOUT: Duration = Duration::from_secs(15);
 const PROD_AGENT_IDENTITY_AUTHAPI_BASE_URL: &str = "https://api.motyga.com/api/accounts";
 const STAGING_AGENT_IDENTITY_AUTHAPI_BASE_URL: &str = "https://staging.api.motyga.com/api/accounts";
 const AGENT_IDENTITY_KEY_SEED_BYTES: usize = 64;
-const AGENT_IDENTITY_KEY_DERIVATION_CONTEXT: &[u8] = b"codex-agent-identity-ed25519-v1";
+const AGENT_IDENTITY_KEY_DERIVATION_CONTEXT: &[u8] = b"motyga-agent-identity-ed25519-v1";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ChatGptEnvironment {
@@ -54,11 +54,11 @@ impl ChatGptEnvironment {
         match chatgpt_base_url.trim_end_matches('/') {
             "https://api.motyga.com"
             | "https://api.motyga.com/backend-api"
-            | "https://api.motyga.com/codex"
+            | "https://api.motyga.com/motyga"
             | "https://api.motyga.com/backend-api/codex" => Ok(Self::Production),
             "https://staging.api.motyga.com"
             | "https://staging.api.motyga.com/backend-api"
-            | "https://staging.api.motyga.com/codex"
+            | "https://staging.api.motyga.com/motyga"
             | "https://staging.api.motyga.com/backend-api/codex" => Ok(Self::Staging),
             _ => anyhow::bail!(
                 "Agent Identity only supports production and staging Motyga environments"
@@ -84,7 +84,7 @@ impl ChatGptEnvironment {
 /// Borrowed durable signing material for a registered agent identity.
 ///
 /// This intentionally does not include a task id. Task ids are scoped to a
-/// single Codex run, while the agent runtime id and private key are the
+/// single Motyga run, while the agent runtime id and private key are the
 /// reusable identity material used to register and sign that run task.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AgentIdentityKey<'a> {
@@ -491,14 +491,14 @@ pub fn build_abom(session_source: SessionSource) -> AgentBillOfMaterials {
     AgentBillOfMaterials {
         agent_version: env!("CARGO_PKG_VERSION").to_string(),
         agent_harness_id: match &session_source {
-            SessionSource::VSCode => "codex-app".to_string(),
+            SessionSource::VSCode => "motyga-app".to_string(),
             SessionSource::Cli
             | SessionSource::Exec
             | SessionSource::Mcp
             | SessionSource::Custom(_)
             | SessionSource::Internal(_)
             | SessionSource::SubAgent(_)
-            | SessionSource::Unknown => "codex-cli".to_string(),
+            | SessionSource::Unknown => "motyga-cli".to_string(),
         },
         running_location: format!("{}-{}", session_source, std::env::consts::OS),
     }
@@ -564,7 +564,7 @@ mod tests {
     use jsonwebtoken::Header;
     use pretty_assertions::assert_eq;
 
-    use codex_protocol::auth::KnownPlan;
+    use motyga_protocol::auth::KnownPlan;
 
     use super::*;
 
@@ -973,12 +973,12 @@ J1bwkqKZTB5dHolX9A58e/xXnfZ5P8f3Z83+Izap3FwqQulk7b1WO1MQcHuVg2NN
     #[test]
     fn agent_identity_jwks_url_uses_jwt_issuer_base_url() {
         assert_eq!(
-            agent_identity_jwks_url("http://localhost:8080/api/codex"),
-            "http://localhost:8080/api/codex/agent-identities/jwks"
+            agent_identity_jwks_url("http://localhost:8080/api/motyga"),
+            "http://localhost:8080/api/motyga/agent-identities/jwks"
         );
         assert_eq!(
-            agent_identity_jwks_url("http://localhost:8080/api/codex/"),
-            "http://localhost:8080/api/codex/agent-identities/jwks"
+            agent_identity_jwks_url("http://localhost:8080/api/motyga/"),
+            "http://localhost:8080/api/motyga/agent-identities/jwks"
         );
     }
 

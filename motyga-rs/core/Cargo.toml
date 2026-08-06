@@ -1,15 +1,15 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-core"
+name = "motyga-core"
 version.workspace = true
 
 [lib]
-name = "codex_core"
+name = "motyga_core"
 path = "src/lib.rs"
 
 [[bin]]
-name = "codex-write-config-schema"
+name = "motyga-write-config-schema"
 path = "src/bin/config_schema.rs"
 
 [lints]
@@ -23,60 +23,60 @@ base64 = { workspace = true }
 bm25 = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true, features = ["derive"] }
-codex-analytics = { workspace = true }
-codex-agent-graph-store = { workspace = true }
-codex-api = { workspace = true }
-codex-app-server-protocol = { workspace = true }
-codex-apply-patch = { workspace = true }
-codex-async-utils = { workspace = true }
-codex-code-mode = { workspace = true }
-codex-connectors = { workspace = true }
-codex-context-fragments = { workspace = true }
-codex-config = { workspace = true }
-codex-core-plugins = { workspace = true }
-codex-core-skills = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-extension-api = { workspace = true }
-codex-features = { workspace = true }
-codex-feedback = { workspace = true }
-codex-file-system = { workspace = true }
-codex-login = { workspace = true }
-codex-memories-read = { workspace = true }
-codex-mcp = { workspace = true }
-codex-model-provider-info = { workspace = true }
-codex-models-manager = { workspace = true }
-codex-shell-command = { workspace = true }
-codex-execpolicy = { workspace = true }
-codex-git-utils = { workspace = true }
-codex-hooks = { workspace = true }
-codex-install-context = { workspace = true }
-codex-network-proxy = { workspace = true }
-codex-otel = { workspace = true }
-codex-plugin = { workspace = true }
-codex-model-provider = { workspace = true }
-codex-protocol = { workspace = true }
-codex-response-debug-context = { workspace = true }
-codex-prompts = { workspace = true }
-codex-rollout = { workspace = true }
-codex-rollout-trace = { workspace = true }
-codex-rmcp-client = { workspace = true }
-codex-sandboxing = { workspace = true }
-codex-state = { workspace = true }
-codex-terminal-detection = { workspace = true }
-codex-thread-store = { workspace = true }
-codex-tools = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-cache = { workspace = true }
-codex-utils-image = { workspace = true }
-codex-utils-home-dir = { workspace = true }
-codex-utils-output-truncation = { workspace = true }
-codex-utils-path = { workspace = true }
-codex-utils-path-uri = { workspace = true }
-codex-utils-plugins = { workspace = true }
-codex-utils-pty = { workspace = true }
-codex-utils-string = { workspace = true }
-codex-utils-stream-parser = { workspace = true }
-codex-windows-sandbox = { package = "codex-windows-sandbox", path = "../windows-sandbox-rs" }
+motyga-analytics = { workspace = true }
+motyga-agent-graph-store = { workspace = true }
+motyga-api = { workspace = true }
+motyga-app-server-protocol = { workspace = true }
+motyga-apply-patch = { workspace = true }
+motyga-async-utils = { workspace = true }
+motyga-code-mode = { workspace = true }
+motyga-connectors = { workspace = true }
+motyga-context-fragments = { workspace = true }
+motyga-config = { workspace = true }
+motyga-core-plugins = { workspace = true }
+motyga-core-skills = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-extension-api = { workspace = true }
+motyga-features = { workspace = true }
+motyga-feedback = { workspace = true }
+motyga-file-system = { workspace = true }
+motyga-login = { workspace = true }
+motyga-memories-read = { workspace = true }
+motyga-mcp = { workspace = true }
+motyga-model-provider-info = { workspace = true }
+motyga-models-manager = { workspace = true }
+motyga-shell-command = { workspace = true }
+motyga-execpolicy = { workspace = true }
+motyga-git-utils = { workspace = true }
+motyga-hooks = { workspace = true }
+motyga-install-context = { workspace = true }
+motyga-network-proxy = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-plugin = { workspace = true }
+motyga-model-provider = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-response-debug-context = { workspace = true }
+motyga-prompts = { workspace = true }
+motyga-rollout = { workspace = true }
+motyga-rollout-trace = { workspace = true }
+motyga-rmcp-client = { workspace = true }
+motyga-sandboxing = { workspace = true }
+motyga-state = { workspace = true }
+motyga-terminal-detection = { workspace = true }
+motyga-thread-store = { workspace = true }
+motyga-tools = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-cache = { workspace = true }
+motyga-utils-image = { workspace = true }
+motyga-utils-home-dir = { workspace = true }
+motyga-utils-output-truncation = { workspace = true }
+motyga-utils-path = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
+motyga-utils-plugins = { workspace = true }
+motyga-utils-pty = { workspace = true }
+motyga-utils-string = { workspace = true }
+motyga-utils-stream-parser = { workspace = true }
+motyga-windows-sandbox = { package = "motyga-windows-sandbox", path = "../windows-sandbox-rs" }
 csv = { workspace = true }
 dirs = { workspace = true }
 dunce = { workspace = true }
@@ -130,17 +130,17 @@ openssl-sys = { workspace = true, features = ["vendored"] }
 openssl-sys = { workspace = true, features = ["vendored"] }
 
 [target.'cfg(unix)'.dependencies]
-codex-shell-escalation = { workspace = true }
+motyga-shell-escalation = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
 assert_matches = { workspace = true }
-codex-image-generation-extension = { workspace = true }
-codex-home = { workspace = true }
-codex-otel = { workspace = true }
-codex-test-binary-support = { workspace = true }
-codex-utils-cargo-bin = { workspace = true }
-codex-web-search-extension = { workspace = true }
+motyga-image-generation-extension = { workspace = true }
+motyga-home = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-test-binary-support = { workspace = true }
+motyga-utils-cargo-bin = { workspace = true }
+motyga-web-search-extension = { workspace = true }
 core_test_support = { workspace = true }
 ctor = { workspace = true }
 insta = { workspace = true }

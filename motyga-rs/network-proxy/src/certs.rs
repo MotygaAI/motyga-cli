@@ -2,7 +2,7 @@ use anyhow::Context as _;
 use anyhow::Result;
 use anyhow::anyhow;
 use base64::Engine as _;
-use codex_utils_home_dir::find_codex_home;
+use motyga_utils_home_dir::find_motyga_home;
 use rama_net::tls::ApplicationProtocol;
 use rama_tls_rustls::dep::pki_types::CertificateDer;
 use rama_tls_rustls::dep::pki_types::PrivateKeyDer;
@@ -155,7 +155,7 @@ pub(crate) const SSL_CERT_DIR_ENV_KEY: &str = "SSL_CERT_DIR";
 // Best-effort compatibility set for common child toolchains that accept a CA bundle path.
 // This is intentionally curated rather than pretending to cover every TLS client.
 pub const CUSTOM_CA_ENV_KEYS: [&str; 10] = [
-    "CODEX_CA_CERTIFICATE",
+    "MOTYGA_CA_CERTIFICATE",
     "SSL_CERT_FILE",
     "REQUESTS_CA_BUNDLE",
     "CURL_CA_BUNDLE",
@@ -183,9 +183,9 @@ pub(crate) struct ManagedMitmCaTrustBundle {
 }
 
 fn managed_ca_dir() -> Result<PathBuf> {
-    let codex_home =
-        find_codex_home().context("failed to resolve MOTYGA_HOME for managed MITM CA")?;
-    Ok(codex_home.join(MANAGED_MITM_CA_DIR).to_path_buf())
+    let motyga_home =
+        find_motyga_home().context("failed to resolve MOTYGA_HOME for managed MITM CA")?;
+    Ok(motyga_home.join(MANAGED_MITM_CA_DIR).to_path_buf())
 }
 
 pub(crate) fn managed_ca_trust_bundle(
@@ -453,7 +453,7 @@ fn is_generated_managed_ca_artifact_path(path: &Path, proxy_dir: &Path, prefix: 
     format!("{:x}", Sha256::digest(trust_bundle)) == expected_hash
 }
 
-/// Returns whether `path` points at a current Codex-generated MITM CA bundle.
+/// Returns whether `path` points at a current Motyga-generated MITM CA bundle.
 pub fn is_managed_mitm_ca_trust_bundle_path(path: &str) -> bool {
     let Ok(proxy_dir) = managed_ca_dir() else {
         return false;
@@ -805,7 +805,7 @@ fn open_create_new_with_mode(path: &Path, _mode: u32) -> Result<File> {
 mod tests {
     use super::*;
 
-    use codex_utils_rustls_provider::ensure_rustls_crypto_provider;
+    use motyga_utils_rustls_provider::ensure_rustls_crypto_provider;
     use pretty_assertions::assert_eq;
     use tempfile::tempdir;
 

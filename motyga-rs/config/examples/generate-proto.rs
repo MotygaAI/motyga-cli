@@ -7,7 +7,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let proto_dir = PathBuf::from(proto_dir_arg);
-    let proto_file = proto_dir.join("codex.thread_config.v1.proto");
+    let proto_file = proto_dir.join("motyga.thread_config.v1.proto");
 
     tonic_prost_build::configure()
         .build_client(true)

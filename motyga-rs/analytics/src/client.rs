@@ -9,7 +9,7 @@ use crate::facts::AnalyticsJsonRpcError;
 use crate::facts::AppInvocation;
 use crate::facts::AppMentionedInput;
 use crate::facts::AppUsedInput;
-use crate::facts::CodexGoalEvent;
+use crate::facts::MotygaGoalEvent;
 use crate::facts::CustomAnalyticsFact;
 use crate::facts::ExternalAgentConfigImportCompletedInput;
 use crate::facts::ExternalAgentConfigImportFailureInput;
@@ -24,25 +24,25 @@ use crate::facts::SkillInvocation;
 use crate::facts::SkillInvokedInput;
 use crate::facts::SubAgentThreadStartedInput;
 use crate::facts::TrackEventsContext;
-use crate::facts::TurnCodexErrorFact;
+use crate::facts::TurnMotygaErrorFact;
 use crate::facts::TurnProfileFact;
 use crate::facts::TurnResolvedConfigFact;
 use crate::facts::TurnTokenUsageFact;
 use crate::reducer::AnalyticsReducer;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::ClientResponsePayload;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::ServerResponse;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::default_client::create_client;
-use codex_plugin::PluginId;
-use codex_plugin::PluginTelemetryMetadata;
-use codex_protocol::request_permissions::RequestPermissionsResponse;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::ClientResponsePayload;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::ServerResponse;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::default_client::create_client;
+use motyga_plugin::PluginId;
+use motyga_plugin::PluginTelemetryMetadata;
+use motyga_protocol::request_permissions::RequestPermissionsResponse;
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -104,7 +104,7 @@ impl AnalyticsEventsDestination {
 
         let base_url = base_url.trim_end_matches('/');
         Self::Http {
-            url: format!("{base_url}/codex/analytics-events/events"),
+            url: format!("{base_url}/motyga/analytics-events/events"),
         }
     }
 }
@@ -325,13 +325,13 @@ impl AnalyticsEventsClient {
         ));
     }
 
-    pub fn track_compaction(&self, event: crate::facts::CodexCompactionEvent) {
+    pub fn track_compaction(&self, event: crate::facts::MotygaCompactionEvent) {
         self.record_fact(AnalyticsFact::Custom(CustomAnalyticsFact::Compaction(
             Box::new(event),
         )));
     }
 
-    pub fn track_goal_event(&self, event: CodexGoalEvent) {
+    pub fn track_goal_event(&self, event: MotygaGoalEvent) {
         self.record_fact(AnalyticsFact::Custom(CustomAnalyticsFact::Goal(Box::new(
             event,
         ))));
@@ -355,8 +355,8 @@ impl AnalyticsEventsClient {
         )));
     }
 
-    pub fn track_turn_codex_error(&self, fact: TurnCodexErrorFact) {
-        self.record_fact(AnalyticsFact::Custom(CustomAnalyticsFact::TurnCodexError(
+    pub fn track_turn_motyga_error(&self, fact: TurnMotygaErrorFact) {
+        self.record_fact(AnalyticsFact::Custom(CustomAnalyticsFact::TurnMotygaError(
             Box::new(fact),
         )));
     }
@@ -557,7 +557,7 @@ async fn send_track_events(
     let Some(auth) = auth_manager.auth().await else {
         return;
     };
-    if !auth.uses_codex_backend() {
+    if !auth.uses_motyga_backend() {
         return;
     }
 
@@ -590,7 +590,7 @@ fn track_event_request_batches(events: Vec<TrackEventRequest>) -> Vec<Vec<TrackE
 }
 
 async fn send_track_events_request(
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     destination: &AnalyticsEventsDestination,
     events: Vec<TrackEventRequest>,
 ) {
@@ -613,7 +613,7 @@ async fn send_track_events_request(
     let response = create_client()
         .post(url)
         .timeout(ANALYTICS_EVENTS_TIMEOUT)
-        .headers(codex_model_provider::auth_provider_from_auth(auth).to_auth_headers())
+        .headers(motyga_model_provider::auth_provider_from_auth(auth).to_auth_headers())
         .header("Content-Type", "application/json")
         .json(&payload)
         .send()

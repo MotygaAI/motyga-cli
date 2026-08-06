@@ -1,7 +1,7 @@
 use super::*;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditOutcome;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
-use codex_app_server_protocol::RateLimitResetCreditsSummary;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditOutcome;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditResponse;
+use motyga_app_server_protocol::RateLimitResetCreditsSummary;
 use uuid::Uuid;
 
 const TEST_OVERLAY_VIEW_ID: &str = "usage-test-overlay";
@@ -134,7 +134,7 @@ async fn account_update_invalidates_usage_menu_refresh_when_visible_state_is_unc
 
     chat.update_account_state(
         /*status_account_display*/ None, /*plan_type*/ None,
-        /*has_chatgpt_account*/ true, /*has_codex_backend_auth*/ true,
+        /*has_chatgpt_account*/ true, /*has_motyga_backend_auth*/ true,
     );
     chat.finish_usage_menu_rate_limit_refresh(
         /*request_id*/ 1,
@@ -516,7 +516,7 @@ async fn account_change_invalidates_pending_reset_requests() {
 
     chat.update_account_state(
         /*status_account_display*/ None, /*plan_type*/ None,
-        /*has_chatgpt_account*/ false, /*has_codex_backend_auth*/ false,
+        /*has_chatgpt_account*/ false, /*has_motyga_backend_auth*/ false,
     );
 
     assert!(!chat.finish_rate_limit_reset_credits_refresh(
@@ -611,7 +611,7 @@ async fn account_change_dismisses_reset_popup_beneath_overlay() {
 
     chat.update_account_state(
         /*status_account_display*/ None, /*plan_type*/ None,
-        /*has_chatgpt_account*/ false, /*has_codex_backend_auth*/ false,
+        /*has_chatgpt_account*/ false, /*has_motyga_backend_auth*/ false,
     );
     assert_eq!(
         chat.bottom_pane.active_view_id(),

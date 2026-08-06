@@ -1,12 +1,12 @@
 use super::shared::v2_enum_from_core;
-use codex_protocol::approvals::ElicitationRequest as CoreElicitationRequest;
-use codex_protocol::items::McpToolCallError as CoreMcpToolCallError;
-use codex_protocol::mcp::CallToolResult as CoreMcpCallToolResult;
-use codex_protocol::mcp::McpServerInfo;
-use codex_protocol::mcp::Resource as McpResource;
-pub use codex_protocol::mcp::ResourceContent as McpResourceContent;
-use codex_protocol::mcp::ResourceTemplate as McpResourceTemplate;
-use codex_protocol::mcp::Tool as McpTool;
+use motyga_protocol::approvals::ElicitationRequest as CoreElicitationRequest;
+use motyga_protocol::items::McpToolCallError as CoreMcpToolCallError;
+use motyga_protocol::mcp::CallToolResult as CoreMcpCallToolResult;
+use motyga_protocol::mcp::McpServerInfo;
+use motyga_protocol::mcp::Resource as McpResource;
+pub use motyga_protocol::mcp::ResourceContent as McpResourceContent;
+use motyga_protocol::mcp::ResourceTemplate as McpResourceTemplate;
+use motyga_protocol::mcp::Tool as McpTool;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 use ts_rs::TS;
 
 v2_enum_from_core!(
-    pub enum McpAuthStatus from codex_protocol::protocol::McpAuthStatus {
+    pub enum McpAuthStatus from motyga_protocol::protocol::McpAuthStatus {
         Unsupported,
         NotLoggedIn,
         BearerToken,
@@ -24,7 +24,7 @@ v2_enum_from_core!(
 );
 
 v2_enum_from_core!(
-    pub enum McpServerStartupFailureReason from codex_protocol::protocol::McpStartupFailureReason {
+    pub enum McpServerStartupFailureReason from motyga_protocol::protocol::McpStartupFailureReason {
         ReauthenticationRequired
     }
 );
@@ -262,11 +262,11 @@ pub enum McpServerElicitationAction {
 }
 
 impl McpServerElicitationAction {
-    pub fn to_core(self) -> codex_protocol::approvals::ElicitationAction {
+    pub fn to_core(self) -> motyga_protocol::approvals::ElicitationAction {
         match self {
-            Self::Accept => codex_protocol::approvals::ElicitationAction::Accept,
-            Self::Decline => codex_protocol::approvals::ElicitationAction::Decline,
-            Self::Cancel => codex_protocol::approvals::ElicitationAction::Cancel,
+            Self::Accept => motyga_protocol::approvals::ElicitationAction::Accept,
+            Self::Decline => motyga_protocol::approvals::ElicitationAction::Decline,
+            Self::Cancel => motyga_protocol::approvals::ElicitationAction::Cancel,
         }
     }
 }
@@ -296,7 +296,7 @@ impl From<rmcp::model::ElicitationAction> for McpServerElicitationAction {
 #[ts(export_to = "v2/")]
 pub struct McpServerElicitationRequestParams {
     pub thread_id: String,
-    /// Active Codex turn when this elicitation was observed, if app-server could correlate one.
+    /// Active Motyga turn when this elicitation was observed, if app-server could correlate one.
     ///
     /// This is nullable because MCP models elicitation as a standalone server-to-client request
     /// identified by the MCP server request id. It may be triggered during a turn, but turn

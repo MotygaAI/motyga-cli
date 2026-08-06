@@ -1,13 +1,13 @@
-use super::CodexErrorInfo;
+use super::MotygaErrorInfo;
 use super::ThreadItem;
 use super::ThreadStatus;
 use super::TurnStatus;
-use codex_experimental_api_macros::ExperimentalApi;
-use codex_protocol::protocol::SessionSource as CoreSessionSource;
-use codex_protocol::protocol::SubAgentSource as CoreSubAgentSource;
-use codex_protocol::protocol::ThreadHistoryMode as CoreThreadHistoryMode;
-use codex_protocol::protocol::ThreadSource as CoreThreadSource;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_experimental_api_macros::ExperimentalApi;
+use motyga_protocol::protocol::SessionSource as CoreSessionSource;
+use motyga_protocol::protocol::SubAgentSource as CoreSubAgentSource;
+use motyga_protocol::protocol::ThreadHistoryMode as CoreThreadHistoryMode;
+use motyga_protocol::protocol::ThreadSource as CoreThreadSource;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use schemars::r#gen::SchemaGenerator;
 use schemars::schema::Schema;
@@ -168,7 +168,7 @@ pub struct GitInfo {
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
 pub struct Thread {
-    /// Identifier for this thread. Codex-generated thread IDs are UUIDv7.
+    /// Identifier for this thread. Motyga-generated thread IDs are UUIDv7.
     pub id: String,
     /// Optional implementation-specific thread data.
     #[experimental("thread.extra")]
@@ -206,7 +206,7 @@ pub struct Thread {
     pub cwd: AbsolutePathBuf,
     /// Version of the CLI that created the thread.
     pub cli_version: String,
-    /// Origin of the thread (CLI, VSCode, codex exec, codex app-server, etc.).
+    /// Origin of the thread (CLI, VSCode, motyga exec, motyga app-server, etc.).
     pub source: SessionSource,
     /// Optional analytics source classification for this thread.
     pub thread_source: Option<ThreadSource>,
@@ -229,7 +229,7 @@ pub struct Thread {
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
 pub struct Turn {
-    /// Identifier for this turn. Codex-generated turn IDs are UUIDv7.
+    /// Identifier for this turn. Motyga-generated turn IDs are UUIDv7.
     pub id: String,
     /// Thread items currently included in this turn payload.
     pub items: Vec<ThreadItem>,
@@ -269,7 +269,7 @@ pub enum TurnItemsView {
 #[error("{message}")]
 pub struct TurnError {
     pub message: String,
-    pub codex_error_info: Option<CodexErrorInfo>,
+    pub motyga_error_info: Option<MotygaErrorInfo>,
     #[serde(default)]
     pub additional_details: Option<String>,
 }

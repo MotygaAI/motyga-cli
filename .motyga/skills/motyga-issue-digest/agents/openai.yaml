@@ -1,0 +1,4 @@
+interface:
+  display_name: "Motyga Issue Digest"
+  short_description: "Summarize Motyga issues by labels or all areas"
+  default_prompt: "Use $motyga-issue-digest to run the Motyga issue digest for labels tui and exec over the previous 24 hours."

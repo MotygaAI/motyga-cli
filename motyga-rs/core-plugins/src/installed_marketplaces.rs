@@ -1,9 +1,9 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_config::ConfigLayerStack;
-use codex_plugin::validate_plugin_segment;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_config::ConfigLayerStack;
+use motyga_plugin::validate_plugin_segment;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use tracing::warn;
 
 use crate::marketplace::find_marketplace_manifest_path;
@@ -11,15 +11,15 @@ use crate::marketplace_policy::project_effective_user_config;
 
 pub const INSTALLED_MARKETPLACES_DIR: &str = ".tmp/marketplaces";
 
-pub fn marketplace_install_root(codex_home: &Path) -> PathBuf {
-    codex_home.join(INSTALLED_MARKETPLACES_DIR)
+pub fn marketplace_install_root(motyga_home: &Path) -> PathBuf {
+    motyga_home.join(INSTALLED_MARKETPLACES_DIR)
 }
 
 pub fn installed_marketplace_roots_from_layer_stack(
     config_layer_stack: &ConfigLayerStack,
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> Vec<AbsolutePathBuf> {
-    let Some(user_config) = project_effective_user_config(config_layer_stack, codex_home) else {
+    let Some(user_config) = project_effective_user_config(config_layer_stack, motyga_home) else {
         return Vec::new();
     };
     let Some(marketplaces_value) = user_config.get("marketplaces") else {
@@ -29,7 +29,7 @@ pub fn installed_marketplace_roots_from_layer_stack(
         warn!("invalid marketplaces config: expected table");
         return Vec::new();
     };
-    let default_install_root = marketplace_install_root(codex_home);
+    let default_install_root = marketplace_install_root(motyga_home);
     let mut roots = marketplaces
         .iter()
         .filter_map(|(marketplace_name, marketplace)| {

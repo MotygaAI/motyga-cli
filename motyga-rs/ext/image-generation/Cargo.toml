@@ -1,11 +1,11 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-image-generation-extension"
+name = "motyga-image-generation-extension"
 version.workspace = true
 
 [lib]
-name = "codex_image_generation_extension"
+name = "motyga_image_generation_extension"
 path = "src/lib.rs"
 doctest = false
 
@@ -14,18 +14,18 @@ workspace = true
 
 [dependencies]
 base64 = { workspace = true }
-codex-api = { workspace = true }
-codex-core = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-extension-api = { workspace = true }
-codex-login = { workspace = true }
-codex-model-provider = { workspace = true }
-codex-model-provider-info = { workspace = true }
-codex-protocol = { workspace = true }
-codex-tools = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-image = { workspace = true }
-codex-utils-path-uri = { workspace = true }
+motyga-api = { workspace = true }
+motyga-core = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-extension-api = { workspace = true }
+motyga-login = { workspace = true }
+motyga-model-provider = { workspace = true }
+motyga-model-provider-info = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-tools = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-image = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
 http = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

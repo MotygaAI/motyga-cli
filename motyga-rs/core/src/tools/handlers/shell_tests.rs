@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::ShellCommandToolCallParams;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::ShellCommandToolCallParams;
 use pretty_assertions::assert_eq;
 
 use crate::config::PermissionProfileSnapshot;
-use crate::exec_env::CODEX_PERMISSION_PROFILE_ENV_VAR;
+use crate::exec_env::MOTYGA_PERMISSION_PROFILE_ENV_VAR;
 use crate::exec_env::create_env;
 use crate::exec_env::inject_permission_profile_env;
 use crate::sandboxing::SandboxPermissions;
@@ -23,10 +23,10 @@ use crate::tools::handlers::ShellCommandHandler;
 use crate::tools::hook_names::HookToolName;
 use crate::tools::registry::CoreToolRuntime;
 use crate::turn_diff_tracker::TurnDiffTracker;
-use codex_shell_command::is_safe_command::is_known_safe_command;
-use codex_shell_command::powershell::try_find_powershell_executable_blocking;
-use codex_shell_command::powershell::try_find_pwsh_executable_blocking;
-use codex_utils_path_uri::PathUri;
+use motyga_shell_command::is_safe_command::is_known_safe_command;
+use motyga_shell_command::powershell::try_find_powershell_executable_blocking;
+use motyga_shell_command::powershell::try_find_pwsh_executable_blocking;
+use motyga_utils_path_uri::PathUri;
 use serde_json::json;
 use tokio::sync::Mutex;
 
@@ -144,7 +144,7 @@ async fn shell_command_handler_to_exec_params_uses_selected_environment() {
     assert_eq!(exec_params.cwd, expected_cwd);
     assert_eq!(exec_params.env, expected_env);
     assert_eq!(
-        exec_params.env.get(CODEX_PERMISSION_PROFILE_ENV_VAR),
+        exec_params.env.get(MOTYGA_PERMISSION_PROFILE_ENV_VAR),
         active_permission_profile
             .as_ref()
             .map(|profile| &profile.id)
@@ -248,7 +248,7 @@ async fn shell_command_pre_tool_use_payload_uses_raw_command() {
     };
     let (session, turn) = make_session_and_context().await;
     let turn = Arc::new(turn);
-    let handler = ShellCommandHandler::from(codex_tools::ShellCommandBackendConfig::Classic);
+    let handler = ShellCommandHandler::from(motyga_tools::ShellCommandBackendConfig::Classic);
 
     assert_eq!(
         handler.pre_tool_use_payload(&ToolInvocation {
@@ -258,7 +258,7 @@ async fn shell_command_pre_tool_use_payload_uses_raw_command() {
             cancellation_token: tokio_util::sync::CancellationToken::new(),
             tracker: Arc::new(Mutex::new(TurnDiffTracker::new())),
             call_id: "call-42".to_string(),
-            tool_name: codex_tools::ToolName::plain("shell_command"),
+            tool_name: motyga_tools::ToolName::plain("shell_command"),
             source: crate::tools::context::ToolCallSource::Direct,
             payload,
         }),
@@ -279,7 +279,7 @@ async fn build_post_tool_use_payload_uses_tool_output_wire_value() {
         success: Some(true),
         post_tool_use_response: Some(json!("shell output")),
     };
-    let handler = ShellCommandHandler::from(codex_tools::ShellCommandBackendConfig::Classic);
+    let handler = ShellCommandHandler::from(motyga_tools::ShellCommandBackendConfig::Classic);
     let (session, turn) = make_session_and_context().await;
     let turn = Arc::new(turn);
     let invocation = ToolInvocation {
@@ -289,7 +289,7 @@ async fn build_post_tool_use_payload_uses_tool_output_wire_value() {
         cancellation_token: tokio_util::sync::CancellationToken::new(),
         tracker: Arc::new(Mutex::new(TurnDiffTracker::new())),
         call_id: "call-42".to_string(),
-        tool_name: codex_tools::ToolName::plain("shell_command"),
+        tool_name: motyga_tools::ToolName::plain("shell_command"),
         source: ToolCallSource::Direct,
         payload,
     };

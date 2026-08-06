@@ -9,8 +9,8 @@ use std::time::UNIX_EPOCH;
 #[tokio::test]
 async fn replace_mcp_servers_serializes_per_tool_approval_overrides() -> anyhow::Result<()> {
     let unique_suffix = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
-    let codex_home = std::env::temp_dir().join(format!(
-        "codex-config-mcp-edit-test-{}-{unique_suffix}",
+    let motyga_home = std::env::temp_dir().join(format!(
+        "motyga-config-mcp-edit-test-{}-{unique_suffix}",
         std::process::id()
     ));
     let servers = BTreeMap::from([(
@@ -54,12 +54,12 @@ async fn replace_mcp_servers_serializes_per_tool_approval_overrides() -> anyhow:
         },
     )]);
 
-    ConfigEditsBuilder::new(&codex_home)
+    ConfigEditsBuilder::new(&motyga_home)
         .replace_mcp_servers(&servers)
         .apply()
         .await?;
 
-    let config_path = codex_home.join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert_eq!(
         serialized,
@@ -78,10 +78,10 @@ approval_mode = "approve"
 "#
     );
 
-    let loaded = load_global_mcp_servers(&codex_home).await?;
+    let loaded = load_global_mcp_servers(&motyga_home).await?;
     assert_eq!(loaded, servers);
 
-    std::fs::remove_dir_all(&codex_home)?;
+    std::fs::remove_dir_all(&motyga_home)?;
 
     Ok(())
 }
@@ -89,8 +89,8 @@ approval_mode = "approve"
 #[tokio::test]
 async fn replace_mcp_servers_serializes_oauth_client_id() -> anyhow::Result<()> {
     let unique_suffix = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
-    let codex_home = std::env::temp_dir().join(format!(
-        "codex-config-mcp-oauth-edit-test-{}-{unique_suffix}",
+    let motyga_home = std::env::temp_dir().join(format!(
+        "motyga-config-mcp-oauth-edit-test-{}-{unique_suffix}",
         std::process::id()
     ));
     let servers = BTreeMap::from([(
@@ -115,19 +115,19 @@ async fn replace_mcp_servers_serializes_oauth_client_id() -> anyhow::Result<()> 
             disabled_tools: None,
             scopes: None,
             oauth: Some(McpServerOAuthConfig {
-                client_id: Some("eci-prd-pub-codex-123".to_string()),
+                client_id: Some("eci-prd-pub-motyga-123".to_string()),
             }),
             oauth_resource: None,
             tools: HashMap::new(),
         },
     )]);
 
-    ConfigEditsBuilder::new(&codex_home)
+    ConfigEditsBuilder::new(&motyga_home)
         .replace_mcp_servers(&servers)
         .apply()
         .await?;
 
-    let config_path = codex_home.join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.join(CONFIG_TOML_FILE);
     let serialized = std::fs::read_to_string(&config_path)?;
     assert_eq!(
         serialized,
@@ -135,14 +135,14 @@ async fn replace_mcp_servers_serializes_oauth_client_id() -> anyhow::Result<()> 
 url = "https://example.com/mcp"
 
 [mcp_servers.maas_outlook.oauth]
-client_id = "eci-prd-pub-codex-123"
+client_id = "eci-prd-pub-motyga-123"
 "#
     );
 
-    let loaded = load_global_mcp_servers(&codex_home).await?;
+    let loaded = load_global_mcp_servers(&motyga_home).await?;
     assert_eq!(loaded, servers);
 
-    std::fs::remove_dir_all(&codex_home)?;
+    std::fs::remove_dir_all(&motyga_home)?;
 
     Ok(())
 }

@@ -1,20 +1,20 @@
 use crate::ThreadManager;
 use crate::agent::AgentControl;
-use crate::codex_thread::CodexThread;
+use crate::motyga_thread::MotygaThread;
 use crate::config::Config;
 use crate::config::test_config;
 use crate::thread_manager::ThreadManagerState;
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_protocol::ThreadId;
-use codex_protocol::error::CodexErr;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::ThreadSource;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::protocol::TurnAbortedEvent;
-use codex_protocol::protocol::TurnCompleteEvent;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_protocol::ThreadId;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_protocol::protocol::TurnAbortedEvent;
+use motyga_protocol::protocol::TurnCompleteEvent;
 use pretty_assertions::assert_eq;
 use std::sync::Arc;
 
@@ -24,13 +24,13 @@ async fn residency_slot_reservation_unloads_oldest_idle_v2_agent() {
     let _ = config.features.enable(Feature::MultiAgentV2);
     config.multi_agent_v2.max_concurrent_threads_per_session = 2;
     let temp_home = tempfile::tempdir().expect("create temp home");
-    config.codex_home = temp_home.path().to_path_buf().try_into().unwrap();
+    config.motyga_home = temp_home.path().to_path_buf().try_into().unwrap();
     config.cwd = temp_home.path().to_path_buf().try_into().unwrap();
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let root = manager
         .start_thread(config.clone())
@@ -53,7 +53,7 @@ async fn residency_slot_reservation_unloads_oldest_idle_v2_agent() {
         .await
         .expect("second resident slot should evict the first idle agent");
     match manager.get_thread(first.thread_id).await {
-        Err(CodexErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
+        Err(MotygaErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
         Err(err) => panic!("expected evicted thread to be missing, got {err:?}"),
         Ok(_) => panic!("expected evicted thread to be missing"),
     }
@@ -70,13 +70,13 @@ async fn interrupted_v2_agent_is_lost_after_residency_eviction() {
     let _ = config.features.enable(Feature::MultiAgentV2);
     config.multi_agent_v2.max_concurrent_threads_per_session = 2;
     let temp_home = tempfile::tempdir().expect("create temp home");
-    config.codex_home = temp_home.path().to_path_buf().try_into().unwrap();
+    config.motyga_home = temp_home.path().to_path_buf().try_into().unwrap();
     config.cwd = temp_home.path().to_path_buf().try_into().unwrap();
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let root = manager
         .start_thread(config.clone())
@@ -99,7 +99,7 @@ async fn interrupted_v2_agent_is_lost_after_residency_eviction() {
         .await
         .expect("second resident slot should evict the first interrupted idle agent");
     match manager.get_thread(first.thread_id).await {
-        Err(CodexErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
+        Err(MotygaErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
         Err(err) => panic!("expected evicted thread to be missing, got {err:?}"),
         Ok(_) => panic!("expected evicted thread to be missing"),
     }
@@ -113,14 +113,14 @@ async fn interrupted_v2_agent_is_lost_after_residency_eviction() {
         .await
         .expect_err("evicted interrupted agent should stay lost");
     match err {
-        CodexErr::ThreadNotFound(thread_id) => assert_eq!(thread_id, first.thread_id),
+        MotygaErr::ThreadNotFound(thread_id) => assert_eq!(thread_id, first.thread_id),
         err => panic!("expected ThreadNotFound, got {err:?}"),
     }
 
     assert!(manager.get_thread(root.thread_id).await.is_ok());
     assert!(manager.get_thread(second.thread_id).await.is_ok());
     match manager.get_thread(first.thread_id).await {
-        Err(CodexErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
+        Err(MotygaErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
         Err(err) => panic!("expected evicted thread to be missing, got {err:?}"),
         Ok(_) => panic!("expected evicted thread to be missing"),
     }
@@ -150,10 +150,10 @@ async fn spawn_v2_subagent(
         .expect("spawn v2 subagent")
 }
 
-async fn mark_thread_completed(thread: &CodexThread) {
-    let turn = thread.codex.session.new_default_turn().await;
+async fn mark_thread_completed(thread: &MotygaThread) {
+    let turn = thread.motyga.session.new_default_turn().await;
     thread
-        .codex
+        .motyga
         .session
         .send_event(
             turn.as_ref(),
@@ -169,10 +169,10 @@ async fn mark_thread_completed(thread: &CodexThread) {
     clear_active_turn(thread).await;
 }
 
-async fn mark_thread_interrupted(thread: &CodexThread) {
-    let turn = thread.codex.session.new_default_turn().await;
+async fn mark_thread_interrupted(thread: &MotygaThread) {
+    let turn = thread.motyga.session.new_default_turn().await;
     thread
-        .codex
+        .motyga
         .session
         .send_event(
             turn.as_ref(),
@@ -187,7 +187,7 @@ async fn mark_thread_interrupted(thread: &CodexThread) {
     clear_active_turn(thread).await;
 }
 
-async fn clear_active_turn(thread: &CodexThread) {
+async fn clear_active_turn(thread: &MotygaThread) {
     // The fixture has no task runner to clear the turn after the terminal event.
-    *thread.codex.session.active_turn.lock().await = None;
+    *thread.motyga.session.active_turn.lock().await = None;
 }

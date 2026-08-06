@@ -43,13 +43,13 @@ function createEarlyExitChild(exitCode = 2): FakeChildProcess {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-describe("CodexExec", () => {
+describe("MotygaExec", () => {
   it("rejects when exit happens before stdout closes", async () => {
-    const { CodexExec } = await import("../src/exec");
+    const { MotygaExec } = await import("../src/exec");
     const child = createEarlyExitChild();
     spawnMock.mockReturnValue(child as unknown as child_process.ChildProcess);
 
-    const exec = new CodexExec("codex");
+    const exec = new MotygaExec("motyga");
     const runPromise = (async () => {
       for await (const _ of exec.run({ input: "hi" })) {
         // no-op
@@ -67,12 +67,12 @@ describe("CodexExec", () => {
     expect(result.status).toBe("rejected");
     if (result.status === "rejected") {
       expect(result.error).toBeInstanceOf(Error);
-      expect(result.error.message).toMatch(/Codex Exec exited/);
+      expect(result.error.message).toMatch(/Motyga Exec exited/);
     }
   });
 
   it("places resume args before image args", async () => {
-    const { CodexExec } = await import("../src/exec");
+    const { MotygaExec } = await import("../src/exec");
     spawnMock.mockClear();
     const child = new FakeChildProcess();
     spawnMock.mockReturnValue(child as unknown as child_process.ChildProcess);
@@ -83,7 +83,7 @@ describe("CodexExec", () => {
       child.emit("exit", 0, null);
     });
 
-    const exec = new CodexExec("codex");
+    const exec = new MotygaExec("motyga");
     for await (const _ of exec.run({ input: "hi", images: ["img.png"], threadId: "thread-id" })) {
       // no-op
     }
@@ -97,8 +97,8 @@ describe("CodexExec", () => {
     expect(resumeIndex).toBeLessThan(imageIndex);
   });
 
-  it("allows overriding the env passed to the Codex CLI", async () => {
-    const { CodexExec } = await import("../src/exec");
+  it("allows overriding the env passed to the Motyga CLI", async () => {
+    const { MotygaExec } = await import("../src/exec");
     spawnMock.mockClear();
     const child = new FakeChildProcess();
     spawnMock.mockReturnValue(child as unknown as child_process.ChildProcess);
@@ -109,11 +109,11 @@ describe("CodexExec", () => {
       child.emit("exit", 0, null);
     });
 
-    process.env.CODEX_ENV_SHOULD_NOT_LEAK = "leak";
+    process.env.MOTYGA_ENV_SHOULD_NOT_LEAK = "leak";
 
     try {
-      const exec = new CodexExec("codex", {
-        MOTYGA_HOME: "/tmp/codex-home",
+      const exec = new MotygaExec("motyga", {
+        MOTYGA_HOME: "/tmp/motyga-home",
         CUSTOM_ENV: "custom",
       });
 
@@ -134,54 +134,54 @@ describe("CodexExec", () => {
         throw new Error("Spawn args missing");
       }
 
-      expect(spawnEnv.MOTYGA_HOME).toBe("/tmp/codex-home");
+      expect(spawnEnv.MOTYGA_HOME).toBe("/tmp/motyga-home");
       expect(spawnEnv.CUSTOM_ENV).toBe("custom");
-      expect(spawnEnv.CODEX_ENV_SHOULD_NOT_LEAK).toBeUndefined();
-      expect(spawnEnv.CODEX_API_KEY).toBe("test");
-      expect(spawnEnv.CODEX_INTERNAL_ORIGINATOR_OVERRIDE).toBeDefined();
+      expect(spawnEnv.MOTYGA_ENV_SHOULD_NOT_LEAK).toBeUndefined();
+      expect(spawnEnv.MOTYGA_API_KEY).toBe("test");
+      expect(spawnEnv.MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE).toBeDefined();
       expect(commandArgs).toContain("--config");
       expect(commandArgs).toContain(`openai_base_url=${JSON.stringify("https://example.test")}`);
     } finally {
-      delete process.env.CODEX_ENV_SHOULD_NOT_LEAK;
+      delete process.env.MOTYGA_ENV_SHOULD_NOT_LEAK;
     }
   });
 
   it("resolves the package-layout binary and PATH directory", async () => {
     const { resolveNativePackage } = await import("../src/exec");
-    const vendorRoot = mkdtempSync(path.join(tmpdir(), "codex-sdk-vendor-"));
-    const packageRoot = path.join(vendorRoot, "x86_64-unknown-linux-musl");
+    const vendorRoot = mkdtempSync(path.join(tmpdir(), "motyga-sdk-vendor-"));
+    const packageRoot = path.join(vendorRoot, "x86_64-unknown-linux-gnu");
     const binDir = path.join(packageRoot, "bin");
-    const pathDir = path.join(packageRoot, "codex-path");
+    const pathDir = path.join(packageRoot, "motyga-path");
     mkdirSync(binDir, { recursive: true });
     mkdirSync(pathDir, { recursive: true });
-    writeFileSync(path.join(packageRoot, "codex-package.json"), "{}");
-    writeFileSync(path.join(binDir, "codex"), "");
+    writeFileSync(path.join(packageRoot, "motyga-package.json"), "{}");
+    writeFileSync(path.join(binDir, "motyga"), "");
 
-    expect(resolveNativePackage(vendorRoot, "x86_64-unknown-linux-musl", "codex")).toEqual({
-      executablePath: path.join(binDir, "codex"),
+    expect(resolveNativePackage(vendorRoot, "x86_64-unknown-linux-gnu", "motyga")).toEqual({
+      executablePath: path.join(binDir, "motyga"),
       pathDirs: [pathDir],
     });
   });
 
   it("falls back to the legacy binary layout", async () => {
     const { resolveNativePackage } = await import("../src/exec");
-    const vendorRoot = mkdtempSync(path.join(tmpdir(), "codex-sdk-vendor-"));
-    const packageRoot = path.join(vendorRoot, "x86_64-unknown-linux-musl");
-    const binDir = path.join(packageRoot, "codex");
+    const vendorRoot = mkdtempSync(path.join(tmpdir(), "motyga-sdk-vendor-"));
+    const packageRoot = path.join(vendorRoot, "x86_64-unknown-linux-gnu");
+    const binDir = path.join(packageRoot, "motyga");
     const pathDir = path.join(packageRoot, "path");
     mkdirSync(binDir, { recursive: true });
     mkdirSync(pathDir, { recursive: true });
-    writeFileSync(path.join(binDir, "codex"), "");
+    writeFileSync(path.join(binDir, "motyga"), "");
 
-    expect(resolveNativePackage(vendorRoot, "x86_64-unknown-linux-musl", "codex")).toEqual({
-      executablePath: path.join(binDir, "codex"),
+    expect(resolveNativePackage(vendorRoot, "x86_64-unknown-linux-gnu", "motyga")).toEqual({
+      executablePath: path.join(binDir, "motyga"),
       pathDirs: [pathDir],
     });
   });
 
   it("prepends package PATH entries without duplicating them", async () => {
     const { prependPathDirs } = await import("../src/exec");
-    const pathDir = path.join(tmpdir(), "codex-path");
+    const pathDir = path.join(tmpdir(), "motyga-path");
     const env = { PATH: `/usr/bin${path.delimiter}${pathDir}` };
 
     prependPathDirs(env, [pathDir]);
@@ -191,7 +191,7 @@ describe("CodexExec", () => {
 
   it("preserves the Windows Path key when prepending package PATH entries", async () => {
     const { prependPathDirs } = await import("../src/exec");
-    const pathDir = path.join(tmpdir(), "codex-path");
+    const pathDir = path.join(tmpdir(), "motyga-path");
     const env = { PATH: "/usr/bin", Path: `C\\Windows${path.delimiter}${pathDir}` };
 
     prependPathDirs(env, [pathDir], "win32");

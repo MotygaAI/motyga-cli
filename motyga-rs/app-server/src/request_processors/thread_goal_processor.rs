@@ -1,9 +1,9 @@
 use super::*;
-use codex_goal_extension::GoalObjectiveUpdate;
-use codex_goal_extension::GoalService;
-use codex_goal_extension::GoalServiceError;
-use codex_goal_extension::GoalSetRequest;
-use codex_goal_extension::GoalTokenBudgetUpdate;
+use motyga_goal_extension::GoalObjectiveUpdate;
+use motyga_goal_extension::GoalService;
+use motyga_goal_extension::GoalServiceError;
+use motyga_goal_extension::GoalSetRequest;
+use motyga_goal_extension::GoalTokenBudgetUpdate;
 
 #[derive(Clone)]
 pub(crate) struct ThreadGoalRequestProcessor {
@@ -66,7 +66,7 @@ impl ThreadGoalRequestProcessor {
     pub(crate) async fn emit_resume_goal_snapshot_and_continue(
         &self,
         thread_id: ThreadId,
-        thread: &CodexThread,
+        thread: &MotygaThread,
     ) {
         if !self.config.features.enabled(Feature::Goals) {
             return;
@@ -79,7 +79,7 @@ impl ThreadGoalRequestProcessor {
 
     pub(crate) async fn pending_resume_goal_state(
         &self,
-        thread: &CodexThread,
+        thread: &MotygaThread,
     ) -> (bool, Option<StateDbHandle>) {
         let emit_thread_goal_update = self.config.features.enabled(Feature::Goals);
         let thread_goal_state_db = if emit_thread_goal_update {
@@ -230,8 +230,8 @@ impl ThreadGoalRequestProcessor {
                 return Ok(state_db);
             }
         } else {
-            codex_rollout::find_thread_path_by_id_str(
-                &self.config.codex_home,
+            motyga_rollout::find_thread_path_by_id_str(
+                &self.config.motyga_home,
                 &thread_id.to_string(),
                 self.state_db.as_deref(),
             )
@@ -259,8 +259,8 @@ impl ThreadGoalRequestProcessor {
                     "ephemeral thread does not support goals: {thread_id}"
                 ))
             })?,
-            None => codex_rollout::find_thread_path_by_id_str(
-                &self.config.codex_home,
+            None => motyga_rollout::find_thread_path_by_id_str(
+                &self.config.motyga_home,
                 &thread_id.to_string(),
                 self.state_db.as_deref(),
             )
@@ -366,7 +366,7 @@ impl ThreadGoalRequestProcessor {
     }
 }
 
-pub(super) fn api_thread_goal_from_state(goal: codex_state::ThreadGoal) -> ThreadGoal {
+pub(super) fn api_thread_goal_from_state(goal: motyga_state::ThreadGoal) -> ThreadGoal {
     ThreadGoal {
         thread_id: goal.thread_id.to_string(),
         objective: goal.objective,
@@ -379,14 +379,14 @@ pub(super) fn api_thread_goal_from_state(goal: codex_state::ThreadGoal) -> Threa
     }
 }
 
-fn api_thread_goal_status_from_state(status: codex_state::ThreadGoalStatus) -> ThreadGoalStatus {
+fn api_thread_goal_status_from_state(status: motyga_state::ThreadGoalStatus) -> ThreadGoalStatus {
     match status {
-        codex_state::ThreadGoalStatus::Active => ThreadGoalStatus::Active,
-        codex_state::ThreadGoalStatus::Paused => ThreadGoalStatus::Paused,
-        codex_state::ThreadGoalStatus::Blocked => ThreadGoalStatus::Blocked,
-        codex_state::ThreadGoalStatus::UsageLimited => ThreadGoalStatus::UsageLimited,
-        codex_state::ThreadGoalStatus::BudgetLimited => ThreadGoalStatus::BudgetLimited,
-        codex_state::ThreadGoalStatus::Complete => ThreadGoalStatus::Complete,
+        motyga_state::ThreadGoalStatus::Active => ThreadGoalStatus::Active,
+        motyga_state::ThreadGoalStatus::Paused => ThreadGoalStatus::Paused,
+        motyga_state::ThreadGoalStatus::Blocked => ThreadGoalStatus::Blocked,
+        motyga_state::ThreadGoalStatus::UsageLimited => ThreadGoalStatus::UsageLimited,
+        motyga_state::ThreadGoalStatus::BudgetLimited => ThreadGoalStatus::BudgetLimited,
+        motyga_state::ThreadGoalStatus::Complete => ThreadGoalStatus::Complete,
     }
 }
 

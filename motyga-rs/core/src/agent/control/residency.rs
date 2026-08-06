@@ -1,13 +1,13 @@
 use super::AgentControl;
 use crate::agent::AgentStatus;
-use crate::codex_thread::CodexThread;
+use crate::motyga_thread::MotygaThread;
 use crate::config::Config;
 use crate::thread_manager::ThreadManagerState;
-use codex_protocol::ThreadId;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::SessionSource;
+use motyga_protocol::ThreadId;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::SessionSource;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -50,7 +50,7 @@ impl AgentControl {
         state: &Arc<ThreadManagerState>,
         config: &Config,
         protected_thread_id: Option<ThreadId>,
-    ) -> CodexResult<V2ResidencySlot> {
+    ) -> MotygaResult<V2ResidencySlot> {
         let capacity = config
             .effective_agent_max_threads(MultiAgentVersion::V2)
             .unwrap_or(usize::MAX);
@@ -82,7 +82,7 @@ impl V2Residency {
         manager: &Arc<ThreadManagerState>,
         capacity: usize,
         protected_thread_id: Option<ThreadId>,
-    ) -> CodexResult<V2ResidencySlot> {
+    ) -> MotygaResult<V2ResidencySlot> {
         loop {
             if self.try_reserve_pending_slot(capacity) {
                 return Ok(V2ResidencySlot {
@@ -94,7 +94,7 @@ impl V2Residency {
                 .try_unload_one_resident(manager, protected_thread_id)
                 .await
             {
-                return Err(CodexErr::AgentLimitReached {
+                return Err(MotygaErr::AgentLimitReached {
                     max_threads: capacity,
                 });
             }
@@ -213,7 +213,7 @@ fn touch_resident(residents: &mut VecDeque<ThreadId>, thread_id: ThreadId) {
     residents.push_back(thread_id);
 }
 
-fn is_resident_candidate(thread: &CodexThread) -> bool {
+fn is_resident_candidate(thread: &MotygaThread) -> bool {
     thread.multi_agent_version() == Some(MultiAgentVersion::V2)
         && is_v2_resident_session_source(&thread.session_source)
 }
@@ -222,13 +222,13 @@ pub(super) fn is_v2_resident_session_source(session_source: &SessionSource) -> b
     matches!(session_source, SessionSource::SubAgent(_))
 }
 
-async fn is_unloadable(thread: &CodexThread) -> bool {
+async fn is_unloadable(thread: &MotygaThread) -> bool {
     matches!(
         thread.agent_status().await,
         AgentStatus::Completed(_) | AgentStatus::Errored(_) | AgentStatus::Interrupted
-    ) && thread.codex.session.active_turn.lock().await.is_none()
+    ) && thread.motyga.session.active_turn.lock().await.is_none()
         && !thread
-            .codex
+            .motyga
             .session
             .input_queue
             .has_pending_mailbox_items()

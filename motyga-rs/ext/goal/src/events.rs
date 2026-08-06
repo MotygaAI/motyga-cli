@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use codex_extension_api::ExtensionEventSink;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ThreadGoal;
-use codex_protocol::protocol::ThreadGoalUpdatedEvent;
+use motyga_extension_api::ExtensionEventSink;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ThreadGoal;
+use motyga_protocol::protocol::ThreadGoalUpdatedEvent;
 
 #[derive(Clone)]
 pub(crate) struct GoalEventEmitter {

@@ -2,13 +2,13 @@ use std::collections::HashMap;
 use std::os::fd::RawFd;
 use std::path::PathBuf;
 
-use codex_protocol::approvals::EscalationPermissions;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::approvals::EscalationPermissions;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use serde::Deserialize;
 use serde::Serialize;
 
 /// Exec wrappers read this to find the inherited FD for the escalation socket.
-pub const ESCALATE_SOCKET_ENV_VAR: &str = "CODEX_ESCALATE_SOCKET";
+pub const ESCALATE_SOCKET_ENV_VAR: &str = "MOTYGA_ESCALATE_SOCKET";
 
 /// Patched shells use this to wrap exec() calls.
 pub const EXEC_WRAPPER_ENV_VAR: &str = "EXEC_WRAPPER";

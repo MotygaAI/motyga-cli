@@ -1,5 +1,5 @@
-use codex_protocol::ThreadId;
-use codex_rollout::ThreadItem;
+use motyga_protocol::ThreadId;
+use motyga_rollout::ThreadItem;
 use pretty_assertions::assert_eq;
 
 use super::ThreadSearchItem;

@@ -1,10 +1,10 @@
 use super::AgentControl;
-use codex_protocol::ThreadId;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::SessionSource;
+use motyga_protocol::ThreadId;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::SessionSource;
 use std::sync::Arc;
 use std::sync::OnceLock;
 use std::sync::atomic::AtomicUsize;
@@ -31,7 +31,7 @@ impl AgentControl {
         &self,
         thread_id: ThreadId,
         op: &Op,
-    ) -> CodexResult<()> {
+    ) -> MotygaResult<()> {
         self.ensure_execution_capacity_for_turn_start(thread_id, op_starts_turn(op))
             .await
     }
@@ -40,16 +40,16 @@ impl AgentControl {
         &self,
         thread_id: ThreadId,
         starts_turn: bool,
-    ) -> CodexResult<()> {
+    ) -> MotygaResult<()> {
         if !starts_turn {
             return Ok(());
         }
         let state = self.upgrade()?;
         let thread = state.get_thread(thread_id).await?;
-        if thread.codex.session.active_turn.lock().await.is_some() {
+        if thread.motyga.session.active_turn.lock().await.is_some() {
             return Ok(());
         }
-        let config = thread.codex.session.get_config().await;
+        let config = thread.motyga.session.get_config().await;
         let multi_agent_version = thread
             .multi_agent_version()
             .unwrap_or_else(|| config.multi_agent_version_from_features());
@@ -60,7 +60,7 @@ impl AgentControl {
         &self,
         multi_agent_version: MultiAgentVersion,
         session_source: &SessionSource,
-    ) -> CodexResult<()> {
+    ) -> MotygaResult<()> {
         if !is_execution_limited(multi_agent_version, session_source) {
             return Ok(());
         }
@@ -68,7 +68,7 @@ impl AgentControl {
         if self.agent_execution_limiter.has_capacity() {
             Ok(())
         } else {
-            Err(CodexErr::AgentLimitReached { max_threads })
+            Err(MotygaErr::AgentLimitReached { max_threads })
         }
     }
 

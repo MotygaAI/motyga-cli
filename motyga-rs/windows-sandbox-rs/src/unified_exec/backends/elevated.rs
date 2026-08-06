@@ -16,10 +16,10 @@ use crate::runner_client::retry_runner_spawn_once;
 use crate::runner_client::spawn_runner_transport;
 use crate::spawn_prep::prepare_elevated_spawn_context_for_permissions;
 use anyhow::Result;
-use codex_protocol::models::PermissionProfile;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_pty::ProcessDriver;
-use codex_utils_pty::SpawnedProcess;
+use motyga_protocol::models::PermissionProfile;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_pty::ProcessDriver;
+use motyga_utils_pty::SpawnedProcess;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
@@ -29,7 +29,7 @@ use tokio::sync::oneshot;
 
 struct RunnerTransportRequest {
     permissions: ResolvedWindowsSandboxPermissions,
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     cwd: PathBuf,
     env_map: HashMap<String, String>,
     logs_base_dir: Option<PathBuf>,
@@ -66,7 +66,7 @@ fn spawn_runner_transport_with_retry<T>(
         &request.spawn_request.command,
         |sandbox_creds| {
             spawn(
-                &request.codex_home,
+                &request.motyga_home,
                 &request.cwd,
                 &sandbox_creds,
                 request.logs_base_dir.as_deref(),
@@ -78,7 +78,7 @@ fn spawn_runner_transport_with_retry<T>(
                 &request.permissions,
                 &request.cwd,
                 &request.env_map,
-                &request.codex_home,
+                &request.motyga_home,
                 request.read_roots_override.as_deref(),
                 request.read_roots_include_platform_defaults,
                 request.write_roots_override.as_deref(),
@@ -111,7 +111,7 @@ async fn spawn_runner_transport_task(
 pub(crate) async fn spawn_windows_sandbox_session_elevated_for_permission_profile(
     permission_profile: &PermissionProfile,
     workspace_roots: &[AbsolutePathBuf],
-    codex_home: &Path,
+    motyga_home: &Path,
     command: Vec<String>,
     cwd: &Path,
     mut env_map: HashMap<String, String>,
@@ -142,7 +142,7 @@ pub(crate) async fn spawn_windows_sandbox_session_elevated_for_permission_profil
         )?;
     let elevated = prepare_elevated_spawn_context_for_permissions(
         permissions.clone(),
-        codex_home,
+        motyga_home,
         cwd,
         &mut env_map,
         &command,
@@ -158,7 +158,7 @@ pub(crate) async fn spawn_windows_sandbox_session_elevated_for_permission_profil
     let sandbox_creds = elevated.sandbox_creds;
     let request = RunnerTransportRequest {
         permissions,
-        codex_home: codex_home.to_path_buf(),
+        motyga_home: motyga_home.to_path_buf(),
         cwd: cwd.to_path_buf(),
         env_map: env_map.clone(),
         logs_base_dir: elevated.logs_base_dir,
@@ -168,8 +168,8 @@ pub(crate) async fn spawn_windows_sandbox_session_elevated_for_permission_profil
             env: env_map,
             permission_profile: permission_profile.clone(),
             workspace_roots: workspace_roots.to_vec(),
-            codex_home: elevated.sandbox_base,
-            real_codex_home: codex_home.to_path_buf(),
+            motyga_home: elevated.sandbox_base,
+            real_motyga_home: motyga_home.to_path_buf(),
             cap_sids: elevated.cap_sids,
             timeout_ms,
             tty,

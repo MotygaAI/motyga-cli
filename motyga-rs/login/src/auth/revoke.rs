@@ -7,8 +7,8 @@
 use serde::Serialize;
 use std::time::Duration;
 
-use codex_client::CodexHttpClient;
-use codex_protocol::auth::AuthMode;
+use motyga_client::MotygaHttpClient;
+use motyga_protocol::auth::AuthMode;
 
 use super::manager::REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR;
 use super::manager::REVOKE_TOKEN_URL;
@@ -95,7 +95,7 @@ fn resolved_auth_mode(auth_dot_json: &AuthDotJson) -> AuthMode {
 }
 
 async fn revoke_oauth_token(
-    client: &CodexHttpClient,
+    client: &MotygaHttpClient,
     endpoint: &str,
     token: &str,
     kind: RevokeTokenKind,
@@ -181,7 +181,7 @@ mod tests {
             .mount(&server)
             .await;
 
-        let client = CodexHttpClient::new(reqwest::Client::new());
+        let client = MotygaHttpClient::new(reqwest::Client::new());
         let endpoint = format!("{}/oauth/revoke", server.uri());
         let error = revoke_oauth_token(
             &client,

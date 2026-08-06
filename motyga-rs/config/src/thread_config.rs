@@ -4,8 +4,8 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::ConfigLayerSource;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use thiserror::Error;
 use toml::Value as TomlValue;
 
@@ -214,8 +214,8 @@ fn session_thread_config_to_toml(
 
 #[cfg(test)]
 mod tests {
-    use codex_model_provider_info::ModelProviderInfo;
-    use codex_model_provider_info::WireApi;
+    use motyga_model_provider_info::ModelProviderInfo;
+    use motyga_model_provider_info::WireApi;
     use pretty_assertions::assert_eq;
 
     use super::*;
@@ -284,7 +284,7 @@ mod tests {
 
                     [model_providers.local]
                     name = "local"
-                    base_url = "http://127.0.0.1:8061/api/codex"
+                    base_url = "http://127.0.0.1:8061/api/motyga"
                     wire_api = "responses"
                     requires_openai_auth = false
                     supports_websockets = true
@@ -300,7 +300,7 @@ mod tests {
     fn test_provider(name: &str) -> ModelProviderInfo {
         ModelProviderInfo {
             name: name.to_string(),
-            base_url: Some("http://127.0.0.1:8061/api/codex".to_string()),
+            base_url: Some("http://127.0.0.1:8061/api/motyga".to_string()),
             env_key: None,
             env_key_instructions: None,
             experimental_bearer_token: None,

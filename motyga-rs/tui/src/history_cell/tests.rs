@@ -8,15 +8,15 @@ use crate::legacy_core::config::Config;
 use crate::legacy_core::config::ConfigBuilder;
 use crate::session_state::ThreadSessionState;
 use crate::wrapping::word_wrap_lines;
-use codex_app_server_protocol::AskForApproval;
-use codex_app_server_protocol::McpAuthStatus;
-use codex_config::types::McpServerConfig;
-use codex_otel::RuntimeMetricTotals;
-use codex_otel::RuntimeMetricsSummary;
-use codex_protocol::ThreadId;
-use codex_protocol::account::PlanType;
-use codex_protocol::error::UnexpectedResponseError;
-use codex_protocol::parse_command::ParsedCommand;
+use motyga_app_server_protocol::AskForApproval;
+use motyga_app_server_protocol::McpAuthStatus;
+use motyga_config::types::McpServerConfig;
+use motyga_otel::RuntimeMetricTotals;
+use motyga_otel::RuntimeMetricsSummary;
+use motyga_protocol::ThreadId;
+use motyga_protocol::account::PlanType;
+use motyga_protocol::error::UnexpectedResponseError;
+use motyga_protocol::parse_command::ParsedCommand;
 use dirs::home_dir;
 use pretty_assertions::assert_eq;
 use ratatui::buffer::Buffer;
@@ -26,16 +26,16 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use codex_app_server_protocol::CommandExecutionSource as ExecCommandSource;
-use codex_protocol::mcp::CallToolResult;
-use codex_protocol::mcp::Tool;
+use motyga_app_server_protocol::CommandExecutionSource as ExecCommandSource;
+use motyga_protocol::mcp::CallToolResult;
+use motyga_protocol::mcp::Tool;
 use rmcp::model::Content;
 
 const SMALL_PNG_BASE64: &str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";
 async fn test_config() -> Config {
-    let codex_home = std::env::temp_dir();
+    let motyga_home = std::env::temp_dir();
     ConfigBuilder::default()
-        .codex_home(codex_home.clone())
+        .motyga_home(motyga_home.clone())
         .build()
         .await
         .expect("config")
@@ -501,7 +501,7 @@ fn session_configured_event(model: &str) -> ThreadSessionState {
         model_provider_id: "test-provider".to_string(),
         service_tier: None,
         approval_policy: AskForApproval::Never,
-        approvals_reviewer: codex_protocol::config_types::ApprovalsReviewer::User,
+        approvals_reviewer: motyga_protocol::config_types::ApprovalsReviewer::User,
         permission_profile: PermissionProfile::read_only(),
         active_permission_profile: None,
         cwd: test_path_buf("/tmp/project").abs(),
@@ -912,7 +912,7 @@ fn mcp_tools_output_from_statuses_renders_status_only_servers() {
         )]),
         resources: Vec::new(),
         resource_templates: Vec::new(),
-        auth_status: codex_app_server_protocol::McpAuthStatus::Unsupported,
+        auth_status: motyga_app_server_protocol::McpAuthStatus::Unsupported,
     }];
 
     let cell =
@@ -959,7 +959,7 @@ fn mcp_tools_output_from_statuses_renders_verbose_inventory() {
             description: None,
             mime_type: None,
         }],
-        auth_status: codex_app_server_protocol::McpAuthStatus::Unsupported,
+        auth_status: motyga_app_server_protocol::McpAuthStatus::Unsupported,
     }];
 
     let cell = new_mcp_tools_output_from_statuses(&statuses, McpServerStatusDetail::Full);
@@ -1754,7 +1754,7 @@ fn coalesced_reads_dedupe_names() {
 #[test]
 fn multiline_command_wraps_with_extra_indent_on_subsequent_lines() {
     // Create a completed exec cell with a multiline command
-    let cmd = "set -o pipefail\ncargo test -p codex-tui --quiet".to_string();
+    let cmd = "set -o pipefail\ncargo test -p motyga-tui --quiet".to_string();
     let call_id = "c1".to_string();
     let mut cell = ExecCell::new(
         ExecCall {
@@ -2401,7 +2401,7 @@ fn agent_markdown_cell_renders_source_at_different_widths() {
 
 #[test]
 fn agent_markdown_cell_does_not_split_words_after_inline_markdown() {
-    let source = "This paragraph is intentionally long so you can inspect soft wrapping behavior while also checking inline formatting like **bold text**, *italic text*, ***bold italic text***, `inline code`, ~~strikethrough~~, a [link to example.com](https://example.com), and a literal path like [README.md](/Users/felipe.coury/code/codex.fcoury-worktrees/README.md) without introducing manual line breaks.\n";
+    let source = "This paragraph is intentionally long so you can inspect soft wrapping behavior while also checking inline formatting like **bold text**, *italic text*, ***bold italic text***, `inline code`, ~~strikethrough~~, a [link to example.com](https://example.com), and a literal path like [README.md](/Users/felipe.coury/code/motyga.fcoury-worktrees/README.md) without introducing manual line breaks.\n";
     let cell = AgentMarkdownCell::new(source.to_string(), &test_cwd());
 
     let lines = render_lines(&cell.display_lines(/*width*/ 190));

@@ -1,7 +1,7 @@
-# codex-execpolicy-legacy
+# motyga-execpolicy-legacy
 
 This crate hosts the original execpolicy implementation. The newer prefix-rule
-engine lives in `codex-execpolicy`.
+engine lives in `motyga-execpolicy`.
 
 The goal of this library is to classify a proposed [`execv(3)`](https://linux.die.net/man/3/execv) command into one of the following states:
 
@@ -16,7 +16,7 @@ To that end, rather than returning a boolean, the validator returns a structured
 For example, to check the command `ls -l foo`, the checker would be invoked as follows:
 
 ```shell
-cargo run -p codex-execpolicy-legacy -- check ls -l foo | jq
+cargo run -p motyga-execpolicy-legacy -- check ls -l foo | jq
 ```
 
 It will exit with `0` and print the following to stdout:
@@ -49,7 +49,7 @@ Of note:
 - `foo` is tagged as a `ReadableFile`, so the caller should resolve `foo` relative to `getcwd()` and `realpath` it (as it may be a symlink) to determine whether `foo` is safe to read.
 - While the specified executable is `ls`, `"system_path"` offers `/bin/ls` and `/usr/bin/ls` as viable alternatives to avoid using whatever `ls` happens to appear first on the user's `$PATH`. If either exists on the host, it is recommended to use it as the first argument to `execv(3)` instead of `ls`.
 
-Further, "safety" in this system is not a guarantee that the command will execute successfully. As an example, `cat /Users/mbolin/code/codex/README.md` may be considered "safe" if the system has decided the agent is allowed to read anything under `/Users/mbolin/code/codex`, but it will fail at runtime if `README.md` does not exist. (Though this is "safe" in that the agent did not read any files that it was not authorized to read.)
+Further, "safety" in this system is not a guarantee that the command will execute successfully. As an example, `cat /Users/mbolin/code/motyga/README.md` may be considered "safe" if the system has decided the agent is allowed to read anything under `/Users/mbolin/code/motyga`, but it will fail at runtime if `README.md` does not exist. (Though this is "safe" in that the agent did not read any files that it was not authorized to read.)
 
 ## Policy
 
@@ -96,7 +96,7 @@ Further, the CLI supports a `--policy` option to specify a custom `.policy` file
 Going back to the `cp` example, because the rule matches an `ARG_WFILE`, it will return `match` instead of `safe`:
 
 ```shell
-cargo run -p codex-execpolicy-legacy -- check cp src1 src2 dest | jq
+cargo run -p motyga-execpolicy-legacy -- check cp src1 src2 dest | jq
 ```
 
 If the caller wants to consider allowing this command, it should parse the JSON to pick out the `WriteableFile` arguments and decide whether they are safe to write:
@@ -153,7 +153,7 @@ define_program(
 Note that for a rule to be forbidden, the `forbidden` keyword arg must be specified as the reason the command is forbidden. This will be included in the output:
 
 ```shell
-cargo run -p codex-execpolicy-legacy -- check applied deploy | jq
+cargo run -p motyga-execpolicy-legacy -- check applied deploy | jq
 ```
 
 ```json

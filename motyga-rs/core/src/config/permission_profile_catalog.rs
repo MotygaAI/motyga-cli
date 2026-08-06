@@ -1,10 +1,10 @@
-use codex_config::ConfigLayerStack;
-use codex_config::RequirementSource;
-use codex_config::SandboxModeRequirement;
-use codex_config::Sourced;
-use codex_config::permissions_toml::PermissionsToml;
-use codex_config::sandbox_mode_requirement_for_permission_profile;
-use codex_protocol::models::PermissionProfile;
+use motyga_config::ConfigLayerStack;
+use motyga_config::RequirementSource;
+use motyga_config::SandboxModeRequirement;
+use motyga_config::Sourced;
+use motyga_config::permissions_toml::PermissionsToml;
+use motyga_config::sandbox_mode_requirement_for_permission_profile;
+use motyga_protocol::models::PermissionProfile;
 
 use super::ConstraintError;
 use super::ConstraintResult;

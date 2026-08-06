@@ -1,9 +1,9 @@
 #[cfg(any(not(debug_assertions), test))]
-use codex_install_context::InstallContext;
+use motyga_install_context::InstallContext;
 #[cfg(any(not(debug_assertions), test))]
-use codex_install_context::InstallMethod;
+use motyga_install_context::InstallMethod;
 #[cfg(any(not(debug_assertions), test))]
-use codex_install_context::StandalonePlatform;
+use motyga_install_context::StandalonePlatform;
 
 /// Update action the CLI should perform after the TUI exits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,7 +76,7 @@ pub fn get_update_action() -> Option<UpdateAction> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -118,7 +118,7 @@ mod tests {
                 method: InstallMethod::Standalone {
                     platform: StandalonePlatform::Unix,
                     release_dir: native_release_dir.clone(),
-                    resources_dir: Some(native_release_dir.join("codex-resources")),
+                    resources_dir: Some(native_release_dir.join("motyga-resources")),
                 },
                 package_layout: None,
             }),
@@ -129,7 +129,7 @@ mod tests {
                 method: InstallMethod::Standalone {
                     platform: StandalonePlatform::Windows,
                     release_dir: native_release_dir.clone(),
-                    resources_dir: Some(native_release_dir.join("codex-resources")),
+                    resources_dir: Some(native_release_dir.join("motyga-resources")),
                 },
                 package_layout: None,
             }),

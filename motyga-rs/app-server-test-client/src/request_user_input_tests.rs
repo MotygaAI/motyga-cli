@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::io::Cursor;
 
-use codex_app_server_protocol::ToolRequestUserInputAnswer;
-use codex_app_server_protocol::ToolRequestUserInputOption;
-use codex_app_server_protocol::ToolRequestUserInputParams;
-use codex_app_server_protocol::ToolRequestUserInputQuestion;
-use codex_app_server_protocol::ToolRequestUserInputResponse;
+use motyga_app_server_protocol::ToolRequestUserInputAnswer;
+use motyga_app_server_protocol::ToolRequestUserInputOption;
+use motyga_app_server_protocol::ToolRequestUserInputParams;
+use motyga_app_server_protocol::ToolRequestUserInputQuestion;
+use motyga_app_server_protocol::ToolRequestUserInputResponse;
 use pretty_assertions::assert_eq;
 
 use super::prompt_for_answers_with;

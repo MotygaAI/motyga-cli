@@ -20,9 +20,9 @@ impl WineExecServer {
         F: FnOnce(String, PathBuf) -> Fut,
         Fut: Future<Output = Result<T>>,
     {
-        let executable = codex_utils_cargo_bin::cargo_bin("wine-windows-exec-server")?;
+        let executable = motyga_utils_cargo_bin::cargo_bin("wine-windows-exec-server")?;
         let mut exec_server = WineTestCommand::new(executable)
-            .env("MOTYGA_HOME", r"C:\codex-home")
+            .env("MOTYGA_HOME", r"C:\motyga-home")
             .spawn()?;
         let wine_prefix = exec_server.prefix_path().to_path_buf();
         let stdout = exec_server.take_stdout();

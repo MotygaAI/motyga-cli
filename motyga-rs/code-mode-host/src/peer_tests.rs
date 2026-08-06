@@ -1,12 +1,12 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use codex_code_mode_protocol::CellId;
-use codex_code_mode_protocol::RuntimeResponse;
-use codex_code_mode_protocol::StartedCell;
-use codex_code_mode_protocol::host::DelegateRequest;
-use codex_code_mode_protocol::host::RequestId;
-use codex_code_mode_protocol::host::SessionId;
+use motyga_code_mode_protocol::CellId;
+use motyga_code_mode_protocol::RuntimeResponse;
+use motyga_code_mode_protocol::StartedCell;
+use motyga_code_mode_protocol::host::DelegateRequest;
+use motyga_code_mode_protocol::host::RequestId;
+use motyga_code_mode_protocol::host::SessionId;
 use pretty_assertions::assert_eq;
 use tokio::sync::Semaphore;
 use tokio::sync::mpsc;

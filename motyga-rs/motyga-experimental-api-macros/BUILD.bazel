@@ -1,0 +1,7 @@
+load("//:defs.bzl", "motyga_rust_crate")
+
+motyga_rust_crate(
+    name = "motyga-experimental-api-macros",
+    crate_name = "motyga_experimental_api_macros",
+    proc_macro = True,
+)

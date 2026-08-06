@@ -8,7 +8,7 @@ use super::*;
 use crate::config_update::format_config_error;
 use crate::external_agent_config_migration_flow::ExternalAgentConfigMigrationFlowOutcome;
 #[cfg(target_os = "windows")]
-use codex_config::types::WindowsSandboxModeToml;
+use motyga_config::types::WindowsSandboxModeToml;
 
 const SHUTDOWN_FIRST_EXIT_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 2);
 
@@ -158,7 +158,7 @@ impl App {
             }
             AppEvent::ForkCurrentSession => {
                 self.session_telemetry.counter(
-                    "codex.thread.fork",
+                    "motyga.thread.fork",
                     /*inc*/ 1,
                     &[("source", "slash_command")],
                 );
@@ -333,7 +333,7 @@ impl App {
             AppEvent::FatalExitRequest(message) => {
                 return Ok(AppRunControl::Exit(ExitReason::Fatal(message)));
             }
-            AppEvent::CodexOp(op) => {
+            AppEvent::MotygaOp(op) => {
                 self.chat_widget.prepare_local_op_submission(&op);
                 self.submit_active_thread_op(app_server, op).await?;
             }
@@ -1095,14 +1095,14 @@ impl App {
                 profile_selection,
             } => {
                 self.session_telemetry.counter(
-                    "codex.windows_sandbox.fallback_prompt_shown",
+                    "motyga.windows_sandbox.fallback_prompt_shown",
                     /*inc*/ 1,
                     &[],
                 );
                 self.chat_widget.clear_windows_sandbox_setup_status();
                 if let Some(started_at) = self.windows_sandbox.setup_started_at.take() {
                     self.session_telemetry.record_duration(
-                        "codex.windows_sandbox.elevated_setup_duration_ms",
+                        "motyga.windows_sandbox.elevated_setup_duration_ms",
                         started_at.elapsed(),
                         &[("result", "failure")],
                     );
@@ -1116,7 +1116,7 @@ impl App {
             } => {
                 #[cfg(any(target_os = "windows", test))]
                 if !self.chat_widget.windows_sandbox_mode_allowed(
-                    codex_config::types::WindowsSandboxModeToml::Elevated,
+                    motyga_config::types::WindowsSandboxModeToml::Elevated,
                 ) {
                     tracing::warn!(
                         "refusing to set up elevated Windows sandbox mode disallowed by requirements"
@@ -1150,12 +1150,12 @@ impl App {
                     let command_cwd = self.config.cwd.clone();
                     let env_map: std::collections::HashMap<String, String> =
                         std::env::vars().collect();
-                    let codex_home = self.config.codex_home.clone();
+                    let motyga_home = self.config.motyga_home.clone();
                     let tx = self.app_event_tx.clone();
 
                     // If the elevated setup already ran on this machine, don't prompt for
                     // elevation again - just flip the config to use the elevated path.
-                    if crate::windows_sandbox::sandbox_setup_is_complete(codex_home.as_path()) {
+                    if crate::windows_sandbox::sandbox_setup_is_complete(motyga_home.as_path()) {
                         tx.send(AppEvent::EnableWindowsSandboxForAgentMode {
                             preset,
                             mode: WindowsSandboxEnableMode::Elevated,
@@ -1173,12 +1173,12 @@ impl App {
                             workspace_roots.as_slice(),
                             command_cwd.as_path(),
                             &env_map,
-                            codex_home.as_path(),
+                            motyga_home.as_path(),
                         );
                         let event = match result {
                             Ok(()) => {
                                 session_telemetry.counter(
-                                    "codex.windows_sandbox.elevated_setup_success",
+                                    "motyga.windows_sandbox.elevated_setup_success",
                                     /*inc*/ 1,
                                     &[],
                                 );
@@ -1235,7 +1235,7 @@ impl App {
             } => {
                 #[cfg(any(target_os = "windows", test))]
                 if !self.chat_widget.windows_sandbox_mode_allowed(
-                    codex_config::types::WindowsSandboxModeToml::Unelevated,
+                    motyga_config::types::WindowsSandboxModeToml::Unelevated,
                 ) {
                     tracing::warn!(
                         "refusing to set up unelevated Windows sandbox mode disallowed by requirements"
@@ -1269,23 +1269,23 @@ impl App {
                     let command_cwd = self.config.cwd.clone();
                     let env_map: std::collections::HashMap<String, String> =
                         std::env::vars().collect();
-                    let codex_home = self.config.codex_home.clone();
+                    let motyga_home = self.config.motyga_home.clone();
                     let tx = self.app_event_tx.clone();
                     let session_telemetry = self.session_telemetry.clone();
 
                     self.chat_widget.show_windows_sandbox_setup_status();
                     tokio::task::spawn_blocking(move || {
                         if let Err(err) =
-                            codex_windows_sandbox::run_windows_sandbox_legacy_preflight(
+                            motyga_windows_sandbox::run_windows_sandbox_legacy_preflight(
                                 &permission_profile,
                                 workspace_roots.as_slice(),
-                                codex_home.as_path(),
+                                motyga_home.as_path(),
                                 command_cwd.as_path(),
                                 &env_map,
                             )
                         {
                             session_telemetry.counter(
-                                "codex.windows_sandbox.legacy_setup_preflight_failed",
+                                "motyga.windows_sandbox.legacy_setup_preflight_failed",
                                 /*inc*/ 1,
                                 &[],
                             );
@@ -1320,7 +1320,7 @@ impl App {
                     let command_cwd = self.config.cwd.clone();
                     let env_map: std::collections::HashMap<String, String> =
                         std::env::vars().collect();
-                    let codex_home = self.config.codex_home.clone();
+                    let motyga_home = self.config.motyga_home.clone();
                     let tx = self.app_event_tx.clone();
 
                     tokio::task::spawn_blocking(move || {
@@ -1330,7 +1330,7 @@ impl App {
                             workspace_roots.as_slice(),
                             command_cwd.as_path(),
                             &env_map,
-                            codex_home.as_path(),
+                            motyga_home.as_path(),
                             requested_path.as_path(),
                         ) {
                             Ok(canonical_path) => AppEvent::WindowsSandboxGrantReadRootCompleted {
@@ -1373,7 +1373,7 @@ impl App {
                     self.chat_widget.clear_windows_sandbox_setup_status();
                     if let Some(started_at) = self.windows_sandbox.setup_started_at.take() {
                         self.session_telemetry.record_duration(
-                            "codex.windows_sandbox.elevated_setup_duration_ms",
+                            "motyga.windows_sandbox.elevated_setup_duration_ms",
                             started_at.elapsed(),
                             &[("result", "success")],
                         );
@@ -1425,7 +1425,7 @@ impl App {
                             if let Some((sample_paths, extra_count, failed_scan)) =
                                 self.chat_widget.world_writable_warning_details()
                             {
-                                self.app_event_tx.send(AppEvent::CodexOp(
+                                self.app_event_tx.send(AppEvent::MotygaOp(
                                     AppCommand::override_turn_context(
                                         /*cwd*/ None,
                                         /*approval_policy*/ None,
@@ -1452,7 +1452,7 @@ impl App {
                                     },
                                 );
                             } else if let Some(selection) = profile_selection {
-                                self.app_event_tx.send(AppEvent::CodexOp(
+                                self.app_event_tx.send(AppEvent::MotygaOp(
                                     AppCommand::override_turn_context(
                                         /*cwd*/ None,
                                         /*approval_policy*/ None,
@@ -1481,7 +1481,7 @@ impl App {
                                     ]),
                                 ]);
                             } else {
-                                self.app_event_tx.send(AppEvent::CodexOp(
+                                self.app_event_tx.send(AppEvent::MotygaOp(
                                     AppCommand::override_turn_context(
                                         /*cwd*/ None,
                                         Some(AskForApproval::from(preset.approval)),
@@ -1724,7 +1724,7 @@ impl App {
                         let env_map: std::collections::HashMap<String, String> =
                             std::env::vars().collect();
                         let tx = self.app_event_tx.clone();
-                        let logs_base_dir = self.config.codex_home.clone();
+                        let logs_base_dir = self.config.motyga_home.clone();
                         let permission_profile =
                             self.config.permissions.effective_permission_profile();
                         Self::spawn_world_writable_scan(
@@ -2186,7 +2186,7 @@ impl App {
                         // navigating, the runtime theme must still be applied.
                         if let Some(theme) = crate::render::highlight::resolve_theme_by_name(
                             &name,
-                            Some(&self.config.codex_home),
+                            Some(&self.config.motyga_home),
                         ) {
                             crate::render::highlight::set_syntax_theme(theme);
                         }

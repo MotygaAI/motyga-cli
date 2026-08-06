@@ -2,21 +2,21 @@
 #![allow(clippy::unwrap_used)]
 
 use anyhow::Result;
-use codex_config::types::AppToolApproval;
-use codex_core::config::Config;
-use codex_features::Feature;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Settings;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::ElicitationAction;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::request_user_input::RequestUserInputAnswer;
-use codex_protocol::request_user_input::RequestUserInputResponse;
-use codex_protocol::user_input::UserInput;
+use motyga_config::types::AppToolApproval;
+use motyga_core::config::Config;
+use motyga_features::Feature;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::Settings;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::ElicitationAction;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::request_user_input::RequestUserInputAnswer;
+use motyga_protocol::request_user_input::RequestUserInputResponse;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::PathExt;
 use core_test_support::apps_test_server::AppsTestServer;
 use core_test_support::apps_test_server::SEARCH_CALENDAR_CREATE_TOOL;
@@ -32,9 +32,9 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
@@ -47,7 +47,7 @@ fn set_calendar_approval_mode(config: &mut Config, approval_mode: AppToolApprova
         AppToolApproval::Prompt => "prompt",
         AppToolApproval::Approve => "approve",
     };
-    let user_config_path = config.codex_home.join("config.toml").abs();
+    let user_config_path = config.motyga_home.join("config.toml").abs();
     let user_config = toml::from_str(&format!(
         r#"
 [apps.calendar]
@@ -70,7 +70,7 @@ fn set_default_app_approval_mode_and_reviewer(
         AppToolApproval::Prompt => "prompt",
         AppToolApproval::Approve => "approve",
     };
-    let user_config_path = config.codex_home.join("config.toml").abs();
+    let user_config_path = config.motyga_home.join("config.toml").abs();
     let user_config = toml::from_str(&format!(
         r#"
 [apps._default]
@@ -85,7 +85,7 @@ default_tools_approval_mode = "{approval_mode}"
 }
 
 async fn submit_user_turn(
-    test: &TestCodex,
+    test: &TestMotyga,
     text: &str,
     approval_policy: AskForApproval,
     collaboration_mode: Option<CollaborationMode>,
@@ -93,7 +93,7 @@ async fn submit_user_turn(
     let session_model = test.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.cwd.path());
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: text.to_string(),
@@ -102,15 +102,15 @@ async fn submit_user_turn(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(approval_policy),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
                 collaboration_mode: collaboration_mode.or({
-                    Some(codex_protocol::config_types::CollaborationMode {
-                        mode: codex_protocol::config_types::ModeKind::Default,
-                        settings: codex_protocol::config_types::Settings {
+                    Some(motyga_protocol::config_types::CollaborationMode {
+                        mode: motyga_protocol::config_types::ModeKind::Default,
+                        settings: motyga_protocol::config_types::Settings {
                             model: session_model,
                             reasoning_effort: None,
                             developer_instructions: None,
@@ -181,7 +181,7 @@ async fn approved_mcp_tool_call_metadata_records_prior_user_input_request() -> R
     )
     .await?;
 
-    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.codex, |event| {
+    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::McpToolCallBegin(_))
     })
     .await
@@ -190,7 +190,7 @@ async fn approved_mcp_tool_call_metadata_records_prior_user_input_request() -> R
     };
     assert_eq!(begin.call_id, call_id);
 
-    let EventMsg::ElicitationRequest(request) = wait_for_event(&test.codex, |event| {
+    let EventMsg::ElicitationRequest(request) = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ElicitationRequest(_) | EventMsg::TurnComplete(_)
@@ -201,7 +201,7 @@ async fn approved_mcp_tool_call_metadata_records_prior_user_input_request() -> R
         panic!("expected apps._default user to route the app approval to the user");
     };
 
-    test.codex
+    test.motyga
         .submit(Op::ResolveElicitation {
             server_name: request.server_name,
             request_id: request.id,
@@ -211,7 +211,7 @@ async fn approved_mcp_tool_call_metadata_records_prior_user_input_request() -> R
         })
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -300,7 +300,7 @@ async fn apps_default_prompt_with_auto_review_routes_actual_mcp_approval_to_guar
     )
     .await?;
 
-    let route_event = wait_for_event(&test.codex, |event| {
+    let route_event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ElicitationRequest(_) | EventMsg::TurnComplete(_)
@@ -412,14 +412,14 @@ async fn mcp_tool_call_metadata_records_prior_request_user_input_tool() -> Resul
     )
     .await?;
 
-    let request = wait_for_event_match(&test.codex, |event| match event {
+    let request = wait_for_event_match(&test.motyga, |event| match event {
         EventMsg::RequestUserInput(request) => Some(request.clone()),
         _ => None,
     })
     .await;
     assert_eq!(request.call_id, request_user_input_call_id);
 
-    test.codex
+    test.motyga
         .submit(Op::UserInputAnswer {
             id: request.turn_id,
             response: RequestUserInputResponse {
@@ -433,7 +433,7 @@ async fn mcp_tool_call_metadata_records_prior_request_user_input_tool() -> Resul
         })
         .await?;
 
-    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.codex, |event| {
+    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::McpToolCallBegin(_))
     })
     .await
@@ -442,7 +442,7 @@ async fn mcp_tool_call_metadata_records_prior_request_user_input_tool() -> Resul
     };
     assert_eq!(begin.call_id, calendar_call_id);
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

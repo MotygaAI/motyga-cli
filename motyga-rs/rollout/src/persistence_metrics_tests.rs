@@ -1,15 +1,15 @@
-use codex_protocol::ThreadId;
-use codex_protocol::items::TurnItem;
-use codex_protocol::items::UserMessageItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ItemCompletedEvent;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::protocol::TurnAbortedEvent;
-use codex_protocol::protocol::TurnCompleteEvent;
-use codex_protocol::protocol::TurnStartedEvent;
+use motyga_protocol::ThreadId;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::items::UserMessageItem;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ItemCompletedEvent;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_protocol::protocol::TurnAbortedEvent;
+use motyga_protocol::protocol::TurnCompleteEvent;
+use motyga_protocol::protocol::TurnStartedEvent;
 use pretty_assertions::assert_eq;
 
 use super::CompletedTurnMeasurement;

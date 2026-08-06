@@ -1,5 +1,5 @@
-use codex_core::config::Config;
-use codex_model_provider_info::WireApi;
+use motyga_core::config::Config;
+use motyga_model_provider_info::WireApi;
 
 use crate::sandbox_summary::summarize_sandbox_policy;
 

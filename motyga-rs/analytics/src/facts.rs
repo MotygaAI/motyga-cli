@@ -1,32 +1,32 @@
 use crate::events::AppServerRpcTransport;
-use crate::events::CodexRuntimeMetadata;
+use crate::events::MotygaRuntimeMetadata;
 use crate::events::GuardianReviewEventParams;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::ClientResponsePayload;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::ServerResponse;
-use codex_plugin::PluginTelemetryMetadata;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::error::CodexErr;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::HookEventName;
-use codex_protocol::protocol::HookRunStatus;
-use codex_protocol::protocol::HookSource;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SkillScope;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::request_permissions::RequestPermissionsResponse;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::ClientResponsePayload;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::ServerResponse;
+use motyga_plugin::PluginTelemetryMetadata;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::Personality;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::HookRunStatus;
+use motyga_protocol::protocol::HookSource;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SkillScope;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::request_permissions::RequestPermissionsResponse;
 use serde::Serialize;
 use std::path::PathBuf;
 
@@ -122,25 +122,25 @@ pub struct TurnProfileFact {
 }
 
 #[derive(Clone)]
-pub struct TurnCodexErrorFact {
+pub struct TurnMotygaErrorFact {
     pub(crate) turn_id: String,
     pub(crate) thread_id: String,
-    pub(crate) error: TurnCodexError,
+    pub(crate) error: TurnMotygaError,
 }
 
-impl TurnCodexErrorFact {
-    pub fn from_codex_err(thread_id: String, turn_id: String, error: &CodexErr) -> Self {
+impl TurnMotygaErrorFact {
+    pub fn from_motyga_err(thread_id: String, turn_id: String, error: &MotygaErr) -> Self {
         Self {
             turn_id,
             thread_id,
-            error: TurnCodexError::from_codex_err(error),
+            error: TurnMotygaError::from_motyga_err(error),
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum CodexErrKind {
+pub enum MotygaErrKind {
     TurnAborted,
     SessionBudgetExceeded,
     Stream,
@@ -184,13 +184,13 @@ pub enum CodexErrKind {
 }
 
 #[derive(Clone)]
-pub(crate) struct TurnCodexError {
-    pub(crate) kind: CodexErrKind,
+pub(crate) struct TurnMotygaError {
+    pub(crate) kind: MotygaErrKind,
     pub(crate) http_status_code: Option<u16>,
 }
 
-impl TurnCodexError {
-    fn from_codex_err(error: &CodexErr) -> Self {
+impl TurnMotygaError {
+    fn from_motyga_err(error: &MotygaErr) -> Self {
         Self {
             kind: error.into(),
             http_status_code: error.http_status_code_value(),
@@ -198,51 +198,51 @@ impl TurnCodexError {
     }
 }
 
-impl From<&CodexErr> for CodexErrKind {
-    fn from(error: &CodexErr) -> Self {
+impl From<&MotygaErr> for MotygaErrKind {
+    fn from(error: &MotygaErr) -> Self {
         match error {
-            CodexErr::TurnAborted => CodexErrKind::TurnAborted,
-            CodexErr::SessionBudgetExceeded => CodexErrKind::SessionBudgetExceeded,
-            CodexErr::Stream(..) => CodexErrKind::Stream,
-            CodexErr::ContextWindowExceeded => CodexErrKind::ContextWindowExceeded,
-            CodexErr::ThreadNotFound(_) => CodexErrKind::ThreadNotFound,
-            CodexErr::AgentLimitReached { .. } => CodexErrKind::AgentLimitReached,
-            CodexErr::SessionConfiguredNotFirstEvent => {
-                CodexErrKind::SessionConfiguredNotFirstEvent
+            MotygaErr::TurnAborted => MotygaErrKind::TurnAborted,
+            MotygaErr::SessionBudgetExceeded => MotygaErrKind::SessionBudgetExceeded,
+            MotygaErr::Stream(..) => MotygaErrKind::Stream,
+            MotygaErr::ContextWindowExceeded => MotygaErrKind::ContextWindowExceeded,
+            MotygaErr::ThreadNotFound(_) => MotygaErrKind::ThreadNotFound,
+            MotygaErr::AgentLimitReached { .. } => MotygaErrKind::AgentLimitReached,
+            MotygaErr::SessionConfiguredNotFirstEvent => {
+                MotygaErrKind::SessionConfiguredNotFirstEvent
             }
-            CodexErr::Timeout => CodexErrKind::Timeout,
-            CodexErr::RequestTimeout => CodexErrKind::RequestTimeout,
-            CodexErr::Spawn => CodexErrKind::Spawn,
-            CodexErr::Interrupted => CodexErrKind::Interrupted,
-            CodexErr::UnexpectedStatus(_) => CodexErrKind::UnexpectedStatus,
-            CodexErr::InvalidRequest(_) => CodexErrKind::InvalidRequest,
-            CodexErr::InvalidImageRequest() => CodexErrKind::InvalidImageRequest,
-            CodexErr::UsageLimitReached(_) => CodexErrKind::UsageLimitReached,
-            CodexErr::ServerOverloaded => CodexErrKind::ServerOverloaded,
-            CodexErr::CyberPolicy { .. } => CodexErrKind::CyberPolicy,
-            CodexErr::Gateway(_) => CodexErrKind::Gateway,
-            CodexErr::ResponseStreamFailed(_) => CodexErrKind::ResponseStreamFailed,
-            CodexErr::ConnectionFailed(_) => CodexErrKind::ConnectionFailed,
-            CodexErr::QuotaExceeded => CodexErrKind::QuotaExceeded,
-            CodexErr::UsageNotIncluded => CodexErrKind::UsageNotIncluded,
-            CodexErr::InternalServerError => CodexErrKind::InternalServerError,
-            CodexErr::RetryLimit(_) => CodexErrKind::RetryLimit,
-            CodexErr::InternalAgentDied => CodexErrKind::InternalAgentDied,
-            CodexErr::Sandbox(_) => CodexErrKind::Sandbox,
-            CodexErr::LandlockSandboxExecutableNotProvided => {
-                CodexErrKind::LandlockSandboxExecutableNotProvided
+            MotygaErr::Timeout => MotygaErrKind::Timeout,
+            MotygaErr::RequestTimeout => MotygaErrKind::RequestTimeout,
+            MotygaErr::Spawn => MotygaErrKind::Spawn,
+            MotygaErr::Interrupted => MotygaErrKind::Interrupted,
+            MotygaErr::UnexpectedStatus(_) => MotygaErrKind::UnexpectedStatus,
+            MotygaErr::InvalidRequest(_) => MotygaErrKind::InvalidRequest,
+            MotygaErr::InvalidImageRequest() => MotygaErrKind::InvalidImageRequest,
+            MotygaErr::UsageLimitReached(_) => MotygaErrKind::UsageLimitReached,
+            MotygaErr::ServerOverloaded => MotygaErrKind::ServerOverloaded,
+            MotygaErr::CyberPolicy { .. } => MotygaErrKind::CyberPolicy,
+            MotygaErr::Gateway(_) => MotygaErrKind::Gateway,
+            MotygaErr::ResponseStreamFailed(_) => MotygaErrKind::ResponseStreamFailed,
+            MotygaErr::ConnectionFailed(_) => MotygaErrKind::ConnectionFailed,
+            MotygaErr::QuotaExceeded => MotygaErrKind::QuotaExceeded,
+            MotygaErr::UsageNotIncluded => MotygaErrKind::UsageNotIncluded,
+            MotygaErr::InternalServerError => MotygaErrKind::InternalServerError,
+            MotygaErr::RetryLimit(_) => MotygaErrKind::RetryLimit,
+            MotygaErr::InternalAgentDied => MotygaErrKind::InternalAgentDied,
+            MotygaErr::Sandbox(_) => MotygaErrKind::Sandbox,
+            MotygaErr::LandlockSandboxExecutableNotProvided => {
+                MotygaErrKind::LandlockSandboxExecutableNotProvided
             }
-            CodexErr::UnsupportedOperation(_) => CodexErrKind::UnsupportedOperation,
-            CodexErr::RefreshTokenFailed(_) => CodexErrKind::RefreshTokenFailed,
-            CodexErr::Fatal(_) => CodexErrKind::Fatal,
-            CodexErr::Io(_) => CodexErrKind::Io,
-            CodexErr::Json(_) => CodexErrKind::Json,
+            MotygaErr::UnsupportedOperation(_) => MotygaErrKind::UnsupportedOperation,
+            MotygaErr::RefreshTokenFailed(_) => MotygaErrKind::RefreshTokenFailed,
+            MotygaErr::Fatal(_) => MotygaErrKind::Fatal,
+            MotygaErr::Io(_) => MotygaErrKind::Io,
+            MotygaErr::Json(_) => MotygaErrKind::Json,
             #[cfg(target_os = "linux")]
-            CodexErr::LandlockRuleset(_) => CodexErrKind::LandlockRuleset,
+            MotygaErr::LandlockRuleset(_) => MotygaErrKind::LandlockRuleset,
             #[cfg(target_os = "linux")]
-            CodexErr::LandlockPathFd(_) => CodexErrKind::LandlockPathFd,
-            CodexErr::TokioJoin(_) => CodexErrKind::TokioJoin,
-            CodexErr::EnvVar(_) => CodexErrKind::EnvVar,
+            MotygaErr::LandlockPathFd(_) => MotygaErrKind::LandlockPathFd,
+            MotygaErr::TokioJoin(_) => MotygaErrKind::TokioJoin,
+            MotygaErr::EnvVar(_) => MotygaErrKind::EnvVar,
         }
     }
 }
@@ -274,7 +274,7 @@ pub enum TurnSteerRejectionReason {
 }
 
 #[derive(Clone)]
-pub struct CodexTurnSteerEvent {
+pub struct MotygaTurnSteerEvent {
     pub expected_turn_id: Option<String>,
     pub accepted_turn_id: Option<String>,
     pub num_input_images: usize,
@@ -408,7 +408,7 @@ pub enum CompactionStatus {
 }
 
 #[derive(Clone)]
-pub struct CodexCompactionEvent {
+pub struct MotygaCompactionEvent {
     pub thread_id: String,
     pub turn_id: String,
     pub trigger: CompactionTrigger,
@@ -417,8 +417,8 @@ pub struct CodexCompactionEvent {
     pub phase: CompactionPhase,
     pub strategy: CompactionStrategy,
     pub status: CompactionStatus,
-    pub codex_error_kind: Option<CodexErrKind>,
-    pub codex_error_http_status_code: Option<u16>,
+    pub motyga_error_kind: Option<MotygaErrKind>,
+    pub motyga_error_http_status_code: Option<u16>,
     pub active_context_tokens_before: i64,
     pub active_context_tokens_after: i64,
     pub retained_image_count: Option<usize>,
@@ -439,12 +439,12 @@ pub enum GoalEventKind {
 }
 
 #[derive(Clone)]
-pub struct CodexGoalEvent {
+pub struct MotygaGoalEvent {
     pub thread_id: String,
     pub turn_id: Option<String>,
     pub goal_id: String,
     pub event_kind: GoalEventKind,
-    pub goal_status: codex_state::ThreadGoalStatus,
+    pub goal_status: motyga_state::ThreadGoalStatus,
     pub has_token_budget: bool,
     pub cumulative_tokens_accounted: Option<i64>,
     pub cumulative_time_accounted_seconds: Option<i64>,
@@ -456,7 +456,7 @@ pub(crate) enum AnalyticsFact {
         connection_id: u64,
         params: InitializeParams,
         product_client_id: String,
-        runtime: CodexRuntimeMetadata,
+        runtime: MotygaRuntimeMetadata,
         rpc_transport: AppServerRpcTransport,
     },
     ClientRequest {
@@ -501,13 +501,13 @@ pub(crate) enum AnalyticsFact {
 
 pub(crate) enum CustomAnalyticsFact {
     SubAgentThreadStarted(SubAgentThreadStartedInput),
-    Compaction(Box<CodexCompactionEvent>),
-    Goal(Box<CodexGoalEvent>),
+    Compaction(Box<MotygaCompactionEvent>),
+    Goal(Box<MotygaGoalEvent>),
     GuardianReview(Box<GuardianReviewEventParams>),
     TurnResolvedConfig(Box<TurnResolvedConfigFact>),
     TurnTokenUsage(Box<TurnTokenUsageFact>),
     TurnProfile(Box<TurnProfileFact>),
-    TurnCodexError(Box<TurnCodexErrorFact>),
+    TurnMotygaError(Box<TurnMotygaErrorFact>),
     SkillInvoked(SkillInvokedInput),
     AppMentioned(AppMentionedInput),
     AppUsed(AppUsedInput),

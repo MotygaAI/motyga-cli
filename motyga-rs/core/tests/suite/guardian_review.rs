@@ -1,14 +1,14 @@
 #![cfg(not(target_os = "windows"))]
 
 use anyhow::Result;
-use codex_core::config::Constrained;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::user_input::UserInput;
+use motyga_core::config::Constrained;
+use motyga_core::sandboxing::SandboxPermissions;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::fs_wait;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -20,8 +20,8 @@ use core_test_support::responses::start_mock_server;
 use core_test_support::responses::start_websocket_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_sandbox;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -55,7 +55,7 @@ async fn guardian_session_prewarms_and_is_reused_for_first_review() -> Result<()
         ]],
     ])
     .await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config.permissions.approval_policy = Constrained::allow_any(AskForApproval::OnRequest);
         config.approvals_reviewer = ApprovalsReviewer::AutoReview;
     });
@@ -80,7 +80,7 @@ async fn guardian_session_prewarms_and_is_reused_for_first_review() -> Result<()
         .as_str()
         .expect("guardian thread id");
 
-    test.codex
+    test.motyga
         .submit(
             vec![UserInput::Text {
                 text: "run a command that requires Guardian review".into(),
@@ -105,7 +105,7 @@ async fn guardian_session_prewarms_and_is_reused_for_first_review() -> Result<()
     );
     assert_eq!(guardian_review.get("generate"), None);
 
-    test.codex.shutdown_and_wait().await?;
+    test.motyga.shutdown_and_wait().await?;
     server.shutdown().await;
     Ok(())
 }
@@ -138,7 +138,7 @@ printf '%s\n' "${@: -1}" >> "${payload_path}""#,
     let notify_script_str = notify_script.to_str().unwrap().to_string();
     let sandbox_policy_for_config = sandbox_policy.clone();
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.notify = Some(vec![notify_script_str]);
         config.permissions.approval_policy = Constrained::allow_any(approval_policy);
         config
@@ -190,7 +190,7 @@ printf '%s\n' "${@: -1}" >> "${payload_path}""#,
     )
     .await;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run a command that requires Guardian review".into(),
@@ -199,7 +199,7 @@ printf '%s\n' "${@: -1}" >> "${payload_path}""#,
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(approval_policy),
                 approvals_reviewer: Some(ApprovalsReviewer::AutoReview),
@@ -208,7 +208,7 @@ printf '%s\n' "${@: -1}" >> "${payload_path}""#,
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -240,7 +240,7 @@ printf '%s\n' "${@: -1}" >> "${payload_path}""#,
     assert_eq!(payloads[0]["last-assistant-message"], json!("done"));
     assert!(
         !notify_payload_raw.contains(
-            "The following is the Codex agent history whose request action you are assessing."
+            "The following is the Motyga agent history whose request action you are assessing."
         ),
         "Guardian review transcript leaked into legacy notify payload: {notify_payload_raw}"
     );

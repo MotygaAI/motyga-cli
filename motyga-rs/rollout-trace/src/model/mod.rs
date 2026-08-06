@@ -18,12 +18,12 @@ pub use conversation::*;
 pub use runtime::*;
 pub use session::*;
 
-/// Codex conversation/session UUID.
+/// Motyga conversation/session UUID.
 pub type AgentThreadId = String;
 /// Stable multi-agent routing path such as `/root` or `/root/search_docs`.
 pub type AgentPath = String;
 /// Runtime submission/activation UUID. This is not a chat turn.
-pub type CodexTurnId = String;
+pub type MotygaTurnId = String;
 /// Reduced transcript item ID assigned by the trace reducer.
 pub type ConversationItemId = String;
 /// Local ID for one outbound upstream inference request.
@@ -38,7 +38,7 @@ pub type ModelVisibleCallId = String;
 pub type CodeModeRuntimeToolId = String;
 /// Reducer-owned ID for one model-authored `exec` JavaScript cell.
 pub type CodeCellId = String;
-/// Process/session ID returned by Codex's terminal runtime.
+/// Process/session ID returned by Motyga's terminal runtime.
 pub type TerminalId = String;
 /// Reducer-owned ID for one command/write/poll operation against a terminal.
 pub type TerminalOperationId = String;
@@ -51,13 +51,13 @@ pub type EdgeId = String;
 /// Reducer-owned ID for request/log correlation metadata.
 pub type CorrelationId = String;
 
-/// Canonical reduced graph for one Codex rollout.
+/// Canonical reduced graph for one Motyga rollout.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RolloutTrace {
     pub schema_version: u32,
     /// Unique identity for this trace capture.
     ///
-    /// `rollout_id` names the Codex rollout/session being observed. `trace_id`
+    /// `rollout_id` names the Motyga rollout/session being observed. `trace_id`
     /// names the diagnostic artifact produced for that rollout, which keeps
     /// storage/replay identity separate from the product-level session identity.
     pub trace_id: String,
@@ -69,7 +69,7 @@ pub struct RolloutTrace {
     pub status: RolloutStatus,
     pub root_thread_id: AgentThreadId,
     pub threads: BTreeMap<AgentThreadId, AgentThread>,
-    pub codex_turns: BTreeMap<CodexTurnId, CodexTurn>,
+    pub motyga_turns: BTreeMap<MotygaTurnId, MotygaTurn>,
     pub conversation_items: BTreeMap<ConversationItemId, ConversationItem>,
     pub inference_calls: BTreeMap<InferenceCallId, InferenceCall>,
     /// Model-authored `exec` JavaScript cells keyed by reducer-owned cell ID.
@@ -107,7 +107,7 @@ impl RolloutTrace {
             status: RolloutStatus::Running,
             root_thread_id,
             threads: BTreeMap::new(),
-            codex_turns: BTreeMap::new(),
+            motyga_turns: BTreeMap::new(),
             conversation_items: BTreeMap::new(),
             inference_calls: BTreeMap::new(),
             code_cells: BTreeMap::new(),

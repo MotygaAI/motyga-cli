@@ -1,6 +1,6 @@
 # Security Policy
 
-Thank you for helping us keep Codex secure!
+Thank you for helping us keep Motyga secure!
 
 ## Reporting Security Issues
 
@@ -12,6 +12,6 @@ Our security program is managed through Bugcrowd, and we ask that any validated 
 
 Our Vulnerability Program Guidelines are defined on our [Bugcrowd program page](https://bugcrowd.com/engagements/openai).
 
-## How to operate CODEX safely
+## How to operate MOTYGA safely
 
-For details on Codex security boundaries, including sandboxing, approvals, and network controls, see [Agent approvals & security](https://developers.openai.com/codex/agent-approvals-security).
+For details on Motyga security boundaries, including sandboxing, approvals, and network controls, see [Agent approvals & security](https://developers.openai.com/codex/agent-approvals-security).

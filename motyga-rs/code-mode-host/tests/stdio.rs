@@ -9,23 +9,23 @@ use std::time::Duration;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-use codex_code_mode::CellId;
-use codex_code_mode::CodeModeNestedToolCall;
-use codex_code_mode::CodeModeSession;
-use codex_code_mode::CodeModeSessionDelegate;
-use codex_code_mode::CodeModeSessionProvider;
-use codex_code_mode::CodeModeToolKind;
-use codex_code_mode::ExecuteRequest;
-use codex_code_mode::FunctionCallOutputContentItem;
-use codex_code_mode::NotificationFuture;
-use codex_code_mode::ProcessOwnedCodeModeSessionProvider;
-use codex_code_mode::RuntimeResponse;
-use codex_code_mode::ToolDefinition;
-use codex_code_mode::ToolInvocationFuture;
-use codex_code_mode::WaitOutcome;
-use codex_code_mode::WaitRequest;
-use codex_code_mode::host::MAX_FRAME_BYTES;
-use codex_protocol::ToolName;
+use motyga_code_mode::CellId;
+use motyga_code_mode::CodeModeNestedToolCall;
+use motyga_code_mode::CodeModeSession;
+use motyga_code_mode::CodeModeSessionDelegate;
+use motyga_code_mode::CodeModeSessionProvider;
+use motyga_code_mode::CodeModeToolKind;
+use motyga_code_mode::ExecuteRequest;
+use motyga_code_mode::FunctionCallOutputContentItem;
+use motyga_code_mode::NotificationFuture;
+use motyga_code_mode::ProcessOwnedCodeModeSessionProvider;
+use motyga_code_mode::RuntimeResponse;
+use motyga_code_mode::ToolDefinition;
+use motyga_code_mode::ToolInvocationFuture;
+use motyga_code_mode::WaitOutcome;
+use motyga_code_mode::WaitRequest;
+use motyga_code_mode::host::MAX_FRAME_BYTES;
+use motyga_protocol::ToolName;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 use tokio::sync::Semaphore;
@@ -263,7 +263,7 @@ async fn next_callback_event(
 #[tokio::test]
 async fn remote_session_persists_values_forwards_delegates_and_controls_cells() {
     let provider = ProcessOwnedCodeModeSessionProvider::with_host_program(
-        codex_utils_cargo_bin::cargo_bin("codex-code-mode-host").expect("host binary"),
+        motyga_utils_cargo_bin::cargo_bin("motyga-code-mode-host").expect("host binary"),
     );
     let delegate = Arc::new(RecordingDelegate::default());
     let session = provider
@@ -365,7 +365,7 @@ text(result.value);
 #[tokio::test]
 async fn dropping_long_wait_releases_observer_before_next_wait() {
     let provider = ProcessOwnedCodeModeSessionProvider::with_host_program(
-        codex_utils_cargo_bin::cargo_bin("codex-code-mode-host").expect("host binary"),
+        motyga_utils_cargo_bin::cargo_bin("motyga-code-mode-host").expect("host binary"),
     );
     let session = provider
         .create_session(Arc::new(RecordingDelegate::default()))
@@ -423,7 +423,7 @@ async fn dropping_long_wait_releases_observer_before_next_wait() {
 #[tokio::test]
 async fn unawaited_slow_tool_is_cancelled_after_parallel_tools_complete() {
     let provider = ProcessOwnedCodeModeSessionProvider::with_host_program(
-        codex_utils_cargo_bin::cargo_bin("codex-code-mode-host").expect("host binary"),
+        motyga_utils_cargo_bin::cargo_bin("motyga-code-mode-host").expect("host binary"),
     );
     let (delegate, mut events_rx) = CancellationDelegate::new();
     let session = provider
@@ -531,7 +531,7 @@ return;
 #[tokio::test]
 async fn oversized_execute_request_does_not_close_the_shared_host() {
     let provider = ProcessOwnedCodeModeSessionProvider::with_host_program(
-        codex_utils_cargo_bin::cargo_bin("codex-code-mode-host").expect("host binary"),
+        motyga_utils_cargo_bin::cargo_bin("motyga-code-mode-host").expect("host binary"),
     );
     let session = provider
         .create_session(Arc::new(RecordingDelegate::default()))
@@ -563,7 +563,7 @@ async fn oversized_execute_request_does_not_close_the_shared_host() {
 #[tokio::test]
 async fn oversized_delegate_payloads_fail_only_the_tool_call() {
     let provider = ProcessOwnedCodeModeSessionProvider::with_host_program(
-        codex_utils_cargo_bin::cargo_bin("codex-code-mode-host").expect("host binary"),
+        motyga_utils_cargo_bin::cargo_bin("motyga-code-mode-host").expect("host binary"),
     );
     let session = provider
         .create_session(Arc::new(OversizedResultDelegate))
@@ -638,7 +638,7 @@ try {
 #[tokio::test]
 async fn oversized_initial_response_does_not_close_the_shared_host() {
     let provider = ProcessOwnedCodeModeSessionProvider::with_host_program(
-        codex_utils_cargo_bin::cargo_bin("codex-code-mode-host").expect("host binary"),
+        motyga_utils_cargo_bin::cargo_bin("motyga-code-mode-host").expect("host binary"),
     );
     let session = provider
         .create_session(Arc::new(RecordingDelegate::default()))
@@ -676,9 +676,9 @@ async fn oversized_initial_response_does_not_close_the_shared_host() {
 #[tokio::test]
 async fn child_process_loss_cleans_up_and_rebuilds_the_shared_host() {
     let host_program =
-        codex_utils_cargo_bin::cargo_bin("codex-code-mode-host").expect("host binary");
+        motyga_utils_cargo_bin::cargo_bin("motyga-code-mode-host").expect("host binary");
     let proxy_dir =
-        std::env::temp_dir().join(format!("codex-code-mode-host-loss-{}", std::process::id()));
+        std::env::temp_dir().join(format!("motyga-code-mode-host-loss-{}", std::process::id()));
     let proxy_program = proxy_dir.join("host-proxy.sh");
     let pid_path = proxy_dir.join("host.pid");
     let _ = std::fs::remove_dir_all(&proxy_dir);

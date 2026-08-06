@@ -1,14 +1,14 @@
 use super::*;
 use anyhow::Result;
-use codex_app_server_protocol::AppConfig;
-use codex_app_server_protocol::AppToolApproval;
-use codex_app_server_protocol::AppsConfig;
-use codex_app_server_protocol::AskForApproval;
-use codex_app_server_protocol::ConfigLayerSource as ApiConfigLayerSource;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::LoaderOverrides;
-use codex_config::test_support::CloudConfigBundleFixture;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::AppConfig;
+use motyga_app_server_protocol::AppToolApproval;
+use motyga_app_server_protocol::AppsConfig;
+use motyga_app_server_protocol::AskForApproval;
+use motyga_app_server_protocol::ConfigLayerSource as ApiConfigLayerSource;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::LoaderOverrides;
+use motyga_config::test_support::CloudConfigBundleFixture;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
 use tempfile::tempdir;
 
@@ -204,12 +204,12 @@ async fn batch_write_rejects_legacy_profile_selector() -> Result<()> {
     let error = service
         .batch_write(ConfigBatchWriteParams {
             edits: vec![
-                codex_app_server_protocol::ConfigEdit {
+                motyga_app_server_protocol::ConfigEdit {
                     key_path: "model".to_string(),
                     value: serde_json::json!("gpt-work"),
                     merge_strategy: MergeStrategy::Replace,
                 },
-                codex_app_server_protocol::ConfigEdit {
+                motyga_app_server_protocol::ConfigEdit {
                     key_path: "profile".to_string(),
                     value: serde_json::json!("work"),
                     merge_strategy: MergeStrategy::Replace,

@@ -1,6 +1,6 @@
 use crate::ExtensionData;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
 
 /// Input supplied when the host starts a runtime for a thread.
 pub struct ThreadStartInput<'a, C> {

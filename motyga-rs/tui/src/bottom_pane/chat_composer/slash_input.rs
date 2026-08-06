@@ -16,8 +16,8 @@ use crate::bottom_pane::slash_commands::SlashCommandItem;
 use crate::bottom_pane::slash_commands::find_slash_command;
 use crate::bottom_pane::slash_commands::has_slash_command_prefix;
 use crate::slash_command::SlashCommand;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::TextElement;
+use motyga_protocol::user_input::ByteRange;
+use motyga_protocol::user_input::TextElement;
 
 use super::super::footer::esc_hint_mode;
 use super::super::footer::reset_mode_after_activity;
@@ -624,14 +624,17 @@ mod tests {
 
     #[test]
     fn slash_completion_does_not_preserve_existing_draft_tail_for_other_commands() {
+        // `/theme` is deliberately NOT in `supports_inline_args()`. This used to use
+        // `/model`, which was later given inline-argument support, so the case it
+        // was meant to cover stopped being exercised.
         let mut composer = composer_with_draft_tail(
-            "/mo",
+            "/the",
             "preserve this draft only for opted-in slash commands",
         );
 
         assert_eq!(press(&mut composer, KeyCode::Tab), InputResult::None);
-        assert_eq!(composer.draft.textarea.text(), "/model ");
-        assert_eq!(composer.draft.textarea.cursor(), "/model ".len());
+        assert_eq!(composer.draft.textarea.text(), "/theme ");
+        assert_eq!(composer.draft.textarea.cursor(), "/theme ".len());
     }
 
     #[test]

@@ -1,29 +1,29 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-model-provider"
+name = "motyga-model-provider"
 version.workspace = true
 
 [lib]
 doctest = false
-name = "codex_model_provider"
+name = "motyga_model_provider"
 path = "src/lib.rs"
 
 [lints]
 workspace = true
 
 [dependencies]
-codex-api = { workspace = true }
-codex-agent-identity = { workspace = true }
-codex-aws-auth = { workspace = true }
-codex-client = { workspace = true }
-codex-feedback = { workspace = true }
-codex-login = { workspace = true }
-codex-model-provider-info = { workspace = true }
-codex-models-manager = { workspace = true }
-codex-otel = { workspace = true }
-codex-protocol = { workspace = true }
-codex-response-debug-context = { workspace = true }
+motyga-api = { workspace = true }
+motyga-agent-identity = { workspace = true }
+motyga-aws-auth = { workspace = true }
+motyga-client = { workspace = true }
+motyga-feedback = { workspace = true }
+motyga-login = { workspace = true }
+motyga-model-provider-info = { workspace = true }
+motyga-models-manager = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-response-debug-context = { workspace = true }
 http = { workspace = true }
 tokio = { workspace = true, features = ["sync", "time"] }
 tracing = { workspace = true, features = ["log"] }

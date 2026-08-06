@@ -12,7 +12,7 @@ fn failed_turn_does_not_overwrite_output_last_message_file() {
     let mut processor = EventProcessorWithJsonOutput::new(Some(output_path.clone()));
 
     let collected = processor.collect_thread_events(ServerNotification::ItemCompleted(
-        codex_app_server_protocol::ItemCompletedNotification {
+        motyga_app_server_protocol::ItemCompletedNotification {
             item: ThreadItem::AgentMessage {
                 id: "msg-1".to_string(),
                 text: "partial answer".to_string(),
@@ -25,21 +25,21 @@ fn failed_turn_does_not_overwrite_output_last_message_file() {
         },
     ));
 
-    assert_eq!(collected.status, CodexStatus::Running);
+    assert_eq!(collected.status, MotygaStatus::Running);
     assert_eq!(processor.final_message(), Some("partial answer"));
 
     let status = processor.process_server_notification(ServerNotification::TurnCompleted(
-        codex_app_server_protocol::TurnCompletedNotification {
+        motyga_app_server_protocol::TurnCompletedNotification {
             thread_id: "thread-1".to_string(),
-            turn: codex_app_server_protocol::Turn {
+            turn: motyga_app_server_protocol::Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Failed,
-                error: Some(codex_app_server_protocol::TurnError {
+                error: Some(motyga_app_server_protocol::TurnError {
                     message: "turn failed".to_string(),
                     additional_details: None,
-                    codex_error_info: None,
+                    motyga_error_info: None,
                 }),
                 started_at: None,
                 completed_at: Some(0),
@@ -48,7 +48,7 @@ fn failed_turn_does_not_overwrite_output_last_message_file() {
         },
     ));
 
-    assert_eq!(status, CodexStatus::InitiateShutdown);
+    assert_eq!(status, MotygaStatus::InitiateShutdown);
     assert_eq!(processor.final_message(), None);
 
     EventProcessor::print_final_output(&mut processor);
@@ -64,7 +64,7 @@ fn runtime_warning_emits_a_non_fatal_error_item() {
     let mut processor = EventProcessorWithJsonOutput::new(/*last_message_path*/ None);
 
     let collected = processor.collect_thread_events(ServerNotification::Warning(
-        codex_app_server_protocol::WarningNotification {
+        motyga_app_server_protocol::WarningNotification {
             thread_id: Some("thread-1".to_string()),
             message: "invalid global instructions".to_string(),
         },
@@ -81,7 +81,7 @@ fn runtime_warning_emits_a_non_fatal_error_item() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -91,7 +91,7 @@ fn mcp_tool_call_result_preserves_meta_in_jsonl_event() {
     let mut processor = EventProcessorWithJsonOutput::new(/*last_message_path*/ None);
 
     let collected = processor.collect_thread_events(ServerNotification::ItemCompleted(
-        codex_app_server_protocol::ItemCompletedNotification {
+        motyga_app_server_protocol::ItemCompletedNotification {
             item: ThreadItem::McpToolCall {
                 id: "mcp-1".to_string(),
                 server: "search service".to_string(),
@@ -101,7 +101,7 @@ fn mcp_tool_call_result_preserves_meta_in_jsonl_event() {
                 app_context: None,
                 mcp_app_resource_uri: None,
                 plugin_id: None,
-                result: Some(Box::new(codex_app_server_protocol::McpToolCallResult {
+                result: Some(Box::new(motyga_app_server_protocol::McpToolCallResult {
                     content: vec![json!({"type": "text", "text": "search result"})],
                     structured_content: None,
                     meta: Some(json!({"raw_messages": [{"ref_id": "turn0search0"}]})),
@@ -115,7 +115,7 @@ fn mcp_tool_call_result_preserves_meta_in_jsonl_event() {
         },
     ));
 
-    assert_eq!(collected.status, CodexStatus::Running);
+    assert_eq!(collected.status, MotygaStatus::Running);
     assert_eq!(collected.events.len(), 1);
 
     let ThreadEvent::ItemCompleted(ItemCompletedEvent { item }) = &collected.events[0] else {

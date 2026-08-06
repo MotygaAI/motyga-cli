@@ -31,10 +31,10 @@
 //! `MessageProcessor` with overload or internal errors so approval flows do
 //! not hang indefinitely.
 //!
-//! # Relationship to `codex-app-server-client`
+//! # Relationship to `motyga-app-server-client`
 //!
 //! This module provides the low-level runtime handle ([`InProcessClientHandle`]).
-//! Higher-level callers (TUI, exec) should go through `codex-app-server-client`,
+//! Higher-level callers (TUI, exec) should go through `motyga-app-server-client`,
 //! which wraps this module behind a worker task with async request/response
 //! helpers, surface-specific startup policy, and bounded shutdown.
 
@@ -66,28 +66,28 @@ use crate::outgoing_message::QueuedOutgoingMessage;
 use crate::transport::CHANNEL_CAPACITY;
 use crate::transport::OutboundConnectionState;
 use crate::transport::route_outgoing_envelope;
-use codex_analytics::AppServerRpcTransport;
-use codex_app_server_protocol::ClientNotification;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::ConfigWarningNotification;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::Result;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_arg0::Arg0DispatchPaths;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::LoaderOverrides;
-use codex_config::ThreadConfigLoader;
-use codex_core::config::Config;
-use codex_core::resolve_installation_id;
-use codex_exec_server::EnvironmentManager;
-use codex_feedback::CodexFeedback;
-use codex_login::AuthManager;
-use codex_protocol::protocol::SessionSource;
-pub use codex_rollout::StateDbHandle;
-pub use codex_state::log_db::LogDbLayer;
+use motyga_analytics::AppServerRpcTransport;
+use motyga_app_server_protocol::ClientNotification;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::ConfigWarningNotification;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::Result;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::LoaderOverrides;
+use motyga_config::ThreadConfigLoader;
+use motyga_core::config::Config;
+use motyga_core::resolve_installation_id;
+use motyga_exec_server::EnvironmentManager;
+use motyga_feedback::MotygaFeedback;
+use motyga_login::AuthManager;
+use motyga_protocol::protocol::SessionSource;
+pub use motyga_rollout::StateDbHandle;
+pub use motyga_state::log_db::LogDbLayer;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 use tokio::time::timeout;
@@ -131,7 +131,7 @@ pub struct InProcessStartArgs {
     /// Loader used to fetch typed thread config sources before a thread starts.
     pub thread_config_loader: Arc<dyn ThreadConfigLoader>,
     /// Feedback sink used by app-server/core telemetry and logs.
-    pub feedback: CodexFeedback,
+    pub feedback: MotygaFeedback,
     /// SQLite tracing layer used to flush recently emitted logs before feedback upload.
     pub log_db: Option<LogDbLayer>,
     /// Process-wide SQLite state handle shared with embedded app-server consumers.
@@ -142,8 +142,8 @@ pub struct InProcessStartArgs {
     pub config_warnings: Vec<ConfigWarningNotification>,
     /// Session source stamped into thread/session metadata.
     pub session_source: SessionSource,
-    /// Whether auth loading should honor the `CODEX_API_KEY` environment variable.
-    pub enable_codex_api_key_env: bool,
+    /// Whether auth loading should honor the `MOTYGA_API_KEY` environment variable.
+    pub enable_motyga_api_key_env: bool,
     /// Initialize params used for initial handshake.
     pub initialize: InitializeParams,
     /// Capacity used for all runtime queues (clamped to at least 1).
@@ -255,14 +255,14 @@ impl InProcessClientSender {
 /// Handle used by an in-process client to call app-server and consume events.
 ///
 /// This is the low-level runtime handle. Higher-level callers should usually go
-/// through `codex-app-server-client`, which adds worker-task buffering,
+/// through `motyga-app-server-client`, which adds worker-task buffering,
 /// request/response helpers, and surface-specific startup policy.
 pub struct InProcessClientHandle {
     client: InProcessClientSender,
     event_rx: mpsc::Receiver<InProcessServerEvent>,
     runtime_handle: tokio::task::JoinHandle<()>,
     #[cfg(test)]
-    _test_codex_home: Option<tempfile::TempDir>,
+    _test_motyga_home: Option<tempfile::TempDir>,
 }
 
 impl InProcessClientHandle {
@@ -373,14 +373,14 @@ pub async fn start(args: InProcessStartArgs) -> IoResult<InProcessClientHandle> 
 
 async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClientHandle> {
     let channel_capacity = args.channel_capacity.max(1);
-    let installation_id = resolve_installation_id(&args.config.codex_home).await?;
+    let installation_id = resolve_installation_id(&args.config.motyga_home).await?;
     let (client_tx, mut client_rx) = mpsc::channel::<InProcessClientMessage>(channel_capacity);
     let (event_tx, event_rx) = mpsc::channel::<InProcessServerEvent>(channel_capacity);
 
     let runtime_handle = tokio::spawn(async move {
         let (outgoing_tx, mut outgoing_rx) = mpsc::channel::<OutgoingEnvelope>(channel_capacity);
         let auth_manager =
-            AuthManager::shared_from_config(args.config.as_ref(), args.enable_codex_api_key_env)
+            AuthManager::shared_from_config(args.config.as_ref(), args.enable_motyga_api_key_env)
                 .await;
         let analytics_events_client =
             analytics_events_client_from_config(Arc::clone(&auth_manager), args.config.as_ref());
@@ -413,7 +413,7 @@ async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClie
 
         let processor_outgoing = Arc::clone(&outgoing_message_sender);
         let config_manager = ConfigManager::new(
-            args.config.codex_home.to_path_buf(),
+            args.config.motyga_home.to_path_buf(),
             args.cli_overrides,
             args.loader_overrides,
             args.strict_config,
@@ -722,37 +722,37 @@ async fn start_uninitialized(args: InProcessStartArgs) -> IoResult<InProcessClie
         event_rx,
         runtime_handle,
         #[cfg(test)]
-        _test_codex_home: None,
+        _test_motyga_home: None,
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_app_server_protocol::ClientInfo;
-    use codex_app_server_protocol::ConfigRequirementsReadResponse;
-    use codex_app_server_protocol::ExternalAgentConfigImportCompletedNotification;
-    use codex_app_server_protocol::SessionSource as ApiSessionSource;
-    use codex_app_server_protocol::ThreadStartParams;
-    use codex_app_server_protocol::ThreadStartResponse;
-    use codex_app_server_protocol::Turn;
-    use codex_app_server_protocol::TurnCompletedNotification;
-    use codex_app_server_protocol::TurnItemsView;
-    use codex_app_server_protocol::TurnStatus;
-    use codex_core::config::ConfigBuilder;
+    use motyga_app_server_protocol::ClientInfo;
+    use motyga_app_server_protocol::ConfigRequirementsReadResponse;
+    use motyga_app_server_protocol::ExternalAgentConfigImportCompletedNotification;
+    use motyga_app_server_protocol::SessionSource as ApiSessionSource;
+    use motyga_app_server_protocol::ThreadStartParams;
+    use motyga_app_server_protocol::ThreadStartResponse;
+    use motyga_app_server_protocol::Turn;
+    use motyga_app_server_protocol::TurnCompletedNotification;
+    use motyga_app_server_protocol::TurnItemsView;
+    use motyga_app_server_protocol::TurnStatus;
+    use motyga_core::config::ConfigBuilder;
     use pretty_assertions::assert_eq;
     use std::path::Path;
     use tempfile::TempDir;
 
-    async fn build_test_config(codex_home: &Path) -> Config {
+    async fn build_test_config(motyga_home: &Path) -> Config {
         match ConfigBuilder::default()
-            .codex_home(codex_home.to_path_buf())
+            .motyga_home(motyga_home.to_path_buf())
             .build()
             .await
         {
             Ok(config) => config,
-            Err(_) => Config::load_default_with_cli_overrides_for_codex_home(
-                codex_home.to_path_buf(),
+            Err(_) => Config::load_default_with_cli_overrides_for_motyga_home(
+                motyga_home.to_path_buf(),
                 Vec::new(),
             )
             .await
@@ -764,9 +764,9 @@ mod tests {
         session_source: SessionSource,
         channel_capacity: usize,
     ) -> InProcessClientHandle {
-        let codex_home = TempDir::new().expect("temp dir");
-        let config = Arc::new(build_test_config(codex_home.path()).await);
-        let state_db = codex_rollout::state_db::try_init(config.as_ref())
+        let motyga_home = TempDir::new().expect("temp dir");
+        let config = Arc::new(build_test_config(motyga_home.path()).await);
+        let state_db = motyga_rollout::state_db::try_init(config.as_ref())
             .await
             .expect("state db should initialize for in-process test");
         let args = InProcessStartArgs {
@@ -776,17 +776,17 @@ mod tests {
             loader_overrides: LoaderOverrides::default(),
             strict_config: false,
             cloud_config_bundle: CloudConfigBundleLoader::default(),
-            thread_config_loader: Arc::new(codex_config::NoopThreadConfigLoader),
-            feedback: CodexFeedback::new(),
+            thread_config_loader: Arc::new(motyga_config::NoopThreadConfigLoader),
+            feedback: MotygaFeedback::new(),
             log_db: None,
             state_db: Some(state_db),
             environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
             config_warnings: Vec::new(),
             session_source,
-            enable_codex_api_key_env: false,
+            enable_motyga_api_key_env: false,
             initialize: InitializeParams {
                 client_info: ClientInfo {
-                    name: "codex-in-process-test".to_string(),
+                    name: "motyga-in-process-test".to_string(),
                     title: None,
                     version: "0.0.0".to_string(),
                 },
@@ -795,7 +795,7 @@ mod tests {
             channel_capacity,
         };
         let mut client = start(args).await.expect("in-process runtime should start");
-        client._test_codex_home = Some(codex_home);
+        client._test_motyga_home = Some(motyga_home);
         client
     }
 

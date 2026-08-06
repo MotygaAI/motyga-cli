@@ -54,7 +54,7 @@ pub(super) fn validate_mutation_events(
     expected: PluginEventIdentity<'_>,
 ) -> Result<Vec<Value>> {
     let mut validated = Vec::new();
-    for event_type in ["codex_plugin_installed", "codex_plugin_uninstalled"] {
+    for event_type in ["motyga_plugin_installed", "motyga_plugin_uninstalled"] {
         let matching = events
             .iter()
             .filter(|event| event["event_type"] == event_type)

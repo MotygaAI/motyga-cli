@@ -1,14 +1,14 @@
-# codex-app-server-client
+# motyga-app-server-client
 
 Shared in-process app-server client used by conversational CLI surfaces:
 
-- `codex-exec`
-- `codex-tui`
+- `motyga-exec`
+- `motyga-tui`
 
 ## Purpose
 
 This crate centralizes startup and lifecycle management for an in-process
-`codex-app-server` runtime, so CLI clients do not need to duplicate:
+`motyga-app-server` runtime, so CLI clients do not need to duplicate:
 
 - app-server bootstrap and initialize handshake
 - in-memory request/event transport wiring

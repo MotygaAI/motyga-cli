@@ -7,30 +7,30 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use codex_exec_server::EnvironmentManager;
-use codex_extension_api::LoadUserInstructionsFuture;
-use codex_extension_api::LoadedUserInstructions;
-use codex_extension_api::UserInstructionsProvider;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_model_provider::create_model_provider;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_models_manager::bundled_models_response;
-use codex_models_manager::collaboration_mode_presets;
-use codex_models_manager::manager::SharedModelsManager;
-use codex_models_manager::test_support::construct_model_info_offline_for_tests;
-use codex_models_manager::test_support::get_model_offline_for_tests;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::protocol::SessionSource;
+use motyga_exec_server::EnvironmentManager;
+use motyga_extension_api::LoadUserInstructionsFuture;
+use motyga_extension_api::LoadedUserInstructions;
+use motyga_extension_api::UserInstructionsProvider;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_model_provider::create_model_provider;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_models_manager::bundled_models_response;
+use motyga_models_manager::collaboration_mode_presets;
+use motyga_models_manager::manager::SharedModelsManager;
+use motyga_models_manager::test_support::construct_model_info_offline_for_tests;
+use motyga_models_manager::test_support::get_model_offline_for_tests;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::CollaborationModeMask;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::protocol::SessionSource;
 use once_cell::sync::Lazy;
 
 use crate::ThreadManager;
 use crate::config::Config;
-use crate::responses_metadata::CodexResponsesMetadata;
-use crate::responses_metadata::CodexResponsesRequestKind;
+use crate::responses_metadata::MotygaResponsesMetadata;
+use crate::responses_metadata::MotygaResponsesRequestKind;
 use crate::responses_metadata::subagent_header_value;
 use crate::responses_metadata::subagent_metadata_kind;
 use crate::thread_manager;
@@ -63,46 +63,46 @@ pub fn set_deterministic_process_ids(enabled: bool) {
     unified_exec::set_deterministic_process_ids_for_tests(enabled);
 }
 
-pub fn auth_manager_from_auth(auth: CodexAuth) -> Arc<AuthManager> {
+pub fn auth_manager_from_auth(auth: MotygaAuth) -> Arc<AuthManager> {
     AuthManager::from_auth_for_testing(auth)
 }
 
-pub fn auth_manager_from_auth_with_home(auth: CodexAuth, codex_home: PathBuf) -> Arc<AuthManager> {
-    AuthManager::from_auth_for_testing_with_home(auth, codex_home)
+pub fn auth_manager_from_auth_with_home(auth: MotygaAuth, motyga_home: PathBuf) -> Arc<AuthManager> {
+    AuthManager::from_auth_for_testing_with_home(auth, motyga_home)
 }
 
 pub fn thread_manager_with_models_provider(
-    auth: CodexAuth,
+    auth: MotygaAuth,
     provider: ModelProviderInfo,
 ) -> ThreadManager {
     ThreadManager::with_models_provider_for_tests(auth, provider)
 }
 
 pub fn thread_manager_with_models_provider_and_home(
-    auth: CodexAuth,
+    auth: MotygaAuth,
     provider: ModelProviderInfo,
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     environment_manager: Arc<EnvironmentManager>,
 ) -> ThreadManager {
     ThreadManager::with_models_provider_and_home_for_tests(
         auth,
         provider,
-        codex_home,
+        motyga_home,
         environment_manager,
     )
 }
 
 pub fn thread_manager_with_models_provider_home_and_state(
-    auth: CodexAuth,
+    auth: MotygaAuth,
     provider: ModelProviderInfo,
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     environment_manager: Arc<EnvironmentManager>,
     state_db: Option<crate::StateDbHandle>,
 ) -> ThreadManager {
     ThreadManager::with_models_provider_home_and_state_for_tests(
         auth,
         provider,
-        codex_home,
+        motyga_home,
         environment_manager,
         state_db,
     )
@@ -113,7 +113,7 @@ pub async fn start_thread_with_user_shell_override(
     config: Config,
     user_shell_override: crate::shell::Shell,
     supports_openai_form_elicitation: bool,
-) -> codex_protocol::error::Result<crate::NewThread> {
+) -> motyga_protocol::error::Result<crate::NewThread> {
     thread_manager
         .start_thread_with_user_shell_override_for_tests(
             config,
@@ -130,7 +130,7 @@ pub async fn resume_thread_from_rollout_with_user_shell_override(
     auth_manager: Arc<AuthManager>,
     user_shell_override: crate::shell::Shell,
     supports_openai_form_elicitation: bool,
-) -> codex_protocol::error::Result<crate::NewThread> {
+) -> motyga_protocol::error::Result<crate::NewThread> {
     thread_manager
         .resume_thread_from_rollout_with_user_shell_override_for_tests(
             config,
@@ -143,12 +143,12 @@ pub async fn resume_thread_from_rollout_with_user_shell_override(
 }
 
 pub fn models_manager_with_provider(
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     auth_manager: Arc<AuthManager>,
     provider: ModelProviderInfo,
 ) -> SharedModelsManager {
     let provider = create_model_provider(provider, Some(auth_manager));
-    provider.models_manager(codex_home, /*config_model_catalog*/ None)
+    provider.models_manager(motyga_home, /*config_model_catalog*/ None)
 }
 
 pub fn get_model_offline(model: Option<&str>) -> String {
@@ -160,7 +160,7 @@ pub fn construct_model_info_offline(model: &str, config: &Config) -> ModelInfo {
 }
 
 #[derive(Clone, Copy)]
-pub enum TestCodexResponsesRequestKind {
+pub enum TestMotygaResponsesRequestKind {
     Turn,
     Prewarm,
     WebsocketConnection,
@@ -175,20 +175,20 @@ pub fn responses_metadata(
     window_id: String,
     session_source: &SessionSource,
     parent_thread_id: Option<ThreadId>,
-    request_kind: TestCodexResponsesRequestKind,
-) -> CodexResponsesMetadata {
+    request_kind: TestMotygaResponsesRequestKind,
+) -> MotygaResponsesMetadata {
     let request_kind = match request_kind {
-        TestCodexResponsesRequestKind::Turn => Some(CodexResponsesRequestKind::Turn),
-        TestCodexResponsesRequestKind::Prewarm => Some(CodexResponsesRequestKind::Prewarm),
-        TestCodexResponsesRequestKind::WebsocketConnection => None,
+        TestMotygaResponsesRequestKind::Turn => Some(MotygaResponsesRequestKind::Turn),
+        TestMotygaResponsesRequestKind::Prewarm => Some(MotygaResponsesRequestKind::Prewarm),
+        TestMotygaResponsesRequestKind::WebsocketConnection => None,
     };
-    CodexResponsesMetadata {
+    MotygaResponsesMetadata {
         turn_id: request_kind.and(turn_id.map(ToString::to_string)),
         request_kind,
         parent_thread_id,
         subagent_header: subagent_header_value(session_source),
         subagent_kind: request_kind.and_then(|_| subagent_metadata_kind(session_source)),
-        ..CodexResponsesMetadata::new(
+        ..MotygaResponsesMetadata::new(
             installation_id.to_string(),
             session_id.to_string(),
             thread_id.to_string(),

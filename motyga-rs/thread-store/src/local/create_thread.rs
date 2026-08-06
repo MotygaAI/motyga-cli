@@ -3,10 +3,10 @@ use crate::CreateThreadParams;
 use crate::ThreadStoreError;
 use crate::ThreadStoreResult;
 use crate::error::reject_paginated_history_mode;
-use codex_protocol::protocol::ThreadMemoryMode;
-use codex_rollout::RolloutConfig;
-use codex_rollout::RolloutRecorder;
-use codex_rollout::RolloutRecorderParams;
+use motyga_protocol::protocol::ThreadMemoryMode;
+use motyga_rollout::RolloutConfig;
+use motyga_rollout::RolloutRecorder;
+use motyga_rollout::RolloutRecorderParams;
 
 pub(super) async fn create_thread(
     store: &LocalThreadStore,
@@ -21,7 +21,7 @@ pub(super) async fn create_thread(
             message: "local thread store requires a cwd".to_string(),
         })?;
     let config = RolloutConfig {
-        codex_home: store.config.codex_home.clone(),
+        motyga_home: store.config.motyga_home.clone(),
         sqlite_home: store.config.sqlite_home.clone(),
         cwd,
         model_provider_id: params.metadata.model_provider.clone(),

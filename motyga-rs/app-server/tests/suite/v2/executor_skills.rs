@@ -3,15 +3,15 @@ use std::time::Duration;
 use anyhow::Result;
 use app_test_support::TestAppServer;
 use app_test_support::to_response;
-use codex_app_server_protocol::CapabilityRootLocation;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SelectedCapabilityRoot;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::UserInput;
-use codex_utils_path_uri::PathUri;
+use motyga_app_server_protocol::CapabilityRootLocation;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::SelectedCapabilityRoot;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::UserInput;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::responses;
 use tempfile::TempDir;
 use tokio::time::timeout;
@@ -34,9 +34,9 @@ async fn selected_executor_root_exposes_plugin_skill() -> Result<()> {
     )
     .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"
 model = "mock-model"
@@ -57,7 +57,7 @@ stream_max_retries = 0
             server.uri()
         ),
     )?;
-    let local_skill_dir = codex_home.path().join("skills/local-deploy");
+    let local_skill_dir = motyga_home.path().join("skills/local-deploy");
     std::fs::create_dir_all(&local_skill_dir)?;
     std::fs::write(
         local_skill_dir.join("SKILL.md"),
@@ -81,7 +81,7 @@ stream_max_retries = 0
         ),
     )?;
 
-    let mut app_server = TestAppServer::new(codex_home.path()).await?;
+    let mut app_server = TestAppServer::new(motyga_home.path()).await?;
     timeout(READ_TIMEOUT, app_server.initialize()).await??;
 
     let request_id = app_server

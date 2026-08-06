@@ -1,11 +1,11 @@
 use super::*;
-use codex_features::Feature;
-use codex_features::Features;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::request_user_input::RequestUserInputQuestion;
-use codex_protocol::request_user_input::RequestUserInputQuestionOption;
-use codex_tools::JsonSchema;
-use codex_tools::request_user_input_available_modes;
+use motyga_features::Feature;
+use motyga_features::Features;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::request_user_input::RequestUserInputQuestion;
+use motyga_protocol::request_user_input::RequestUserInputQuestionOption;
+use motyga_tools::JsonSchema;
+use motyga_tools::request_user_input_available_modes;
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
 

@@ -29,7 +29,7 @@ class WrapperCommonTest(unittest.TestCase):
         )
 
     def test_forwarded_cargo_args_keep_single_separator(self) -> None:
-        parsed = wrapper_common.parse_wrapper_args(["-p", "codex-core", "--", "--tests"])
+        parsed = wrapper_common.parse_wrapper_args(["-p", "motyga-core", "--", "--tests"])
         final_args = wrapper_common.build_final_args(parsed, Path("/repo/motyga-rs/Cargo.toml"))
 
         self.assertEqual(
@@ -39,14 +39,14 @@ class WrapperCommonTest(unittest.TestCase):
                 "/repo/motyga-rs/Cargo.toml",
                 "--no-deps",
                 "-p",
-                "codex-core",
+                "motyga-core",
                 "--",
                 "--tests",
             ],
         )
 
     def test_fix_does_not_add_all_targets(self) -> None:
-        parsed = wrapper_common.parse_wrapper_args(["--fix", "-p", "codex-core"])
+        parsed = wrapper_common.parse_wrapper_args(["--fix", "-p", "motyga-core"])
         final_args = wrapper_common.build_final_args(parsed, Path("/repo/motyga-rs/Cargo.toml"))
 
         self.assertEqual(
@@ -57,7 +57,7 @@ class WrapperCommonTest(unittest.TestCase):
                 "--no-deps",
                 "--fix",
                 "-p",
-                "codex-core",
+                "motyga-core",
             ],
         )
 

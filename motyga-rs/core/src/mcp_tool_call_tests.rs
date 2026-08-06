@@ -9,31 +9,31 @@ use crate::state::ActiveTurn;
 use crate::test_support::models_manager_with_provider;
 use crate::tools::hook_names::HookToolName;
 use crate::turn_metadata::McpTurnMetadataContext;
-use codex_config::CONFIG_TOML_FILE;
-use codex_config::config_toml::ConfigToml;
-use codex_config::types::AppConfig;
-use codex_config::types::AppToolConfig;
-use codex_config::types::AppToolsConfig;
-use codex_config::types::ApprovalsReviewer;
-use codex_config::types::AppsConfigToml;
-use codex_config::types::McpServerConfig;
-use codex_config::types::McpServerToolConfig;
-use codex_features::Features;
-use codex_hooks::Hooks;
-use codex_hooks::HooksConfig;
-use codex_model_provider::create_model_provider;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::GranularApprovalConfig;
-use codex_protocol::protocol::McpInvocation;
-use codex_protocol::protocol::SessionSource;
-use codex_rollout_trace::ThreadStartedTraceMetadata;
-use codex_rollout_trace::ToolDispatchInvocation;
-use codex_rollout_trace::ToolDispatchPayload;
-use codex_rollout_trace::ToolDispatchRequester;
-use codex_rollout_trace::replay_bundle;
-use codex_utils_path_uri::PathUri;
+use motyga_config::CONFIG_TOML_FILE;
+use motyga_config::config_toml::ConfigToml;
+use motyga_config::types::AppConfig;
+use motyga_config::types::AppToolConfig;
+use motyga_config::types::AppToolsConfig;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_config::types::AppsConfigToml;
+use motyga_config::types::McpServerConfig;
+use motyga_config::types::McpServerToolConfig;
+use motyga_features::Features;
+use motyga_hooks::Hooks;
+use motyga_hooks::HooksConfig;
+use motyga_model_provider::create_model_provider;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::GranularApprovalConfig;
+use motyga_protocol::protocol::McpInvocation;
+use motyga_protocol::protocol::SessionSource;
+use motyga_rollout_trace::ThreadStartedTraceMetadata;
+use motyga_rollout_trace::ToolDispatchInvocation;
+use motyga_rollout_trace::ToolDispatchPayload;
+use motyga_rollout_trace::ToolDispatchRequester;
+use motyga_rollout_trace::replay_bundle;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::hooks::trusted_config_layer_stack;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -88,7 +88,7 @@ fn approval_metadata(
         tool_description: tool_description.map(str::to_string),
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     }
 }
@@ -100,8 +100,8 @@ fn mcp_turn_metadata_context(turn_context: &TurnContext) -> McpTurnMetadataConte
     }
 }
 
-fn write_sample_plugin_mcp(codex_home: &std::path::Path) {
-    let plugin_root = codex_home.join("plugins/cache/test/sample/local");
+fn write_sample_plugin_mcp(motyga_home: &std::path::Path) {
+    let plugin_root = motyga_home.join("plugins/cache/test/sample/local");
     std::fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
     std::fs::write(
         plugin_root.join(".codex-plugin/plugin.json"),
@@ -146,7 +146,7 @@ async fn execute_mcp_tool_call_records_replayable_correlation() -> anyhow::Resul
         .start_tool_dispatch_trace(|| {
             Some(ToolDispatchInvocation {
                 thread_id: session.thread_id.to_string(),
-                codex_turn_id: turn_context.sub_id.clone(),
+                motyga_turn_id: turn_context.sub_id.clone(),
                 tool_call_id: "mcp-call".to_string(),
                 tool_name: "search".to_string(),
                 tool_namespace: Some("mcp__docs__".to_string()),
@@ -198,14 +198,14 @@ fn install_mcp_permission_request_hook(
 ) -> std::path::PathBuf {
     let script_path = turn_context
         .config
-        .codex_home
+        .motyga_home
         .join("mcp_permission_request_hook.py");
     let log_path = turn_context
         .config
-        .codex_home
+        .motyga_home
         .join("mcp_permission_request_hook_log.jsonl");
     let hook_output = hook_output.to_string();
-    std::fs::create_dir_all(&turn_context.config.codex_home)
+    std::fs::create_dir_all(&turn_context.config.motyga_home)
         .expect("create motyga home for MCP permission hook");
     let script = format!(
         r#"import json
@@ -233,7 +233,7 @@ print({hook_output:?})
         )
     };
     std::fs::write(
-        turn_context.config.codex_home.join("hooks.json"),
+        turn_context.config.motyga_home.join("hooks.json"),
         serde_json::json!({
             "hooks": {
                 "PermissionRequest": [{
@@ -249,7 +249,7 @@ print({hook_output:?})
         .to_string(),
     )
     .expect("write hooks.json");
-    let hook_list = codex_hooks::list_hooks(HooksConfig {
+    let hook_list = motyga_hooks::list_hooks(HooksConfig {
         feature_enabled: true,
         config_layer_stack: Some(turn_context.config.config_layer_stack.clone()),
         ..HooksConfig::default()
@@ -257,7 +257,7 @@ print({hook_output:?})
     assert_eq!(hook_list.hooks.len(), 1);
     let trusted_config_layer_stack = trusted_config_layer_stack(
         &turn_context.config.config_layer_stack,
-        &turn_context.config.codex_home,
+        &turn_context.config.motyga_home,
         hook_list.hooks,
     );
 
@@ -286,7 +286,7 @@ fn attach_trace_bundle(
     root: &Path,
 ) -> anyhow::Result<()> {
     let rollout_thread_trace =
-        codex_rollout_trace::ThreadTraceContext::start_root_in_root_for_test(
+        motyga_rollout_trace::ThreadTraceContext::start_root_in_root_for_test(
             root,
             ThreadStartedTraceMetadata {
                 thread_id: session.thread_id.to_string(),
@@ -303,7 +303,7 @@ fn attach_trace_bundle(
                 sandbox_policy: "danger-full-access".to_string(),
             },
         )?;
-    rollout_thread_trace.record_codex_turn_started(turn_context.sub_id.as_str());
+    rollout_thread_trace.record_motyga_turn_started(turn_context.sub_id.as_str());
     session.services.rollout_thread_trace = rollout_thread_trace;
     Ok(())
 }
@@ -348,14 +348,14 @@ fn mcp_app_resource_uri_reads_known_tool_meta_keys() {
 }
 
 #[test]
-fn openai_file_params_are_only_honored_for_codex_apps() {
+fn openai_file_params_are_only_honored_for_motyga_apps() {
     let meta = serde_json::json!({
         "openai/fileParams": ["file"],
     });
     let meta = meta.as_object();
 
     assert_eq!(
-        openai_file_input_params_for_server(CODEX_APPS_MCP_SERVER_NAME, meta),
+        openai_file_input_params_for_server(MOTYGA_APPS_MCP_SERVER_NAME, meta),
         Some(vec!["file".to_string()])
     );
     assert_eq!(
@@ -490,7 +490,7 @@ async fn mcp_tool_call_span_records_error_type_and_error_code() {
         &session,
         &turn_context,
         McpToolCallSpanFields {
-            server_name: CODEX_APPS_MCP_SERVER_NAME,
+            server_name: MOTYGA_APPS_MCP_SERVER_NAME,
             tool_name: "calendar_search",
             call_id: "call-123",
             server_origin: Some("https://chatgpt.com/api/codex/ps/mcp"),
@@ -508,7 +508,7 @@ async fn mcp_tool_call_span_records_error_type_and_error_code() {
     let logs = String::from_utf8(buffer.lock().expect("buffer lock").clone()).expect("utf8 logs");
     assert!(
         logs.contains("error.type=\"tool_result\"")
-            && logs.contains("codex.mcp.error.code=\"RATE_LIMITED\""),
+            && logs.contains("motyga.mcp.error.code=\"RATE_LIMITED\""),
         "missing MCP tool error span fields\nlogs:\n{logs}"
     );
 }
@@ -560,7 +560,7 @@ async fn mcp_result_telemetry_span_logs(meta: Option<serde_json::Value>) -> Stri
 #[tokio::test]
 async fn mcp_result_telemetry_records_allowlisted_span_fields() {
     let logs = mcp_result_telemetry_span_logs(Some(serde_json::json!({
-        "codex/telemetry": {
+        "motyga/telemetry": {
             "span": {
                 "target_id": "com.apple.reminders",
                 "did_trigger_server_user_flow": false,
@@ -571,8 +571,8 @@ async fn mcp_result_telemetry_records_allowlisted_span_fields() {
     .await;
 
     assert!(
-        logs.contains("codex.mcp.target.id=\"com.apple.reminders\"")
-            && logs.contains("codex.mcp.server_user_flow.triggered=false"),
+        logs.contains("motyga.mcp.target.id=\"com.apple.reminders\"")
+            && logs.contains("motyga.mcp.server_user_flow.triggered=false"),
         "missing MCP result telemetry span fields\nlogs:\n{logs}"
     );
     assert!(
@@ -585,7 +585,7 @@ async fn mcp_result_telemetry_records_allowlisted_span_fields() {
 #[tokio::test]
 async fn mcp_result_telemetry_ignores_invalid_and_missing_values() {
     let invalid_logs = mcp_result_telemetry_span_logs(Some(serde_json::json!({
-        "codex/telemetry": {
+        "motyga/telemetry": {
             "span": {
                 "target_id": 123,
                 "did_trigger_server_user_flow": "false",
@@ -594,25 +594,25 @@ async fn mcp_result_telemetry_ignores_invalid_and_missing_values() {
     })))
     .await;
     assert!(
-        !invalid_logs.contains("codex.mcp.target.id=")
-            && !invalid_logs.contains("codex.mcp.server_user_flow.triggered="),
+        !invalid_logs.contains("motyga.mcp.target.id=")
+            && !invalid_logs.contains("motyga.mcp.server_user_flow.triggered="),
         "invalid MCP result telemetry values should be ignored\nlogs:\n{invalid_logs}"
     );
 
     let missing_logs = mcp_result_telemetry_span_logs(Some(serde_json::json!({
-        "codex/telemetry": {},
+        "motyga/telemetry": {},
     })))
     .await;
     assert!(
-        !missing_logs.contains("codex.mcp.target.id=")
-            && !missing_logs.contains("codex.mcp.server_user_flow.triggered="),
+        !missing_logs.contains("motyga.mcp.target.id=")
+            && !missing_logs.contains("motyga.mcp.server_user_flow.triggered="),
         "missing MCP result telemetry span object should be ignored\nlogs:\n{missing_logs}"
     );
 
     let no_meta_logs = mcp_result_telemetry_span_logs(/*meta*/ None).await;
     assert!(
-        !no_meta_logs.contains("codex.mcp.target.id=")
-            && !no_meta_logs.contains("codex.mcp.server_user_flow.triggered="),
+        !no_meta_logs.contains("motyga.mcp.target.id=")
+            && !no_meta_logs.contains("motyga.mcp.server_user_flow.triggered="),
         "missing MCP result metadata should be ignored\nlogs:\n{no_meta_logs}"
     );
 }
@@ -622,7 +622,7 @@ async fn mcp_result_telemetry_truncates_long_target_id() {
     let truncated = "x".repeat(MCP_RESULT_TELEMETRY_TARGET_ID_MAX_CHARS);
     let target_id = format!("{truncated}tail");
     let logs = mcp_result_telemetry_span_logs(Some(serde_json::json!({
-        "codex/telemetry": {
+        "motyga/telemetry": {
             "span": {
                 "target_id": target_id,
             },
@@ -631,7 +631,7 @@ async fn mcp_result_telemetry_truncates_long_target_id() {
     .await;
 
     assert!(
-        logs.contains(&format!("codex.mcp.target.id=\"{truncated}\"")) && !logs.contains("tail"),
+        logs.contains(&format!("motyga.mcp.target.id=\"{truncated}\"")) && !logs.contains("tail"),
         "long MCP result telemetry target_id should be truncated\nlogs:\n{logs}"
     );
 }
@@ -653,7 +653,7 @@ fn truncates_strings_on_char_boundaries() {
 fn approval_elicitation_request_uses_message_override_and_preserves_tool_params_keys() {
     let question = build_mcp_tool_approval_question(
         "q".to_string(),
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         "create_event",
         Some("Calendar"),
         prompt_options(
@@ -663,7 +663,7 @@ fn approval_elicitation_request_uses_message_override_and_preserves_tool_params_
     );
 
     let request = build_mcp_tool_approval_elicitation_request(McpToolApprovalElicitationRequest {
-        server: CODEX_APPS_MCP_SERVER_NAME,
+        server: MOTYGA_APPS_MCP_SERVER_NAME,
         metadata: Some(&approval_metadata(
             Some("calendar"),
             Some("Calendar"),
@@ -764,10 +764,10 @@ fn custom_mcp_tool_question_mentions_server_name() {
 }
 
 #[test]
-fn codex_apps_tool_question_uses_fallback_app_label() {
+fn motyga_apps_tool_question_uses_fallback_app_label() {
     let question = build_mcp_tool_approval_question(
         "q".to_string(),
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         "run_action",
         /*connector_name*/ None,
         prompt_options(
@@ -783,10 +783,10 @@ fn codex_apps_tool_question_uses_fallback_app_label() {
 }
 
 #[test]
-fn trusted_codex_apps_tool_question_offers_always_allow() {
+fn trusted_motyga_apps_tool_question_offers_always_allow() {
     let question = build_mcp_tool_approval_question(
         "q".to_string(),
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         "run_action",
         Some("Calendar"),
         prompt_options(
@@ -819,16 +819,16 @@ fn trusted_codex_apps_tool_question_offers_always_allow() {
 }
 
 #[test]
-fn codex_apps_tool_question_without_elicitation_omits_always_allow() {
+fn motyga_apps_tool_question_without_elicitation_omits_always_allow() {
     let session_key = McpToolApprovalKey {
-        server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
+        server: MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
         connector_id: Some("calendar".to_string()),
         tool_name: "run_action".to_string(),
     };
     let persistent_key = session_key.clone();
     let question = build_mcp_tool_approval_question(
         "q".to_string(),
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         "run_action",
         Some("Calendar"),
         mcp_tool_approval_prompt_options(
@@ -911,9 +911,9 @@ fn custom_servers_support_session_and_persistent_approval() {
 }
 
 #[test]
-fn codex_apps_connectors_support_persistent_approval() {
+fn motyga_apps_connectors_support_persistent_approval() {
     let invocation = McpInvocation {
-        server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
+        server: MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
         tool: "calendar/list_events".to_string(),
         arguments: None,
     };
@@ -925,7 +925,7 @@ fn codex_apps_connectors_support_persistent_approval() {
         /*tool_description*/ None,
     );
     let expected = McpToolApprovalKey {
-        server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
+        server: MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
         connector_id: Some("calendar".to_string()),
         tool_name: "calendar/list_events".to_string(),
     };
@@ -1081,7 +1081,7 @@ async fn mcp_tool_call_request_meta_includes_turn_metadata_for_custom_server() {
     )
     .expect("custom servers should receive turn metadata");
     let turn_metadata = meta
-        .get(crate::X_CODEX_TURN_METADATA_HEADER)
+        .get(crate::X_MOTYGA_TURN_METADATA_HEADER)
         .expect("turn metadata should be present");
 
     assert_eq!(
@@ -1103,7 +1103,7 @@ async fn mcp_tool_call_request_meta_includes_turn_metadata_for_custom_server() {
     assert_eq!(
         meta,
         serde_json::json!({
-            crate::X_CODEX_TURN_METADATA_HEADER: expected_turn_metadata,
+            crate::X_MOTYGA_TURN_METADATA_HEADER: expected_turn_metadata,
         })
     );
 }
@@ -1123,7 +1123,7 @@ async fn mcp_tool_call_request_meta_includes_turn_started_at_unix_ms() {
     )
     .expect("custom servers should receive turn metadata");
     let turn_metadata = meta
-        .get(crate::X_CODEX_TURN_METADATA_HEADER)
+        .get(crate::X_MOTYGA_TURN_METADATA_HEADER)
         .expect("turn metadata should be present");
 
     assert_eq!(
@@ -1186,14 +1186,14 @@ async fn plugin_mcp_tool_call_request_meta_includes_plugin_id() {
     assert_eq!(
         build_mcp_tool_call_request_meta(&turn_context, "sample", "call-plugin", Some(&metadata),),
         Some(serde_json::json!({
-            crate::X_CODEX_TURN_METADATA_HEADER: expected_turn_metadata,
+            crate::X_MOTYGA_TURN_METADATA_HEADER: expected_turn_metadata,
             MCP_TOOL_PLUGIN_ID_META_KEY: "sample@test",
         }))
     );
 }
 
 #[test]
-fn mcp_tool_call_item_metadata_only_trusts_codex_apps_identity() {
+fn mcp_tool_call_item_metadata_only_trusts_motyga_apps_identity() {
     let mut metadata = approval_metadata(
         Some("asdk_app_0123456789abcdef0123456789abcdef"),
         Some("Calendar"),
@@ -1203,18 +1203,18 @@ fn mcp_tool_call_item_metadata_only_trusts_codex_apps_identity() {
     );
     metadata.link_id = Some("link_fedcba9876543210fedcba9876543210".to_string());
     metadata.template_id = Some("calendar_template".to_string());
-    metadata.codex_apps_meta = Some(
+    metadata.motyga_apps_meta = Some(
         serde_json::json!({
             "resource_uri": "/asdk_app_0123456789abcdef0123456789abcdef/link_fedcba9876543210fedcba9876543210/create_event",
             "template_id": "calendar_template",
         })
         .as_object()
         .cloned()
-        .expect("_codex_apps metadata should be an object"),
+        .expect("_motyga_apps metadata should be an object"),
     );
 
     assert_eq!(
-        McpToolCallItemMetadata::from_tool_metadata(CODEX_APPS_MCP_SERVER_NAME, Some(&metadata),),
+        McpToolCallItemMetadata::from_tool_metadata(MOTYGA_APPS_MCP_SERVER_NAME, Some(&metadata),),
         McpToolCallItemMetadata {
             connector_id: Some("asdk_app_0123456789abcdef0123456789abcdef".to_string()),
             link_id: Some("link_fedcba9876543210fedcba9876543210".to_string()),
@@ -1248,7 +1248,7 @@ async fn mcp_tool_call_item_includes_app_identity() {
         &turn_context,
         "call-plugin",
         McpInvocation {
-            server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
+            server: MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
             tool: "echo".to_string(),
             arguments: None,
         },
@@ -1289,7 +1289,7 @@ async fn mcp_tool_call_item_includes_app_identity() {
 }
 
 #[tokio::test]
-async fn codex_apps_tool_call_request_meta_includes_turn_metadata_and_codex_apps_meta() {
+async fn motyga_apps_tool_call_request_meta_includes_turn_metadata_and_motyga_apps_meta() {
     let (_, turn_context) = make_session_and_context().await;
     let expected_turn_metadata = turn_context
         .turn_metadata_state
@@ -1307,7 +1307,7 @@ async fn codex_apps_tool_call_request_meta_includes_turn_metadata_and_codex_apps
         tool_description: Some("Create a calendar event.".to_string()),
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: Some(
+        motyga_apps_meta: Some(
             serde_json::json!({
                 "resource_uri": "connector://calendar/tools/calendar_create_event",
                 "contains_mcp_source": true,
@@ -1315,7 +1315,7 @@ async fn codex_apps_tool_call_request_meta_includes_turn_metadata_and_codex_apps
             })
             .as_object()
             .cloned()
-            .expect("_codex_apps metadata should be an object"),
+            .expect("_motyga_apps metadata should be an object"),
         ),
         openai_file_input_params: None,
     };
@@ -1323,13 +1323,13 @@ async fn codex_apps_tool_call_request_meta_includes_turn_metadata_and_codex_apps
     assert_eq!(
         build_mcp_tool_call_request_meta(
             &turn_context,
-            CODEX_APPS_MCP_SERVER_NAME,
+            MOTYGA_APPS_MCP_SERVER_NAME,
             "call_abc123xyz789",
             Some(&metadata),
         ),
         Some(serde_json::json!({
-            crate::X_CODEX_TURN_METADATA_HEADER: expected_turn_metadata,
-            MCP_TOOL_CODEX_APPS_META_KEY: {
+            crate::X_MOTYGA_TURN_METADATA_HEADER: expected_turn_metadata,
+            MCP_TOOL_MOTYGA_APPS_META_KEY: {
                 "call_id": "call_abc123xyz789",
                 "resource_uri": "connector://calendar/tools/calendar_create_event",
                 "contains_mcp_source": true,
@@ -1340,7 +1340,7 @@ async fn codex_apps_tool_call_request_meta_includes_turn_metadata_and_codex_apps
 }
 
 #[tokio::test]
-async fn codex_apps_tool_call_request_meta_includes_call_id_without_existing_codex_apps_meta() {
+async fn motyga_apps_tool_call_request_meta_includes_call_id_without_existing_motyga_apps_meta() {
     let (_, turn_context) = make_session_and_context().await;
     let expected_turn_metadata = turn_context
         .turn_metadata_state
@@ -1350,20 +1350,20 @@ async fn codex_apps_tool_call_request_meta_includes_call_id_without_existing_cod
     assert_eq!(
         build_mcp_tool_call_request_meta(
             &turn_context,
-            CODEX_APPS_MCP_SERVER_NAME,
+            MOTYGA_APPS_MCP_SERVER_NAME,
             "call_abc123xyz789",
             /*metadata*/ None,
         ),
         Some(serde_json::json!({
-            crate::X_CODEX_TURN_METADATA_HEADER: expected_turn_metadata,
-            MCP_TOOL_CODEX_APPS_META_KEY: {
+            crate::X_MOTYGA_TURN_METADATA_HEADER: expected_turn_metadata,
+            MCP_TOOL_MOTYGA_APPS_META_KEY: {
                 "call_id": "call_abc123xyz789",
             },
         }))
     );
 }
 
-fn codex_apps_auth_failure_result() -> CallToolResult {
+fn motyga_apps_auth_failure_result() -> CallToolResult {
     CallToolResult {
         content: vec![serde_json::json!({
             "type": "text",
@@ -1372,7 +1372,7 @@ fn codex_apps_auth_failure_result() -> CallToolResult {
         structured_content: None,
         is_error: Some(true),
         meta: Some(serde_json::json!({
-            MCP_TOOL_CODEX_APPS_META_KEY: {
+            MCP_TOOL_MOTYGA_APPS_META_KEY: {
                 "connector_auth_failure": {
                     "is_auth_failure": true,
                     "auth_reason": "reauthentication_required",
@@ -1388,7 +1388,7 @@ fn codex_apps_auth_failure_result() -> CallToolResult {
     }
 }
 
-fn codex_apps_auth_failure_metadata() -> McpToolApprovalMetadata {
+fn motyga_apps_auth_failure_metadata() -> McpToolApprovalMetadata {
     approval_metadata(
         Some("connector_calendar"),
         Some("Google Calendar"),
@@ -1398,22 +1398,22 @@ fn codex_apps_auth_failure_metadata() -> McpToolApprovalMetadata {
     )
 }
 
-async fn host_owned_codex_apps_manager(
+async fn host_owned_motyga_apps_manager(
     session: &Session,
     turn_context: &TurnContext,
-) -> Arc<codex_mcp::McpConnectionManager> {
+) -> Arc<motyga_mcp::McpConnectionManager> {
     let auth = session.services.auth_manager.auth().await;
     let startup_cancellation_token = CancellationToken::new();
     startup_cancellation_token.cancel();
     let (tx_event, _rx_event) = async_channel::unbounded();
     let mcp_servers = HashMap::from([(
-        CODEX_APPS_MCP_SERVER_NAME.to_string(),
-        codex_mcp::EffectiveMcpServer::configured(codex_mcp::codex_apps_mcp_server_config(
+        MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
+        motyga_mcp::EffectiveMcpServer::configured(motyga_mcp::motyga_apps_mcp_server_config(
             "https://api.motyga.com",
             /*apps_mcp_product_sku*/ None,
         )),
     )]);
-    let manager = codex_mcp::McpConnectionManager::new(
+    let manager = motyga_mcp::McpConnectionManager::new(
         &mcp_servers,
         turn_context.config.mcp_oauth_credentials_store_mode,
         turn_context.config.auth_keyring_backend_kind(),
@@ -1423,41 +1423,41 @@ async fn host_owned_codex_apps_manager(
         tx_event,
         startup_cancellation_token,
         turn_context.permission_profile(),
-        codex_mcp::McpRuntimeContext::new(
+        motyga_mcp::McpRuntimeContext::new(
             session.services.turn_environments.environment_manager(),
             {
                 #[allow(deprecated)]
                 turn_context.cwd.to_path_buf()
             },
         ),
-        turn_context.config.codex_home.to_path_buf(),
-        session.services.mcp_manager.codex_apps_tools_cache(),
-        codex_mcp::codex_apps_tools_cache_key(auth.as_ref()),
+        turn_context.config.motyga_home.to_path_buf(),
+        session.services.mcp_manager.motyga_apps_tools_cache(),
+        motyga_mcp::motyga_apps_tools_cache_key(auth.as_ref()),
         turn_context.config.prefix_mcp_tool_names(),
         rmcp::model::ElicitationCapability::default(),
         /*supports_openai_form_elicitation*/ false,
-        codex_mcp::ToolPluginProvenance::default(),
+        motyga_mcp::ToolPluginProvenance::default(),
         auth.as_ref(),
         /*elicitation_reviewer*/ None,
-        codex_mcp::ElicitationRequestRouter::default(),
+        motyga_mcp::ElicitationRequestRouter::default(),
     )
     .await;
     Arc::new(manager)
 }
 
 #[tokio::test]
-async fn codex_apps_auth_elicitation_feature_disabled_returns_original_result() {
+async fn motyga_apps_auth_elicitation_feature_disabled_returns_original_result() {
     let (session, turn_context, rx_event) = make_session_and_context_with_rx().await;
-    let manager = host_owned_codex_apps_manager(&session, &turn_context).await;
-    let result = codex_apps_auth_failure_result();
-    let metadata = codex_apps_auth_failure_metadata();
+    let manager = host_owned_motyga_apps_manager(&session, &turn_context).await;
+    let result = motyga_apps_auth_failure_result();
+    let metadata = motyga_apps_auth_failure_metadata();
 
-    let returned = maybe_request_codex_apps_auth_elicitation(
+    let returned = maybe_request_motyga_apps_auth_elicitation(
         &session,
         &turn_context,
         manager.as_ref(),
         "call_123",
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         Some(&metadata),
         result.clone(),
     )
@@ -1468,22 +1468,22 @@ async fn codex_apps_auth_elicitation_feature_disabled_returns_original_result() 
 }
 
 #[tokio::test]
-async fn codex_apps_auth_elicitation_non_host_owned_server_returns_original_result() {
+async fn motyga_apps_auth_elicitation_non_host_owned_server_returns_original_result() {
     let (session, mut turn_context, rx_event) = make_session_and_context_with_rx().await;
     let mut features = Features::with_defaults();
     features.enable(Feature::AuthElicitation);
     let turn_context = Arc::get_mut(&mut turn_context).expect("single turn context ref");
     Arc::make_mut(&mut turn_context.config).features = ManagedFeatures::from(features);
-    let result = codex_apps_auth_failure_result();
-    let metadata = codex_apps_auth_failure_metadata();
+    let result = motyga_apps_auth_failure_result();
+    let metadata = motyga_apps_auth_failure_metadata();
     let manager = session.services.latest_mcp_runtime().manager_arc();
 
-    let returned = maybe_request_codex_apps_auth_elicitation(
+    let returned = maybe_request_motyga_apps_auth_elicitation(
         &session,
         turn_context,
         manager.as_ref(),
         "call_123",
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         Some(&metadata),
         result.clone(),
     )
@@ -1494,9 +1494,9 @@ async fn codex_apps_auth_elicitation_non_host_owned_server_returns_original_resu
 }
 
 #[tokio::test]
-async fn codex_apps_auth_elicitation_disallowed_by_policy_returns_original_result() {
+async fn motyga_apps_auth_elicitation_disallowed_by_policy_returns_original_result() {
     let (session, mut turn_context, rx_event) = make_session_and_context_with_rx().await;
-    let manager = host_owned_codex_apps_manager(&session, &turn_context).await;
+    let manager = host_owned_motyga_apps_manager(&session, &turn_context).await;
     let mut features = Features::with_defaults();
     features.enable(Feature::AuthElicitation);
     let turn_context = Arc::get_mut(&mut turn_context).expect("single turn context ref");
@@ -1505,15 +1505,15 @@ async fn codex_apps_auth_elicitation_disallowed_by_policy_returns_original_resul
         .approval_policy
         .set(AskForApproval::Never)
         .expect("test setup should allow updating approval policy");
-    let result = codex_apps_auth_failure_result();
-    let metadata = codex_apps_auth_failure_metadata();
+    let result = motyga_apps_auth_failure_result();
+    let metadata = motyga_apps_auth_failure_metadata();
 
-    let returned = maybe_request_codex_apps_auth_elicitation(
+    let returned = maybe_request_motyga_apps_auth_elicitation(
         &session,
         turn_context,
         manager.as_ref(),
         "call_123",
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         Some(&metadata),
         result.clone(),
     )
@@ -1524,9 +1524,9 @@ async fn codex_apps_auth_elicitation_disallowed_by_policy_returns_original_resul
 }
 
 #[tokio::test]
-async fn codex_apps_auth_elicitation_granular_mcp_disabled_returns_original_result() {
+async fn motyga_apps_auth_elicitation_granular_mcp_disabled_returns_original_result() {
     let (session, mut turn_context, rx_event) = make_session_and_context_with_rx().await;
-    let manager = host_owned_codex_apps_manager(&session, &turn_context).await;
+    let manager = host_owned_motyga_apps_manager(&session, &turn_context).await;
     let mut features = Features::with_defaults();
     features.enable(Feature::AuthElicitation);
     let turn_context = Arc::get_mut(&mut turn_context).expect("single turn context ref");
@@ -1541,15 +1541,15 @@ async fn codex_apps_auth_elicitation_granular_mcp_disabled_returns_original_resu
             mcp_elicitations: false,
         }))
         .expect("test setup should allow updating approval policy");
-    let result = codex_apps_auth_failure_result();
-    let metadata = codex_apps_auth_failure_metadata();
+    let result = motyga_apps_auth_failure_result();
+    let metadata = motyga_apps_auth_failure_metadata();
 
-    let returned = maybe_request_codex_apps_auth_elicitation(
+    let returned = maybe_request_motyga_apps_auth_elicitation(
         &session,
         turn_context,
         manager.as_ref(),
         "call_123",
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         Some(&metadata),
         result.clone(),
     )
@@ -1560,9 +1560,9 @@ async fn codex_apps_auth_elicitation_granular_mcp_disabled_returns_original_resu
 }
 
 #[tokio::test]
-async fn codex_apps_auth_elicitation_feature_enabled_requests_elicitation() {
+async fn motyga_apps_auth_elicitation_feature_enabled_requests_elicitation() {
     let (session, mut turn_context, rx_event) = make_session_and_context_with_rx().await;
-    let manager = host_owned_codex_apps_manager(&session, &turn_context).await;
+    let manager = host_owned_motyga_apps_manager(&session, &turn_context).await;
     *session.active_turn.lock().await = Some(ActiveTurn::default());
     let mut features = Features::with_defaults();
     features.enable(Feature::AuthElicitation);
@@ -1570,20 +1570,20 @@ async fn codex_apps_auth_elicitation_feature_enabled_requests_elicitation() {
         let turn_context = Arc::get_mut(&mut turn_context).expect("single turn context ref");
         Arc::make_mut(&mut turn_context.config).features = ManagedFeatures::from(features);
     }
-    let result = codex_apps_auth_failure_result();
-    let metadata = codex_apps_auth_failure_metadata();
+    let result = motyga_apps_auth_failure_result();
+    let metadata = motyga_apps_auth_failure_metadata();
 
     let request_task = tokio::spawn({
         let session = Arc::clone(&session);
         let turn_context = Arc::clone(&turn_context);
         let manager = Arc::clone(&manager);
         async move {
-            maybe_request_codex_apps_auth_elicitation(
+            maybe_request_motyga_apps_auth_elicitation(
                 &session,
                 &turn_context,
                 manager.as_ref(),
                 "call_123",
-                CODEX_APPS_MCP_SERVER_NAME,
+                MOTYGA_APPS_MCP_SERVER_NAME,
                 Some(&metadata),
                 result,
             )
@@ -1600,20 +1600,20 @@ async fn codex_apps_auth_elicitation_feature_enabled_requests_elicitation() {
             break request;
         }
     };
-    assert_eq!(request.server_name, CODEX_APPS_MCP_SERVER_NAME);
+    assert_eq!(request.server_name, MOTYGA_APPS_MCP_SERVER_NAME);
     assert_eq!(
         request.id,
-        codex_protocol::mcp::RequestId::String("codex_apps_auth_call_123".to_string())
+        motyga_protocol::mcp::RequestId::String("motyga_apps_auth_call_123".to_string())
     );
     assert!(matches!(
         request.request,
-        codex_protocol::approvals::ElicitationRequest::Url { .. }
+        motyga_protocol::approvals::ElicitationRequest::Url { .. }
     ));
 
     session
         .resolve_elicitation(
-            CODEX_APPS_MCP_SERVER_NAME.to_string(),
-            rmcp::model::RequestId::String("codex_apps_auth_call_123".into()),
+            MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
+            rmcp::model::RequestId::String("motyga_apps_auth_call_123".into()),
             ElicitationResponse {
                 action: ElicitationAction::Accept,
                 content: None,
@@ -1739,7 +1739,7 @@ fn approval_elicitation_meta_merges_session_and_always_persist_for_custom_server
 #[test]
 fn guardian_mcp_review_request_includes_invocation_metadata() {
     let invocation = McpInvocation {
-        server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
+        server: MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
         tool: "browser_navigate".to_string(),
         arguments: Some(serde_json::json!({
             "url": "https://example.com",
@@ -1760,7 +1760,7 @@ fn guardian_mcp_review_request_includes_invocation_metadata() {
         request,
         GuardianApprovalRequest::McpToolCall {
             id: "call-1".to_string(),
-            server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
+            server: MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
             tool_name: "browser_navigate".to_string(),
             arguments: Some(serde_json::json!({
                 "url": "https://example.com",
@@ -1795,7 +1795,7 @@ fn guardian_mcp_review_request_includes_annotations_when_present() {
         tool_description: None,
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     };
 
@@ -1875,7 +1875,7 @@ async fn guardian_review_decision_maps_to_mcp_tool_decision() {
         "review-id".to_string(),
         crate::guardian::GuardianRejection {
             rationale: "too risky".to_string(),
-            source: codex_protocol::protocol::GuardianAssessmentDecisionSource::Agent,
+            source: motyga_protocol::protocol::GuardianAssessmentDecisionSource::Agent,
         },
     );
     let denial = mcp_tool_approval_decision_from_guardian(
@@ -1918,10 +1918,10 @@ async fn guardian_review_decision_maps_to_mcp_tool_decision() {
 }
 
 #[test]
-fn approval_elicitation_meta_includes_connector_source_for_codex_apps() {
+fn approval_elicitation_meta_includes_connector_source_for_motyga_apps() {
     assert_eq!(
         build_mcp_tool_approval_elicitation_meta(
-            CODEX_APPS_MCP_SERVER_NAME,
+            MOTYGA_APPS_MCP_SERVER_NAME,
             Some(&approval_metadata(
                 Some("calendar"),
                 Some("Calendar"),
@@ -1956,7 +1956,7 @@ fn approval_elicitation_meta_includes_connector_source_for_codex_apps() {
 fn approval_elicitation_meta_merges_session_and_always_persist_with_connector_source() {
     assert_eq!(
         build_mcp_tool_approval_elicitation_meta(
-            CODEX_APPS_MCP_SERVER_NAME,
+            MOTYGA_APPS_MCP_SERVER_NAME,
             Some(&approval_metadata(
                 Some("calendar"),
                 Some("Calendar"),
@@ -2071,15 +2071,15 @@ fn accepted_elicitation_without_content_defaults_to_accept() {
 }
 
 #[tokio::test]
-async fn persist_codex_app_tool_approval_writes_tool_override() {
+async fn persist_motyga_app_tool_approval_writes_tool_override() {
     let tmp = tempdir().expect("tempdir");
     let config = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .build()
         .await
         .expect("load config");
 
-    persist_codex_app_tool_approval(&config, "calendar", "calendar/list_events")
+    persist_motyga_app_tool_approval(&config, "calendar", "calendar/list_events")
         .await
         .expect("persist approval");
 
@@ -2124,7 +2124,7 @@ async fn persist_custom_mcp_tool_approval_writes_tool_override() {
     )
     .expect("seed config");
     let config = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .build()
         .await
         .expect("load config");
@@ -2166,7 +2166,7 @@ approval_mode = "prompt"
     )
     .expect("seed config");
     let config = ConfigBuilder::default()
-        .codex_home(tmp.path().to_path_buf())
+        .motyga_home(tmp.path().to_path_buf())
         .build()
         .await
         .expect("load config");
@@ -2190,10 +2190,10 @@ approval_mode = "prompt"
 #[tokio::test]
 async fn custom_mcp_tool_approval_mode_uses_plugin_mcp_policy() {
     let (session, mut turn_context) = make_session_and_context().await;
-    let codex_home = session.codex_home().await;
-    write_sample_plugin_mcp(codex_home.as_path());
+    let motyga_home = session.motyga_home().await;
+    write_sample_plugin_mcp(motyga_home.as_path());
     std::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"
 [features]
 plugins = true
@@ -2210,7 +2210,7 @@ approval_mode = "approve"
     )
     .expect("seed config");
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.to_path_buf())
+        .motyga_home(motyga_home.to_path_buf())
         .build()
         .await
         .expect("load config");
@@ -2230,10 +2230,10 @@ approval_mode = "approve"
 #[tokio::test]
 async fn custom_mcp_tool_approval_mode_uses_updated_plugin_mcp_policy_after_cache_warm() {
     let (session, mut turn_context) = make_session_and_context().await;
-    let codex_home = session.codex_home().await;
-    write_sample_plugin_mcp(codex_home.as_path());
+    let motyga_home = session.motyga_home().await;
+    write_sample_plugin_mcp(motyga_home.as_path());
     std::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"
 [features]
 plugins = true
@@ -2244,7 +2244,7 @@ enabled = true
     )
     .expect("seed config");
     let initial_config = ConfigBuilder::default()
-        .codex_home(codex_home.to_path_buf())
+        .motyga_home(motyga_home.to_path_buf())
         .build()
         .await
         .expect("load initial config");
@@ -2254,7 +2254,7 @@ enabled = true
         .plugins_for_config(&initial_config.plugins_config_input())
         .await;
     std::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"
 [features]
 plugins = true
@@ -2268,7 +2268,7 @@ approval_mode = "approve"
     )
     .expect("update config");
     let updated_config = ConfigBuilder::default()
-        .codex_home(codex_home.to_path_buf())
+        .motyga_home(motyga_home.to_path_buf())
         .build()
         .await
         .expect("load updated config");
@@ -2283,10 +2283,10 @@ approval_mode = "approve"
 #[tokio::test]
 async fn maybe_persist_mcp_tool_approval_reloads_session_config() {
     let (session, turn_context) = make_session_and_context().await;
-    let codex_home = session.codex_home().await;
-    std::fs::create_dir_all(&codex_home).expect("create motyga home");
+    let motyga_home = session.motyga_home().await;
+    std::fs::create_dir_all(&motyga_home).expect("create motyga home");
     let key = McpToolApprovalKey {
-        server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
+        server: MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
         connector_id: Some("calendar".to_string()),
         tool_name: "calendar/list_events".to_string(),
     };
@@ -2322,15 +2322,15 @@ async fn maybe_persist_mcp_tool_approval_reloads_session_config() {
 #[tokio::test]
 async fn maybe_persist_mcp_tool_approval_reloads_session_config_for_custom_server() {
     let (session, mut turn_context) = make_session_and_context().await;
-    let codex_home = session.codex_home().await;
-    std::fs::create_dir_all(&codex_home).expect("create motyga home");
+    let motyga_home = session.motyga_home().await;
+    std::fs::create_dir_all(&motyga_home).expect("create motyga home");
     std::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         "[mcp_servers.docs]\ncommand = \"docs-server\"\n",
     )
     .expect("seed config");
     let config = ConfigBuilder::without_managed_config_for_tests()
-        .codex_home(codex_home.clone().to_path_buf())
+        .motyga_home(motyga_home.clone().to_path_buf())
         .build()
         .await
         .expect("load config");
@@ -2370,10 +2370,10 @@ async fn maybe_persist_mcp_tool_approval_reloads_session_config_for_custom_serve
 #[tokio::test]
 async fn maybe_persist_mcp_tool_approval_writes_plugin_mcp_policy() {
     let (session, mut turn_context) = make_session_and_context().await;
-    let codex_home = session.codex_home().await;
-    write_sample_plugin_mcp(codex_home.as_path());
+    let motyga_home = session.motyga_home().await;
+    write_sample_plugin_mcp(motyga_home.as_path());
     std::fs::write(
-        codex_home.join(CONFIG_TOML_FILE),
+        motyga_home.join(CONFIG_TOML_FILE),
         r#"
 [features]
 plugins = true
@@ -2384,7 +2384,7 @@ enabled = true
     )
     .expect("seed config");
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.to_path_buf())
+        .motyga_home(motyga_home.to_path_buf())
         .build()
         .await
         .expect("load config");
@@ -2398,7 +2398,7 @@ enabled = true
 
     maybe_persist_mcp_tool_approval(&session, &turn_context, key.clone()).await;
 
-    let contents = std::fs::read_to_string(codex_home.join(CONFIG_TOML_FILE)).expect("read config");
+    let contents = std::fs::read_to_string(motyga_home.join(CONFIG_TOML_FILE)).expect("read config");
     let parsed: ConfigToml = toml::from_str(&contents).expect("parse config");
     let tool = parsed
         .plugins
@@ -2420,26 +2420,26 @@ enabled = true
 #[tokio::test]
 async fn maybe_persist_mcp_tool_approval_writes_project_config_for_project_server() {
     let (session, mut turn_context) = make_session_and_context().await;
-    let codex_home = session.codex_home().await;
+    let motyga_home = session.motyga_home().await;
     let project_dir = tempdir().expect("tempdir");
     std::fs::write(project_dir.path().join(".git"), "gitdir: nowhere").expect("seed git marker");
-    let project_codex_dir = project_dir.path().join(".motyga");
-    std::fs::create_dir_all(&project_codex_dir).expect("create project .codex dir");
+    let project_motyga_dir = project_dir.path().join(".motyga");
+    std::fs::create_dir_all(&project_motyga_dir).expect("create project .motyga dir");
     std::fs::write(
-        project_codex_dir.join(CONFIG_TOML_FILE),
+        project_motyga_dir.join(CONFIG_TOML_FILE),
         "[mcp_servers.docs]\ncommand = \"docs-server\"\n",
     )
     .expect("seed project config");
-    ConfigEditsBuilder::new(&codex_home)
+    ConfigEditsBuilder::new(&motyga_home)
         .set_project_trust_level(
             project_dir.path(),
-            codex_protocol::config_types::TrustLevel::Trusted,
+            motyga_protocol::config_types::TrustLevel::Trusted,
         )
         .apply()
         .await
         .expect("trust project");
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.to_path_buf())
+        .motyga_home(motyga_home.to_path_buf())
         .fallback_cwd(Some(project_dir.path().to_path_buf()))
         .build()
         .await
@@ -2453,7 +2453,7 @@ async fn maybe_persist_mcp_tool_approval_writes_project_config_for_project_serve
 
     maybe_persist_mcp_tool_approval(&session, &turn_context, key.clone()).await;
 
-    let contents = std::fs::read_to_string(project_codex_dir.join(CONFIG_TOML_FILE))
+    let contents = std::fs::read_to_string(project_motyga_dir.join(CONFIG_TOML_FILE))
         .expect("read project config");
     let parsed: ConfigToml = toml::from_str(&contents).expect("parse project config");
     let tool = parsed
@@ -2498,7 +2498,7 @@ async fn approve_mode_skips_when_annotations_do_not_require_approval() {
         tool_description: None,
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     };
 
@@ -2541,7 +2541,7 @@ async fn guardian_mode_skips_auto_when_annotations_do_not_require_approval() {
     config.approvals_reviewer = ApprovalsReviewer::AutoReview;
     let config = Arc::new(config);
     let models_manager = models_manager_with_provider(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
         Arc::clone(&session.services.auth_manager),
         config.model_provider.clone(),
     );
@@ -2575,7 +2575,7 @@ async fn guardian_mode_skips_auto_when_annotations_do_not_require_approval() {
         tool_description: None,
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     };
 
@@ -2635,7 +2635,7 @@ async fn permission_request_hook_allows_mcp_tool_call() {
         tool_description: None,
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     };
 
@@ -2774,7 +2774,7 @@ async fn permission_request_hook_runs_after_remembered_mcp_approval() {
         tool_description: None,
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     };
     let remembered_key =
@@ -2834,7 +2834,7 @@ async fn guardian_mode_mcp_denial_returns_rationale_message() {
     config.approvals_reviewer = ApprovalsReviewer::AutoReview;
     let config = Arc::new(config);
     let models_manager = models_manager_with_provider(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
         Arc::clone(&session.services.auth_manager),
         config.model_provider.clone(),
     );
@@ -2864,7 +2864,7 @@ async fn guardian_mode_mcp_denial_returns_rationale_message() {
         tool_description: Some("Reads calendar data.".to_string()),
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     };
 
@@ -2921,7 +2921,7 @@ async fn prompt_mode_waits_for_approval_when_annotations_do_not_require_approval
         tool_description: None,
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     };
 
@@ -2963,7 +2963,7 @@ async fn full_access_mode_skips_mcp_tool_approval_for_all_approval_modes() {
     let session = Arc::new(session);
     let turn_context = Arc::new(turn_context);
     let invocation = McpInvocation {
-        server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
+        server: MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
         tool: "dangerous_tool".to_string(),
         arguments: Some(serde_json::json!({ "id": 1 })),
     };
@@ -2979,7 +2979,7 @@ async fn full_access_mode_skips_mcp_tool_approval_for_all_approval_modes() {
         tool_description: Some("Performs a risky action.".to_string()),
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     };
 
@@ -3019,7 +3019,7 @@ async fn approve_mode_skips_guardian_in_every_permission_mode() {
         .await;
 
     let invocation = McpInvocation {
-        server: CODEX_APPS_MCP_SERVER_NAME.to_string(),
+        server: MOTYGA_APPS_MCP_SERVER_NAME.to_string(),
         tool: "dangerous_tool".to_string(),
         arguments: Some(serde_json::json!({ "id": 1 })),
     };
@@ -3035,7 +3035,7 @@ async fn approve_mode_skips_guardian_in_every_permission_mode() {
         tool_description: Some("Performs a risky action.".to_string()),
         mcp_app_resource_uri: None,
         template_id: None,
-        codex_apps_meta: None,
+        motyga_apps_meta: None,
         openai_file_input_params: None,
     };
 
@@ -3053,7 +3053,7 @@ async fn approve_mode_skips_guardian_in_every_permission_mode() {
     ] {
         let (mut session, mut turn_context) = make_session_and_context().await;
         turn_context.auth_manager = Some(crate::test_support::auth_manager_from_auth(
-            codex_login::CodexAuth::create_dummy_chatgpt_auth_for_testing(),
+            motyga_login::MotygaAuth::create_dummy_chatgpt_auth_for_testing(),
         ));
         turn_context
             .approval_policy
@@ -3065,7 +3065,7 @@ async fn approve_mode_skips_guardian_in_every_permission_mode() {
         config.approvals_reviewer = ApprovalsReviewer::User;
         let config = Arc::new(config);
         let models_manager = models_manager_with_provider(
-            config.codex_home.to_path_buf(),
+            config.motyga_home.to_path_buf(),
             Arc::clone(&session.services.auth_manager),
             config.model_provider.clone(),
         );

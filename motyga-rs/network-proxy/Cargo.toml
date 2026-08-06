@@ -1,11 +1,11 @@
 [package]
-name = "codex-network-proxy"
+name = "motyga-network-proxy"
 edition.workspace = true
 version.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_network_proxy"
+name = "motyga_network_proxy"
 path = "src/lib.rs"
 doctest = false
 
@@ -17,9 +17,9 @@ anyhow = { workspace = true }
 base64 = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 chrono = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-home-dir = { workspace = true }
-codex-utils-rustls-provider = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-home-dir = { workspace = true }
+motyga-utils-rustls-provider = { workspace = true }
 globset = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

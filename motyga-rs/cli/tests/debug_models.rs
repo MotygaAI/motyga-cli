@@ -3,16 +3,16 @@ use std::path::Path;
 use anyhow::Result;
 use tempfile::TempDir;
 
-fn codex_command(codex_home: &Path) -> Result<assert_cmd::Command> {
-    let mut cmd = assert_cmd::Command::new(codex_utils_cargo_bin::cargo_bin("motyga")?);
-    cmd.env("MOTYGA_HOME", codex_home);
+fn motyga_command(motyga_home: &Path) -> Result<assert_cmd::Command> {
+    let mut cmd = assert_cmd::Command::new(motyga_utils_cargo_bin::cargo_bin("motyga")?);
+    cmd.env("MOTYGA_HOME", motyga_home);
     Ok(cmd)
 }
 
 #[test]
 fn debug_models_bundled_prints_json() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut cmd = codex_command(codex_home.path())?;
+    let motyga_home = TempDir::new()?;
+    let mut cmd = motyga_command(motyga_home.path())?;
     let output = cmd.args(["debug", "models", "--bundled"]).output()?;
 
     assert!(output.status.success());
@@ -26,8 +26,8 @@ fn debug_models_bundled_prints_json() -> Result<()> {
 
 #[test]
 fn debug_models_default_prints_json_without_auth() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut cmd = codex_command(codex_home.path())?;
+    let motyga_home = TempDir::new()?;
+    let mut cmd = motyga_command(motyga_home.path())?;
     let output = cmd.args(["debug", "models"]).output()?;
 
     assert!(output.status.success());

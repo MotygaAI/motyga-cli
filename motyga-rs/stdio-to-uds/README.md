@@ -1,4 +1,4 @@
-# codex-stdio-to-uds
+# motyga-stdio-to-uds
 
 Traditionally, there are two transport mechanisms for an MCP server: stdio and HTTP.
 
@@ -10,11 +10,11 @@ This crate helps enable a third, which is UNIX domain socket, because it has the
 To that end, this crate provides an adapter between a UDS and stdio. The idea is that someone could start an MCP server that communicates over `/tmp/mcp.sock`. Then the user could specify this on the fly like so:
 
 ```
-codex --config mcp_servers.example={command="codex-stdio-to-uds",args=["/tmp/mcp.sock"]}
+motyga --config mcp_servers.example={command="motyga-stdio-to-uds",args=["/tmp/mcp.sock"]}
 ```
 
 Unfortunately, the Rust standard library does not provide support for UNIX domain sockets on Windows today even though support was added in October 2018 in Windows 10:
 
 https://github.com/rust-lang/rust/issues/56533
 
-As a workaround, this crate uses `codex-uds`, which provides a cross-platform async UDS API backed by https://crates.io/crates/uds_windows on Windows.
+As a workaround, this crate uses `motyga-uds`, which provides a cross-platform async UDS API backed by https://crates.io/crates/uds_windows on Windows.

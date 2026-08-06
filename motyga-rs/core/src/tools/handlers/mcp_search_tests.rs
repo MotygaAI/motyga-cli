@@ -1,6 +1,6 @@
 use super::*;
-use codex_tools::LoadableToolSpec;
-use codex_tools::ToolSearchSourceInfo;
+use motyga_tools::LoadableToolSpec;
+use motyga_tools::ToolSearchSourceInfo;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 
@@ -11,7 +11,7 @@ fn search_info_uses_mcp_tool_metadata_and_parameter_names() {
 
     assert_eq!(
         search_info.entry.search_text,
-        "mcp__calendar___create_event _create_event createEvent codex-apps Create event Create a calendar event. Calendar Plan events. Calendar plugin attendees start_time"
+        "mcp__calendar___create_event _create_event createEvent motyga-apps Create event Create a calendar event. Calendar Plan events. Calendar plugin attendees start_time"
     );
     assert_eq!(
         search_info.source_info,
@@ -44,7 +44,7 @@ fn search_info_uses_connector_name_for_output_namespace_description() {
 
 fn tool_info() -> ToolInfo {
     ToolInfo {
-        server_name: "codex-apps".to_string(),
+        server_name: "motyga-apps".to_string(),
         supports_parallel_tool_calls: false,
         server_origin: None,
         callable_name: "_create_event".to_string(),

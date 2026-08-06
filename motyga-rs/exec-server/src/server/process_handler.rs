@@ -1,4 +1,4 @@
-use codex_exec_server_protocol::JSONRPCErrorError;
+use motyga_exec_server_protocol::JSONRPCErrorError;
 
 use crate::ExecServerRuntimePaths;
 use crate::local_process::LocalProcess;

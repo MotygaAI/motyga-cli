@@ -1,21 +1,21 @@
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::Turn;
-use codex_app_server_protocol::TurnStatus;
-use codex_core::config::ConfigBuilder;
-use codex_protocol::SessionId;
-use codex_protocol::ThreadId;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::SessionConfiguredEvent;
-use codex_utils_absolute_path::test_support::PathBufExt;
-use codex_utils_absolute_path::test_support::test_path_buf;
-use codex_utils_sandbox_summary::summarize_permission_profile;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::Turn;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_core::config::ConfigBuilder;
+use motyga_protocol::SessionId;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::SessionConfiguredEvent;
+use motyga_utils_absolute_path::test_support::PathBufExt;
+use motyga_utils_absolute_path::test_support::test_path_buf;
+use motyga_utils_sandbox_summary::summarize_permission_profile;
 use owo_colors::Style;
 use pretty_assertions::assert_eq;
 
@@ -176,11 +176,11 @@ fn summarizes_managed_read_only_permission_profile() {
 
 #[tokio::test]
 async fn config_summary_entries_include_runtime_workspace_roots() {
-    let codex_home = tempfile::tempdir().expect("create motyga home");
+    let motyga_home = tempfile::tempdir().expect("create motyga home");
     let cwd = tempfile::tempdir().expect("create cwd");
     let extra_root = tempfile::tempdir().expect("create extra root");
     let mut config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .fallback_cwd(Some(cwd.path().to_path_buf()))
         .build()
         .await
@@ -306,11 +306,11 @@ fn turn_completed_recovers_final_message_from_turn_items() {
     };
 
     let status = processor.process_server_notification(ServerNotification::TurnCompleted(
-        codex_app_server_protocol::TurnCompletedNotification {
+        motyga_app_server_protocol::TurnCompletedNotification {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: vec![ThreadItem::AgentMessage {
                     id: "msg-1".to_string(),
                     text: "final answer".to_string(),
@@ -328,7 +328,7 @@ fn turn_completed_recovers_final_message_from_turn_items() {
 
     assert_eq!(
         status,
-        crate::event_processor::CodexStatus::InitiateShutdown
+        crate::event_processor::MotygaStatus::InitiateShutdown
     );
     assert_eq!(processor.final_message.as_deref(), Some("final answer"));
 }
@@ -354,11 +354,11 @@ fn turn_completed_overwrites_stale_final_message_from_turn_items() {
     };
 
     let status = processor.process_server_notification(ServerNotification::TurnCompleted(
-        codex_app_server_protocol::TurnCompletedNotification {
+        motyga_app_server_protocol::TurnCompletedNotification {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: vec![ThreadItem::AgentMessage {
                     id: "msg-1".to_string(),
                     text: "final answer".to_string(),
@@ -376,7 +376,7 @@ fn turn_completed_overwrites_stale_final_message_from_turn_items() {
 
     assert_eq!(
         status,
-        crate::event_processor::CodexStatus::InitiateShutdown
+        crate::event_processor::MotygaStatus::InitiateShutdown
     );
     assert_eq!(processor.final_message.as_deref(), Some("final answer"));
     assert!(!processor.final_message_rendered);
@@ -403,11 +403,11 @@ fn turn_completed_preserves_streamed_final_message_when_turn_items_are_empty() {
     };
 
     let status = processor.process_server_notification(ServerNotification::TurnCompleted(
-        codex_app_server_protocol::TurnCompletedNotification {
+        motyga_app_server_protocol::TurnCompletedNotification {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Completed,
                 error: None,
@@ -420,7 +420,7 @@ fn turn_completed_preserves_streamed_final_message_when_turn_items_are_empty() {
 
     assert_eq!(
         status,
-        crate::event_processor::CodexStatus::InitiateShutdown
+        crate::event_processor::MotygaStatus::InitiateShutdown
     );
     assert_eq!(processor.final_message.as_deref(), Some("streamed answer"));
     assert!(processor.emit_final_message_on_shutdown);
@@ -447,11 +447,11 @@ fn turn_failed_clears_stale_final_message() {
     };
 
     let status = processor.process_server_notification(ServerNotification::TurnCompleted(
-        codex_app_server_protocol::TurnCompletedNotification {
+        motyga_app_server_protocol::TurnCompletedNotification {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Failed,
                 error: None,
@@ -464,7 +464,7 @@ fn turn_failed_clears_stale_final_message() {
 
     assert_eq!(
         status,
-        crate::event_processor::CodexStatus::InitiateShutdown
+        crate::event_processor::MotygaStatus::InitiateShutdown
     );
     assert_eq!(processor.final_message, None);
     assert!(!processor.final_message_rendered);
@@ -492,11 +492,11 @@ fn turn_interrupted_clears_stale_final_message() {
     };
 
     let status = processor.process_server_notification(ServerNotification::TurnCompleted(
-        codex_app_server_protocol::TurnCompletedNotification {
+        motyga_app_server_protocol::TurnCompletedNotification {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Interrupted,
                 error: None,
@@ -509,7 +509,7 @@ fn turn_interrupted_clears_stale_final_message() {
 
     assert_eq!(
         status,
-        crate::event_processor::CodexStatus::InitiateShutdown
+        crate::event_processor::MotygaStatus::InitiateShutdown
     );
     assert_eq!(processor.final_message, None);
     assert!(!processor.final_message_rendered);

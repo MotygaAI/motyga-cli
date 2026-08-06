@@ -3,26 +3,26 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::user_input::UserInput;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::hooks::trust_discovered_hooks;
 use core_test_support::responses;
 use core_test_support::responses::ResponseMock;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodexHarness;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::TestMotygaHarness;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serde_json::json;
 
-const FIXED_CWD: &str = "/tmp/codex_remote_compaction_parity_workspace";
+const FIXED_CWD: &str = "/tmp/motyga_remote_compaction_parity_workspace";
 const IMAGE_URL: &str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 const SUMMARY: &str = "REMOTE_COMPACTION_PARITY_ENCRYPTED_SUMMARY";
 const DUMMY_FUNCTION_NAME: &str = "test_tool";
@@ -41,10 +41,10 @@ enum AuthCase {
 }
 
 impl AuthCase {
-    fn build(self) -> CodexAuth {
+    fn build(self) -> MotygaAuth {
         match self {
-            AuthCase::ChatGpt => CodexAuth::create_dummy_chatgpt_auth_for_testing(),
-            AuthCase::ApiKey => CodexAuth::from_api_key("dummy"),
+            AuthCase::ChatGpt => MotygaAuth::create_dummy_chatgpt_auth_for_testing(),
+            AuthCase::ApiKey => MotygaAuth::from_api_key("dummy"),
         }
     }
 }
@@ -303,20 +303,20 @@ async fn run_manual_session(
 
     let harness = build_harness(mode, settings, /*hooks*/ false).await?;
     let rollout_path = rollout_path(&harness);
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
 
     let responses_mock = responses::mount_sse_sequence(harness.server(), response_bodies).await;
     let compact_mock = mount_legacy_compact_if_needed(&harness, mode).await;
 
     for (idx, step) in scenario.steps.iter().enumerate() {
-        submit_user_input(&codex, user_input_for_step(scenario.name, idx, *step)).await?;
+        submit_user_input(&motyga, user_input_for_step(scenario.name, idx, *step)).await?;
     }
 
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
     submit_user_input(
-        &codex,
+        &motyga,
         vec![UserInput::Text {
             text: format!("{}_AFTER_COMPACT_USER", scenario.name),
             text_elements: Vec::new(),
@@ -326,7 +326,7 @@ async fn run_manual_session(
 
     capture_from_requests(
         mode,
-        &codex,
+        &motyga,
         &rollout_path,
         &responses_mock,
         compact_mock.as_ref(),
@@ -361,12 +361,12 @@ async fn run_pre_turn_auto_session(mode: Mode) -> Result<Capture> {
     };
     let harness = build_auto_harness(mode).await?;
     let rollout_path = rollout_path(&harness);
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
     let responses_mock = responses::mount_sse_sequence(harness.server(), response_bodies).await;
     let compact_mock = mount_legacy_compact_if_needed(&harness, mode).await;
 
     submit_user_input(
-        &codex,
+        &motyga,
         vec![UserInput::Text {
             text: "pre_turn_auto_before".to_string(),
             text_elements: Vec::new(),
@@ -374,7 +374,7 @@ async fn run_pre_turn_auto_session(mode: Mode) -> Result<Capture> {
     )
     .await?;
     submit_user_input(
-        &codex,
+        &motyga,
         vec![UserInput::Text {
             text: "pre_turn_auto_after".to_string(),
             text_elements: Vec::new(),
@@ -384,7 +384,7 @@ async fn run_pre_turn_auto_session(mode: Mode) -> Result<Capture> {
 
     capture_from_requests(
         mode,
-        &codex,
+        &motyga,
         &rollout_path,
         &responses_mock,
         compact_mock.as_ref(),
@@ -419,12 +419,12 @@ async fn run_mid_turn_auto_session(mode: Mode) -> Result<Capture> {
     };
     let harness = build_auto_harness(mode).await?;
     let rollout_path = rollout_path(&harness);
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
     let responses_mock = responses::mount_sse_sequence(harness.server(), response_bodies).await;
     let compact_mock = mount_legacy_compact_if_needed(&harness, mode).await;
 
     submit_user_input(
-        &codex,
+        &motyga,
         vec![UserInput::Text {
             text: "mid_turn_auto_user".to_string(),
             text_elements: Vec::new(),
@@ -434,7 +434,7 @@ async fn run_mid_turn_auto_session(mode: Mode) -> Result<Capture> {
 
     capture_from_requests(
         mode,
-        &codex,
+        &motyga,
         &rollout_path,
         &responses_mock,
         compact_mock.as_ref(),
@@ -458,26 +458,26 @@ async fn run_manual_hook_session(mode: Mode) -> Result<Value> {
         ],
     };
     let harness = build_harness(mode, RunSettings::default(), /*hooks*/ true).await?;
-    let codex = harness.test().codex.clone();
+    let motyga = harness.test().motyga.clone();
     responses::mount_sse_sequence(harness.server(), response_bodies).await;
     let compact_mock = mount_legacy_compact_if_needed(&harness, mode).await;
 
     submit_user_input(
-        &codex,
+        &motyga,
         vec![UserInput::Text {
             text: "manual_hooks_before".to_string(),
             text_elements: Vec::new(),
         }],
     )
     .await?;
-    codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&codex).await;
+    motyga.submit(Op::Compact).await?;
+    wait_for_turn_complete(&motyga).await;
 
     if let Some(compact_mock) = compact_mock {
         assert_eq!(compact_mock.requests().len(), 1);
     }
 
-    let home = harness.test().codex_home_path();
+    let home = harness.test().motyga_home_path();
     let pre = hook_log_view(&home.join("pre_compact_manual_log.jsonl"))?;
     let post = hook_log_view(&home.join("post_compact_manual_log.jsonl"))?;
     Ok(json!({
@@ -486,7 +486,7 @@ async fn run_manual_hook_session(mode: Mode) -> Result<Value> {
     }))
 }
 
-async fn build_auto_harness(mode: Mode) -> Result<TestCodexHarness> {
+async fn build_auto_harness(mode: Mode) -> Result<TestMotygaHarness> {
     build_harness_inner(
         mode,
         RunSettings::default(),
@@ -496,7 +496,7 @@ async fn build_auto_harness(mode: Mode) -> Result<TestCodexHarness> {
     .await
 }
 
-async fn build_harness(mode: Mode, settings: RunSettings, hooks: bool) -> Result<TestCodexHarness> {
+async fn build_harness(mode: Mode, settings: RunSettings, hooks: bool) -> Result<TestMotygaHarness> {
     build_harness_inner(mode, settings, hooks, /*auto_compact_limit*/ None).await
 }
 
@@ -505,9 +505,9 @@ async fn build_harness_inner(
     settings: RunSettings,
     hooks: bool,
     auto_compact_limit: Option<i64>,
-) -> Result<TestCodexHarness> {
+) -> Result<TestMotygaHarness> {
     fs::create_dir_all(FIXED_CWD)?;
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_auth(settings.auth.build())
         .with_pre_build_hook(|home| {
             fs::write(home.join("AGENTS.md"), USER_INSTRUCTIONS)
@@ -516,8 +516,8 @@ async fn build_harness_inner(
     if hooks {
         builder = builder.with_pre_build_hook(write_manual_compact_hooks);
     }
-    TestCodexHarness::with_builder(builder.with_config(move |config| {
-        config.cwd = codex_utils_absolute_path::AbsolutePathBuf::from_absolute_path(PathBuf::from(
+    TestMotygaHarness::with_builder(builder.with_config(move |config| {
+        config.cwd = motyga_utils_absolute_path::AbsolutePathBuf::from_absolute_path(PathBuf::from(
             FIXED_CWD,
         ))
         .expect("fixed cwd should be absolute");
@@ -536,7 +536,7 @@ async fn build_harness_inner(
     .await
 }
 
-fn rollout_path(harness: &TestCodexHarness) -> PathBuf {
+fn rollout_path(harness: &TestMotygaHarness) -> PathBuf {
     harness
         .test()
         .session_configured
@@ -546,7 +546,7 @@ fn rollout_path(harness: &TestCodexHarness) -> PathBuf {
 }
 
 async fn mount_legacy_compact_if_needed(
-    harness: &TestCodexHarness,
+    harness: &TestMotygaHarness,
     mode: Mode,
 ) -> Option<ResponseMock> {
     match mode {
@@ -564,7 +564,7 @@ fn follow_up_index(request_count: usize) -> usize {
 
 async fn capture_from_requests(
     mode: Mode,
-    codex: &codex_core::CodexThread,
+    motyga: &motyga_core::MotygaThread,
     rollout_path: &Path,
     responses_mock: &ResponseMock,
     compact_mock: Option<&ResponseMock>,
@@ -590,8 +590,8 @@ async fn capture_from_requests(
         (Mode::Legacy, None) | (Mode::V2, Some(_)) => panic!("unexpected compact mock state"),
     };
 
-    codex.submit(Op::Shutdown).await?;
-    wait_for_event(codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    motyga.submit(Op::Shutdown).await?;
+    wait_for_event(motyga, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
     Ok(Capture {
         compact_body,
@@ -602,8 +602,8 @@ async fn capture_from_requests(
     })
 }
 
-async fn submit_user_input(codex: &codex_core::CodexThread, items: Vec<UserInput>) -> Result<()> {
-    codex
+async fn submit_user_input(motyga: &motyga_core::MotygaThread, items: Vec<UserInput>) -> Result<()> {
+    motyga
         .submit(Op::UserInput {
             items,
             final_output_json_schema: None,
@@ -612,12 +612,12 @@ async fn submit_user_input(codex: &codex_core::CodexThread, items: Vec<UserInput
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(codex).await;
+    wait_for_turn_complete(motyga).await;
     Ok(())
 }
 
-async fn wait_for_turn_complete(codex: &codex_core::CodexThread) {
-    wait_for_event(codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+async fn wait_for_turn_complete(motyga: &motyga_core::MotygaThread) {
+    wait_for_event(motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
 fn user_input_for_step(scenario_name: &str, idx: usize, step: Step) -> Vec<UserInput> {

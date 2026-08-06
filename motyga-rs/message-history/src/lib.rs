@@ -34,15 +34,15 @@ use std::time::Duration;
 use tokio::fs;
 use tokio::io::AsyncReadExt;
 
-use codex_config::types::History;
-use codex_config::types::HistoryPersistence;
+use motyga_config::types::History;
+use motyga_config::types::HistoryPersistence;
 
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-/// Filename that stores the message history inside `~/.codex`.
+/// Filename that stores the message history inside `~/.motyga`.
 const HISTORY_FILENAME: &str = "history.jsonl";
 const HISTORY_READ_BUFFER_SIZE: usize = 8192;
 
@@ -61,15 +61,15 @@ pub struct HistoryEntry {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HistoryConfig {
-    pub codex_home: PathBuf,
+    pub motyga_home: PathBuf,
     pub persistence: HistoryPersistence,
     pub max_bytes: Option<usize>,
 }
 
 impl HistoryConfig {
-    pub fn new(codex_home: impl Into<PathBuf>, history: &History) -> Self {
+    pub fn new(motyga_home: impl Into<PathBuf>, history: &History) -> Self {
         Self {
-            codex_home: codex_home.into(),
+            motyga_home: motyga_home.into(),
             persistence: history.persistence,
             max_bytes: history.max_bytes,
         }
@@ -77,7 +77,7 @@ impl HistoryConfig {
 }
 
 fn history_filepath(config: &HistoryConfig) -> PathBuf {
-    config.codex_home.join(HISTORY_FILENAME)
+    config.motyga_home.join(HISTORY_FILENAME)
 }
 
 /// Append a `text` entry associated with `conversation_id` to the history file.

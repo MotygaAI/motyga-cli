@@ -50,8 +50,8 @@ use crate::tui::event_stream::EventBroker;
 use crate::tui::event_stream::TuiEventStream;
 #[cfg(unix)]
 use crate::tui::job_control::SuspendContext;
-use codex_config::types::NotificationCondition;
-use codex_config::types::NotificationMethod;
+use motyga_config::types::NotificationCondition;
+use motyga_config::types::NotificationMethod;
 
 mod event_stream;
 mod frame_rate_limiter;
@@ -102,7 +102,7 @@ mod tests {
     use super::should_emit_notification;
     use crate::custom_terminal::Terminal as CustomTerminal;
     use crate::test_backend::VT100Backend;
-    use codex_config::types::NotificationCondition;
+    use motyga_config::types::NotificationCondition;
     use ratatui::layout::Position;
     use ratatui::layout::Rect;
 
@@ -295,7 +295,7 @@ pub(super) fn reapply_raw_mode_after_resume() -> Result<()> {
     enable_raw_mode()
 }
 
-/// Restore the terminal after Codex is exiting.
+/// Restore the terminal after Motyga is exiting.
 ///
 /// Uses a stronger keyboard reset than [`restore`] so the parent shell recovers even if a
 /// terminal missed the stack pop that normally pairs with [`set_modes`].
@@ -579,7 +579,7 @@ impl Tui {
         // Cache this to avoid contention with the event reader.
         supports_color::on_cached(supports_color::Stream::Stdout);
         let _ = crate::terminal_palette::default_colors();
-        let is_zellij = codex_terminal_detection::terminal_info().is_zellij();
+        let is_zellij = motyga_terminal_detection::terminal_info().is_zellij();
 
         Self {
             frame_requester,
@@ -643,7 +643,7 @@ impl Tui {
     /// Temporarily restore terminal state to run an external interactive program `f`.
     ///
     /// This pauses crossterm's stdin polling by dropping the underlying event stream, restores
-    /// terminal modes and stderr (optionally keeping raw mode enabled), then re-applies Codex TUI
+    /// terminal modes and stderr (optionally keeping raw mode enabled), then re-applies Motyga TUI
     /// modes and stderr suppression before resuming events.
     pub async fn with_restored<R, F, Fut>(&mut self, mode: RestoreMode, f: F) -> R
     where

@@ -3,22 +3,22 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 
-use codex_app_server_protocol::CollabAgentTool;
-use codex_app_server_protocol::CollabAgentToolCallStatus;
-use codex_app_server_protocol::CommandExecutionStatus;
-use codex_app_server_protocol::McpToolCallStatus;
-use codex_app_server_protocol::PatchApplyStatus;
-use codex_app_server_protocol::PatchChangeKind;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadTokenUsage;
-use codex_app_server_protocol::TurnStatus;
-use codex_core::config::Config;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::protocol::SessionConfiguredEvent;
+use motyga_app_server_protocol::CollabAgentTool;
+use motyga_app_server_protocol::CollabAgentToolCallStatus;
+use motyga_app_server_protocol::CommandExecutionStatus;
+use motyga_app_server_protocol::McpToolCallStatus;
+use motyga_app_server_protocol::PatchApplyStatus;
+use motyga_app_server_protocol::PatchChangeKind;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadTokenUsage;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_core::config::Config;
+use motyga_protocol::models::WebSearchAction;
+use motyga_protocol::protocol::SessionConfiguredEvent;
 use serde_json::json;
 
-pub use crate::event_processor::CodexStatus;
+pub use crate::event_processor::MotygaStatus;
 use crate::event_processor::EventProcessor;
 use crate::event_processor::handle_last_message;
 use crate::exec_events::AgentMessageItem;
@@ -75,7 +75,7 @@ struct RunningTodoList {
 #[derive(Debug, PartialEq)]
 pub struct CollectedThreadEvents {
     pub events: Vec<ThreadEvent>,
-    pub status: CodexStatus,
+    pub status: MotygaStatus,
 }
 
 impl EventProcessorWithJsonOutput {
@@ -126,13 +126,13 @@ impl EventProcessorWithJsonOutput {
         }
     }
 
-    pub fn map_todo_items(plan: &[codex_app_server_protocol::TurnPlanStep]) -> Vec<TodoItem> {
+    pub fn map_todo_items(plan: &[motyga_app_server_protocol::TurnPlanStep]) -> Vec<TodoItem> {
         plan.iter()
             .map(|step| TodoItem {
                 text: step.step.clone(),
                 completed: matches!(
                     step.status,
-                    codex_app_server_protocol::TurnPlanStepStatus::Completed
+                    motyga_app_server_protocol::TurnPlanStepStatus::Completed
                 ),
             })
             .collect()
@@ -259,25 +259,25 @@ impl EventProcessorWithJsonOutput {
                                 thread_id,
                                 CollabAgentState {
                                     status: match state.status {
-                                        codex_app_server_protocol::CollabAgentStatus::PendingInit => {
+                                        motyga_app_server_protocol::CollabAgentStatus::PendingInit => {
                                             CollabAgentStatus::PendingInit
                                         }
-                                        codex_app_server_protocol::CollabAgentStatus::Running => {
+                                        motyga_app_server_protocol::CollabAgentStatus::Running => {
                                             CollabAgentStatus::Running
                                         }
-                                        codex_app_server_protocol::CollabAgentStatus::Interrupted => {
+                                        motyga_app_server_protocol::CollabAgentStatus::Interrupted => {
                                             CollabAgentStatus::Interrupted
                                         }
-                                        codex_app_server_protocol::CollabAgentStatus::Completed => {
+                                        motyga_app_server_protocol::CollabAgentStatus::Completed => {
                                             CollabAgentStatus::Completed
                                         }
-                                        codex_app_server_protocol::CollabAgentStatus::Errored => {
+                                        motyga_app_server_protocol::CollabAgentStatus::Errored => {
                                             CollabAgentStatus::Errored
                                         }
-                                        codex_app_server_protocol::CollabAgentStatus::Shutdown => {
+                                        motyga_app_server_protocol::CollabAgentStatus::Shutdown => {
                                             CollabAgentStatus::Shutdown
                                         }
-                                        codex_app_server_protocol::CollabAgentStatus::NotFound => {
+                                        motyga_app_server_protocol::CollabAgentStatus::NotFound => {
                                             CollabAgentStatus::NotFound
                                         }
                                     },
@@ -405,7 +405,7 @@ impl EventProcessorWithJsonOutput {
                     details: ThreadItemDetails::Error(ErrorItem { message }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     }
 
@@ -428,7 +428,7 @@ impl EventProcessorWithJsonOutput {
                         details: ThreadItemDetails::Error(ErrorItem { message }),
                     },
                 }));
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::Warning(notification) => {
                 let warning = self.collect_warning(notification.message);
@@ -445,7 +445,7 @@ impl EventProcessorWithJsonOutput {
                 let error = ThreadErrorEvent { message };
                 self.last_critical_error = Some(error.clone());
                 events.push(ThreadEvent::Error(error));
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::DeprecationNotice(notification) => {
                 let message = match notification.details {
@@ -460,16 +460,16 @@ impl EventProcessorWithJsonOutput {
                         details: ThreadItemDetails::Error(ErrorItem { message }),
                     },
                 }));
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::HookStarted(_) | ServerNotification::HookCompleted(_) => {
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::ItemStarted(notification) => {
                 if let Some(item) = self.map_started_item(notification.item) {
                     events.push(ThreadEvent::ItemStarted(ItemStartedEvent { item }));
                 }
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::ItemCompleted(notification) => {
                 if let Some(item) = self.map_completed_item_mut(notification.item) {
@@ -480,7 +480,7 @@ impl EventProcessorWithJsonOutput {
                     }
                     events.push(ThreadEvent::ItemCompleted(ItemCompletedEvent { item }));
                 }
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::ModelRerouted(notification) => {
                 events.push(ThreadEvent::ItemCompleted(ItemCompletedEvent {
@@ -494,12 +494,12 @@ impl EventProcessorWithJsonOutput {
                         }),
                     },
                 }));
-                CodexStatus::Running
+                MotygaStatus::Running
             }
-            ServerNotification::ModelVerification(_) => CodexStatus::Running,
+            ServerNotification::ModelVerification(_) => MotygaStatus::Running,
             ServerNotification::ThreadTokenUsageUpdated(notification) => {
                 self.last_total_token_usage = Some(notification.token_usage);
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::TurnCompleted(notification) => {
                 if let Some(running) = self.running_todo_list.take() {
@@ -524,7 +524,7 @@ impl EventProcessorWithJsonOutput {
                         events.push(ThreadEvent::TurnCompleted(TurnCompletedEvent {
                             usage: self.usage_from_last_total(),
                         }));
-                        CodexStatus::InitiateShutdown
+                        MotygaStatus::InitiateShutdown
                     }
                     TurnStatus::Failed => {
                         self.final_message = None;
@@ -545,17 +545,17 @@ impl EventProcessorWithJsonOutput {
                                 message: "turn failed".to_string(),
                             });
                         events.push(ThreadEvent::TurnFailed(TurnFailedEvent { error }));
-                        CodexStatus::InitiateShutdown
+                        MotygaStatus::InitiateShutdown
                     }
                     TurnStatus::Interrupted => {
                         self.final_message = None;
                         self.emit_final_message_on_shutdown = false;
-                        CodexStatus::InitiateShutdown
+                        MotygaStatus::InitiateShutdown
                     }
-                    TurnStatus::InProgress => CodexStatus::Running,
+                    TurnStatus::InProgress => MotygaStatus::Running,
                 }
             }
-            ServerNotification::TurnDiffUpdated(_) => CodexStatus::Running,
+            ServerNotification::TurnDiffUpdated(_) => MotygaStatus::Running,
             ServerNotification::TurnPlanUpdated(notification) => {
                 let items = Self::map_todo_items(&notification.plan);
                 if let Some(running) = self.running_todo_list.as_mut() {
@@ -580,13 +580,13 @@ impl EventProcessorWithJsonOutput {
                         },
                     }));
                 }
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::TurnStarted(_) => {
                 events.push(ThreadEvent::TurnStarted(TurnStartedEvent {}));
-                CodexStatus::Running
+                MotygaStatus::Running
             }
-            _ => CodexStatus::Running,
+            _ => MotygaStatus::Running,
         };
 
         CollectedThreadEvents { events, status }
@@ -603,7 +603,7 @@ impl EventProcessor for EventProcessorWithJsonOutput {
         self.emit(Self::thread_started_event(session_configured));
     }
 
-    fn process_server_notification(&mut self, notification: ServerNotification) -> CodexStatus {
+    fn process_server_notification(&mut self, notification: ServerNotification) -> MotygaStatus {
         let collected = self.collect_thread_events(notification);
         for event in collected.events {
             self.emit(event);
@@ -611,7 +611,7 @@ impl EventProcessor for EventProcessorWithJsonOutput {
         collected.status
     }
 
-    fn process_warning(&mut self, message: String) -> CodexStatus {
+    fn process_warning(&mut self, message: String) -> MotygaStatus {
         let collected = self.collect_warning(message);
         for event in collected.events {
             self.emit(event);

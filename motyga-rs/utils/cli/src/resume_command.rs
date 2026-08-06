@@ -1,7 +1,7 @@
 //! Shared formatting for user-facing `motyga resume` command hints.
 
-use codex_protocol::ThreadId;
-use codex_shell_command::parse_command::shlex_join;
+use motyga_protocol::ThreadId;
+use motyga_shell_command::parse_command::shlex_join;
 
 pub fn resume_command(thread_name: Option<&str>, thread_id: Option<ThreadId>) -> Option<String> {
     let resume_target = thread_name

@@ -23,7 +23,7 @@ impl ChatWidget {
                 .windows_sandbox_mode
                 .source
                 .is_some()
-            && !crate::windows_sandbox::sandbox_setup_is_complete(self.config.codex_home.as_path())
+            && !crate::windows_sandbox::sandbox_setup_is_complete(self.config.motyga_home.as_path())
     }
 
     #[cfg(target_os = "windows")]
@@ -41,19 +41,19 @@ impl ChatWidget {
         let env_map: std::collections::HashMap<String, String> = std::env::vars().collect();
         let permission_profile = self.config.permissions.effective_permission_profile();
         let Ok(permissions) =
-            codex_windows_sandbox::ResolvedWindowsSandboxPermissions::try_from_permission_profile_for_workspace_roots(
+            motyga_windows_sandbox::ResolvedWindowsSandboxPermissions::try_from_permission_profile_for_workspace_roots(
                 &permission_profile,
                 workspace_roots.as_slice(),
             )
         else {
             return None;
         };
-        match codex_windows_sandbox::apply_world_writable_scan_and_denies_for_permissions(
-            self.config.codex_home.as_path(),
+        match motyga_windows_sandbox::apply_world_writable_scan_and_denies_for_permissions(
+            self.config.motyga_home.as_path(),
             cwd.as_path(),
             &env_map,
             &permissions,
-            Some(self.config.codex_home.as_path()),
+            Some(self.config.motyga_home.as_path()),
         ) {
             Ok(_) => None,
             Err(_) => Some((Vec::new(), 0, true)),
@@ -225,7 +225,7 @@ impl ChatWidget {
         use ratatui_macros::line;
 
         self.session_telemetry.counter(
-            "codex.windows_sandbox.elevated_prompt_shown",
+            "motyga.windows_sandbox.elevated_prompt_shown",
             /*inc*/ 1,
             &[],
         );
@@ -261,7 +261,7 @@ impl ChatWidget {
             description: None,
             actions: vec![Box::new(move |tx| {
                 accept_otel.counter(
-                    "codex.windows_sandbox.elevated_prompt_accept",
+                    "motyga.windows_sandbox.elevated_prompt_accept",
                     /*inc*/ 1,
                     &[],
                 );
@@ -279,7 +279,7 @@ impl ChatWidget {
                 description: None,
                 actions: vec![Box::new(move |tx| {
                     legacy_otel.counter(
-                        "codex.windows_sandbox.elevated_prompt_use_legacy",
+                        "motyga.windows_sandbox.elevated_prompt_use_legacy",
                         /*inc*/ 1,
                         &[],
                     );
@@ -297,7 +297,7 @@ impl ChatWidget {
             description: None,
             actions: vec![Box::new(move |tx| {
                 quit_otel.counter(
-                    "codex.windows_sandbox.elevated_prompt_quit",
+                    "motyga.windows_sandbox.elevated_prompt_quit",
                     /*inc*/ 1,
                     &[],
                 );
@@ -378,7 +378,7 @@ impl ChatWidget {
                 let preset = elevated_preset;
                 move |tx| {
                     otel.counter(
-                        "codex.windows_sandbox.fallback_retry_elevated",
+                        "motyga.windows_sandbox.fallback_retry_elevated",
                         /*inc*/ 1,
                         &[],
                     );
@@ -400,7 +400,7 @@ impl ChatWidget {
                     let preset = legacy_preset;
                     move |tx| {
                         otel.counter(
-                            "codex.windows_sandbox.fallback_use_legacy",
+                            "motyga.windows_sandbox.fallback_use_legacy",
                             /*inc*/ 1,
                             &[],
                         );
@@ -419,7 +419,7 @@ impl ChatWidget {
             description: None,
             actions: vec![Box::new(move |tx| {
                 quit_otel.counter(
-                    "codex.windows_sandbox.fallback_prompt_quit",
+                    "motyga.windows_sandbox.fallback_prompt_quit",
                     /*inc*/ 1,
                     &[],
                 );

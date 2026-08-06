@@ -1,5 +1,5 @@
 use anyhow::Result;
-use codex_windows_sandbox::to_wide;
+use motyga_windows_sandbox::to_wide;
 use std::ffi::OsStr;
 use windows_sys::Win32::Foundation::CloseHandle;
 use windows_sys::Win32::Foundation::ERROR_ALREADY_EXISTS;
@@ -11,7 +11,7 @@ use windows_sys::Win32::System::Threading::MUTEX_ALL_ACCESS;
 use windows_sys::Win32::System::Threading::OpenMutexW;
 use windows_sys::Win32::System::Threading::ReleaseMutex;
 
-const READ_ACL_MUTEX_NAME: &str = "Local\\CodexSandboxReadAcl";
+const READ_ACL_MUTEX_NAME: &str = "Local\\MotygaSandboxReadAcl";
 
 pub(super) struct ReadAclMutexGuard {
     handle: HANDLE,

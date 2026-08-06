@@ -2,12 +2,8 @@
 
 version: 2
 updates:
-  - package-ecosystem: bun
-    directory: .github/actions/codex
-    schedule:
-      interval: weekly
-    cooldown:
-      default-days: 7
+  # The `bun` entry that used to sit here pointed at `.github/actions/codex`,
+  # a directory this repo has never had, so the job failed on every run.
   - package-ecosystem: cargo
     directories:
       - motyga-rs
@@ -22,8 +18,10 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+  # Was `codex-cli`, which holds no Dockerfile — the job failed every run. The
+  # repo's Dockerfiles live in .devcontainer.
   - package-ecosystem: docker
-    directory: codex-cli
+    directory: .devcontainer
     schedule:
       interval: weekly
     cooldown:

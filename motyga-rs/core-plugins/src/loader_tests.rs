@@ -1,11 +1,11 @@
 use super::*;
 use crate::manifest::load_plugin_manifest;
 use crate::test_support::write_file;
-use codex_config::ConfigLayerEntry;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigRequirements;
-use codex_config::ConfigRequirementsToml;
-use codex_plugin::PluginId;
+use motyga_config::ConfigLayerEntry;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigRequirements;
+use motyga_config::ConfigRequirementsToml;
+use motyga_plugin::PluginId;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 
@@ -161,7 +161,7 @@ enabled = true
         HashMap::new(),
         &store,
         /*plugin_skill_snapshots*/ None,
-        Some(Product::Codex),
+        Some(Product::Motyga),
         /*remote_global_catalog_active*/ false,
     )
     .await;
@@ -454,7 +454,7 @@ fn load_plugin_hooks_supports_inline_manifest_hook_list() {
 
 #[test]
 fn materialize_git_subdir_uses_sparse_checkout() {
-    let codex_home = tempfile::tempdir().expect("create motyga home");
+    let motyga_home = tempfile::tempdir().expect("create motyga home");
     let repo = tempfile::tempdir().expect("create git repo");
     let plugin_dir = repo.path().join("plugins/toolkit");
     fs::create_dir_all(&plugin_dir).expect("create plugin directory");
@@ -474,7 +474,7 @@ fn materialize_git_subdir_uses_sparse_checkout() {
     run_git(&["commit", "-m", "init"], Some(repo.path())).expect("commit git repo");
 
     let materialized = materialize_marketplace_plugin_source(
-        codex_home.path(),
+        motyga_home.path(),
         &MarketplacePluginSource::Git {
             url: repo.path().display().to_string(),
             path: Some("plugins/toolkit".to_string()),

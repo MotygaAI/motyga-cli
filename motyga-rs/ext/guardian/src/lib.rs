@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use codex_core::config::Config;
-use codex_extension_api::AgentSpawnFuture;
-use codex_extension_api::AgentSpawner;
-use codex_extension_api::ExtensionFuture;
-use codex_extension_api::ExtensionRegistryBuilder;
-use codex_extension_api::ThreadLifecycleContributor;
-use codex_extension_api::ThreadStartInput;
-use codex_protocol::ThreadId;
+use motyga_core::config::Config;
+use motyga_extension_api::AgentSpawnFuture;
+use motyga_extension_api::AgentSpawner;
+use motyga_extension_api::ExtensionFuture;
+use motyga_extension_api::ExtensionRegistryBuilder;
+use motyga_extension_api::ThreadLifecycleContributor;
+use motyga_extension_api::ThreadStartInput;
+use motyga_protocol::ThreadId;
 
 /// Guardian extension dependencies supplied by the host at construction time.
 #[derive(Clone, Debug)]

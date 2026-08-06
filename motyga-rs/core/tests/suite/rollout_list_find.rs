@@ -4,26 +4,26 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use chrono::Utc;
-use codex_core::RolloutRecorder;
-use codex_core::RolloutRecorderParams;
-use codex_core::config::ConfigBuilder;
-use codex_core::find_archived_thread_path_by_id_str;
-use codex_core::find_thread_meta_by_name_str;
-use codex_core::find_thread_path_by_id_str;
-use codex_protocol::ThreadId;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::protocol::SessionSource;
-use codex_rollout::StateDbHandle;
-use codex_state::StateRuntime;
-use codex_state::ThreadMetadataBuilder;
+use motyga_core::RolloutRecorder;
+use motyga_core::RolloutRecorderParams;
+use motyga_core::config::ConfigBuilder;
+use motyga_core::find_archived_thread_path_by_id_str;
+use motyga_core::find_thread_meta_by_name_str;
+use motyga_core::find_thread_path_by_id_str;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::protocol::SessionSource;
+use motyga_rollout::StateDbHandle;
+use motyga_state::StateRuntime;
+use motyga_state::ThreadMetadataBuilder;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use uuid::Uuid;
 
 /// Create <subdir>/YYYY/MM/DD and write a minimal rollout file containing the
 /// provided conversation id in the SessionMeta line. Returns the absolute path.
-fn write_minimal_rollout_with_id_in_subdir(codex_home: &Path, subdir: &str, id: Uuid) -> PathBuf {
-    let sessions = codex_home.join(subdir).join("2024/01/01");
+fn write_minimal_rollout_with_id_in_subdir(motyga_home: &Path, subdir: &str, id: Uuid) -> PathBuf {
+    let sessions = motyga_home.join(subdir).join("2024/01/01");
     std::fs::create_dir_all(&sessions).unwrap();
 
     let file = sessions.join(format!("rollout-2024-01-01T00-00-00-{id}.jsonl"));
@@ -57,16 +57,16 @@ fn write_minimal_rollout_with_id_at_path(file: &Path, id: Uuid) {
 
 /// Create sessions/YYYY/MM/DD and write a minimal rollout file containing the
 /// provided conversation id in the SessionMeta line. Returns the absolute path.
-fn write_minimal_rollout_with_id(codex_home: &Path, id: Uuid) -> PathBuf {
-    write_minimal_rollout_with_id_in_subdir(codex_home, "sessions", id)
+fn write_minimal_rollout_with_id(motyga_home: &Path, id: Uuid) -> PathBuf {
+    write_minimal_rollout_with_id_in_subdir(motyga_home, "sessions", id)
 }
 
 async fn upsert_thread_metadata(
-    codex_home: &Path,
+    motyga_home: &Path,
     thread_id: ThreadId,
     rollout_path: PathBuf,
 ) -> StateDbHandle {
-    let runtime = StateRuntime::init(codex_home.to_path_buf(), "test-provider".to_string())
+    let runtime = StateRuntime::init(motyga_home.to_path_buf(), "test-provider".to_string())
         .await
         .unwrap();
     runtime
@@ -79,7 +79,7 @@ async fn upsert_thread_metadata(
         Utc::now(),
         SessionSource::default(),
     );
-    builder.cwd = codex_home.to_path_buf();
+    builder.cwd = motyga_home.to_path_buf();
     let metadata = builder.build("test-provider");
     runtime.upsert_thread(&metadata).await.unwrap();
     runtime
@@ -100,16 +100,16 @@ async fn find_locates_rollout_file_by_id() {
 }
 
 #[tokio::test]
-async fn find_handles_gitignore_covering_codex_home_directory() {
+async fn find_handles_gitignore_covering_motyga_home_directory() {
     let repo = TempDir::new().unwrap();
-    let codex_home = repo.path().join(".motyga");
-    std::fs::create_dir_all(&codex_home).unwrap();
+    let motyga_home = repo.path().join(".motyga");
+    std::fs::create_dir_all(&motyga_home).unwrap();
     std::fs::write(repo.path().join(".gitignore"), ".motyga/**\n").unwrap();
     let id = Uuid::new_v4();
-    let expected = write_minimal_rollout_with_id(&codex_home, id);
+    let expected = write_minimal_rollout_with_id(&motyga_home, id);
 
     let found =
-        find_thread_path_by_id_str(&codex_home, &id.to_string(), /*state_db_ctx*/ None)
+        find_thread_path_by_id_str(&motyga_home, &id.to_string(), /*state_db_ctx*/ None)
             .await
             .unwrap();
 
@@ -175,7 +175,7 @@ async fn find_locates_rollout_file_written_by_recorder() -> std::io::Result<()> 
     // Ensures the name-based finder locates a rollout produced by the real recorder.
     let home = TempDir::new().unwrap();
     let config = ConfigBuilder::default()
-        .codex_home(home.path().to_path_buf())
+        .motyga_home(home.path().to_path_buf())
         .build()
         .await?;
     let thread_id = ThreadId::new();

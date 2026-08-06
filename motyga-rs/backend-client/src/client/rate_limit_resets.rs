@@ -48,16 +48,16 @@ impl Client {
 
     fn rate_limit_status_url(&self) -> String {
         match self.path_style {
-            PathStyle::CodexApi => format!("{}/api/codex/usage", self.base_url),
+            PathStyle::MotygaApi => format!("{}/api/motyga/usage", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/usage", self.base_url),
         }
     }
 
     fn consume_rate_limit_reset_credit_url(&self) -> String {
         match self.path_style {
-            PathStyle::CodexApi => {
+            PathStyle::MotygaApi => {
                 format!(
-                    "{}/api/codex/rate-limit-reset-credits/consume",
+                    "{}/api/motyga/rate-limit-reset-credits/consume",
                     self.base_url
                 )
             }

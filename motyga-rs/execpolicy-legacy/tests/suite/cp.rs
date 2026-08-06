@@ -1,15 +1,15 @@
-extern crate codex_execpolicy_legacy;
+extern crate motyga_execpolicy_legacy;
 
-use codex_execpolicy_legacy::ArgMatcher;
-use codex_execpolicy_legacy::ArgType;
-use codex_execpolicy_legacy::Error;
-use codex_execpolicy_legacy::ExecCall;
-use codex_execpolicy_legacy::MatchedArg;
-use codex_execpolicy_legacy::MatchedExec;
-use codex_execpolicy_legacy::Policy;
-use codex_execpolicy_legacy::Result;
-use codex_execpolicy_legacy::ValidExec;
-use codex_execpolicy_legacy::get_default_policy;
+use motyga_execpolicy_legacy::ArgMatcher;
+use motyga_execpolicy_legacy::ArgType;
+use motyga_execpolicy_legacy::Error;
+use motyga_execpolicy_legacy::ExecCall;
+use motyga_execpolicy_legacy::MatchedArg;
+use motyga_execpolicy_legacy::MatchedExec;
+use motyga_execpolicy_legacy::Policy;
+use motyga_execpolicy_legacy::Result;
+use motyga_execpolicy_legacy::ValidExec;
+use motyga_execpolicy_legacy::get_default_policy;
 
 #[expect(clippy::expect_used)]
 fn setup() -> Policy {

@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::HookStateToml;
-use codex_config::TomlValue;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::HookStateToml;
+use motyga_config::TomlValue;
 
 /// Build effective hook state from config layers that are allowed to override
 /// user preferences.
@@ -71,10 +71,10 @@ pub fn hook_states_from_stack(
 
 #[cfg(test)]
 mod tests {
-    use codex_config::ConfigLayerEntry;
-    use codex_config::TomlValue;
-    use codex_utils_absolute_path::test_support::PathBufExt;
-    use codex_utils_absolute_path::test_support::test_path_buf;
+    use motyga_config::ConfigLayerEntry;
+    use motyga_config::TomlValue;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
+    use motyga_utils_absolute_path::test_support::test_path_buf;
     use pretty_assertions::assert_eq;
 
     use super::*;

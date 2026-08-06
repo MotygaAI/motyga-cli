@@ -1,28 +1,28 @@
 use std::collections::HashMap;
 
-use codex_exec_server_protocol::JSONRPCErrorError;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_sandboxing::SandboxCommand;
-use codex_sandboxing::SandboxDirectSpawnTransformRequest;
-use codex_sandboxing::SandboxExecRequest;
-use codex_sandboxing::SandboxManager;
-use codex_sandboxing::SandboxTransformRequest;
-use codex_sandboxing::SandboxablePreference;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_absolute_path::canonicalize_preserving_symlinks;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server_protocol::JSONRPCErrorError;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_sandboxing::SandboxCommand;
+use motyga_sandboxing::SandboxDirectSpawnTransformRequest;
+use motyga_sandboxing::SandboxExecRequest;
+use motyga_sandboxing::SandboxManager;
+use motyga_sandboxing::SandboxTransformRequest;
+use motyga_sandboxing::SandboxablePreference;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::canonicalize_preserving_symlinks;
+use motyga_utils_path_uri::PathUri;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 use crate::ExecServerRuntimePaths;
 use crate::FileSystemSandboxContext;
-use crate::fs_helper::CODEX_FS_HELPER_ARG1;
+use crate::fs_helper::MOTYGA_FS_HELPER_ARG1;
 use crate::fs_helper::FsHelperPayload;
 use crate::fs_helper::FsHelperRequest;
 use crate::fs_helper::FsHelperResponse;
@@ -100,7 +100,7 @@ impl FileSystemSandboxRunner {
         cwd: &SandboxCwd,
         sandbox_context: &FileSystemSandboxContext,
     ) -> Result<SandboxExecRequest, JSONRPCErrorError> {
-        let helper = &self.runtime_paths.codex_self_exe;
+        let helper = &self.runtime_paths.motyga_self_exe;
         let sandbox_manager = SandboxManager::new();
         let (file_system_policy, network_policy) = permission_profile.to_runtime_permissions();
         let sandbox = sandbox_manager.select_initial(
@@ -112,7 +112,7 @@ impl FileSystemSandboxRunner {
         );
         let command = SandboxCommand {
             program: helper.as_path().as_os_str().to_owned(),
-            args: vec![CODEX_FS_HELPER_ARG1.to_string()],
+            args: vec![MOTYGA_FS_HELPER_ARG1.to_string()],
             cwd: cwd.uri.clone(),
             env: self.helper_env.clone(),
             managed_network: None,
@@ -132,7 +132,7 @@ impl FileSystemSandboxRunner {
             .transform_for_direct_spawn(SandboxDirectSpawnTransformRequest {
                 workspace_roots,
                 windows_sandbox_proxy_settings_mode:
-                    codex_sandboxing::WindowsSandboxProxySettingsMode::Preserve,
+                    motyga_sandboxing::WindowsSandboxProxySettingsMode::Preserve,
                 transform: SandboxTransformRequest {
                     command,
                     permissions: permission_profile,
@@ -141,7 +141,7 @@ impl FileSystemSandboxRunner {
                     environment_id: None,
                     network: None,
                     sandbox_policy_cwd: &cwd.uri,
-                    codex_linux_sandbox_exe: self.runtime_paths.codex_linux_sandbox_exe.as_deref(),
+                    motyga_linux_sandbox_exe: self.runtime_paths.motyga_linux_sandbox_exe.as_deref(),
                     use_legacy_landlock: sandbox_context.use_legacy_landlock,
                     windows_sandbox_level: sandbox_context.windows_sandbox_level,
                     windows_sandbox_private_desktop: sandbox_context
@@ -187,8 +187,8 @@ fn native_workspace_root(root: &PathUri) -> Result<AbsolutePathBuf, JSONRPCError
 
 fn helper_read_roots(runtime_paths: &ExecServerRuntimePaths) -> Vec<AbsolutePathBuf> {
     let mut roots = Vec::new();
-    for path in std::iter::once(runtime_paths.codex_self_exe.as_path())
-        .chain(runtime_paths.codex_linux_sandbox_exe.as_deref())
+    for path in std::iter::once(runtime_paths.motyga_self_exe.as_path())
+        .chain(runtime_paths.motyga_linux_sandbox_exe.as_deref())
     {
         if let Some(parent) = path.parent()
             && let Ok(root) = AbsolutePathBuf::from_absolute_path(parent)
@@ -372,15 +372,15 @@ mod tests {
     use std::collections::HashMap;
     use std::ffi::OsString;
 
-    use codex_protocol::models::PermissionProfile;
-    use codex_protocol::permissions::FileSystemAccessMode;
-    use codex_protocol::permissions::FileSystemPath;
-    use codex_protocol::permissions::FileSystemSandboxEntry;
-    use codex_protocol::permissions::FileSystemSandboxPolicy;
-    use codex_protocol::permissions::FileSystemSpecialPath;
-    use codex_protocol::permissions::NetworkSandboxPolicy;
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use codex_utils_path_uri::PathUri;
+    use motyga_protocol::models::PermissionProfile;
+    use motyga_protocol::permissions::FileSystemAccessMode;
+    use motyga_protocol::permissions::FileSystemPath;
+    use motyga_protocol::permissions::FileSystemSandboxEntry;
+    use motyga_protocol::permissions::FileSystemSandboxPolicy;
+    use motyga_protocol::permissions::FileSystemSpecialPath;
+    use motyga_protocol::permissions::NetworkSandboxPolicy;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_path_uri::PathUri;
     use pretty_assertions::assert_eq;
 
     use crate::ExecServerRuntimePaths;
@@ -421,9 +421,9 @@ mod tests {
 
     #[test]
     fn helper_permissions_preserve_existing_writes() {
-        let codex_self_exe = std::env::current_exe().expect("current exe");
+        let motyga_self_exe = std::env::current_exe().expect("current exe");
         let runtime_paths =
-            ExecServerRuntimePaths::new(codex_self_exe, /*codex_linux_sandbox_exe*/ None)
+            ExecServerRuntimePaths::new(motyga_self_exe, /*motyga_linux_sandbox_exe*/ None)
                 .expect("runtime paths");
         let cwd = AbsolutePathBuf::from_absolute_path(std::env::temp_dir().as_path())
             .expect("absolute cwd");
@@ -434,7 +434,7 @@ mod tests {
         )]);
         let readable = AbsolutePathBuf::from_absolute_path(
             runtime_paths
-                .codex_self_exe
+                .motyga_self_exe
                 .parent()
                 .expect("current exe parent"),
         )
@@ -470,7 +470,7 @@ mod tests {
         let env = helper_env_from_vars(
             [
                 ("PATH", "/usr/bin:/bin"),
-                ("TMPDIR", "/tmp/codex"),
+                ("TMPDIR", "/tmp/motyga"),
                 ("TMP", "/tmp"),
                 ("TEMP", "/tmp"),
                 ("HOME", "/home/user"),
@@ -484,7 +484,7 @@ mod tests {
             env,
             HashMap::from([
                 ("PATH".to_string(), "/usr/bin:/bin".to_string()),
-                ("TMPDIR".to_string(), "/tmp/codex".to_string()),
+                ("TMPDIR".to_string(), "/tmp/motyga".to_string()),
                 ("TMP".to_string(), "/tmp".to_string()),
                 ("TEMP".to_string(), "/tmp".to_string()),
             ])
@@ -539,9 +539,9 @@ mod tests {
         };
         let path_key = path_key.to_string_lossy().into_owned();
         let path = path.to_string_lossy().into_owned();
-        let codex_self_exe = std::env::current_exe().expect("current exe");
+        let motyga_self_exe = std::env::current_exe().expect("current exe");
         let runtime_paths =
-            ExecServerRuntimePaths::new(codex_self_exe.clone(), Some(codex_self_exe))
+            ExecServerRuntimePaths::new(motyga_self_exe.clone(), Some(motyga_self_exe))
                 .expect("runtime paths");
         let runner = FileSystemSandboxRunner::new(runtime_paths);
         let native_cwd = AbsolutePathBuf::current_dir().expect("cwd");
@@ -614,7 +614,7 @@ mod tests {
             },
             access: FileSystemAccessMode::Write,
         }]);
-        let sandbox_context = codex_file_system::FileSystemSandboxContext::from_permission_profile(
+        let sandbox_context = motyga_file_system::FileSystemSandboxContext::from_permission_profile(
             PermissionProfile::from_runtime_permissions(&policy, NetworkSandboxPolicy::Restricted),
         );
 
@@ -628,16 +628,16 @@ mod tests {
 
     #[test]
     fn helper_permissions_include_helper_read_root_without_additional_permissions() {
-        let codex_self_exe = std::env::current_exe().expect("current exe");
+        let motyga_self_exe = std::env::current_exe().expect("current exe");
         let runtime_paths =
-            ExecServerRuntimePaths::new(codex_self_exe, /*codex_linux_sandbox_exe*/ None)
+            ExecServerRuntimePaths::new(motyga_self_exe, /*motyga_linux_sandbox_exe*/ None)
                 .expect("runtime paths");
         let cwd = AbsolutePathBuf::from_absolute_path(std::env::temp_dir().as_path())
             .expect("absolute cwd");
         let mut policy = restricted_policy(Vec::new());
         let readable = AbsolutePathBuf::from_absolute_path(
             runtime_paths
-                .codex_self_exe
+                .motyga_self_exe
                 .parent()
                 .expect("current exe parent"),
         )
@@ -655,16 +655,16 @@ mod tests {
     #[test]
     fn helper_permissions_include_linux_sandbox_alias_parent() {
         let root = tempfile::tempdir().expect("temp dir");
-        let codex_self_exe = root.path().join("bin").join("codex");
-        let codex_linux_sandbox_exe = root.path().join("aliases").join("codex-linux-sandbox");
+        let motyga_self_exe = root.path().join("bin").join("motyga");
+        let motyga_linux_sandbox_exe = root.path().join("aliases").join("motyga-linux-sandbox");
         let runtime_paths =
-            ExecServerRuntimePaths::new(codex_self_exe, Some(codex_linux_sandbox_exe))
+            ExecServerRuntimePaths::new(motyga_self_exe, Some(motyga_linux_sandbox_exe))
                 .expect("runtime paths");
         let cwd = AbsolutePathBuf::from_absolute_path(std::env::temp_dir().as_path())
             .expect("absolute cwd");
         let mut policy = restricted_policy(Vec::new());
-        let codex_parent = AbsolutePathBuf::from_absolute_path(root.path().join("bin"))
-            .expect("absolute codex parent");
+        let motyga_parent = AbsolutePathBuf::from_absolute_path(root.path().join("bin"))
+            .expect("absolute motyga parent");
         let alias_parent = AbsolutePathBuf::from_absolute_path(root.path().join("aliases"))
             .expect("absolute alias parent");
 
@@ -674,7 +674,7 @@ mod tests {
             cwd.as_path(),
         );
 
-        assert!(policy.can_read_path_with_cwd(codex_parent.as_path(), cwd.as_path()));
+        assert!(policy.can_read_path_with_cwd(motyga_parent.as_path(), cwd.as_path()));
         assert!(policy.can_read_path_with_cwd(alias_parent.as_path(), cwd.as_path()));
     }
 
@@ -686,7 +686,7 @@ mod tests {
         policy: &FileSystemSandboxPolicy,
         cwd: PathUri,
     ) -> crate::FileSystemSandboxContext {
-        codex_file_system::FileSystemSandboxContext::from_permission_profile_with_cwd(
+        motyga_file_system::FileSystemSandboxContext::from_permission_profile_with_cwd(
             PermissionProfile::from_runtime_permissions(policy, NetworkSandboxPolicy::Restricted),
             cwd,
         )

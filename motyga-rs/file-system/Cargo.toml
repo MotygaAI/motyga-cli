@@ -1,5 +1,5 @@
 [package]
-name = "codex-file-system"
+name = "motyga-file-system"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,9 +9,9 @@ workspace = true
 
 [dependencies]
 bytes = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-path-uri = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
 futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 

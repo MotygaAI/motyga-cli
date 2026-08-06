@@ -8,7 +8,7 @@ mod registry;
 mod schema;
 mod types;
 
-use codex_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::HookEventName;
 
 pub use config_rules::hook_states_from_stack;
 pub use declarations::PluginHookDeclaration;
@@ -31,7 +31,7 @@ pub const HOOK_EVENT_NAMES: [&str; 10] = [
 
 /// Hook event names whose matcher fields are meaningful during dispatch.
 ///
-/// Other events can appear in hooks JSON, but Codex ignores their matcher
+/// Other events can appear in hooks JSON, but Motyga ignores their matcher
 /// fields because those events do not dispatch against a tool, compaction
 /// trigger, or session-start source.
 pub const HOOK_EVENT_NAMES_WITH_MATCHERS: [&str; 8] = [

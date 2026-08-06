@@ -5,38 +5,38 @@ use std::path::Component;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_config::permissions_toml::FilesystemPermissionToml;
-use codex_config::permissions_toml::FilesystemPermissionsToml;
-use codex_config::permissions_toml::NetworkDomainPermissionToml;
-use codex_config::permissions_toml::NetworkDomainPermissionsToml;
-use codex_config::permissions_toml::NetworkToml;
-use codex_config::permissions_toml::NetworkUnixSocketPermissionToml;
-use codex_config::permissions_toml::NetworkUnixSocketPermissionsToml;
-use codex_config::permissions_toml::PermissionProfileToml;
-use codex_config::permissions_toml::PermissionsToml;
-use codex_config::permissions_toml::WorkspaceRootsToml;
-use codex_config::types::SandboxWorkspaceWrite;
-use codex_features::NetworkProxyConfigToml;
-use codex_features::NetworkProxyDomainPermissionToml;
-use codex_features::NetworkProxyModeToml;
-use codex_features::NetworkProxyUnixSocketPermissionToml;
-use codex_network_proxy::NetworkMode;
-use codex_network_proxy::NetworkProxyConfig;
+use motyga_config::permissions_toml::FilesystemPermissionToml;
+use motyga_config::permissions_toml::FilesystemPermissionsToml;
+use motyga_config::permissions_toml::NetworkDomainPermissionToml;
+use motyga_config::permissions_toml::NetworkDomainPermissionsToml;
+use motyga_config::permissions_toml::NetworkToml;
+use motyga_config::permissions_toml::NetworkUnixSocketPermissionToml;
+use motyga_config::permissions_toml::NetworkUnixSocketPermissionsToml;
+use motyga_config::permissions_toml::PermissionProfileToml;
+use motyga_config::permissions_toml::PermissionsToml;
+use motyga_config::permissions_toml::WorkspaceRootsToml;
+use motyga_config::types::SandboxWorkspaceWrite;
+use motyga_features::NetworkProxyConfigToml;
+use motyga_features::NetworkProxyDomainPermissionToml;
+use motyga_features::NetworkProxyModeToml;
+use motyga_features::NetworkProxyUnixSocketPermissionToml;
+use motyga_network_proxy::NetworkMode;
+use motyga_network_proxy::NetworkProxyConfig;
 #[cfg(test)]
-use codex_network_proxy::NetworkUnixSocketPermission as ProxyNetworkUnixSocketPermission;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::permissions::project_roots_glob_pattern;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_network_proxy::NetworkUnixSocketPermission as ProxyNetworkUnixSocketPermission;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::permissions::project_roots_glob_pattern;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 use super::ProjectConfig;
 
@@ -473,14 +473,14 @@ pub(crate) fn reject_unknown_builtin_permission_profile(profile_name: &str) -> i
 }
 
 /// Returns a list of paths that must be readable by shell tools in order
-/// for Codex to function. These should always be added to the
+/// for Motyga to function. These should always be added to the
 /// `FileSystemSandboxPolicy` for a thread.
-pub(crate) fn get_readable_roots_required_for_codex_runtime(
-    codex_home: &Path,
+pub(crate) fn get_readable_roots_required_for_motyga_runtime(
+    motyga_home: &Path,
     zsh_path: Option<&PathBuf>,
     main_execve_wrapper_exe: Option<&PathBuf>,
 ) -> Vec<AbsolutePathBuf> {
-    let arg0_root = AbsolutePathBuf::from_absolute_path(codex_home.join("tmp").join("arg0")).ok();
+    let arg0_root = AbsolutePathBuf::from_absolute_path(motyga_home.join("tmp").join("arg0")).ok();
     let zsh_path = zsh_path.and_then(|path| AbsolutePathBuf::from_absolute_path(path).ok());
     let execve_wrapper_root = main_execve_wrapper_exe.and_then(|path| {
         let path = AbsolutePathBuf::from_absolute_path(path).ok()?;
@@ -765,7 +765,7 @@ fn remove_trailing_glob_suffix(path: &str) -> &str {
 }
 
 // WARNING: keep this parser forward-compatible.
-// Adding a new `:special_path` must not make older Codex versions reject the
+// Adding a new `:special_path` must not make older Motyga versions reject the
 // config. Unknown values intentionally round-trip through
 // `FileSystemSpecialPath::Unknown` so they can be surfaced as warnings and
 // ignored, rather than aborting config load.

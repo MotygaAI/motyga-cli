@@ -1,12 +1,12 @@
 use super::*;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigRequirements;
-use codex_config::ConfigRequirementsToml;
-use codex_config::FeatureRequirementsToml;
-use codex_config::RequirementSource;
-use codex_config::Sourced;
-use codex_config::config_toml::ConfigToml;
-use codex_features::FeaturesToml;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigRequirements;
+use motyga_config::ConfigRequirementsToml;
+use motyga_config::FeatureRequirementsToml;
+use motyga_config::RequirementSource;
+use motyga_config::Sourced;
+use motyga_config::config_toml::ConfigToml;
+use motyga_features::FeaturesToml;
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
 

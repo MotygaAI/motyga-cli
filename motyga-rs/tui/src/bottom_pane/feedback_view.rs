@@ -1,7 +1,7 @@
-use codex_feedback::DOCTOR_REPORT_ATTACHMENT_FILENAME;
-use codex_feedback::FEEDBACK_DIAGNOSTICS_ATTACHMENT_FILENAME;
-use codex_feedback::FeedbackDiagnostics;
-use codex_feedback::WINDOWS_SANDBOX_LOG_ATTACHMENT_FILENAME;
+use motyga_feedback::DOCTOR_REPORT_ATTACHMENT_FILENAME;
+use motyga_feedback::FEEDBACK_DIAGNOSTICS_ATTACHMENT_FILENAME;
+use motyga_feedback::FeedbackDiagnostics;
+use motyga_feedback::WINDOWS_SANDBOX_LOG_ATTACHMENT_FILENAME;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
@@ -30,7 +30,7 @@ use super::textarea::TextAreaState;
 
 const BASE_CLI_BUG_ISSUE_URL: &str = "https://github.com/MotygaAI/motyga-cli/issues/new?labels=cli";
 /// Internal routing link for employee feedback follow-ups. This must not be shown to external users.
-const CODEX_FEEDBACK_INTERNAL_URL: &str = "https://motyga.com";
+const MOTYGA_FEEDBACK_INTERNAL_URL: &str = "https://motyga.com";
 
 /// The target audience for feedback follow-up instructions.
 ///
@@ -321,7 +321,7 @@ pub(crate) fn feedback_success_cell(
     let issue_url = issue_url_for_category(category, thread_id, feedback_audience);
     let mut lines = vec![Line::from(match issue_url.as_ref() {
         Some(_) if feedback_audience == FeedbackAudience::OpenAiEmployee => {
-            format!("{prefix} Please report this in #codex-feedback:")
+            format!("{prefix} Please report this in #motyga-feedback:")
         }
         Some(_) => format!("{prefix} Please open an issue using the following URL:"),
         None => format!("{prefix} Thanks for the feedback!"),
@@ -335,7 +335,7 @@ pub(crate) fn feedback_success_cell(
                 Line::from("  Share this and add some info about your problem:"),
                 Line::from(vec![
                     "    ".into(),
-                    format!("https://go/codex-feedback/{thread_id}").bold(),
+                    format!("https://go/motyga-feedback/{thread_id}").bold(),
                 ]),
             ]);
         }
@@ -388,7 +388,7 @@ fn issue_url_for_category(
 /// We accept a `thread_id` so the call site stays symmetric with the external
 /// path, but we currently point to a fixed channel without prefilling text.
 fn slack_feedback_url(_thread_id: &str) -> String {
-    CODEX_FEEDBACK_INTERNAL_URL.to_string()
+    MOTYGA_FEEDBACK_INTERNAL_URL.to_string()
 }
 
 // Build the selection popup params for feedback categories.
@@ -503,7 +503,7 @@ pub(crate) fn feedback_upload_consent_params(
         Line::from("Upload logs?".bold()).into(),
         Line::from("").into(),
         Line::from("The following files will be sent:".dim()).into(),
-        Line::from(vec!["  • ".into(), "codex-logs.log".into()]).into(),
+        Line::from(vec!["  • ".into(), "motyga-logs.log".into()]).into(),
         Line::from(vec![
             "  • ".into(),
             DOCTOR_REPORT_ATTACHMENT_FILENAME.into(),
@@ -580,7 +580,7 @@ mod tests {
     use super::*;
     use crate::app_event::AppEvent;
     use crate::app_event_sender::AppEventSender;
-    use codex_feedback::FeedbackDiagnostic;
+    use motyga_feedback::FeedbackDiagnostic;
     use pretty_assertions::assert_eq;
 
     fn render(view: &FeedbackNoteView, width: u16) -> String {
@@ -820,7 +820,9 @@ mod tests {
             "thread-1",
             FeedbackAudience::OpenAiEmployee,
         );
-        let expected_slack_url = "http://go/codex-feedback-internal".to_string();
+        // `slack_feedback_url` returns MOTYGA_FEEDBACK_INTERNAL_URL; the old
+        // `go/...` value was OpenAI's intranet shortlink and does not resolve here.
+        let expected_slack_url = MOTYGA_FEEDBACK_INTERNAL_URL.to_string();
         assert_eq!(bug_url.as_deref(), Some(expected_slack_url.as_str()));
 
         let bad_result_url = issue_url_for_category(
@@ -888,7 +890,9 @@ mod tests {
         );
         assert_eq!(
             rendered,
-            "• Feedback uploaded. Please report this in #codex-feedback:\n\n  http://go/codex-feedback-internal\n\n  Share this and add some info about your problem:\n    https://go/codex-feedback/thread-2"
+            format!(
+                "• Feedback uploaded. Please report this in #motyga-feedback:\n\n  {MOTYGA_FEEDBACK_INTERNAL_URL}\n\n  Share this and add some info about your problem:\n    https://go/motyga-feedback/thread-2"
+            )
         );
     }
 

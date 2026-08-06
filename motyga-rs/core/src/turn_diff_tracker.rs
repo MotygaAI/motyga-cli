@@ -6,9 +6,9 @@ use std::time::Duration;
 
 use sha1::digest::Output;
 
-use codex_apply_patch::AppliedPatchChange;
-use codex_apply_patch::AppliedPatchDelta;
-use codex_apply_patch::AppliedPatchFileChange;
+use motyga_apply_patch::AppliedPatchChange;
+use motyga_apply_patch::AppliedPatchDelta;
+use motyga_apply_patch::AppliedPatchFileChange;
 
 const ZERO_OID: &str = "0000000000000000000000000000000000000000";
 const DEV_NULL: &str = "/dev/null";

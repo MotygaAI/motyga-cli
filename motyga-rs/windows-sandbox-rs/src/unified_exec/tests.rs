@@ -6,9 +6,9 @@ use crate::ipc_framed::Message;
 use crate::ipc_framed::decode_bytes;
 use crate::ipc_framed::read_frame;
 use crate::run_windows_sandbox_capture;
-use codex_protocol::models::PermissionProfile;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_pty::ProcessDriver;
+use motyga_protocol::models::PermissionProfile;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_pty::ProcessDriver;
 use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 use std::fs;
@@ -67,14 +67,14 @@ fn sandbox_cwd() -> PathBuf {
 
 fn sandbox_home(name: &str) -> TempDir {
     let id = TEST_HOME_COUNTER.fetch_add(1, Ordering::Relaxed);
-    let path = std::env::temp_dir().join(format!("codex-windows-sandbox-{name}-{id}"));
+    let path = std::env::temp_dir().join(format!("motyga-windows-sandbox-{name}-{id}"));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("create sandbox home");
     tempfile::TempDir::new_in(&path).expect("create sandbox home tempdir")
 }
 
-fn sandbox_log(codex_home: &Path) -> String {
-    let log_path = crate::current_log_file_path(&codex_home.join(".sandbox"));
+fn sandbox_log(motyga_home: &Path) -> String {
+    let log_path = crate::current_log_file_path(&motyga_home.join(".sandbox"));
     fs::read_to_string(&log_path)
         .unwrap_or_else(|err| format!("failed to read {}: {err}", log_path.display()))
 }
@@ -116,11 +116,11 @@ fn wait_for_frame_count(frames_path: &Path, expected_frames: usize) -> Vec<Messa
 }
 
 async fn collect_stdout_and_exit(
-    spawned: codex_utils_pty::SpawnedProcess,
-    codex_home: &Path,
+    spawned: motyga_utils_pty::SpawnedProcess,
+    motyga_home: &Path,
     timeout_duration: Duration,
 ) -> (Vec<u8>, i32) {
-    let codex_utils_pty::SpawnedProcess {
+    let motyga_utils_pty::SpawnedProcess {
         session: _session,
         mut stdout_rx,
         stderr_rx: _stderr_rx,
@@ -135,14 +135,14 @@ async fn collect_stdout_and_exit(
     });
     let exit_code = timeout(timeout_duration, exit_rx)
         .await
-        .unwrap_or_else(|_| panic!("timed out waiting for exit\n{}", sandbox_log(codex_home)))
+        .unwrap_or_else(|_| panic!("timed out waiting for exit\n{}", sandbox_log(motyga_home)))
         .unwrap_or(-1);
     let stdout = timeout(timeout_duration, stdout_task)
         .await
         .unwrap_or_else(|_| {
             panic!(
                 "timed out waiting for stdout task\n{}",
-                sandbox_log(codex_home)
+                sandbox_log(motyga_home)
             )
         })
         .expect("stdout task join");
@@ -155,13 +155,13 @@ fn legacy_non_tty_cmd_emits_output() {
     let runtime = current_thread_runtime();
     runtime.block_on(async move {
         let cwd = sandbox_cwd();
-        let codex_home = sandbox_home("legacy-non-tty-cmd");
-        println!("cmd codex_home={}", codex_home.path().display());
+        let motyga_home = sandbox_home("legacy-non-tty-cmd");
+        println!("cmd motyga_home={}", motyga_home.path().display());
         let permission_profile = PermissionProfile::workspace_write();
         let spawned = spawn_windows_sandbox_session_legacy(
             &permission_profile,
             workspace_roots_for(cwd.as_path()).as_slice(),
-            codex_home.path(),
+            motyga_home.path(),
             vec![
                 "C:\\Windows\\System32\\cmd.exe".to_string(),
                 "/c".to_string(),
@@ -180,7 +180,7 @@ fn legacy_non_tty_cmd_emits_output() {
         .expect("spawn legacy non-tty cmd session");
         println!("cmd spawn returned");
         let (stdout, exit_code) =
-            collect_stdout_and_exit(spawned, codex_home.path(), Duration::from_secs(10)).await;
+            collect_stdout_and_exit(spawned, motyga_home.path(), Duration::from_secs(10)).await;
         println!("cmd collect returned exit_code={exit_code}");
         let stdout = String::from_utf8_lossy(&stdout);
         assert_eq!(exit_code, 0, "stdout={stdout:?}");
@@ -194,7 +194,7 @@ fn legacy_non_tty_cmd_rejects_deny_read_overrides() {
     let runtime = current_thread_runtime();
     runtime.block_on(async move {
         let cwd = sandbox_cwd();
-        let codex_home = sandbox_home("legacy-non-tty-deny-read");
+        let motyga_home = sandbox_home("legacy-non-tty-deny-read");
         let secret_path =
             AbsolutePathBuf::from_absolute_path(cwd.join("legacy-non-tty-deny-read-secret.env"))
                 .expect("absolute deny-read fixture path");
@@ -202,7 +202,7 @@ fn legacy_non_tty_cmd_rejects_deny_read_overrides() {
         let err = spawn_windows_sandbox_session_legacy(
             &permission_profile,
             workspace_roots_for(cwd.as_path()).as_slice(),
-            codex_home.path(),
+            motyga_home.path(),
             vec![
                 "C:\\Windows\\System32\\cmd.exe".to_string(),
                 "/c".to_string(),
@@ -236,13 +236,13 @@ fn legacy_non_tty_powershell_emits_output() {
     let runtime = current_thread_runtime();
     runtime.block_on(async move {
         let cwd = sandbox_cwd();
-        let codex_home = sandbox_home("legacy-non-tty-pwsh");
-        println!("pwsh codex_home={}", codex_home.path().display());
+        let motyga_home = sandbox_home("legacy-non-tty-pwsh");
+        println!("pwsh motyga_home={}", motyga_home.path().display());
         let permission_profile = PermissionProfile::workspace_write();
         let spawned = spawn_windows_sandbox_session_legacy(
             &permission_profile,
             workspace_roots_for(cwd.as_path()).as_slice(),
-            codex_home.path(),
+            motyga_home.path(),
             vec![
                 pwsh.display().to_string(),
                 "-NoProfile".to_string(),
@@ -262,7 +262,7 @@ fn legacy_non_tty_powershell_emits_output() {
         .expect("spawn legacy non-tty powershell session");
         println!("pwsh spawn returned");
         let (stdout, exit_code) =
-            collect_stdout_and_exit(spawned, codex_home.path(), Duration::from_secs(10)).await;
+            collect_stdout_and_exit(spawned, motyga_home.path(), Duration::from_secs(10)).await;
         println!("pwsh collect returned exit_code={exit_code}");
         let stdout = String::from_utf8_lossy(&stdout);
         assert_eq!(exit_code, 0, "stdout={stdout:?}");
@@ -398,7 +398,7 @@ fn runner_resizer_sends_resize_frame() {
         let outbound_tx = super::start_runner_pipe_writer(file);
         let mut resizer = super::make_runner_resizer(outbound_tx);
 
-        resizer(codex_utils_pty::TerminalSize {
+        resizer(motyga_utils_pty::TerminalSize {
             rows: 45,
             cols: 132,
         })
@@ -422,13 +422,13 @@ fn legacy_capture_powershell_emits_output() {
     };
     let _guard = legacy_process_test_guard();
     let cwd = sandbox_cwd();
-    let codex_home = sandbox_home("legacy-capture-pwsh");
-    println!("capture pwsh codex_home={}", codex_home.path().display());
+    let motyga_home = sandbox_home("legacy-capture-pwsh");
+    println!("capture pwsh motyga_home={}", motyga_home.path().display());
     let permission_profile = PermissionProfile::workspace_write();
     let result = run_windows_sandbox_capture(
         &permission_profile,
         workspace_roots_for(cwd.as_path()).as_slice(),
-        codex_home.path(),
+        motyga_home.path(),
         vec![
             pwsh.display().to_string(),
             "-NoProfile".to_string(),
@@ -462,7 +462,7 @@ fn legacy_capture_cancellation_is_not_reported_as_timeout() {
     };
     let _guard = legacy_process_test_guard();
     let cwd = sandbox_cwd();
-    let codex_home = sandbox_home("legacy-capture-cancel");
+    let motyga_home = sandbox_home("legacy-capture-cancel");
     let permission_profile = PermissionProfile::workspace_write();
     let cancelled = Arc::new(AtomicBool::new(false));
     let cancelled_for_token = Arc::clone(&cancelled);
@@ -478,7 +478,7 @@ fn legacy_capture_cancellation_is_not_reported_as_timeout() {
     let result = run_windows_sandbox_capture(
         &permission_profile,
         workspace_roots_for(cwd.as_path()).as_slice(),
-        codex_home.path(),
+        motyga_home.path(),
         vec![
             pwsh.display().to_string(),
             "-NoProfile".to_string(),
@@ -514,13 +514,13 @@ fn legacy_tty_powershell_emits_output_and_accepts_input() {
     let runtime = current_thread_runtime();
     runtime.block_on(async move {
         let cwd = sandbox_cwd();
-        let codex_home = sandbox_home("legacy-tty-pwsh");
-        println!("tty pwsh codex_home={}", codex_home.path().display());
+        let motyga_home = sandbox_home("legacy-tty-pwsh");
+        println!("tty pwsh motyga_home={}", motyga_home.path().display());
         let permission_profile = PermissionProfile::workspace_write();
         let spawned = spawn_windows_sandbox_session_legacy(
             &permission_profile,
             workspace_roots_for(cwd.as_path()).as_slice(),
-            codex_home.path(),
+            motyga_home.path(),
             vec![
                 pwsh.display().to_string(),
                 "-NoLogo".to_string(),
@@ -554,7 +554,7 @@ fn legacy_tty_powershell_emits_output_and_accepts_input() {
         spawned.session.close_stdin();
 
         let (stdout, exit_code) =
-            collect_stdout_and_exit(spawned, codex_home.path(), Duration::from_secs(15)).await;
+            collect_stdout_and_exit(spawned, motyga_home.path(), Duration::from_secs(15)).await;
         let stdout = String::from_utf8_lossy(&stdout);
         assert_eq!(exit_code, 0, "stdout={stdout:?}");
         assert!(stdout.contains("ready"), "stdout={stdout:?}");
@@ -568,13 +568,13 @@ fn legacy_tty_cmd_emits_output_and_accepts_input() {
     let runtime = current_thread_runtime();
     runtime.block_on(async move {
         let cwd = sandbox_cwd();
-        let codex_home = sandbox_home("legacy-tty-cmd");
-        println!("tty cmd codex_home={}", codex_home.path().display());
+        let motyga_home = sandbox_home("legacy-tty-cmd");
+        println!("tty cmd motyga_home={}", motyga_home.path().display());
         let permission_profile = PermissionProfile::workspace_write();
         let spawned = spawn_windows_sandbox_session_legacy(
             &permission_profile,
             workspace_roots_for(cwd.as_path()).as_slice(),
-            codex_home.path(),
+            motyga_home.path(),
             vec![
                 "C:\\Windows\\System32\\cmd.exe".to_string(),
                 "/K".to_string(),
@@ -605,7 +605,7 @@ fn legacy_tty_cmd_emits_output_and_accepts_input() {
         spawned.session.close_stdin();
 
         let (stdout, exit_code) =
-            collect_stdout_and_exit(spawned, codex_home.path(), Duration::from_secs(15)).await;
+            collect_stdout_and_exit(spawned, motyga_home.path(), Duration::from_secs(15)).await;
         let stdout = String::from_utf8_lossy(&stdout);
         assert_eq!(exit_code, 0, "stdout={stdout:?}");
         assert!(stdout.contains("ready"), "stdout={stdout:?}");
@@ -619,16 +619,16 @@ fn legacy_tty_cmd_default_desktop_emits_output_and_accepts_input() {
     let runtime = current_thread_runtime();
     runtime.block_on(async move {
         let cwd = sandbox_cwd();
-        let codex_home = sandbox_home("legacy-tty-cmd-default-desktop");
+        let motyga_home = sandbox_home("legacy-tty-cmd-default-desktop");
         println!(
-            "tty cmd default desktop codex_home={}",
-            codex_home.path().display()
+            "tty cmd default desktop motyga_home={}",
+            motyga_home.path().display()
         );
         let permission_profile = PermissionProfile::workspace_write();
         let spawned = spawn_windows_sandbox_session_legacy(
             &permission_profile,
             workspace_roots_for(cwd.as_path()).as_slice(),
-            codex_home.path(),
+            motyga_home.path(),
             vec![
                 "C:\\Windows\\System32\\cmd.exe".to_string(),
                 "/K".to_string(),
@@ -659,7 +659,7 @@ fn legacy_tty_cmd_default_desktop_emits_output_and_accepts_input() {
         spawned.session.close_stdin();
 
         let (stdout, exit_code) =
-            collect_stdout_and_exit(spawned, codex_home.path(), Duration::from_secs(15)).await;
+            collect_stdout_and_exit(spawned, motyga_home.path(), Duration::from_secs(15)).await;
         let stdout = String::from_utf8_lossy(&stdout);
         assert_eq!(exit_code, 0, "stdout={stdout:?}");
         assert!(stdout.contains("ready"), "stdout={stdout:?}");

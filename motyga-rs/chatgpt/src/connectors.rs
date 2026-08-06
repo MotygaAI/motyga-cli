@@ -4,44 +4,44 @@ use std::time::Duration;
 
 use crate::chatgpt_client::chatgpt_get_request_with_timeout;
 
-use codex_connectors::AppInfo;
-use codex_connectors::ConnectorDirectoryCacheContext;
-use codex_connectors::ConnectorDirectoryCacheKey;
-use codex_connectors::DirectoryListResponse;
-use codex_connectors::merge::merge_connectors;
-use codex_connectors::merge::merge_plugin_connectors;
-use codex_core::config::Config;
-pub use codex_core::connectors::list_accessible_connectors_from_mcp_tools;
-pub use codex_core::connectors::list_accessible_connectors_from_mcp_tools_with_environment_manager;
-pub use codex_core::connectors::list_accessible_connectors_from_mcp_tools_with_mcp_manager;
-pub use codex_core::connectors::list_accessible_connectors_from_mcp_tools_with_options;
-pub use codex_core::connectors::list_accessible_connectors_from_mcp_tools_with_options_and_status;
-pub use codex_core::connectors::list_cached_accessible_connectors_from_mcp_tools;
-pub use codex_core::connectors::with_app_enabled_state;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_plugin::AppConnectorId;
+use motyga_connectors::AppInfo;
+use motyga_connectors::ConnectorDirectoryCacheContext;
+use motyga_connectors::ConnectorDirectoryCacheKey;
+use motyga_connectors::DirectoryListResponse;
+use motyga_connectors::merge::merge_connectors;
+use motyga_connectors::merge::merge_plugin_connectors;
+use motyga_core::config::Config;
+pub use motyga_core::connectors::list_accessible_connectors_from_mcp_tools;
+pub use motyga_core::connectors::list_accessible_connectors_from_mcp_tools_with_environment_manager;
+pub use motyga_core::connectors::list_accessible_connectors_from_mcp_tools_with_mcp_manager;
+pub use motyga_core::connectors::list_accessible_connectors_from_mcp_tools_with_options;
+pub use motyga_core::connectors::list_accessible_connectors_from_mcp_tools_with_options_and_status;
+pub use motyga_core::connectors::list_cached_accessible_connectors_from_mcp_tools;
+pub use motyga_core::connectors::with_app_enabled_state;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_plugin::AppConnectorId;
 
 const DIRECTORY_CONNECTORS_TIMEOUT: Duration = Duration::from_secs(60);
 
 async fn apps_enabled(config: &Config) -> bool {
     let auth_manager =
-        AuthManager::shared_from_config(config, /*enable_codex_api_key_env*/ false).await;
+        AuthManager::shared_from_config(config, /*enable_motyga_api_key_env*/ false).await;
     let auth = auth_manager.auth().await;
     config
         .features
-        .apps_enabled_for_auth(auth.as_ref().is_some_and(CodexAuth::uses_codex_backend))
+        .apps_enabled_for_auth(auth.as_ref().is_some_and(MotygaAuth::uses_motyga_backend))
 }
 
-async fn connector_auth(config: &Config) -> anyhow::Result<CodexAuth> {
+async fn connector_auth(config: &Config) -> anyhow::Result<MotygaAuth> {
     let auth_manager =
-        AuthManager::shared_from_config(config, /*enable_codex_api_key_env*/ false).await;
+        AuthManager::shared_from_config(config, /*enable_motyga_api_key_env*/ false).await;
     let auth = auth_manager
         .auth()
         .await
         .ok_or_else(|| anyhow::anyhow!("ChatGPT auth not available"))?;
     anyhow::ensure!(
-        auth.uses_codex_backend(),
+        auth.uses_motyga_backend(),
         "ChatGPT connectors require Motyga backend auth"
     );
     Ok(auth)
@@ -79,7 +79,7 @@ pub async fn list_cached_all_connectors(
 
     let auth = connector_auth(config).await.ok()?;
     let cache_context = connector_directory_cache_context(config, &auth);
-    let connectors = codex_connectors::cached_directory_connectors(&cache_context)?;
+    let connectors = motyga_connectors::cached_directory_connectors(&cache_context)?;
     Some(merge_directory_and_plugin_connectors(
         connectors,
         plugin_apps,
@@ -96,7 +96,7 @@ pub async fn list_all_connectors_with_options(
     }
     let auth = connector_auth(config).await?;
     let cache_context = connector_directory_cache_context(config, &auth);
-    let connectors = codex_connectors::list_all_connectors_with_options(
+    let connectors = motyga_connectors::list_all_connectors_with_options(
         cache_context,
         auth.is_workspace_account(),
         force_refetch,
@@ -118,10 +118,10 @@ pub async fn list_all_connectors_with_options(
 
 fn connector_directory_cache_context(
     config: &Config,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
 ) -> ConnectorDirectoryCacheContext {
     ConnectorDirectoryCacheContext::new(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
         ConnectorDirectoryCacheKey::new(
             config.chatgpt_base_url.clone(),
             auth.get_account_id(),
@@ -187,8 +187,8 @@ pub fn merge_connectors_with_accessible(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_connectors::metadata::connector_install_url;
-    use codex_plugin::AppConnectorId;
+    use motyga_connectors::metadata::connector_install_url;
+    use motyga_plugin::AppConnectorId;
     use pretty_assertions::assert_eq;
 
     fn app(id: &str) -> AppInfo {

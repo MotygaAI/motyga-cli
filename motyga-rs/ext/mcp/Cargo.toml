@@ -1,11 +1,11 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-mcp-extension"
+name = "motyga-mcp-extension"
 version.workspace = true
 
 [lib]
-name = "codex_mcp_extension"
+name = "motyga_mcp_extension"
 path = "src/lib.rs"
 doctest = false
 
@@ -13,25 +13,25 @@ doctest = false
 workspace = true
 
 [dependencies]
-codex-core = { workspace = true }
-codex-core-plugins = { workspace = true }
-codex-config = { workspace = true }
-codex-connectors-extension = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-extension-api = { workspace = true }
-codex-features = { workspace = true }
-codex-mcp = { workspace = true }
-codex-plugin = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-path-uri = { workspace = true }
+motyga-core = { workspace = true }
+motyga-core-plugins = { workspace = true }
+motyga-config = { workspace = true }
+motyga-connectors-extension = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-extension-api = { workspace = true }
+motyga-features = { workspace = true }
+motyga-mcp = { workspace = true }
+motyga-plugin = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 
 [dev-dependencies]
-codex-login = { workspace = true }
+motyga-login = { workspace = true }
 pretty_assertions = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

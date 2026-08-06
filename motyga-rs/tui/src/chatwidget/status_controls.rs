@@ -318,7 +318,7 @@ impl ChatWidget {
             }),
         );
 
-        if self.rate_limit_snapshots_by_limit_id.contains_key("codex") {
+        if self.rate_limit_snapshots_by_limit_id.contains_key("motyga") {
             for item in [
                 StatusSurfacePreviewItem::FiveHourLimit,
                 StatusSurfacePreviewItem::WeeklyLimit,

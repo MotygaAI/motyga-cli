@@ -22,7 +22,7 @@ pub async fn run_main(
 }
 
 #[tracing::instrument(
-    name = "codex.exec_server",
+    name = "motyga.exec_server",
     skip_all,
     fields(otel.kind = "internal")
 )]
@@ -61,7 +61,7 @@ mod tests {
                 "invalid",
                 ExecServerRuntimePaths::new(
                     std::env::current_exe().expect("current executable"),
-                    /*codex_linux_sandbox_exe*/ None,
+                    /*motyga_linux_sandbox_exe*/ None,
                 )
                 .expect("runtime paths"),
                 ExecServerTelemetry::default(),
@@ -75,7 +75,7 @@ mod tests {
         provider.force_flush().expect("flush traces");
         let spans = exporter.get_finished_spans().expect("span export");
         assert!(
-            spans.iter().any(|span| span.name == "codex.exec_server"),
+            spans.iter().any(|span| span.name == "motyga.exec_server"),
             "root exec-server span missing: {spans:?}"
         );
     }

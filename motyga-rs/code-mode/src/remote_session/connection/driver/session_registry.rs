@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use codex_code_mode_protocol::CellId;
-use codex_code_mode_protocol::CodeModeSessionDelegate;
-use codex_code_mode_protocol::host::SessionId;
-use codex_code_mode_protocol::host::WireCellId;
+use motyga_code_mode_protocol::CellId;
+use motyga_code_mode_protocol::CodeModeSessionDelegate;
+use motyga_code_mode_protocol::host::SessionId;
+use motyga_code_mode_protocol::host::WireCellId;
 
 use super::cell_ids::public_cell_id;
 use super::cleanup::SessionCleanup;

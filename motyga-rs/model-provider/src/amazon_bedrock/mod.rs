@@ -6,22 +6,22 @@ mod mantle;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use codex_api::ApiError;
-use codex_api::Provider;
-use codex_api::SharedAuthProvider;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::auth::BedrockApiKeyAuth;
-use codex_model_provider_info::AMAZON_BEDROCK_GPT_5_4_MODEL_ID;
-use codex_model_provider_info::ModelProviderAwsAuthInfo;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_models_manager::manager::SharedModelsManager;
-use codex_models_manager::manager::StaticModelsManager;
-use codex_protocol::account::AmazonBedrockCredentialSource;
-use codex_protocol::account::ProviderAccount;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result;
-use codex_protocol::openai_models::ModelsResponse;
+use motyga_api::ApiError;
+use motyga_api::Provider;
+use motyga_api::SharedAuthProvider;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::auth::BedrockApiKeyAuth;
+use motyga_model_provider_info::AMAZON_BEDROCK_GPT_5_4_MODEL_ID;
+use motyga_model_provider_info::ModelProviderAwsAuthInfo;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_models_manager::manager::SharedModelsManager;
+use motyga_models_manager::manager::StaticModelsManager;
+use motyga_protocol::account::AmazonBedrockCredentialSource;
+use motyga_protocol::account::ProviderAccount;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result;
+use motyga_protocol::openai_models::ModelsResponse;
 
 use crate::provider::ModelProvider;
 use crate::provider::ModelProviderFuture;
@@ -65,17 +65,17 @@ impl AmazonBedrockModelProvider {
             .as_ref()
             .and_then(|auth_manager| auth_manager.auth_cached())
             .and_then(|auth| match auth {
-                CodexAuth::BedrockApiKey(auth) => Some(auth),
-                CodexAuth::ApiKey(_)
-                | CodexAuth::Chatgpt(_)
-                | CodexAuth::ChatgptAuthTokens(_)
-                | CodexAuth::AgentIdentity(_)
-                | CodexAuth::PersonalAccessToken(_) => None,
+                MotygaAuth::BedrockApiKey(auth) => Some(auth),
+                MotygaAuth::ApiKey(_)
+                | MotygaAuth::Chatgpt(_)
+                | MotygaAuth::ChatgptAuthTokens(_)
+                | MotygaAuth::AgentIdentity(_)
+                | MotygaAuth::PersonalAccessToken(_) => None,
             })
     }
 
-    async fn auth(&self) -> Option<CodexAuth> {
-        self.managed_auth().map(CodexAuth::BedrockApiKey)
+    async fn auth(&self) -> Option<MotygaAuth> {
+        self.managed_auth().map(MotygaAuth::BedrockApiKey)
     }
 
     async fn api_provider(&self) -> Result<Provider> {
@@ -129,13 +129,13 @@ impl ModelProvider for AmazonBedrockModelProvider {
             .and_then(|_| self.auth_manager.as_ref().cloned())
     }
 
-    fn auth(&self) -> ModelProviderFuture<'_, Option<CodexAuth>> {
+    fn auth(&self) -> ModelProviderFuture<'_, Option<MotygaAuth>> {
         Box::pin(AmazonBedrockModelProvider::auth(self))
     }
 
     fn account_state(&self) -> ProviderAccountResult {
         let credential_source = if self.managed_auth().is_some() {
-            AmazonBedrockCredentialSource::CodexManaged
+            AmazonBedrockCredentialSource::MotygaManaged
         } else {
             AmazonBedrockCredentialSource::AwsManaged
         };
@@ -145,7 +145,7 @@ impl ModelProvider for AmazonBedrockModelProvider {
         })
     }
 
-    fn map_api_error(&self, error: ApiError) -> CodexErr {
+    fn map_api_error(&self, error: ApiError) -> MotygaErr {
         error::map_api_error(error)
     }
 
@@ -163,7 +163,7 @@ impl ModelProvider for AmazonBedrockModelProvider {
 
     fn models_manager(
         &self,
-        _codex_home: PathBuf,
+        _motyga_home: PathBuf,
         config_model_catalog: Option<ModelsResponse>,
     ) -> SharedModelsManager {
         Arc::new(StaticModelsManager::new(
@@ -207,7 +207,7 @@ mod tests {
             region: "us-east-1".to_string(),
         };
         let auth_manager =
-            AuthManager::from_auth_for_testing(CodexAuth::BedrockApiKey(managed_auth.clone()));
+            AuthManager::from_auth_for_testing(MotygaAuth::BedrockApiKey(managed_auth.clone()));
         let provider = AmazonBedrockModelProvider::new(
             ModelProviderInfo::create_amazon_bedrock_provider(Some(ModelProviderAwsAuthInfo {
                 profile: Some("aws-profile-that-should-not-be-loaded".to_string()),
@@ -224,13 +224,13 @@ mod tests {
         ));
         assert_eq!(
             provider.auth().await,
-            Some(CodexAuth::BedrockApiKey(managed_auth))
+            Some(MotygaAuth::BedrockApiKey(managed_auth))
         );
         assert_eq!(
             provider.account_state(),
             Ok(ProviderAccountState {
                 account: Some(ProviderAccount::AmazonBedrock {
-                    credential_source: AmazonBedrockCredentialSource::CodexManaged,
+                    credential_source: AmazonBedrockCredentialSource::MotygaManaged,
                 }),
                 requires_openai_auth: false,
             })
@@ -257,7 +257,7 @@ mod tests {
     async fn openai_auth_is_not_exposed_to_bedrock() {
         let provider = AmazonBedrockModelProvider::new(
             ModelProviderInfo::create_amazon_bedrock_provider(/*aws*/ None),
-            Some(AuthManager::from_auth_for_testing(CodexAuth::from_api_key(
+            Some(AuthManager::from_auth_for_testing(MotygaAuth::from_api_key(
                 "openai-api-key",
             ))),
         );

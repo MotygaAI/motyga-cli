@@ -1,10 +1,10 @@
-use codex_experimental_api_macros::ExperimentalApi;
-use codex_protocol::config_types::ApprovalsReviewer as CoreApprovalsReviewer;
-use codex_protocol::config_types::SandboxMode as CoreSandboxMode;
-use codex_protocol::protocol::AskForApproval as CoreAskForApproval;
-use codex_protocol::protocol::CodexErrorInfo as CoreCodexErrorInfo;
-use codex_protocol::protocol::GranularApprovalConfig as CoreGranularApprovalConfig;
-use codex_protocol::protocol::NonSteerableTurnKind as CoreNonSteerableTurnKind;
+use motyga_experimental_api_macros::ExperimentalApi;
+use motyga_protocol::config_types::ApprovalsReviewer as CoreApprovalsReviewer;
+use motyga_protocol::config_types::SandboxMode as CoreSandboxMode;
+use motyga_protocol::protocol::AskForApproval as CoreAskForApproval;
+use motyga_protocol::protocol::MotygaErrorInfo as CoreMotygaErrorInfo;
+use motyga_protocol::protocol::GranularApprovalConfig as CoreGranularApprovalConfig;
+use motyga_protocol::protocol::NonSteerableTurnKind as CoreNonSteerableTurnKind;
 use schemars::JsonSchema;
 use schemars::r#gen::SchemaGenerator;
 use schemars::schema::InstanceType;
@@ -61,14 +61,14 @@ pub enum NonSteerableTurnKind {
     Compact,
 }
 
-/// This translation layer make sure that we expose codex error code in camel case.
+/// This translation layer make sure that we expose motyga error code in camel case.
 ///
 /// When an upstream HTTP status is available (for example, from the Responses API or a provider),
-/// it is forwarded in `httpStatusCode` on the relevant `codexErrorInfo` variant.
+/// it is forwarded in `httpStatusCode` on the relevant `motygaErrorInfo` variant.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
-pub enum CodexErrorInfo {
+pub enum MotygaErrorInfo {
     ContextWindowExceeded,
     SessionBudgetExceeded,
     UsageLimitExceeded,
@@ -112,37 +112,37 @@ pub enum CodexErrorInfo {
     Other,
 }
 
-impl From<CoreCodexErrorInfo> for CodexErrorInfo {
-    fn from(value: CoreCodexErrorInfo) -> Self {
+impl From<CoreMotygaErrorInfo> for MotygaErrorInfo {
+    fn from(value: CoreMotygaErrorInfo) -> Self {
         match value {
-            CoreCodexErrorInfo::ContextWindowExceeded => CodexErrorInfo::ContextWindowExceeded,
-            CoreCodexErrorInfo::SessionBudgetExceeded => CodexErrorInfo::SessionBudgetExceeded,
-            CoreCodexErrorInfo::UsageLimitExceeded => CodexErrorInfo::UsageLimitExceeded,
-            CoreCodexErrorInfo::ServerOverloaded => CodexErrorInfo::ServerOverloaded,
-            CoreCodexErrorInfo::CyberPolicy => CodexErrorInfo::CyberPolicy,
-            CoreCodexErrorInfo::HttpConnectionFailed { http_status_code } => {
-                CodexErrorInfo::HttpConnectionFailed { http_status_code }
+            CoreMotygaErrorInfo::ContextWindowExceeded => MotygaErrorInfo::ContextWindowExceeded,
+            CoreMotygaErrorInfo::SessionBudgetExceeded => MotygaErrorInfo::SessionBudgetExceeded,
+            CoreMotygaErrorInfo::UsageLimitExceeded => MotygaErrorInfo::UsageLimitExceeded,
+            CoreMotygaErrorInfo::ServerOverloaded => MotygaErrorInfo::ServerOverloaded,
+            CoreMotygaErrorInfo::CyberPolicy => MotygaErrorInfo::CyberPolicy,
+            CoreMotygaErrorInfo::HttpConnectionFailed { http_status_code } => {
+                MotygaErrorInfo::HttpConnectionFailed { http_status_code }
             }
-            CoreCodexErrorInfo::ResponseStreamConnectionFailed { http_status_code } => {
-                CodexErrorInfo::ResponseStreamConnectionFailed { http_status_code }
+            CoreMotygaErrorInfo::ResponseStreamConnectionFailed { http_status_code } => {
+                MotygaErrorInfo::ResponseStreamConnectionFailed { http_status_code }
             }
-            CoreCodexErrorInfo::InternalServerError => CodexErrorInfo::InternalServerError,
-            CoreCodexErrorInfo::Unauthorized => CodexErrorInfo::Unauthorized,
-            CoreCodexErrorInfo::BadRequest => CodexErrorInfo::BadRequest,
-            CoreCodexErrorInfo::ThreadRollbackFailed => CodexErrorInfo::ThreadRollbackFailed,
-            CoreCodexErrorInfo::SandboxError => CodexErrorInfo::SandboxError,
-            CoreCodexErrorInfo::ResponseStreamDisconnected { http_status_code } => {
-                CodexErrorInfo::ResponseStreamDisconnected { http_status_code }
+            CoreMotygaErrorInfo::InternalServerError => MotygaErrorInfo::InternalServerError,
+            CoreMotygaErrorInfo::Unauthorized => MotygaErrorInfo::Unauthorized,
+            CoreMotygaErrorInfo::BadRequest => MotygaErrorInfo::BadRequest,
+            CoreMotygaErrorInfo::ThreadRollbackFailed => MotygaErrorInfo::ThreadRollbackFailed,
+            CoreMotygaErrorInfo::SandboxError => MotygaErrorInfo::SandboxError,
+            CoreMotygaErrorInfo::ResponseStreamDisconnected { http_status_code } => {
+                MotygaErrorInfo::ResponseStreamDisconnected { http_status_code }
             }
-            CoreCodexErrorInfo::ResponseTooManyFailedAttempts { http_status_code } => {
-                CodexErrorInfo::ResponseTooManyFailedAttempts { http_status_code }
+            CoreMotygaErrorInfo::ResponseTooManyFailedAttempts { http_status_code } => {
+                MotygaErrorInfo::ResponseTooManyFailedAttempts { http_status_code }
             }
-            CoreCodexErrorInfo::ActiveTurnNotSteerable { turn_kind } => {
-                CodexErrorInfo::ActiveTurnNotSteerable {
+            CoreMotygaErrorInfo::ActiveTurnNotSteerable { turn_kind } => {
+                MotygaErrorInfo::ActiveTurnNotSteerable {
                     turn_kind: turn_kind.into(),
                 }
             }
-            CoreCodexErrorInfo::Other => CodexErrorInfo::Other,
+            CoreMotygaErrorInfo::Other => MotygaErrorInfo::Other,
         }
     }
 }

@@ -1,18 +1,18 @@
 #![recursion_limit = "256"]
 #![deny(clippy::print_stdout, clippy::print_stderr)]
 
-use codex_arg0::Arg0DispatchPaths;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::LoaderOverrides;
-use codex_config::NoopThreadConfigLoader;
-use codex_config::RemoteThreadConfigLoader;
-use codex_config::ThreadConfigLoader;
-use codex_core::config::Config;
-use codex_core::resolve_installation_id;
-use codex_login::AuthManager;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::LoaderOverrides;
+use motyga_config::NoopThreadConfigLoader;
+use motyga_config::RemoteThreadConfigLoader;
+use motyga_config::ThreadConfigLoader;
+use motyga_core::config::Config;
+use motyga_core::resolve_installation_id;
+use motyga_login::AuthManager;
 #[cfg(debug_assertions)]
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_cli::CliConfigOverrides;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_cli::CliConfigOverrides;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io::ErrorKind;
@@ -46,24 +46,24 @@ use crate::transport::start_control_socket_acceptor;
 use crate::transport::start_remote_control;
 use crate::transport::start_stdio_connection;
 use crate::transport::start_websocket_acceptor;
-use codex_analytics::AppServerRpcTransport;
-use codex_app_server_protocol::ConfigWarningNotification;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::TextPosition as AppTextPosition;
-use codex_app_server_protocol::TextRange as AppTextRange;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLoadError;
-use codex_config::TextRange as CoreTextRange;
-use codex_core::ExecPolicyError;
-use codex_core::check_execpolicy_for_warnings;
-use codex_core::config::find_codex_home;
-use codex_exec_server::EnvironmentManager;
-use codex_exec_server::ExecServerRuntimePaths;
-use codex_feedback::CodexFeedback;
-use codex_protocol::protocol::SessionSource;
-use codex_rollout::state_db as rollout_state_db;
-use codex_state::log_db;
+use motyga_analytics::AppServerRpcTransport;
+use motyga_app_server_protocol::ConfigWarningNotification;
+use motyga_app_server_protocol::JSONRPCMessage;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::TextPosition as AppTextPosition;
+use motyga_app_server_protocol::TextRange as AppTextRange;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLoadError;
+use motyga_config::TextRange as CoreTextRange;
+use motyga_core::ExecPolicyError;
+use motyga_core::check_execpolicy_for_warnings;
+use motyga_core::config::find_motyga_home;
+use motyga_exec_server::EnvironmentManager;
+use motyga_exec_server::ExecServerRuntimePaths;
+use motyga_feedback::MotygaFeedback;
+use motyga_protocol::protocol::SessionSource;
+use motyga_rollout::state_db as rollout_state_db;
+use motyga_state::log_db;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
@@ -125,9 +125,9 @@ pub use crate::transport::auth::WebsocketAuthCliMode;
 pub use crate::transport::take_remote_control_disabled_env;
 
 const LOG_FORMAT_ENV_VAR: &str = "LOG_FORMAT";
-const OTEL_SERVICE_NAME: &str = "codex-app-server";
+const OTEL_SERVICE_NAME: &str = "motyga-app-server";
 #[cfg(debug_assertions)]
-const TEST_USER_CONFIG_FILE_ENV_VAR: &str = "CODEX_APP_SERVER_TEST_USER_CONFIG_FILE";
+const TEST_USER_CONFIG_FILE_ENV_VAR: &str = "MOTYGA_APP_SERVER_TEST_USER_CONFIG_FILE";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum LogFormat {
@@ -340,14 +340,14 @@ fn project_config_warning(config: &Config) -> Option<ConfigWarningNotification> 
         ConfigLayerStackOrdering::LowestPrecedenceFirst,
         /*include_disabled*/ true,
     ) {
-        let ConfigLayerSource::Project { dot_codex_folder } = &layer.name else {
+        let ConfigLayerSource::Project { dot_motyga_folder } = &layer.name else {
             continue;
         };
         let Some(disabled_reason) = &layer.disabled_reason else {
             continue;
         };
         disabled_folders.push((
-            dot_codex_folder.as_path().display().to_string(),
+            dot_motyga_folder.as_path().display().to_string(),
             disabled_reason.clone(),
         ));
     }
@@ -463,20 +463,20 @@ pub async fn run_main_with_transport_options(
             format!("error parsing -c overrides: {e}"),
         )
     })?;
-    let codex_home = find_codex_home()?;
+    let motyga_home = find_motyga_home()?;
     let local_runtime_paths = ExecServerRuntimePaths::from_optional_paths(
-        arg0_paths.codex_self_exe.clone(),
-        arg0_paths.codex_linux_sandbox_exe.clone(),
+        arg0_paths.motyga_self_exe.clone(),
+        arg0_paths.motyga_linux_sandbox_exe.clone(),
     )?;
     let environment_manager = if loader_overrides.ignore_user_config {
         EnvironmentManager::from_env(Some(local_runtime_paths)).await
     } else {
-        EnvironmentManager::from_codex_home(codex_home.clone(), Some(local_runtime_paths)).await
+        EnvironmentManager::from_motyga_home(motyga_home.clone(), Some(local_runtime_paths)).await
     }
     .map(Arc::new)
     .map_err(std::io::Error::other)?;
     let config_manager = ConfigManager::new(
-        codex_home.to_path_buf(),
+        motyga_home.to_path_buf(),
         cli_kv_overrides.clone(),
         loader_overrides,
         strict_config,
@@ -493,7 +493,7 @@ pub async fn run_main_with_transport_options(
             config_manager
                 .replace_thread_config_loader(Arc::clone(&discovered_thread_config_loader));
             let auth_manager =
-                AuthManager::shared_from_config(&config, /*enable_codex_api_key_env*/ false).await;
+                AuthManager::shared_from_config(&config, /*enable_motyga_api_key_env*/ false).await;
             config_manager
                 .replace_cloud_config_bundle_loader(auth_manager, config.chatgpt_base_url);
         }
@@ -529,7 +529,7 @@ pub async fn run_main_with_transport_options(
         }
     };
 
-    let otel = codex_core::otel_init::build_provider(
+    let otel = motyga_core::otel_init::build_provider(
         &config,
         env!("CARGO_PKG_VERSION"),
         Some(OTEL_SERVICE_NAME),
@@ -541,11 +541,11 @@ pub async fn run_main_with_transport_options(
             format!("error loading otel config: {e}"),
         )
     })?;
-    codex_core::otel_init::record_process_start(otel.as_ref(), OTEL_SERVICE_NAME);
-    codex_core::otel_init::install_sqlite_telemetry(otel.as_ref(), OTEL_SERVICE_NAME);
+    motyga_core::otel_init::record_process_start(otel.as_ref(), OTEL_SERVICE_NAME);
+    motyga_core::otel_init::install_sqlite_telemetry(otel.as_ref(), OTEL_SERVICE_NAME);
     let unix_socket_startup_lock = match &transport {
         AppServerTransport::UnixSocket { socket_path } => {
-            let startup_lock_path = app_server_startup_lock_path(&codex_home)?;
+            let startup_lock_path = app_server_startup_lock_path(&motyga_home)?;
             let startup_lock = acquire_app_server_startup_lock(startup_lock_path).await?;
             prepare_control_socket_path(socket_path.as_path()).await?;
             Some(startup_lock)
@@ -575,14 +575,14 @@ pub async fn run_main_with_transport_options(
         let effective_toml = config.config_layer_stack.effective_config();
         match effective_toml.try_into() {
             Ok(config_toml) => {
-                match codex_core::personality_migration::maybe_migrate_personality(
-                    &config.codex_home,
+                match motyga_core::personality_migration::maybe_migrate_personality(
+                    &config.motyga_home,
                     &config_toml,
                     state_db.clone(),
                 )
                 .await
                 {
-                    Ok(codex_core::personality_migration::PersonalityMigrationStatus::Applied) => {
+                    Ok(motyga_core::personality_migration::PersonalityMigrationStatus::Applied) => {
                         config = config_manager
                             .load_latest_config(/*fallback_cwd*/ None)
                             .await
@@ -596,9 +596,9 @@ pub async fn run_main_with_transport_options(
                             })?;
                     }
                     Ok(
-                        codex_core::personality_migration::PersonalityMigrationStatus::SkippedMarker
-                        | codex_core::personality_migration::PersonalityMigrationStatus::SkippedExplicitPersonality
-                        | codex_core::personality_migration::PersonalityMigrationStatus::SkippedNoSessions,
+                        motyga_core::personality_migration::PersonalityMigrationStatus::SkippedMarker
+                        | motyga_core::personality_migration::PersonalityMigrationStatus::SkippedExplicitPersonality
+                        | motyga_core::personality_migration::PersonalityMigrationStatus::SkippedNoSessions,
                     ) => {}
                     Err(err) => {
                         warn!(error = %err, "Failed to run personality migration");
@@ -634,7 +634,7 @@ pub async fn run_main_with_transport_options(
         });
     }
     if let Some(warning) =
-        codex_core::config::system_bwrap_warning(config.permissions.permission_profile())
+        motyga_core::config::system_bwrap_warning(config.permissions.permission_profile())
     {
         config_warnings.push(ConfigWarningNotification {
             summary: warning,
@@ -644,7 +644,7 @@ pub async fn run_main_with_transport_options(
         });
     }
 
-    let feedback = CodexFeedback::new();
+    let feedback = MotygaFeedback::new();
 
     // Install a simple subscriber so `tracing` output is visible. Users can
     // control the log level with `RUST_LOG` and switch to JSON logs with
@@ -707,7 +707,7 @@ pub async fn run_main_with_transport_options(
             "remote control is disabled by managed requirements",
         ));
     }
-    let installation_id = resolve_installation_id(&config.codex_home).await?;
+    let installation_id = resolve_installation_id(&config.motyga_home).await?;
     let transport_shutdown_token = CancellationToken::new();
     let mut transport_accept_handles = Vec::<JoinHandle<()>>::new();
 
@@ -752,7 +752,7 @@ pub async fn run_main_with_transport_options(
     drop(unix_socket_startup_lock);
 
     let auth_manager =
-        AuthManager::shared_from_config(&config, /*enable_codex_api_key_env*/ false).await;
+        AuthManager::shared_from_config(&config, /*enable_motyga_api_key_env*/ false).await;
 
     let remote_control_enabled = remote_control_policy == RemoteControlPolicy::Allowed
         && remote_control_explicitly_requested
@@ -1231,9 +1231,9 @@ async fn init_sqlite_state_db_with_fresh_start_on_corruption(
             }
             Err(err) => err,
         };
-        let database_path = codex_state::runtime_db_path_for_corruption_error(&err)
-            .unwrap_or_else(|| codex_state::state_db_path(config.sqlite_home.as_path()));
-        if !codex_state::is_sqlite_corruption_error(&err)
+        let database_path = motyga_state::runtime_db_path_for_corruption_error(&err)
+            .unwrap_or_else(|| motyga_state::state_db_path(config.sqlite_home.as_path()));
+        if !motyga_state::is_sqlite_corruption_error(&err)
             && !sqlite_home_is_blocking_file(database_path.as_path())
         {
             return Err(err);
@@ -1250,7 +1250,7 @@ async fn init_sqlite_state_db_with_fresh_start_on_corruption(
             "Motyga local database at {} appears damaged. Moving it into a backup folder so the app server can rebuild it from saved data.",
             database_path.display()
         ));
-        let backups = codex_state::backup_runtime_db_for_fresh_start(database_path.as_path())
+        let backups = motyga_state::backup_runtime_db_for_fresh_start(database_path.as_path())
             .await
             .map_err(|backup_err| {
                 anyhow::anyhow!(
@@ -1364,9 +1364,9 @@ mod tests {
     #[cfg(debug_assertions)]
     use super::loader_overrides_with_test_user_config_file;
     #[cfg(debug_assertions)]
-    use codex_config::LoaderOverrides;
+    use motyga_config::LoaderOverrides;
     #[cfg(debug_assertions)]
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -1390,7 +1390,7 @@ mod tests {
     #[cfg(debug_assertions)]
     #[test]
     fn debug_test_user_config_file_overrides_loader_path() {
-        let path = std::env::temp_dir().join("codex-app-server-test-config.toml");
+        let path = std::env::temp_dir().join("motyga-app-server-test-config.toml");
         let loader_overrides = loader_overrides_with_test_user_config_file(
             LoaderOverrides::default(),
             Some(path.clone()),

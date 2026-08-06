@@ -11,7 +11,7 @@ const TEST_REQUEST_TIMEOUT: Duration = Duration::from_millis(100);
 
 fn auth() -> RemoteControlConnectionAuth {
     RemoteControlConnectionAuth {
-        auth_provider: codex_model_provider::unauthenticated_auth_provider(),
+        auth_provider: motyga_model_provider::unauthenticated_auth_provider(),
         account_id: "account-a".to_string(),
     }
 }

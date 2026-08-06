@@ -2,9 +2,9 @@ use assert_matches::assert_matches;
 use std::sync::Arc;
 use std::time::Duration;
 
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_function_call;
 use core_test_support::responses::ev_response_created;
@@ -12,7 +12,7 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use regex_lite::Regex;
 use serde_json::json;
@@ -36,15 +36,15 @@ async fn interrupt_long_running_tool_emits_turn_aborted() {
     let server = start_mock_server().await;
     mount_sse_once(&server, body).await;
 
-    let codex = test_codex()
+    let motyga = test_motyga()
         .with_model("gpt-5.4")
         .build(&server)
         .await
         .unwrap()
-        .codex;
+        .motyga;
 
     // Kick off a turn that triggers the function call.
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "start sleep".into(),
@@ -59,12 +59,12 @@ async fn interrupt_long_running_tool_emits_turn_aborted() {
         .unwrap();
 
     // Wait until the exec begins to avoid a race, then interrupt.
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::ExecCommandBegin(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::ExecCommandBegin(_))).await;
 
-    codex.submit(Op::Interrupt).await.unwrap();
+    motyga.submit(Op::Interrupt).await.unwrap();
 
     // Expect TurnAborted soon after.
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnAborted(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnAborted(_))).await;
 }
 
 /// After an interrupt we expect the next request to the model to include both
@@ -94,14 +94,14 @@ async fn interrupt_tool_records_history_entries() {
     let server = start_mock_server().await;
     let response_mock = mount_sse_sequence(&server, vec![first_body, follow_up_body]).await;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_model("gpt-5.4")
         .build(&server)
         .await
         .unwrap();
-    let codex = Arc::clone(&fixture.codex);
+    let motyga = Arc::clone(&fixture.motyga);
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "start history recording".into(),
@@ -115,14 +115,14 @@ async fn interrupt_tool_records_history_entries() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::ExecCommandBegin(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::ExecCommandBegin(_))).await;
 
     tokio::time::sleep(Duration::from_secs_f32(0.1)).await;
-    codex.submit(Op::Interrupt).await.unwrap();
+    motyga.submit(Op::Interrupt).await.unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnAborted(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnAborted(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "follow up".into(),
@@ -136,7 +136,7 @@ async fn interrupt_tool_records_history_entries() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = response_mock.requests();
     assert!(
@@ -198,14 +198,14 @@ async fn interrupt_persists_turn_aborted_marker_in_next_request() {
     let server = start_mock_server().await;
     let response_mock = mount_sse_sequence(&server, vec![first_body, follow_up_body]).await;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_model("gpt-5.4")
         .build(&server)
         .await
         .unwrap();
-    let codex = Arc::clone(&fixture.codex);
+    let motyga = Arc::clone(&fixture.motyga);
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "start interrupt marker".into(),
@@ -219,14 +219,14 @@ async fn interrupt_persists_turn_aborted_marker_in_next_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::ExecCommandBegin(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::ExecCommandBegin(_))).await;
 
     tokio::time::sleep(Duration::from_secs_f32(0.1)).await;
-    codex.submit(Op::Interrupt).await.unwrap();
+    motyga.submit(Op::Interrupt).await.unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnAborted(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnAborted(_))).await;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "follow up".into(),
@@ -240,7 +240,7 @@ async fn interrupt_persists_turn_aborted_marker_in_next_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = response_mock.requests();
     assert_eq!(requests.len(), 2, "expected two calls to the responses API");

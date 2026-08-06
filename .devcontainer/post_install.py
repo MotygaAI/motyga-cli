@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Post-install configuration for the Codex devcontainer."""
+"""Post-install configuration for the Motyga devcontainer."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def fix_directory_ownership() -> None:
     gid = os.getgid()
 
     paths = [
-        Path.home() / ".codex",
+        Path.home() / ".motyga",
         Path.home() / ".config" / "gh",
         Path.home() / ".cargo",
         Path.home() / ".rustup",
@@ -59,8 +59,8 @@ def setup_git_config() -> None:
     gitignore_global = home / ".gitignore_global"
 
     gitignore_global.write_text(
-        """# Codex
-.codex/
+        """# Motyga
+.motyga/
 
 # Rust
 /target/

@@ -13,114 +13,114 @@ use tokio::process::ChildStdout;
 
 use anyhow::Context;
 use anyhow::ensure;
-use codex_app_server_protocol::AppsListParams;
-use codex_app_server_protocol::CancelLoginAccountParams;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientNotification;
-use codex_app_server_protocol::CollaborationModeListParams;
-use codex_app_server_protocol::CommandExecParams;
-use codex_app_server_protocol::CommandExecResizeParams;
-use codex_app_server_protocol::CommandExecTerminateParams;
-use codex_app_server_protocol::CommandExecWriteParams;
-use codex_app_server_protocol::ConfigBatchWriteParams;
-use codex_app_server_protocol::ConfigReadParams;
-use codex_app_server_protocol::ConfigValueWriteParams;
-use codex_app_server_protocol::ConsumeAccountRateLimitResetCreditParams;
-use codex_app_server_protocol::ExperimentalFeatureListParams;
-use codex_app_server_protocol::FeedbackUploadParams;
-use codex_app_server_protocol::FsCopyParams;
-use codex_app_server_protocol::FsCreateDirectoryParams;
-use codex_app_server_protocol::FsGetMetadataParams;
-use codex_app_server_protocol::FsReadDirectoryParams;
-use codex_app_server_protocol::FsReadFileParams;
-use codex_app_server_protocol::FsRemoveParams;
-use codex_app_server_protocol::FsUnwatchParams;
-use codex_app_server_protocol::FsWatchParams;
-use codex_app_server_protocol::FsWriteFileParams;
-use codex_app_server_protocol::GetAccountParams;
-use codex_app_server_protocol::GetAuthStatusParams;
-use codex_app_server_protocol::GetConversationSummaryParams;
-use codex_app_server_protocol::HooksListParams;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCRequest;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::ListMcpServerStatusParams;
-use codex_app_server_protocol::LoginAccountParams;
-use codex_app_server_protocol::MarketplaceAddParams;
-use codex_app_server_protocol::MarketplaceRemoveParams;
-use codex_app_server_protocol::MarketplaceUpgradeParams;
-use codex_app_server_protocol::McpResourceReadParams;
-use codex_app_server_protocol::McpServerToolCallParams;
-use codex_app_server_protocol::MockExperimentalMethodParams;
-use codex_app_server_protocol::ModelListParams;
-use codex_app_server_protocol::ModelProviderCapabilitiesReadParams;
-use codex_app_server_protocol::PermissionProfileListParams;
-use codex_app_server_protocol::PluginInstallParams;
-use codex_app_server_protocol::PluginInstalledParams;
-use codex_app_server_protocol::PluginListParams;
-use codex_app_server_protocol::PluginReadParams;
-use codex_app_server_protocol::PluginSkillReadParams;
-use codex_app_server_protocol::PluginUninstallParams;
-use codex_app_server_protocol::ProcessKillParams;
-use codex_app_server_protocol::ProcessResizePtyParams;
-use codex_app_server_protocol::ProcessSpawnParams;
-use codex_app_server_protocol::ProcessWriteStdinParams;
-use codex_app_server_protocol::RemoteControlClientsListParams;
-use codex_app_server_protocol::RemoteControlClientsRevokeParams;
-use codex_app_server_protocol::RemoteControlPairingStartParams;
-use codex_app_server_protocol::RemoteControlPairingStatusParams;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ReviewStartParams;
-use codex_app_server_protocol::SendAddCreditsNudgeEmailParams;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::SkillsExtraRootsSetParams;
-use codex_app_server_protocol::SkillsListParams;
-use codex_app_server_protocol::ThreadArchiveParams;
-use codex_app_server_protocol::ThreadCompactStartParams;
-use codex_app_server_protocol::ThreadDeleteParams;
-use codex_app_server_protocol::ThreadForkParams;
-use codex_app_server_protocol::ThreadInjectItemsParams;
-use codex_app_server_protocol::ThreadItemsListParams;
-use codex_app_server_protocol::ThreadListParams;
-use codex_app_server_protocol::ThreadLoadedListParams;
-use codex_app_server_protocol::ThreadMemoryModeSetParams;
-use codex_app_server_protocol::ThreadMetadataUpdateParams;
-use codex_app_server_protocol::ThreadReadParams;
-use codex_app_server_protocol::ThreadRealtimeAppendAudioParams;
-use codex_app_server_protocol::ThreadRealtimeAppendSpeechParams;
-use codex_app_server_protocol::ThreadRealtimeAppendTextParams;
-use codex_app_server_protocol::ThreadRealtimeListVoicesParams;
-use codex_app_server_protocol::ThreadRealtimeStartParams;
-use codex_app_server_protocol::ThreadRealtimeStopParams;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadRollbackParams;
-use codex_app_server_protocol::ThreadSearchParams;
-use codex_app_server_protocol::ThreadSetNameParams;
-use codex_app_server_protocol::ThreadSettingsUpdateParams;
-use codex_app_server_protocol::ThreadShellCommandParams;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadTurnsListParams;
-use codex_app_server_protocol::ThreadUnarchiveParams;
-use codex_app_server_protocol::ThreadUnsubscribeParams;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnEnvironmentParams;
-use codex_app_server_protocol::TurnInterruptParams;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnSteerParams;
-use codex_app_server_protocol::WindowsSandboxSetupStartParams;
-use codex_exec_server::CODEX_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR;
-use codex_exec_server::CODEX_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID_ENV_VAR;
-use codex_exec_server::CODEX_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR;
-use codex_exec_server::CODEX_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR;
-use codex_exec_server::CODEX_EXEC_SERVER_URL_ENV_VAR;
-use codex_login::default_client::CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR;
-use core_test_support::test_codex::TestEnv;
-use core_test_support::test_codex::test_env;
+use motyga_app_server_protocol::AppsListParams;
+use motyga_app_server_protocol::CancelLoginAccountParams;
+use motyga_app_server_protocol::ClientInfo;
+use motyga_app_server_protocol::ClientNotification;
+use motyga_app_server_protocol::CollaborationModeListParams;
+use motyga_app_server_protocol::CommandExecParams;
+use motyga_app_server_protocol::CommandExecResizeParams;
+use motyga_app_server_protocol::CommandExecTerminateParams;
+use motyga_app_server_protocol::CommandExecWriteParams;
+use motyga_app_server_protocol::ConfigBatchWriteParams;
+use motyga_app_server_protocol::ConfigReadParams;
+use motyga_app_server_protocol::ConfigValueWriteParams;
+use motyga_app_server_protocol::ConsumeAccountRateLimitResetCreditParams;
+use motyga_app_server_protocol::ExperimentalFeatureListParams;
+use motyga_app_server_protocol::FeedbackUploadParams;
+use motyga_app_server_protocol::FsCopyParams;
+use motyga_app_server_protocol::FsCreateDirectoryParams;
+use motyga_app_server_protocol::FsGetMetadataParams;
+use motyga_app_server_protocol::FsReadDirectoryParams;
+use motyga_app_server_protocol::FsReadFileParams;
+use motyga_app_server_protocol::FsRemoveParams;
+use motyga_app_server_protocol::FsUnwatchParams;
+use motyga_app_server_protocol::FsWatchParams;
+use motyga_app_server_protocol::FsWriteFileParams;
+use motyga_app_server_protocol::GetAccountParams;
+use motyga_app_server_protocol::GetAuthStatusParams;
+use motyga_app_server_protocol::GetConversationSummaryParams;
+use motyga_app_server_protocol::HooksListParams;
+use motyga_app_server_protocol::InitializeCapabilities;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::JSONRPCMessage;
+use motyga_app_server_protocol::JSONRPCNotification;
+use motyga_app_server_protocol::JSONRPCRequest;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::ListMcpServerStatusParams;
+use motyga_app_server_protocol::LoginAccountParams;
+use motyga_app_server_protocol::MarketplaceAddParams;
+use motyga_app_server_protocol::MarketplaceRemoveParams;
+use motyga_app_server_protocol::MarketplaceUpgradeParams;
+use motyga_app_server_protocol::McpResourceReadParams;
+use motyga_app_server_protocol::McpServerToolCallParams;
+use motyga_app_server_protocol::MockExperimentalMethodParams;
+use motyga_app_server_protocol::ModelListParams;
+use motyga_app_server_protocol::ModelProviderCapabilitiesReadParams;
+use motyga_app_server_protocol::PermissionProfileListParams;
+use motyga_app_server_protocol::PluginInstallParams;
+use motyga_app_server_protocol::PluginInstalledParams;
+use motyga_app_server_protocol::PluginListParams;
+use motyga_app_server_protocol::PluginReadParams;
+use motyga_app_server_protocol::PluginSkillReadParams;
+use motyga_app_server_protocol::PluginUninstallParams;
+use motyga_app_server_protocol::ProcessKillParams;
+use motyga_app_server_protocol::ProcessResizePtyParams;
+use motyga_app_server_protocol::ProcessSpawnParams;
+use motyga_app_server_protocol::ProcessWriteStdinParams;
+use motyga_app_server_protocol::RemoteControlClientsListParams;
+use motyga_app_server_protocol::RemoteControlClientsRevokeParams;
+use motyga_app_server_protocol::RemoteControlPairingStartParams;
+use motyga_app_server_protocol::RemoteControlPairingStatusParams;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ReviewStartParams;
+use motyga_app_server_protocol::SendAddCreditsNudgeEmailParams;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::SkillsExtraRootsSetParams;
+use motyga_app_server_protocol::SkillsListParams;
+use motyga_app_server_protocol::ThreadArchiveParams;
+use motyga_app_server_protocol::ThreadCompactStartParams;
+use motyga_app_server_protocol::ThreadDeleteParams;
+use motyga_app_server_protocol::ThreadForkParams;
+use motyga_app_server_protocol::ThreadInjectItemsParams;
+use motyga_app_server_protocol::ThreadItemsListParams;
+use motyga_app_server_protocol::ThreadListParams;
+use motyga_app_server_protocol::ThreadLoadedListParams;
+use motyga_app_server_protocol::ThreadMemoryModeSetParams;
+use motyga_app_server_protocol::ThreadMetadataUpdateParams;
+use motyga_app_server_protocol::ThreadReadParams;
+use motyga_app_server_protocol::ThreadRealtimeAppendAudioParams;
+use motyga_app_server_protocol::ThreadRealtimeAppendSpeechParams;
+use motyga_app_server_protocol::ThreadRealtimeAppendTextParams;
+use motyga_app_server_protocol::ThreadRealtimeListVoicesParams;
+use motyga_app_server_protocol::ThreadRealtimeStartParams;
+use motyga_app_server_protocol::ThreadRealtimeStopParams;
+use motyga_app_server_protocol::ThreadResumeParams;
+use motyga_app_server_protocol::ThreadRollbackParams;
+use motyga_app_server_protocol::ThreadSearchParams;
+use motyga_app_server_protocol::ThreadSetNameParams;
+use motyga_app_server_protocol::ThreadSettingsUpdateParams;
+use motyga_app_server_protocol::ThreadShellCommandParams;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadTurnsListParams;
+use motyga_app_server_protocol::ThreadUnarchiveParams;
+use motyga_app_server_protocol::ThreadUnsubscribeParams;
+use motyga_app_server_protocol::TurnCompletedNotification;
+use motyga_app_server_protocol::TurnEnvironmentParams;
+use motyga_app_server_protocol::TurnInterruptParams;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnSteerParams;
+use motyga_app_server_protocol::WindowsSandboxSetupStartParams;
+use motyga_exec_server::MOTYGA_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR;
+use motyga_exec_server::MOTYGA_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID_ENV_VAR;
+use motyga_exec_server::MOTYGA_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR;
+use motyga_exec_server::MOTYGA_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR;
+use motyga_exec_server::MOTYGA_EXEC_SERVER_URL_ENV_VAR;
+use motyga_login::default_client::MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR;
+use core_test_support::test_motyga::TestEnv;
+use core_test_support::test_motyga::test_env;
 use tokio::process::Command;
 
 pub struct TestAppServer {
@@ -136,31 +136,31 @@ pub struct TestAppServer {
     auto_env: Option<TestEnv>,
 }
 
-pub const DEFAULT_CLIENT_NAME: &str = "codex-app-server-tests";
+pub const DEFAULT_CLIENT_NAME: &str = "motyga-app-server-tests";
 pub const DISABLE_PLUGIN_STARTUP_TASKS_ARG: &str = "--disable-plugin-startup-tasks-for-tests";
-const DISABLE_MANAGED_CONFIG_ENV_VAR: &str = "CODEX_APP_SERVER_DISABLE_MANAGED_CONFIG";
+const DISABLE_MANAGED_CONFIG_ENV_VAR: &str = "MOTYGA_APP_SERVER_DISABLE_MANAGED_CONFIG";
 
 impl TestAppServer {
     pub async fn wait_for_exit(&mut self) -> std::io::Result<ExitStatus> {
         self.process.wait().await
     }
 
-    pub async fn new(codex_home: &Path) -> anyhow::Result<Self> {
-        Self::new_with_env_and_args(codex_home, &[], &[DISABLE_PLUGIN_STARTUP_TASKS_ARG]).await
+    pub async fn new(motyga_home: &Path) -> anyhow::Result<Self> {
+        Self::new_with_env_and_args(motyga_home, &[], &[DISABLE_PLUGIN_STARTUP_TASKS_ARG]).await
     }
 
     /// Starts an app server with the standard test environment and retains it
     /// for the server's lifetime.
     ///
-    /// Local test runs explicitly remove `CODEX_EXEC_SERVER_URL`; Docker- and
+    /// Local test runs explicitly remove `MOTYGA_EXEC_SERVER_URL`; Docker- and
     /// Wine-backed runs set it to the remote fixture URL. Use
     /// [`Self::auto_env_params`] or
     /// [`Self::send_thread_start_request_with_auto_env`] to select the matching
     /// target-native cwd in a thread. Because `environments.toml` overrides the
-    /// URL-based configuration, this helper rejects a `codex_home` containing
+    /// URL-based configuration, this helper rejects a `motyga_home` containing
     /// that file.
-    pub async fn new_with_auto_env(codex_home: &Path) -> anyhow::Result<Self> {
-        let environments_toml = codex_home.join("environments.toml");
+    pub async fn new_with_auto_env(motyga_home: &Path) -> anyhow::Result<Self> {
+        let environments_toml = motyga_home.join("environments.toml");
         ensure!(
             !environments_toml
                 .try_exists()
@@ -174,15 +174,15 @@ impl TestAppServer {
         // provider, so clear inherited values to keep the selection hermetic.
         let env_overrides = [
             (
-                CODEX_EXEC_SERVER_URL_ENV_VAR,
+                MOTYGA_EXEC_SERVER_URL_ENV_VAR,
                 auto_env.environment().exec_server_url(),
             ),
-            (CODEX_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR, None),
-            (CODEX_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR, None),
-            (CODEX_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR, None),
-            (CODEX_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID_ENV_VAR, None),
+            (MOTYGA_EXEC_SERVER_NOISE_REGISTRY_URL_ENV_VAR, None),
+            (MOTYGA_EXEC_SERVER_NOISE_ENVIRONMENT_ID_ENV_VAR, None),
+            (MOTYGA_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR, None),
+            (MOTYGA_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID_ENV_VAR, None),
         ];
-        let mut app_server = Self::new_with_env(codex_home, &env_overrides).await?;
+        let mut app_server = Self::new_with_env(motyga_home, &env_overrides).await?;
         app_server.auto_env = Some(auto_env);
         Ok(app_server)
     }
@@ -202,34 +202,34 @@ impl TestAppServer {
         })
     }
 
-    pub async fn new_without_managed_config(codex_home: &Path) -> anyhow::Result<Self> {
-        Self::new_with_env(codex_home, &[(DISABLE_MANAGED_CONFIG_ENV_VAR, Some("1"))]).await
+    pub async fn new_without_managed_config(motyga_home: &Path) -> anyhow::Result<Self> {
+        Self::new_with_env(motyga_home, &[(DISABLE_MANAGED_CONFIG_ENV_VAR, Some("1"))]).await
     }
 
     pub async fn new_without_managed_config_with_env(
-        codex_home: &Path,
+        motyga_home: &Path,
         env_overrides: &[(&str, Option<&str>)],
     ) -> anyhow::Result<Self> {
         let mut all_env_overrides = vec![(DISABLE_MANAGED_CONFIG_ENV_VAR, Some("1"))];
         all_env_overrides.extend_from_slice(env_overrides);
-        Self::new_with_env(codex_home, &all_env_overrides).await
+        Self::new_with_env(motyga_home, &all_env_overrides).await
     }
 
-    pub async fn new_with_plugin_startup_tasks(codex_home: &Path) -> anyhow::Result<Self> {
-        Self::new_with_env_and_args(codex_home, &[], &[]).await
+    pub async fn new_with_plugin_startup_tasks(motyga_home: &Path) -> anyhow::Result<Self> {
+        Self::new_with_env_and_args(motyga_home, &[], &[]).await
     }
 
     pub async fn new_with_env_and_plugin_startup_tasks(
-        codex_home: &Path,
+        motyga_home: &Path,
         env_overrides: &[(&str, Option<&str>)],
     ) -> anyhow::Result<Self> {
-        Self::new_with_env_and_args(codex_home, env_overrides, &[]).await
+        Self::new_with_env_and_args(motyga_home, env_overrides, &[]).await
     }
 
-    pub async fn new_with_args(codex_home: &Path, args: &[&str]) -> anyhow::Result<Self> {
+    pub async fn new_with_args(motyga_home: &Path, args: &[&str]) -> anyhow::Result<Self> {
         let mut all_args = vec![DISABLE_PLUGIN_STARTUP_TASKS_ARG];
         all_args.extend_from_slice(args);
-        Self::new_with_env_and_args(codex_home, &[], &all_args).await
+        Self::new_with_env_and_args(motyga_home, &[], &all_args).await
     }
 
     /// Creates a new MCP process, allowing tests to override or remove
@@ -238,11 +238,11 @@ impl TestAppServer {
     /// Pass a tuple of (key, Some(value)) to set/override, or (key, None) to
     /// remove a variable from the child's environment.
     pub async fn new_with_env(
-        codex_home: &Path,
+        motyga_home: &Path,
         env_overrides: &[(&str, Option<&str>)],
     ) -> anyhow::Result<Self> {
         Self::new_with_env_and_args(
-            codex_home,
+            motyga_home,
             env_overrides,
             &[DISABLE_PLUGIN_STARTUP_TASKS_ARG],
         )
@@ -250,12 +250,12 @@ impl TestAppServer {
     }
 
     pub async fn new_with_program_and_env(
-        codex_home: &Path,
+        motyga_home: &Path,
         program: &Path,
         env_overrides: &[(&str, Option<&str>)],
     ) -> anyhow::Result<Self> {
         Self::new_with_program_env_and_args(
-            codex_home,
+            motyga_home,
             program,
             env_overrides,
             &[DISABLE_PLUGIN_STARTUP_TASKS_ARG],
@@ -264,17 +264,17 @@ impl TestAppServer {
     }
 
     async fn new_with_env_and_args(
-        codex_home: &Path,
+        motyga_home: &Path,
         env_overrides: &[(&str, Option<&str>)],
         args: &[&str],
     ) -> anyhow::Result<Self> {
-        let program = codex_utils_cargo_bin::cargo_bin("codex-app-server")
-            .context("should find binary for codex-app-server")?;
-        Self::new_with_program_env_and_args(codex_home, &program, env_overrides, args).await
+        let program = motyga_utils_cargo_bin::cargo_bin("motyga-app-server")
+            .context("should find binary for motyga-app-server")?;
+        Self::new_with_program_env_and_args(motyga_home, &program, env_overrides, args).await
     }
 
     async fn new_with_program_env_and_args(
-        codex_home: &Path,
+        motyga_home: &Path,
         program: &Path,
         env_overrides: &[(&str, Option<&str>)],
         args: &[&str],
@@ -284,15 +284,15 @@ impl TestAppServer {
         cmd.stdin(Stdio::piped());
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
-        cmd.current_dir(codex_home);
-        cmd.env("MOTYGA_HOME", codex_home);
+        cmd.current_dir(motyga_home);
+        cmd.env("MOTYGA_HOME", motyga_home);
         cmd.env("RUST_LOG", "warn");
         // Keep integration tests isolated from host managed configuration.
         cmd.env(
-            "CODEX_APP_SERVER_MANAGED_CONFIG_PATH",
-            codex_home.join("managed_config.toml"),
+            "MOTYGA_APP_SERVER_MANAGED_CONFIG_PATH",
+            motyga_home.join("managed_config.toml"),
         );
-        cmd.env_remove(CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR);
+        cmd.env_remove(MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR);
         cmd.args(args);
 
         for (k, v) in env_overrides {
@@ -309,7 +309,7 @@ impl TestAppServer {
         let mut process = cmd
             .kill_on_drop(true)
             .spawn()
-            .context("codex-mcp-server proc should start")?;
+            .context("motyga-mcp-server proc should start")?;
         let stdin = process
             .stdin
             .take()
@@ -730,7 +730,7 @@ impl TestAppServer {
     /// Send an `experimentalFeature/enablement/set` JSON-RPC request.
     pub async fn send_experimental_feature_enablement_set_request(
         &mut self,
-        params: codex_app_server_protocol::ExperimentalFeatureEnablementSetParams,
+        params: motyga_app_server_protocol::ExperimentalFeatureEnablementSetParams,
     ) -> anyhow::Result<i64> {
         let params = Some(serde_json::to_value(params)?);
         self.send_request("experimentalFeature/enablement/set", params)
@@ -1699,7 +1699,7 @@ impl TestAppServer {
 
 impl Drop for TestAppServer {
     fn drop(&mut self) {
-        // These tests spawn a `codex-app-server` child process.
+        // These tests spawn a `motyga-app-server` child process.
         //
         // We keep that child alive for the test and rely on Tokio's `kill_on_drop(true)` when this
         // helper is dropped. Tokio documents kill-on-drop as best-effort: dropping requests

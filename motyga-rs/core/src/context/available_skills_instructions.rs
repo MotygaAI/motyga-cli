@@ -1,13 +1,13 @@
-use codex_core_skills::AvailableSkills;
-use codex_core_skills::SKILLS_HOW_TO_USE_WITH_ABSOLUTE_PATHS;
-use codex_core_skills::SKILLS_HOW_TO_USE_WITH_ALIASES;
-use codex_core_skills::render_available_skills_body;
-use codex_protocol::protocol::SKILLS_INSTRUCTIONS_CLOSE_TAG;
-use codex_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
+use motyga_core_skills::AvailableSkills;
+use motyga_core_skills::SKILLS_HOW_TO_USE_WITH_ABSOLUTE_PATHS;
+use motyga_core_skills::SKILLS_HOW_TO_USE_WITH_ALIASES;
+use motyga_core_skills::render_available_skills_body;
+use motyga_protocol::protocol::SKILLS_INSTRUCTIONS_CLOSE_TAG;
+use motyga_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
 
 use super::ContextualUserFragment;
 
-/// Model-context fragment describing the skills available to Codex.
+/// Model-context fragment describing the skills available to Motyga.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AvailableSkillsInstructions {
     skill_root_lines: Vec<String>,

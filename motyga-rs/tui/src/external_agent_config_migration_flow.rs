@@ -6,10 +6,10 @@ use crate::external_agent_config_migration_model::external_agent_config_migratio
 use crate::external_agent_config_migration_model::external_agent_config_migration_type_label;
 use crate::legacy_core::config::Config;
 use crate::tui;
-use codex_app_server_protocol::ExternalAgentConfigDetectParams;
-use codex_app_server_protocol::ExternalAgentConfigImportCompletedNotification;
-use codex_app_server_protocol::ExternalAgentConfigMigrationItem;
-use codex_app_server_protocol::ExternalAgentConfigMigrationItemType;
+use motyga_app_server_protocol::ExternalAgentConfigDetectParams;
+use motyga_app_server_protocol::ExternalAgentConfigImportCompletedNotification;
+use motyga_app_server_protocol::ExternalAgentConfigMigrationItem;
+use motyga_app_server_protocol::ExternalAgentConfigMigrationItemType;
 use ratatui::prelude::Stylize as _;
 use ratatui::text::Line;
 

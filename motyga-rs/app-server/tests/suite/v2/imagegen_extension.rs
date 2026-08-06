@@ -7,16 +7,16 @@ use app_test_support::ChatGptAuthFixture;
 use app_test_support::TestAppServer;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_config::types::AuthCredentialsStoreMode;
+use motyga_app_server_protocol::ItemCompletedNotification;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_config::types::AuthCredentialsStoreMode;
 use core_test_support::responses;
 use pretty_assertions::assert_eq;
 use serde_json::json;
@@ -79,16 +79,16 @@ async fn standalone_image_generation_returns_saved_path_hint_to_model() -> Resul
     )
     .await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri(), ImagegenTestMode::Direct)?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri(), ImagegenTestMode::Direct)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("access-chatgpt"),
         AuthCredentialsStoreMode::File,
     )?;
 
     let mut mcp =
-        TestAppServer::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+        TestAppServer::new_with_env(motyga_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
     start_image_generation_turn(&mut mcp).await?;
 
@@ -152,7 +152,7 @@ async fn standalone_image_generation_failure_emits_terminal_item() -> Result<()>
     let call_id = "image-run-failed";
     let server = responses::start_mock_server().await;
     Mock::given(method("POST"))
-        .and(path("/api/codex/images/generations"))
+        .and(path("/api/motyga/images/generations"))
         .respond_with(ResponseTemplate::new(500).set_body_string("image backend failed"))
         .expect(1)
         .mount(&server)
@@ -178,15 +178,15 @@ async fn standalone_image_generation_failure_emits_terminal_item() -> Result<()>
     )
     .await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri(), ImagegenTestMode::Direct)?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri(), ImagegenTestMode::Direct)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("access-chatgpt"),
         AuthCredentialsStoreMode::File,
     )?;
     let mut mcp =
-        TestAppServer::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+        TestAppServer::new_with_env(motyga_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
     start_image_generation_turn(&mut mcp).await?;
 
@@ -227,8 +227,8 @@ async fn standalone_image_generation_failure_emits_terminal_item() -> Result<()>
 
 #[tokio::test]
 async fn standalone_image_edit_uses_attached_model_visible_image() -> Result<()> {
-    let edit_request = run_image_edit_test(|codex_home| {
-        let image_path = codex_home.join("attached.png");
+    let edit_request = run_image_edit_test(|motyga_home| {
+        let image_path = motyga_home.join("attached.png");
         std::fs::write(&image_path, TINY_PNG_BYTES)?;
         Ok((
             json!({
@@ -294,20 +294,20 @@ async fn standalone_image_generation_is_exposed_in_code_mode_only() -> Result<()
     )
     .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &server.uri(),
         ImagegenTestMode::CodeModeOnly,
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("access-chatgpt"),
         AuthCredentialsStoreMode::File,
     )?;
 
     let mut mcp =
-        TestAppServer::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+        TestAppServer::new_with_env(motyga_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
     start_image_generation_turn(&mut mcp).await?;
     timeout(
@@ -357,20 +357,20 @@ generatedImage(result);
     )
     .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &server.uri(),
         ImagegenTestMode::CodeModeOnly,
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("access-chatgpt"),
         AuthCredentialsStoreMode::File,
     )?;
 
     let mut mcp =
-        TestAppServer::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+        TestAppServer::new_with_env(motyga_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
     start_image_generation_turn(&mut mcp).await?;
     timeout(
@@ -419,8 +419,8 @@ async fn run_image_edit_test(
     let server = responses::start_mock_server().await;
     mount_image_edit_response(&server).await;
 
-    let codex_home = TempDir::new()?;
-    let (arguments, input) = input(codex_home.path())?;
+    let motyga_home = TempDir::new()?;
+    let (arguments, input) = input(motyga_home.path())?;
     let response_mock = responses::mount_sse_sequence(
         &server,
         vec![
@@ -442,15 +442,15 @@ async fn run_image_edit_test(
     )
     .await;
 
-    create_config_toml(codex_home.path(), &server.uri(), ImagegenTestMode::Direct)?;
+    create_config_toml(motyga_home.path(), &server.uri(), ImagegenTestMode::Direct)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("access-chatgpt"),
         AuthCredentialsStoreMode::File,
     )?;
 
     let mut mcp =
-        TestAppServer::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+        TestAppServer::new_with_env(motyga_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
     start_turn(&mut mcp, input).await?;
     timeout(
@@ -471,7 +471,7 @@ async fn run_image_edit_test(
         .context("failed to fetch received requests")?;
     Ok(requests
         .iter()
-        .find(|request| request.url.path() == "/api/codex/images/edits")
+        .find(|request| request.url.path() == "/api/motyga/images/edits")
         .context("image edit request should be sent")?
         .body_json::<serde_json::Value>()?)
 }
@@ -525,7 +525,7 @@ async fn wait_for_image_generation_completed(
 
 async fn mount_image_response(server: &MockServer) {
     Mock::given(method("POST"))
-        .and(path("/api/codex/images/generations"))
+        .and(path("/api/motyga/images/generations"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "created": 1,
             "data": [{"b64_json": RESULT}],
@@ -537,7 +537,7 @@ async fn mount_image_response(server: &MockServer) {
 
 async fn mount_image_edit_response(server: &MockServer) {
     Mock::given(method("POST"))
-        .and(path("/api/codex/images/edits"))
+        .and(path("/api/motyga/images/edits"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "created": 1,
             "data": [{"b64_json": RESULT}],
@@ -548,7 +548,7 @@ async fn mount_image_edit_response(server: &MockServer) {
 }
 
 fn create_config_toml(
-    codex_home: &Path,
+    motyga_home: &Path,
     server_uri: &str,
     mode: ImagegenTestMode,
 ) -> std::io::Result<()> {
@@ -557,7 +557,7 @@ fn create_config_toml(
         ImagegenTestMode::CodeModeOnly => "code_mode_only = true",
     };
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 model = "mock-model"
@@ -572,7 +572,7 @@ imagegenext = true
 
 [model_providers.openai-custom]
 name = "OpenAI"
-base_url = "{server_uri}/api/codex"
+base_url = "{server_uri}/api/motyga"
 wire_api = "responses"
 request_max_retries = 0
 stream_max_retries = 0

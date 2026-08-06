@@ -4,23 +4,23 @@ use super::parse_turn_item;
 use crate::context::ContextualUserFragment;
 use crate::context::InternalContextSource;
 use crate::context::InternalModelContextFragment;
-use codex_protocol::items::AgentMessageContent;
-use codex_protocol::items::HookPromptFragment;
-use codex_protocol::items::TurnItem;
-use codex_protocol::items::WebSearchItem;
-use codex_protocol::items::build_hook_prompt_message;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::DEFAULT_IMAGE_DETAIL;
-use codex_protocol::models::ReasoningItemContent;
-use codex_protocol::models::ReasoningItemReasoningSummary;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::protocol::CONTEXT_WINDOW_CLOSE_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_CLOSE_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_OPEN_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_OPEN_TAG;
-use codex_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
-use codex_protocol::user_input::UserInput;
+use motyga_protocol::items::AgentMessageContent;
+use motyga_protocol::items::HookPromptFragment;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::items::WebSearchItem;
+use motyga_protocol::items::build_hook_prompt_message;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::DEFAULT_IMAGE_DETAIL;
+use motyga_protocol::models::ReasoningItemContent;
+use motyga_protocol::models::ReasoningItemReasoningSummary;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::models::WebSearchAction;
+use motyga_protocol::protocol::CONTEXT_WINDOW_CLOSE_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_CLOSE_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_OPEN_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_OPEN_TAG;
+use motyga_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
+use motyga_protocol::user_input::UserInput;
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -204,7 +204,7 @@ fn parses_assistant_message_input_text_for_backward_compatibility() {
 #[test]
 fn skips_unnamed_image_label_text() {
     let image_url = "data:image/png;base64,abc".to_string();
-    let label = codex_protocol::models::image_open_tag_text();
+    let label = motyga_protocol::models::image_open_tag_text();
     let user_text = "Please review this image.".to_string();
 
     let item = ResponseItem::Message {
@@ -217,7 +217,7 @@ fn skips_unnamed_image_label_text() {
                 detail: Some(DEFAULT_IMAGE_DETAIL),
             },
             ContentItem::InputText {
-                text: codex_protocol::models::image_close_tag_text(),
+                text: motyga_protocol::models::image_close_tag_text(),
             },
             ContentItem::InputText {
                 text: user_text.clone(),

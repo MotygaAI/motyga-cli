@@ -1,30 +1,30 @@
-use codex_core::CodexThread;
-use codex_core::REVIEW_PROMPT;
-use codex_core::config::Config;
-use codex_core::review_format::render_review_output_text;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExitedReviewModeEvent;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ReviewCodeLocation;
-use codex_protocol::protocol::ReviewFinding;
-use codex_protocol::protocol::ReviewLineRange;
-use codex_protocol::protocol::ReviewOutputEvent;
-use codex_protocol::protocol::ReviewRequest;
-use codex_protocol::protocol::ReviewTarget;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::user_input::UserInput;
+use motyga_core::MotygaThread;
+use motyga_core::REVIEW_PROMPT;
+use motyga_core::config::Config;
+use motyga_core::review_format::render_review_output_text;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExitedReviewModeEvent;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ReviewCodeLocation;
+use motyga_protocol::protocol::ReviewFinding;
+use motyga_protocol::protocol::ReviewLineRange;
+use motyga_protocol::protocol::ReviewOutputEvent;
+use motyga_protocol::protocol::ReviewRequest;
+use motyga_protocol::protocol::ReviewTarget;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::PathBufExt;
 use core_test_support::responses;
 use core_test_support::responses::ResponseMock;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use std::path::PathBuf;
@@ -39,7 +39,7 @@ use wiremock::MockServer;
 /// in that order when the model returns a structured review JSON payload.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn review_op_emits_lifecycle_and_review_output() {
-    // Skip under Codex sandbox network restrictions.
+    // Skip under Motyga sandbox network restrictions.
     skip_if_no_network!();
 
     // Start mock Responses API server. Return a single assistant message whose
@@ -67,11 +67,11 @@ async fn review_op_emits_lifecycle_and_review_output() {
         /*expected_requests*/ 1,
     )
     .await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let motyga = new_conversation_for_server(&server, motyga_home.clone(), |_| {}).await;
 
     // Submit review request.
-    codex
+    motyga
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -84,8 +84,8 @@ async fn review_op_emits_lifecycle_and_review_output() {
         .unwrap();
 
     // Verify lifecycle: Entered -> Exited(Some(review)) -> TurnComplete.
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let closed = wait_for_event(&codex, |ev| matches!(ev, EventMsg::ExitedReviewMode(_))).await;
+    let _entered = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let closed = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::ExitedReviewMode(_))).await;
     let review = match closed {
         EventMsg::ExitedReviewMode(ev) => ev
             .review_output
@@ -110,9 +110,9 @@ async fn review_op_emits_lifecycle_and_review_output() {
         overall_confidence_score: 0.8,
     };
     assert_eq!(expected, review);
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    let path = codex.rollout_path().expect("rollout path");
+    let path = motyga.rollout_path().expect("rollout path");
     let text = std::fs::read_to_string(&path).expect("read rollout file");
     let parent_thread_id = text
         .lines()
@@ -196,7 +196,7 @@ async fn review_op_emits_lifecycle_and_review_output() {
         "assistant review output contains user_action markup"
     );
 
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
     server.verify().await;
 }
 
@@ -214,10 +214,10 @@ async fn review_op_with_plain_text_emits_review_fallback() {
         /*expected_requests*/ 1,
     )
     .await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let motyga = new_conversation_for_server(&server, motyga_home.clone(), |_| {}).await;
 
-    codex
+    motyga
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -229,8 +229,8 @@ async fn review_op_with_plain_text_emits_review_fallback() {
         .await
         .unwrap();
 
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let closed = wait_for_event(&codex, |ev| matches!(ev, EventMsg::ExitedReviewMode(_))).await;
+    let _entered = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let closed = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::ExitedReviewMode(_))).await;
     let review = match closed {
         EventMsg::ExitedReviewMode(ev) => ev
             .review_output
@@ -244,9 +244,9 @@ async fn review_op_with_plain_text_emits_review_fallback() {
         ..Default::default()
     };
     assert_eq!(expected, review);
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
     server.verify().await;
 }
 
@@ -270,10 +270,10 @@ async fn review_filters_agent_message_related_events() {
         /*expected_requests*/ 1,
     )
     .await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let motyga = new_conversation_for_server(&server, motyga_home.clone(), |_| {}).await;
 
-    codex
+    motyga
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -289,7 +289,7 @@ async fn review_filters_agent_message_related_events() {
     let mut saw_exited = false;
 
     // Drain until TurnComplete; assert streaming-related events never surface.
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&motyga, |event| match event {
         EventMsg::TurnComplete(_) => true,
         EventMsg::EnteredReviewMode(_) => {
             saw_entered = true;
@@ -308,7 +308,7 @@ async fn review_filters_agent_message_related_events() {
     .await;
     assert!(saw_entered && saw_exited, "missing review lifecycle events");
 
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
     server.verify().await;
 }
 
@@ -344,10 +344,10 @@ async fn review_does_not_emit_agent_message_on_structured_output() {
         /*expected_requests*/ 1,
     )
     .await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let motyga = new_conversation_for_server(&server, motyga_home.clone(), |_| {}).await;
 
-    codex
+    motyga
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -364,7 +364,7 @@ async fn review_does_not_emit_agent_message_on_structured_output() {
     let mut saw_entered = false;
     let mut saw_exited = false;
     let mut agent_messages = 0;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&motyga, |event| match event {
         EventMsg::TurnComplete(_) => true,
         EventMsg::AgentMessage(_) => {
             agent_messages += 1;
@@ -384,7 +384,7 @@ async fn review_does_not_emit_agent_message_on_structured_output() {
     assert_eq!(1, agent_messages, "expected exactly one AgentMessage event");
     assert!(saw_entered && saw_exited, "missing review lifecycle events");
 
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
     server.verify().await;
 }
 
@@ -396,15 +396,15 @@ async fn review_uses_custom_review_model_from_config() {
 
     let (server, request_log) =
         start_responses_server_with_sse(completed_sse(), /*expected_requests*/ 1).await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
+    let motyga_home = Arc::new(TempDir::new().unwrap());
     // Choose a review model different from the main model; ensure it is used.
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |cfg| {
+    let motyga = new_conversation_for_server(&server, motyga_home.clone(), |cfg| {
         cfg.model = Some("gpt-4.1".to_string());
         cfg.review_model = Some("gpt-5.4".to_string());
     })
     .await;
 
-    codex
+    motyga
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -417,8 +417,8 @@ async fn review_uses_custom_review_model_from_config() {
         .unwrap();
 
     // Wait for completion
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _closed = wait_for_event(&codex, |ev| {
+    let _entered = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _closed = wait_for_event(&motyga, |ev| {
         matches!(
             ev,
             EventMsg::ExitedReviewMode(ExitedReviewModeEvent {
@@ -427,7 +427,7 @@ async fn review_uses_custom_review_model_from_config() {
         )
     })
     .await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Assert the request body model equals the configured review model
     let request = request_log.single_request();
@@ -435,7 +435,7 @@ async fn review_uses_custom_review_model_from_config() {
     let body = request.body_json();
     assert_eq!(body["model"].as_str().unwrap(), "gpt-5.4");
 
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
     server.verify().await;
 }
 
@@ -447,14 +447,14 @@ async fn review_uses_session_model_when_review_model_unset() {
 
     let (server, request_log) =
         start_responses_server_with_sse(completed_sse(), /*expected_requests*/ 1).await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |cfg| {
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let motyga = new_conversation_for_server(&server, motyga_home.clone(), |cfg| {
         cfg.model = Some("gpt-4.1".to_string());
         cfg.review_model = None;
     })
     .await;
 
-    codex
+    motyga
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -466,8 +466,8 @@ async fn review_uses_session_model_when_review_model_unset() {
         .await
         .unwrap();
 
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _closed = wait_for_event(&codex, |ev| {
+    let _entered = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _closed = wait_for_event(&motyga, |ev| {
         matches!(
             ev,
             EventMsg::ExitedReviewMode(ExitedReviewModeEvent {
@@ -476,14 +476,14 @@ async fn review_uses_session_model_when_review_model_unset() {
         )
     })
     .await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = request_log.single_request();
     assert_eq!(request.path(), "/v1/responses");
     let body = request.body_json();
     assert_eq!(body["model"].as_str().unwrap(), "gpt-4.1");
 
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
     server.verify().await;
 }
 
@@ -500,9 +500,9 @@ async fn review_input_isolated_from_parent_history() {
         start_responses_server_with_sse(completed_sse(), /*expected_requests*/ 1).await;
 
     // Seed a parent session history via resume file with both user + assistant items.
-    let codex_home = Arc::new(TempDir::new().unwrap());
+    let motyga_home = Arc::new(TempDir::new().unwrap());
 
-    let session_file = codex_home.path().join("resume.jsonl");
+    let session_file = motyga_home.path().join("resume.jsonl");
     {
         let mut f = tokio::fs::File::create(&session_file).await.unwrap();
         let convo_id = Uuid::new_v4();
@@ -525,10 +525,10 @@ async fn review_input_isolated_from_parent_history() {
             .unwrap();
 
         // Prior user message (enveloped response_item)
-        let user = codex_protocol::models::ResponseItem::Message {
+        let user = motyga_protocol::models::ResponseItem::Message {
             id: None,
             role: "user".to_string(),
-            content: vec![codex_protocol::models::ContentItem::InputText {
+            content: vec![motyga_protocol::models::ContentItem::InputText {
                 text: "parent: earlier user message".to_string(),
             }],
             phase: None,
@@ -545,10 +545,10 @@ async fn review_input_isolated_from_parent_history() {
             .unwrap();
 
         // Prior assistant message (enveloped response_item)
-        let assistant = codex_protocol::models::ResponseItem::Message {
+        let assistant = motyga_protocol::models::ResponseItem::Message {
             id: None,
             role: "assistant".to_string(),
-            content: vec![codex_protocol::models::ContentItem::OutputText {
+            content: vec![motyga_protocol::models::ContentItem::OutputText {
                 text: "parent: assistant reply".to_string(),
             }],
             phase: None,
@@ -564,13 +564,13 @@ async fn review_input_isolated_from_parent_history() {
             .await
             .unwrap();
     }
-    let codex =
-        resume_conversation_for_server(&server, codex_home.clone(), session_file.clone(), |_| {})
+    let motyga =
+        resume_conversation_for_server(&server, motyga_home.clone(), session_file.clone(), |_| {})
             .await;
 
     // Submit review request; it must start fresh (no parent history in `input`).
     let review_prompt = "Please review only this".to_string();
-    codex
+    motyga
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -582,8 +582,8 @@ async fn review_input_isolated_from_parent_history() {
         .await
         .unwrap();
 
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _closed = wait_for_event(&codex, |ev| {
+    let _entered = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _closed = wait_for_event(&motyga, |ev| {
         matches!(
             ev,
             EventMsg::ExitedReviewMode(ExitedReviewModeEvent {
@@ -592,7 +592,7 @@ async fn review_input_isolated_from_parent_history() {
         )
     })
     .await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Assert the request `input` contains the environment context followed by the user review prompt.
     let request = request_log.single_request();
@@ -633,7 +633,7 @@ async fn review_input_isolated_from_parent_history() {
     assert_eq!(instructions, REVIEW_PROMPT);
 
     // Also verify that a user interruption note was recorded in the rollout.
-    let path = codex.rollout_path().expect("rollout path");
+    let path = motyga.rollout_path().expect("rollout path");
     let text = std::fs::read_to_string(&path).expect("read rollout file");
     let mut saw_interruption_message = false;
     for line in text.lines() {
@@ -663,7 +663,7 @@ async fn review_input_isolated_from_parent_history() {
         "expected user interruption message in rollout"
     );
 
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
     server.verify().await;
 }
 
@@ -678,11 +678,11 @@ async fn review_history_surfaces_in_parent_session() {
         /*expected_requests*/ 2,
     )
     .await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let motyga_home = Arc::new(TempDir::new().unwrap());
+    let motyga = new_conversation_for_server(&server, motyga_home.clone(), |_| {}).await;
 
     // 1) Run a review turn that produces an assistant message (isolated in child).
-    codex
+    motyga
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -693,8 +693,8 @@ async fn review_history_surfaces_in_parent_session() {
         })
         .await
         .unwrap();
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _closed = wait_for_event(&codex, |ev| {
+    let _entered = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _closed = wait_for_event(&motyga, |ev| {
         matches!(
             ev,
             EventMsg::ExitedReviewMode(ExitedReviewModeEvent {
@@ -703,11 +703,11 @@ async fn review_history_surfaces_in_parent_session() {
         )
     })
     .await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // 2) Continue in the parent session; request input must not include any review items.
     let followup = "back to parent".to_string();
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: followup.clone(),
@@ -720,7 +720,7 @@ async fn review_history_surfaces_in_parent_session() {
         })
         .await
         .unwrap();
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Inspect the second request (parent turn) input contents.
     // Parent turns include session initial messages (user_instructions, environment_context).
@@ -761,7 +761,7 @@ async fn review_history_surfaces_in_parent_session() {
         "review assistant output missing from parent turn input"
     );
 
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
     server.verify().await;
 }
 
@@ -814,16 +814,16 @@ async fn review_uses_overridden_cwd_for_base_branch_merge_base() {
         .trim()
         .to_string();
 
-    let codex_home = Arc::new(TempDir::new().unwrap());
+    let motyga_home = Arc::new(TempDir::new().unwrap());
     let initial_cwd_path = initial_cwd.path().to_path_buf();
-    let codex = new_conversation_for_server(&server, codex_home.clone(), move |config| {
+    let motyga = new_conversation_for_server(&server, motyga_home.clone(), move |config| {
         config.cwd = initial_cwd_path.abs();
     })
     .await;
 
     core_test_support::submit_thread_settings(
-        &codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             environments: Some(local_selections(repo_path.to_path_buf().abs())),
             ..Default::default()
         },
@@ -831,7 +831,7 @@ async fn review_uses_overridden_cwd_for_base_branch_merge_base() {
     .await
     .unwrap();
 
-    codex
+    motyga
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::BaseBranch {
@@ -843,8 +843,8 @@ async fn review_uses_overridden_cwd_for_base_branch_merge_base() {
         .await
         .unwrap();
 
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _entered = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _complete = wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     assert_eq!(requests.len(), 1);
@@ -863,7 +863,7 @@ async fn review_uses_overridden_cwd_for_base_branch_merge_base() {
         "expected review prompt to include merge-base sha {head_sha}"
     );
 
-    let _codex_home_guard = codex_home;
+    let _motyga_home_guard = motyga_home;
     server.verify().await;
 }
 
@@ -893,15 +893,15 @@ async fn start_responses_server_with_sse(
 /// Create a conversation configured to talk to the provided mock server.
 async fn new_conversation_for_server<F>(
     server: &MockServer,
-    codex_home: Arc<TempDir>,
+    motyga_home: Arc<TempDir>,
     mutator: F,
-) -> Arc<CodexThread>
+) -> Arc<MotygaThread>
 where
     F: FnOnce(&mut Config) + Send + 'static,
 {
     let base_url = format!("{}/v1", server.uri());
-    let mut builder = test_codex()
-        .with_home(codex_home)
+    let mut builder = test_motyga()
+        .with_home(motyga_home)
         .with_config(move |config| {
             config.model_provider.base_url = Some(base_url.clone());
             mutator(config);
@@ -910,29 +910,29 @@ where
         .build(server)
         .await
         .expect("create conversation")
-        .codex
+        .motyga
 }
 
 /// Create a conversation resuming from a rollout file, configured to talk to the provided mock server.
 async fn resume_conversation_for_server<F>(
     server: &MockServer,
-    codex_home: Arc<TempDir>,
+    motyga_home: Arc<TempDir>,
     resume_path: std::path::PathBuf,
     mutator: F,
-) -> Arc<CodexThread>
+) -> Arc<MotygaThread>
 where
     F: FnOnce(&mut Config) + Send + 'static,
 {
     let base_url = format!("{}/v1", server.uri());
-    let mut builder = test_codex()
-        .with_home(codex_home.clone())
+    let mut builder = test_motyga()
+        .with_home(motyga_home.clone())
         .with_config(move |config| {
             config.model_provider.base_url = Some(base_url.clone());
             mutator(config);
         });
     builder
-        .resume(server, codex_home, resume_path)
+        .resume(server, motyga_home, resume_path)
         .await
         .expect("resume conversation")
-        .codex
+        .motyga
 }

@@ -1,12 +1,12 @@
 use super::*;
 use crate::legacy_core::config::ConfigBuilder;
-use codex_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::openai_models::ReasoningEffort;
 use pretty_assertions::assert_eq;
 
 async fn test_config() -> Config {
-    let codex_home = tempfile::tempdir().expect("tempdir").keep();
+    let motyga_home = tempfile::tempdir().expect("tempdir").keep();
     ConfigBuilder::default()
-        .codex_home(codex_home)
+        .motyga_home(motyga_home)
         .build()
         .await
         .expect("config")

@@ -1,21 +1,21 @@
 use super::*;
-use codex_app_server_protocol::PluginAvailability;
+use motyga_app_server_protocol::PluginAvailability;
 use pretty_assertions::assert_eq;
 
 pub(super) async fn test_config() -> Config {
     // Start from the built-in defaults so tests do not inherit host/system config.
-    let codex_home = tempfile::Builder::new()
+    let motyga_home = tempfile::Builder::new()
         .prefix("chatwidget-tests-")
         .tempdir()
         .expect("tempdir")
         .keep();
     let mut config =
-        Config::load_default_with_cli_overrides_for_codex_home(codex_home.clone(), Vec::new())
+        Config::load_default_with_cli_overrides_for_motyga_home(motyga_home.clone(), Vec::new())
             .await
             .expect("config");
-    config.codex_home = codex_home.abs();
-    config.sqlite_home = codex_home.clone();
-    config.log_dir = codex_home.join("log");
+    config.motyga_home = motyga_home.abs();
+    config.sqlite_home = motyga_home.clone();
+    config.log_dir = motyga_home.join("log");
     config.cwd = PathBuf::from(test_path_display("/tmp/project")).abs();
     config.config_layer_stack = ConfigLayerStack::default();
     config.startup_warnings.clear();
@@ -151,7 +151,7 @@ pub(super) async fn make_chatwidget_manual(
     make_chatwidget_manual_with_auth(
         model_override,
         /*has_chatgpt_account*/ false,
-        /*has_codex_backend_auth*/ false,
+        /*has_motyga_backend_auth*/ false,
     )
     .await
 }
@@ -159,7 +159,7 @@ pub(super) async fn make_chatwidget_manual(
 pub(super) async fn make_chatwidget_manual_with_auth(
     model_override: Option<&str>,
     has_chatgpt_account: bool,
-    has_codex_backend_auth: bool,
+    has_motyga_backend_auth: bool,
 ) -> (
     ChatWidget,
     tokio::sync::mpsc::UnboundedReceiver<AppEvent>,
@@ -185,9 +185,9 @@ pub(super) async fn make_chatwidget_manual_with_auth(
         initial_user_message: None,
         enhanced_keys_supported: false,
         has_chatgpt_account,
-        has_codex_backend_auth,
+        has_motyga_backend_auth,
         model_catalog,
-        feedback: codex_feedback::CodexFeedback::new(),
+        feedback: motyga_feedback::MotygaFeedback::new(),
         is_first_run: true,
         status_account_display: None,
         runtime_model_provider_base_url: None,
@@ -198,7 +198,7 @@ pub(super) async fn make_chatwidget_manual_with_auth(
         terminal_title_invalid_items_warned: Arc::new(AtomicBool::new(false)),
         session_telemetry,
     };
-    let mut widget = ChatWidget::new_with_op_target(common, super::CodexOpTarget::Direct(op_tx));
+    let mut widget = ChatWidget::new_with_op_target(common, super::MotygaOpTarget::Direct(op_tx));
     widget.transcript.active_cell = None;
     widget.transcript.active_cell_revision = 0;
     widget.normal_placeholder_text = "Ask Motyga to do anything".to_string();
@@ -246,8 +246,19 @@ pub(super) fn assert_no_submit_op(op_rx: &mut tokio::sync::mpsc::UnboundedReceiv
 
 pub(crate) fn set_chatgpt_auth(chat: &mut ChatWidget) {
     chat.has_chatgpt_account = true;
-    chat.has_codex_backend_auth = true;
+    chat.has_motyga_backend_auth = true;
     chat.model_catalog = test_model_catalog(&chat.config);
+}
+
+/// `set_chatgpt_auth` plus the provider flag that a real ChatGPT session implies.
+///
+/// The default provider is Motyga, whose `requires_openai_auth` is false, so the
+/// rate-limit machinery stays gated off for the plain helper. Only tests that are
+/// actually about that machinery should opt in — turning it on globally makes every
+/// widget built by the helpers start prefetching rate limits and hang.
+pub(crate) fn set_chatgpt_auth_with_openai_provider(chat: &mut ChatWidget) {
+    set_chatgpt_auth(chat);
+    chat.config.model_provider.requires_openai_auth = true;
 }
 
 fn test_model_info(slug: &str, priority: i32, supports_fast_mode: bool) -> ModelInfo {
@@ -371,8 +382,8 @@ fn thread_id(chat: &ChatWidget) -> String {
     chat.thread_id.map(|id| id.to_string()).unwrap_or_default()
 }
 
-fn token_usage_breakdown(usage: TokenUsage) -> codex_app_server_protocol::TokenUsageBreakdown {
-    codex_app_server_protocol::TokenUsageBreakdown {
+fn token_usage_breakdown(usage: TokenUsage) -> motyga_app_server_protocol::TokenUsageBreakdown {
+    motyga_app_server_protocol::TokenUsageBreakdown {
         total_tokens: usage.total_tokens,
         input_tokens: usage.input_tokens,
         cached_input_tokens: usage.cached_input_tokens,
@@ -386,14 +397,14 @@ pub(super) fn handle_token_count(chat: &mut ChatWidget, info: Option<TokenUsageI
         Some(info) => {
             chat.handle_server_notification(
                 ServerNotification::ThreadTokenUsageUpdated(
-                    codex_app_server_protocol::ThreadTokenUsageUpdatedNotification {
+                    motyga_app_server_protocol::ThreadTokenUsageUpdatedNotification {
                         thread_id: thread_id(chat),
                         turn_id: chat
                             .turn_lifecycle
                             .last_turn_id
                             .clone()
                             .unwrap_or_else(|| "turn-1".to_string()),
-                        token_usage: codex_app_server_protocol::ThreadTokenUsage {
+                        token_usage: motyga_app_server_protocol::ThreadTokenUsage {
                             total: token_usage_breakdown(info.total_token_usage),
                             last: token_usage_breakdown(info.last_token_usage),
                             model_context_window: info.model_context_window,
@@ -410,13 +421,13 @@ pub(super) fn handle_token_count(chat: &mut ChatWidget, info: Option<TokenUsageI
 pub(super) fn handle_error(
     chat: &mut ChatWidget,
     message: impl Into<String>,
-    codex_error_info: Option<CodexErrorInfo>,
+    motyga_error_info: Option<MotygaErrorInfo>,
 ) {
     chat.handle_server_notification(
         ServerNotification::Error(ErrorNotification {
             error: AppServerTurnError {
                 message: message.into(),
-                codex_error_info,
+                motyga_error_info,
                 additional_details: None,
             },
             will_retry: false,
@@ -449,7 +460,7 @@ pub(super) fn handle_stream_error_with_replay(
         ServerNotification::Error(ErrorNotification {
             error: AppServerTurnError {
                 message: message.into(),
-                codex_error_info: None,
+                motyga_error_info: None,
                 additional_details,
             },
             will_retry: true,
@@ -495,7 +506,7 @@ pub(super) fn handle_model_verification(
 pub(super) fn handle_agent_message_delta(chat: &mut ChatWidget, delta: impl Into<String>) {
     chat.handle_server_notification(
         ServerNotification::AgentMessageDelta(
-            codex_app_server_protocol::AgentMessageDeltaNotification {
+            motyga_app_server_protocol::AgentMessageDeltaNotification {
                 thread_id: thread_id(chat),
                 turn_id: chat
                     .turn_lifecycle
@@ -793,7 +804,7 @@ pub(super) fn replay_agent_message_delta(
 ) {
     chat.handle_server_notification(
         ServerNotification::AgentMessageDelta(
-            codex_app_server_protocol::AgentMessageDeltaNotification {
+            motyga_app_server_protocol::AgentMessageDeltaNotification {
                 thread_id: thread_id(chat),
                 turn_id: "turn-1".to_string(),
                 item_id: "msg-1".to_string(),
@@ -814,13 +825,13 @@ pub(super) fn begin_exec_with_source(
     // Build the full command vec and parse it using core's parser,
     // then convert to protocol variants for the event payload.
     let command = vec!["bash".to_string(), "-lc".to_string(), raw_cmd.to_string()];
-    let command_actions = codex_shell_command::parse_command::parse_command(&command)
+    let command_actions = motyga_shell_command::parse_command::parse_command(&command)
         .into_iter()
         .map(|parsed| AppServerCommandAction::from_core_with_cwd(parsed, &chat.config.cwd))
         .collect();
     let item = AppServerThreadItem::CommandExecution {
         id: call_id.to_string(),
-        command: codex_shell_command::parse_command::shlex_join(&command),
+        command: motyga_shell_command::parse_command::shlex_join(&command),
         cwd: chat.config.cwd.clone().into(),
         process_id: None,
         source,
@@ -843,7 +854,7 @@ pub(super) fn begin_unified_exec_startup(
     let command = vec!["bash".to_string(), "-lc".to_string(), raw_cmd.to_string()];
     let item = AppServerThreadItem::CommandExecution {
         id: call_id.to_string(),
-        command: codex_shell_command::parse_command::shlex_join(&command),
+        command: motyga_shell_command::parse_command::shlex_join(&command),
         cwd: chat.config.cwd.clone().into(),
         process_id: Some(process_id.to_string()),
         source: ExecCommandSource::UnifiedExecStartup,
@@ -881,7 +892,7 @@ pub(super) fn terminal_interaction(
 ) {
     chat.handle_server_notification(
         ServerNotification::TerminalInteraction(
-            codex_app_server_protocol::TerminalInteractionNotification {
+            motyga_app_server_protocol::TerminalInteractionNotification {
                 thread_id: thread_id(chat),
                 turn_id: chat
                     .turn_lifecycle
@@ -969,7 +980,7 @@ pub(super) fn app_server_turn(
 ) -> AppServerTurn {
     AppServerTurn {
         id: turn_id.to_string(),
-        items_view: codex_app_server_protocol::TurnItemsView::Full,
+        items_view: motyga_app_server_protocol::TurnItemsView::Full,
         items: Vec::new(),
         status,
         error,
@@ -1279,7 +1290,7 @@ pub(super) fn strip_osc8_for_snapshot(text: &str) -> String {
 
 pub(super) fn plugins_test_absolute_path(path: &str) -> AbsolutePathBuf {
     std::env::temp_dir()
-        .join("codex-plugin-menu-tests")
+        .join("motyga-plugin-menu-tests")
         .join(path)
         .abs()
 }
@@ -1454,7 +1465,7 @@ pub(super) fn plugins_test_detail(
     summary: PluginSummary,
     description: Option<&str>,
     skills: &[&str],
-    hooks: &[(codex_app_server_protocol::HookEventName, usize)],
+    hooks: &[(motyga_app_server_protocol::HookEventName, usize)],
     apps: &[&str],
     mcp_servers: &[&str],
 ) -> PluginDetail {
@@ -1482,7 +1493,7 @@ pub(super) fn plugins_test_detail(
             .enumerate()
             .flat_map(|(event_index, (event_name, handler_count))| {
                 (0..*handler_count).map(move |handler_index| {
-                    codex_app_server_protocol::PluginHookSummary {
+                    motyga_app_server_protocol::PluginHookSummary {
                         key: format!("plugin:{event_index}:{handler_index}"),
                         event_name: *event_name,
                     }
@@ -1576,37 +1587,37 @@ pub(super) fn handle_hook_completed(chat: &mut ChatWidget, run: AppServerHookRun
 
 pub(super) fn hook_run(
     run_id: &str,
-    event_name: codex_app_server_protocol::HookEventName,
-    status: codex_app_server_protocol::HookRunStatus,
+    event_name: motyga_app_server_protocol::HookEventName,
+    status: motyga_app_server_protocol::HookRunStatus,
     status_message: &str,
-    entries: Vec<codex_app_server_protocol::HookOutputEntry>,
-) -> codex_app_server_protocol::HookRunSummary {
-    codex_app_server_protocol::HookRunSummary {
+    entries: Vec<motyga_app_server_protocol::HookOutputEntry>,
+) -> motyga_app_server_protocol::HookRunSummary {
+    motyga_app_server_protocol::HookRunSummary {
         id: run_id.to_string(),
         event_name,
-        handler_type: codex_app_server_protocol::HookHandlerType::Command,
-        execution_mode: codex_app_server_protocol::HookExecutionMode::Sync,
-        scope: codex_app_server_protocol::HookScope::Turn,
+        handler_type: motyga_app_server_protocol::HookHandlerType::Command,
+        execution_mode: motyga_app_server_protocol::HookExecutionMode::Sync,
+        scope: motyga_app_server_protocol::HookScope::Turn,
         source_path: PathBuf::from(test_path_display("/tmp/hooks.json")).abs(),
-        source: codex_app_server_protocol::HookSource::User,
+        source: motyga_app_server_protocol::HookSource::User,
         display_order: 0,
         status,
         status_message: Some(status_message.to_string()),
         started_at: 1,
         completed_at: matches!(
             status,
-            codex_app_server_protocol::HookRunStatus::Completed
-                | codex_app_server_protocol::HookRunStatus::Failed
-                | codex_app_server_protocol::HookRunStatus::Blocked
-                | codex_app_server_protocol::HookRunStatus::Stopped
+            motyga_app_server_protocol::HookRunStatus::Completed
+                | motyga_app_server_protocol::HookRunStatus::Failed
+                | motyga_app_server_protocol::HookRunStatus::Blocked
+                | motyga_app_server_protocol::HookRunStatus::Stopped
         )
         .then_some(11),
         duration_ms: matches!(
             status,
-            codex_app_server_protocol::HookRunStatus::Completed
-                | codex_app_server_protocol::HookRunStatus::Failed
-                | codex_app_server_protocol::HookRunStatus::Blocked
-                | codex_app_server_protocol::HookRunStatus::Stopped
+            motyga_app_server_protocol::HookRunStatus::Completed
+                | motyga_app_server_protocol::HookRunStatus::Failed
+                | motyga_app_server_protocol::HookRunStatus::Blocked
+                | motyga_app_server_protocol::HookRunStatus::Stopped
         )
         .then_some(10),
         entries,
@@ -1614,7 +1625,7 @@ pub(super) fn hook_run(
 }
 
 pub(super) async fn assert_hook_events_snapshot(
-    event_name: codex_app_server_protocol::HookEventName,
+    event_name: motyga_app_server_protocol::HookEventName,
     run_id: &str,
     status_message: &str,
     snapshot_name: &str,
@@ -1626,7 +1637,7 @@ pub(super) async fn assert_hook_events_snapshot(
         hook_run(
             run_id,
             event_name,
-            codex_app_server_protocol::HookRunStatus::Running,
+            motyga_app_server_protocol::HookRunStatus::Running,
             status_message,
             Vec::new(),
         ),
@@ -1649,15 +1660,15 @@ pub(super) async fn assert_hook_events_snapshot(
         hook_run(
             run_id,
             event_name,
-            codex_app_server_protocol::HookRunStatus::Completed,
+            motyga_app_server_protocol::HookRunStatus::Completed,
             status_message,
             vec![
-                codex_app_server_protocol::HookOutputEntry {
-                    kind: codex_app_server_protocol::HookOutputEntryKind::Warning,
+                motyga_app_server_protocol::HookOutputEntry {
+                    kind: motyga_app_server_protocol::HookOutputEntryKind::Warning,
                     text: "Heads up from the hook".to_string(),
                 },
-                codex_app_server_protocol::HookOutputEntry {
-                    kind: codex_app_server_protocol::HookOutputEntryKind::Context,
+                motyga_app_server_protocol::HookOutputEntry {
+                    kind: motyga_app_server_protocol::HookOutputEntryKind::Context,
                     text: "Remember the startup checklist.".to_string(),
                 },
             ],
@@ -1672,17 +1683,17 @@ pub(super) async fn assert_hook_events_snapshot(
     assert_chatwidget_snapshot!(snapshot_name, combined);
 }
 
-fn hook_event_label(event_name: codex_app_server_protocol::HookEventName) -> &'static str {
+fn hook_event_label(event_name: motyga_app_server_protocol::HookEventName) -> &'static str {
     match event_name {
-        codex_app_server_protocol::HookEventName::PreToolUse => "PreToolUse",
-        codex_app_server_protocol::HookEventName::PermissionRequest => "PermissionRequest",
-        codex_app_server_protocol::HookEventName::PostToolUse => "PostToolUse",
-        codex_app_server_protocol::HookEventName::PreCompact => "PreCompact",
-        codex_app_server_protocol::HookEventName::PostCompact => "PostCompact",
-        codex_app_server_protocol::HookEventName::SessionStart => "SessionStart",
-        codex_app_server_protocol::HookEventName::UserPromptSubmit => "UserPromptSubmit",
-        codex_app_server_protocol::HookEventName::SubagentStart => "SubagentStart",
-        codex_app_server_protocol::HookEventName::SubagentStop => "SubagentStop",
-        codex_app_server_protocol::HookEventName::Stop => "Stop",
+        motyga_app_server_protocol::HookEventName::PreToolUse => "PreToolUse",
+        motyga_app_server_protocol::HookEventName::PermissionRequest => "PermissionRequest",
+        motyga_app_server_protocol::HookEventName::PostToolUse => "PostToolUse",
+        motyga_app_server_protocol::HookEventName::PreCompact => "PreCompact",
+        motyga_app_server_protocol::HookEventName::PostCompact => "PostCompact",
+        motyga_app_server_protocol::HookEventName::SessionStart => "SessionStart",
+        motyga_app_server_protocol::HookEventName::UserPromptSubmit => "UserPromptSubmit",
+        motyga_app_server_protocol::HookEventName::SubagentStart => "SubagentStart",
+        motyga_app_server_protocol::HookEventName::SubagentStop => "SubagentStop",
+        motyga_app_server_protocol::HookEventName::Stop => "Stop",
     }
 }

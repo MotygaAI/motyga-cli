@@ -1,4 +1,4 @@
-# codex-process-hardening
+# motyga-process-hardening
 
 This crate provides `pre_main_hardening()`, which is designed to be called pre-`main()` (using `#[ctor::ctor]`) to perform various process hardening steps, such as
 

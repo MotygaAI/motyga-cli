@@ -15,14 +15,14 @@ use crate::tools::registry::PostToolUsePayload;
 use crate::tools::registry::PreToolUsePayload;
 use crate::tools::registry::ToolExecutor;
 use crate::tools::registry::ToolTelemetryTags;
-use codex_mcp::ToolInfo;
-use codex_tools::ResponsesApiNamespace;
-use codex_tools::ResponsesApiNamespaceTool;
-use codex_tools::ToolName;
-use codex_tools::ToolSearchInfo;
-use codex_tools::ToolSearchSourceInfo;
-use codex_tools::ToolSpec;
-use codex_tools::mcp_tool_to_responses_api_tool;
+use motyga_mcp::ToolInfo;
+use motyga_tools::ResponsesApiNamespace;
+use motyga_tools::ResponsesApiNamespaceTool;
+use motyga_tools::ToolName;
+use motyga_tools::ToolSearchInfo;
+use motyga_tools::ToolSearchSourceInfo;
+use motyga_tools::ToolSpec;
+use motyga_tools::mcp_tool_to_responses_api_tool;
 use serde_json::Map;
 use serde_json::Value;
 
@@ -112,7 +112,7 @@ impl ToolExecutor<ToolInvocation> for McpHandler {
         )
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(invocation))
     }
 }
@@ -354,7 +354,7 @@ mod tests {
                 cancellation_token: tokio_util::sync::CancellationToken::new(),
                 tracker: Arc::new(Mutex::new(TurnDiffTracker::new())),
                 call_id: "call-mcp-pre".to_string(),
-                tool_name: codex_tools::ToolName::namespaced("memory", "create_entities"),
+                tool_name: motyga_tools::ToolName::namespaced("memory", "create_entities"),
                 source: ToolCallSource::Direct,
                 payload,
             }),
@@ -388,7 +388,7 @@ mod tests {
                 cancellation_token: tokio_util::sync::CancellationToken::new(),
                 tracker: Arc::new(Mutex::new(TurnDiffTracker::new())),
                 call_id: "call-mcp-pre-builtin-like".to_string(),
-                tool_name: codex_tools::ToolName::namespaced("mcp__foo", "exec_command"),
+                tool_name: motyga_tools::ToolName::namespaced("mcp__foo", "exec_command"),
                 source: ToolCallSource::Direct,
                 payload,
             }),
@@ -418,7 +418,7 @@ mod tests {
                     cancellation_token: tokio_util::sync::CancellationToken::new(),
                     tracker: Arc::new(Mutex::new(TurnDiffTracker::new())),
                     call_id: "call-mcp-rewrite-builtin-like".to_string(),
-                    tool_name: codex_tools::ToolName::namespaced("mcp__foo", "exec_command"),
+                    tool_name: motyga_tools::ToolName::namespaced("mcp__foo", "exec_command"),
                     source: ToolCallSource::Direct,
                     payload,
                 },
@@ -438,7 +438,7 @@ mod tests {
             arguments: json!({ "path": "/tmp/notes.txt" }).to_string(),
         };
         let output = McpToolOutput {
-            result: codex_protocol::mcp::CallToolResult {
+            result: motyga_protocol::mcp::CallToolResult {
                 content: vec![json!({
                     "type": "text",
                     "text": "notes"
@@ -454,7 +454,7 @@ mod tests {
             }),
             wall_time: Duration::from_millis(42),
             original_image_detail_supported: true,
-            truncation_policy: codex_utils_output_truncation::TruncationPolicy::Bytes(1024),
+            truncation_policy: motyga_utils_output_truncation::TruncationPolicy::Bytes(1024),
         };
         let (session, turn) = make_session_and_context().await;
         let turn = Arc::new(turn);
@@ -467,7 +467,7 @@ mod tests {
             cancellation_token: tokio_util::sync::CancellationToken::new(),
             tracker: Arc::new(Mutex::new(TurnDiffTracker::new())),
             call_id: "call-mcp-post".to_string(),
-            tool_name: codex_tools::ToolName::namespaced("filesystem", "read_file"),
+            tool_name: motyga_tools::ToolName::namespaced("filesystem", "read_file"),
             source: ToolCallSource::Direct,
             payload,
         };

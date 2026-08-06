@@ -14,8 +14,8 @@ use super::TraceReducer;
 use super::tool::spawn_edge_id;
 use crate::model::AgentOrigin;
 use crate::model::AgentThread;
-use crate::model::CodexTurn;
-use crate::model::CodexTurnId;
+use crate::model::MotygaTurn;
+use crate::model::MotygaTurnId;
 use crate::model::ExecutionStatus;
 use crate::model::ExecutionWindow;
 use crate::model::RolloutStatus;
@@ -123,24 +123,24 @@ impl TraceReducer {
         Ok(())
     }
 
-    /// Starts a Codex turn inside an existing thread.
-    pub(super) fn start_codex_turn(
+    /// Starts a Motyga turn inside an existing thread.
+    pub(super) fn start_motyga_turn(
         &mut self,
         seq: RawEventSeq,
         wall_time_unix_ms: i64,
-        codex_turn_id: CodexTurnId,
+        motyga_turn_id: MotygaTurnId,
         thread_id: String,
     ) -> Result<()> {
-        if self.rollout.codex_turns.contains_key(&codex_turn_id) {
-            bail!("duplicate codex turn start for {codex_turn_id}");
+        if self.rollout.motyga_turns.contains_key(&motyga_turn_id) {
+            bail!("duplicate motyga turn start for {motyga_turn_id}");
         }
 
         self.thread_mut(&thread_id)?;
 
-        self.rollout.codex_turns.insert(
-            codex_turn_id.clone(),
-            CodexTurn {
-                codex_turn_id,
+        self.rollout.motyga_turns.insert(
+            motyga_turn_id.clone(),
+            MotygaTurn {
+                motyga_turn_id,
                 thread_id,
                 execution: ExecutionWindow {
                     started_at_unix_ms: wall_time_unix_ms,
@@ -155,28 +155,28 @@ impl TraceReducer {
         Ok(())
     }
 
-    /// Marks a Codex turn terminal and validates any thread id carried by the raw event.
-    pub(super) fn end_codex_turn(
+    /// Marks a Motyga turn terminal and validates any thread id carried by the raw event.
+    pub(super) fn end_motyga_turn(
         &mut self,
         seq: RawEventSeq,
         wall_time_unix_ms: i64,
         thread_id: Option<String>,
-        codex_turn_id: CodexTurnId,
+        motyga_turn_id: MotygaTurnId,
         status: ExecutionStatus,
     ) -> Result<()> {
         if let Some(event_thread_id) = thread_id.as_deref()
-            && let Some(turn) = self.rollout.codex_turns.get(&codex_turn_id)
+            && let Some(turn) = self.rollout.motyga_turns.get(&motyga_turn_id)
             && turn.thread_id != event_thread_id
         {
             bail!(
-                "codex turn end for {codex_turn_id} used thread {event_thread_id}, \
+                "motyga turn end for {motyga_turn_id} used thread {event_thread_id}, \
                  but the turn belongs to {}",
                 turn.thread_id
             );
         }
 
-        let Some(turn) = self.rollout.codex_turns.get_mut(&codex_turn_id) else {
-            bail!("codex turn end referenced unknown turn {codex_turn_id}");
+        let Some(turn) = self.rollout.motyga_turns.get_mut(&motyga_turn_id) else {
+            bail!("motyga turn end referenced unknown turn {motyga_turn_id}");
         };
         turn.execution.ended_at_unix_ms = Some(wall_time_unix_ms);
         turn.execution.ended_seq = Some(seq);
@@ -184,13 +184,13 @@ impl TraceReducer {
         self.terminate_running_code_cells_for_turn_end(
             seq,
             wall_time_unix_ms,
-            &codex_turn_id,
+            &motyga_turn_id,
             &status,
         )?;
         self.close_running_inference_calls_for_turn_end(
             seq,
             wall_time_unix_ms,
-            &codex_turn_id,
+            &motyga_turn_id,
             &status,
         );
         Ok(())

@@ -1,5 +1,5 @@
 [package]
-name = "codex-login"
+name = "motyga-login"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,16 +10,16 @@ workspace = true
 [dependencies]
 base64 = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
-codex-agent-identity = { workspace = true }
-codex-client = { workspace = true }
-codex-config = { workspace = true }
-codex-keyring-store = { workspace = true }
-codex-model-provider-info = { workspace = true }
-codex-otel = { workspace = true }
-codex-protocol = { workspace = true }
-codex-secrets = { workspace = true }
-codex-terminal-detection = { workspace = true }
-codex-utils-template = { workspace = true }
+motyga-agent-identity = { workspace = true }
+motyga-client = { workspace = true }
+motyga-config = { workspace = true }
+motyga-keyring-store = { workspace = true }
+motyga-model-provider-info = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-secrets = { workspace = true }
+motyga-terminal-detection = { workspace = true }
+motyga-utils-template = { workspace = true }
 once_cell = { workspace = true }
 os_info = { workspace = true }
 rand = { workspace = true }

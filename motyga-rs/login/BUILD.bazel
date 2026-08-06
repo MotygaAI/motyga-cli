@@ -1,11 +1,11 @@
-load("//:defs.bzl", "codex_rust_crate")
+load("//:defs.bzl", "motyga_rust_crate")
 
-codex_rust_crate(
+motyga_rust_crate(
     name = "login",
     compile_data = [
         "src/assets/error.html",
         "src/assets/success.html",
         "src/assets/success_legacy.html",
     ],
-    crate_name = "codex_login",
+    crate_name = "motyga_login",
 )

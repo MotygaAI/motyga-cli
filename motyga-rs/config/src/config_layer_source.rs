@@ -1,7 +1,7 @@
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use serde_json::Value as JsonValue;
 
-/// Provenance for one layer in the effective Codex configuration.
+/// Provenance for one layer in the effective Motyga configuration.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConfigLayerSource {
     /// Managed preferences delivered by MDM.
@@ -16,7 +16,7 @@ pub enum ConfigLayerSource {
         profile: Option<String>,
     },
     /// Configuration loaded from a project's `.motyga` directory.
-    Project { dot_codex_folder: AbsolutePathBuf },
+    Project { dot_motyga_folder: AbsolutePathBuf },
     /// Overrides supplied for the current session.
     SessionFlags,
     /// Legacy managed configuration loaded from a file.
@@ -86,10 +86,10 @@ pub fn format_config_layer_source(source: &ConfigLayerSource, config_toml_file: 
         ConfigLayerSource::User { file, .. } => {
             format!("user ({})", file.as_path().display())
         }
-        ConfigLayerSource::Project { dot_codex_folder } => {
+        ConfigLayerSource::Project { dot_motyga_folder } => {
             format!(
                 "project ({}/{config_toml_file})",
-                dot_codex_folder.as_path().display()
+                dot_motyga_folder.as_path().display()
             )
         }
         ConfigLayerSource::SessionFlags => "session-flags".to_string(),

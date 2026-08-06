@@ -5,7 +5,7 @@ import base64
 from app_server_harness import AppServerHarness
 from app_server_helpers import TINY_PNG_BYTES
 
-from openai_codex import Codex, ImageInput, LocalImageInput, SkillInput, TextInput
+from motyga_sdk import Motyga, ImageInput, LocalImageInput, SkillInput, TextInput
 
 
 def test_data_url_image_input_reaches_responses_api(
@@ -20,8 +20,8 @@ def test_data_url_image_input_reaches_responses_api(
             response_id="data-url-image",
         )
 
-        with Codex(config=harness.app_server_config()) as codex:
-            result = codex.thread_start().run(
+        with Motyga(config=harness.app_server_config()) as motyga:
+            result = motyga.thread_start().run(
                 [
                     TextInput("Describe the data URL image."),
                     ImageInput(image_data_url),
@@ -56,8 +56,8 @@ def test_local_image_input_reaches_responses_api(
             response_id="local-image",
         )
 
-        with Codex(config=harness.app_server_config()) as codex:
-            result = codex.thread_start().run(
+        with Motyga(config=harness.app_server_config()) as motyga:
+            result = motyga.thread_start().run(
                 [
                     TextInput("Describe the local image."),
                     LocalImageInput(str(local_image)),
@@ -92,8 +92,8 @@ def test_skill_input_injects_loaded_skill_body(tmp_path) -> None:
             response_id="skill-input",
         )
 
-        with Codex(config=harness.app_server_config()) as codex:
-            result = codex.thread_start().run(
+        with Motyga(config=harness.app_server_config()) as motyga:
+            result = motyga.thread_start().run(
                 [
                     TextInput("Use the selected skill."),
                     SkillInput("demo", str(skill_path)),

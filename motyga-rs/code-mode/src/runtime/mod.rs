@@ -11,18 +11,18 @@ use std::sync::OnceLock;
 use std::sync::mpsc as std_mpsc;
 use std::thread;
 
-use codex_code_mode_protocol::CodeModeToolKind;
-use codex_code_mode_protocol::EnabledToolMetadata;
-use codex_code_mode_protocol::ExecuteRequest;
-use codex_code_mode_protocol::FunctionCallOutputContentItem;
-use codex_code_mode_protocol::enabled_tool_metadata;
-use codex_protocol::ToolName;
+use motyga_code_mode_protocol::CodeModeToolKind;
+use motyga_code_mode_protocol::EnabledToolMetadata;
+use motyga_code_mode_protocol::ExecuteRequest;
+use motyga_code_mode_protocol::FunctionCallOutputContentItem;
+use motyga_code_mode_protocol::enabled_tool_metadata;
+use motyga_protocol::ToolName;
 use serde_json::Value as JsonValue;
 use tokio::sync::mpsc;
 
 use crate::TaskFailureHandler;
 
-const EXIT_SENTINEL: &str = "__codex_code_mode_exit__";
+const EXIT_SENTINEL: &str = "__motyga_code_mode_exit__";
 
 #[derive(Debug)]
 pub(crate) enum RuntimeCommand {

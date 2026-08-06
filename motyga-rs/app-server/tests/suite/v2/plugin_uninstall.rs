@@ -8,11 +8,11 @@ use app_test_support::TestAppServer;
 use app_test_support::start_analytics_events_server;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::PluginUninstallParams;
-use codex_app_server_protocol::PluginUninstallResponse;
-use codex_app_server_protocol::RequestId;
-use codex_config::types::AuthCredentialsStoreMode;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::PluginUninstallParams;
+use motyga_app_server_protocol::PluginUninstallResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_config::types::AuthCredentialsStoreMode;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 use tempfile::TempDir;
@@ -30,10 +30,10 @@ const WORKSPACE_REMOTE_PLUGIN_ID: &str = "plugins_69f27c3e67848191a45cbaa5f2adb3
 
 #[tokio::test]
 async fn plugin_uninstall_removes_plugin_cache_and_config_entry() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    write_installed_plugin(&codex_home, "debug", "sample-plugin")?;
+    let motyga_home = TempDir::new()?;
+    write_installed_plugin(&motyga_home, "debug", "sample-plugin")?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"[features]
 plugins = true
 
@@ -42,7 +42,7 @@ enabled = true
 "#,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let params = PluginUninstallParams {
@@ -59,12 +59,12 @@ enabled = true
     assert_eq!(response, PluginUninstallResponse {});
 
     assert!(
-        !codex_home
+        !motyga_home
             .path()
             .join("plugins/cache/debug/sample-plugin")
             .exists()
     );
-    let config = std::fs::read_to_string(codex_home.path().join("config.toml"))?;
+    let config = std::fs::read_to_string(motyga_home.path().join("config.toml"))?;
     assert!(!config.contains(r#"[plugins."sample-plugin@debug"]"#));
 
     let request_id = mcp.send_plugin_uninstall_request(params).await?;
@@ -82,17 +82,17 @@ enabled = true
 #[tokio::test]
 async fn plugin_uninstall_tracks_analytics_event() -> Result<()> {
     let analytics_server = start_analytics_events_server().await?;
-    let codex_home = TempDir::new()?;
-    write_installed_plugin(&codex_home, "debug", "sample-plugin")?;
+    let motyga_home = TempDir::new()?;
+    write_installed_plugin(&motyga_home, "debug", "sample-plugin")?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             "chatgpt_base_url = \"{}\"\n\n[features]\nplugins = true\n\n[plugins.\"sample-plugin@debug\"]\nenabled = true\n",
             analytics_server.uri()
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -100,7 +100,7 @@ async fn plugin_uninstall_tracks_analytics_event() -> Result<()> {
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -123,7 +123,7 @@ async fn plugin_uninstall_tracks_analytics_event() -> Result<()> {
                 continue;
             };
             if let Some(request) = requests.iter().find(|request| {
-                request.method == "POST" && request.url.path() == "/codex/analytics-events/events"
+                request.method == "POST" && request.url.path() == "/motyga/analytics-events/events"
             }) {
                 break request.body.clone();
             }
@@ -136,7 +136,7 @@ async fn plugin_uninstall_tracks_analytics_event() -> Result<()> {
         payload,
         json!({
             "events": [{
-                "event_type": "codex_plugin_uninstalled",
+                "event_type": "motyga_plugin_uninstalled",
                 "event_params": {
                     "plugin_id": "sample-plugin@debug",
                     "remote_plugin_id": null,
@@ -155,14 +155,14 @@ async fn plugin_uninstall_tracks_analytics_event() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_uninstall_rejects_remote_plugin_when_plugins_are_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"[features]
 plugins = false
 "#,
     )?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -188,14 +188,14 @@ plugins = false
 
 #[tokio::test]
 async fn plugin_uninstall_writes_remote_plugin_to_cloud_when_remote_plugin_enabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -223,7 +223,7 @@ async fn plugin_uninstall_writes_remote_plugin_to_cloud_when_remote_plugin_enabl
         .mount(&server)
         .await;
 
-    let remote_plugin_cache_root = codex_home
+    let remote_plugin_cache_root = motyga_home
         .path()
         .join("plugins/cache/openai-curated-remote/linear");
     std::fs::create_dir_all(remote_plugin_cache_root.join("1.0.0/.codex-plugin"))?;
@@ -236,12 +236,12 @@ async fn plugin_uninstall_writes_remote_plugin_to_cloud_when_remote_plugin_enabl
         remote_plugin_cache_root.join("1.0.0/skills/plan-work/SKILL.md"),
         "---\nname: plan-work\ndescription: Plan work\n---\n",
     )?;
-    let legacy_remote_plugin_cache_root = codex_home.path().join(format!(
+    let legacy_remote_plugin_cache_root = motyga_home.path().join(format!(
         "plugins/cache/openai-curated-remote/{REMOTE_PLUGIN_ID}"
     ));
     std::fs::create_dir_all(legacy_remote_plugin_cache_root.join("local/.codex-plugin"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     // Simulate a background remote-cache refresh removing the local bundle
@@ -275,7 +275,7 @@ async fn plugin_uninstall_writes_remote_plugin_to_cloud_when_remote_plugin_enabl
         payload,
         json!({
             "events": [{
-                "event_type": "codex_plugin_uninstalled",
+                "event_type": "motyga_plugin_uninstalled",
                 "event_params": {
                     "plugin_id": "linear@openai-curated-remote",
                     "remote_plugin_id": REMOTE_PLUGIN_ID,
@@ -294,14 +294,14 @@ async fn plugin_uninstall_writes_remote_plugin_to_cloud_when_remote_plugin_enabl
 
 #[tokio::test]
 async fn plugin_uninstall_uses_detail_scope_for_cache_namespace() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -323,7 +323,7 @@ async fn plugin_uninstall_uses_detail_scope_for_cache_namespace() -> Result<()> 
         .mount(&server)
         .await;
 
-    let workspace_cache_root = codex_home
+    let workspace_cache_root = motyga_home
         .path()
         .join("plugins/cache/workspace-directory/linear");
     std::fs::create_dir_all(workspace_cache_root.join("1.0.0/.codex-plugin"))?;
@@ -331,12 +331,12 @@ async fn plugin_uninstall_uses_detail_scope_for_cache_namespace() -> Result<()> 
         workspace_cache_root.join("1.0.0/.codex-plugin/plugin.json"),
         r#"{"name":"linear","version":"1.0.0"}"#,
     )?;
-    let global_cache_root = codex_home
+    let global_cache_root = motyga_home
         .path()
         .join("plugins/cache/openai-curated-remote/linear");
     std::fs::create_dir_all(global_cache_root.join("1.0.0/.codex-plugin"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -366,14 +366,14 @@ async fn plugin_uninstall_uses_detail_scope_for_cache_namespace() -> Result<()> 
 
 #[tokio::test]
 async fn plugin_uninstall_accepts_workspace_remote_plugin_id_shape() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -401,7 +401,7 @@ async fn plugin_uninstall_accepts_workspace_remote_plugin_id_shape() -> Result<(
         .mount(&server)
         .await;
 
-    let remote_plugin_cache_root = codex_home
+    let remote_plugin_cache_root = motyga_home
         .path()
         .join("plugins/cache/workspace-directory/skill-improver");
     std::fs::create_dir_all(remote_plugin_cache_root.join("1.0.0/.codex-plugin"))?;
@@ -410,7 +410,7 @@ async fn plugin_uninstall_accepts_workspace_remote_plugin_id_shape() -> Result<(
         r#"{"name":"skill-improver","version":"1.0.0"}"#,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -439,14 +439,14 @@ async fn plugin_uninstall_accepts_workspace_remote_plugin_id_shape() -> Result<(
 
 #[tokio::test]
 async fn plugin_uninstall_rejects_before_post_when_remote_detail_fetch_fails() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -454,12 +454,12 @@ async fn plugin_uninstall_rejects_before_post_when_remote_detail_fetch_fails() -
         AuthCredentialsStoreMode::File,
     )?;
 
-    let legacy_remote_plugin_cache_root = codex_home.path().join(format!(
+    let legacy_remote_plugin_cache_root = motyga_home.path().join(format!(
         "plugins/cache/openai-curated-remote/{REMOTE_PLUGIN_ID}"
     ));
     std::fs::create_dir_all(legacy_remote_plugin_cache_root.join("local/.codex-plugin"))?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -495,13 +495,13 @@ async fn plugin_uninstall_rejects_before_post_when_remote_detail_fetch_fails() -
 
 #[tokio::test]
 async fn plugin_uninstall_rejects_remote_plugin_id_with_spaces_before_network_call() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -530,13 +530,13 @@ async fn plugin_uninstall_rejects_remote_plugin_id_with_spaces_before_network_ca
 
 #[tokio::test]
 async fn plugin_uninstall_rejects_invalid_remote_plugin_id_before_network_call() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -565,13 +565,13 @@ async fn plugin_uninstall_rejects_invalid_remote_plugin_id_before_network_call()
 
 #[tokio::test]
 async fn plugin_uninstall_rejects_empty_remote_plugin_id() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     write_remote_plugin_catalog_config(
-        codex_home.path(),
+        motyga_home.path(),
         &format!("{}/backend-api/", server.uri()),
     )?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -592,11 +592,11 @@ async fn plugin_uninstall_rejects_empty_remote_plugin_id() -> Result<()> {
 }
 
 fn write_installed_plugin(
-    codex_home: &TempDir,
+    motyga_home: &TempDir,
     marketplace_name: &str,
     plugin_name: &str,
 ) -> Result<()> {
-    let plugin_root = codex_home
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join(marketplace_name)
@@ -611,11 +611,11 @@ fn write_installed_plugin(
 }
 
 fn write_remote_plugin_catalog_config(
-    codex_home: &std::path::Path,
+    motyga_home: &std::path::Path,
     base_url: &str,
 ) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{base_url}"
@@ -701,7 +701,7 @@ async fn wait_for_plugin_analytics_payload(server: &MockServer) -> Result<serde_
                     && request
                         .url
                         .path()
-                        .ends_with("/codex/analytics-events/events")
+                        .ends_with("/motyga/analytics-events/events")
             }) {
                 return serde_json::from_slice(&request.body)
                     .map_err(|err| anyhow::anyhow!("invalid analytics payload: {err}"));

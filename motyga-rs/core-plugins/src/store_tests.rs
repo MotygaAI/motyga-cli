@@ -1,5 +1,5 @@
 use super::*;
-use codex_plugin::PluginId;
+use motyga_plugin::PluginId;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 use tempfile::tempdir;
@@ -35,7 +35,7 @@ fn write_plugin(root: &Path, dir_name: &str, manifest_name: &str) {
 }
 
 #[test]
-fn try_new_rejects_relative_codex_home() {
+fn try_new_rejects_relative_motyga_home() {
     let err = PluginStore::try_new(PathBuf::from("relative"))
         .expect_err("relative motyga home should fail");
     let err = err.to_string().replace('\\', "/");
@@ -215,7 +215,7 @@ fn remote_plugin_install_metadata_follows_installed_cache_lifecycle() {
     let metadata_path = store.remote_plugin_install_metadata_path(&plugin_id);
     assert_eq!(
         metadata_path.as_path().file_name(),
-        Some(std::ffi::OsStr::new(".codex-remote-plugin-install.json"))
+        Some(std::ffi::OsStr::new(".motyga-remote-plugin-install.json"))
     );
     assert_eq!(
         serde_json::from_str::<serde_json::Value>(

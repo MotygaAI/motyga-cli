@@ -1,7 +1,7 @@
-load("//:defs.bzl", "codex_rust_crate")
+load("//:defs.bzl", "motyga_rust_crate")
 
-codex_rust_crate(
+motyga_rust_crate(
     name = "test-binary-support",
-    crate_name = "codex_test_binary_support",
+    crate_name = "motyga_test_binary_support",
     crate_srcs = ["lib.rs"],
 )

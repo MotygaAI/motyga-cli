@@ -1,9 +1,9 @@
 #![cfg(target_os = "linux")]
 #![allow(clippy::unwrap_used)]
 
-use codex_core::exec_env::create_env;
-use codex_protocol::config_types::ShellEnvironmentPolicy;
-use codex_protocol::models::PermissionProfile;
+use motyga_core::exec_env::create_env;
+use motyga_protocol::config_types::ShellEnvironmentPolicy;
+use motyga_protocol::models::PermissionProfile;
 use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 use std::io::Read;
@@ -135,7 +135,7 @@ async fn run_linux_sandbox_direct(
     args.push("--".to_string());
     args.extend(command.iter().map(|entry| (*entry).to_string()));
 
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_codex-linux-sandbox"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_motyga-linux-sandbox"));
     cmd.args(args)
         .current_dir(cwd)
         .env_clear()

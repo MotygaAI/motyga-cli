@@ -1,8 +1,8 @@
 use super::*;
 
-pub(super) fn environment_selection_error(err: CodexErr) -> JSONRPCErrorError {
+pub(super) fn environment_selection_error(err: MotygaErr) -> JSONRPCErrorError {
     match err {
-        CodexErr::InvalidRequest(message) => invalid_request(message),
+        MotygaErr::InvalidRequest(message) => invalid_request(message),
         err => internal_error(format!("failed to validate environment selections: {err}")),
     }
 }

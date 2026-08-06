@@ -2,13 +2,13 @@ use std::ffi::OsString;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use codex_exec_server::ExecBackend;
-use codex_exec_server::ExecBackendFuture;
-use codex_exec_server::ExecParams;
-use codex_exec_server::ExecServerError;
-use codex_rmcp_client::ExecutorStdioServerLauncher;
-use codex_rmcp_client::RmcpClient;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::ExecBackend;
+use motyga_exec_server::ExecBackendFuture;
+use motyga_exec_server::ExecParams;
+use motyga_exec_server::ExecServerError;
+use motyga_rmcp_client::ExecutorStdioServerLauncher;
+use motyga_rmcp_client::RmcpClient;
+use motyga_utils_path_uri::PathUri;
 use pretty_assertions::assert_eq;
 
 #[derive(Default)]

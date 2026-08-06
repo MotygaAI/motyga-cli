@@ -1,4 +1,4 @@
-use codex_protocol::AgentPath;
+use motyga_protocol::AgentPath;
 
 use super::ContextualUserFragment;
 

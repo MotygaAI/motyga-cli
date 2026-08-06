@@ -1,16 +1,16 @@
-use codex_app_server_protocol::AppBranding as ApiAppBranding;
-use codex_app_server_protocol::AppInfo as ApiAppInfo;
-use codex_app_server_protocol::AppMetadata as ApiAppMetadata;
-use codex_app_server_protocol::AppReview as ApiAppReview;
-use codex_app_server_protocol::AppScreenshot as ApiAppScreenshot;
-use codex_connectors::AppBranding;
-use codex_connectors::AppInfo;
-use codex_connectors::AppMetadata;
-use codex_connectors::AppReview;
-use codex_connectors::AppScreenshot;
+use motyga_app_server_protocol::AppBranding as ApiAppBranding;
+use motyga_app_server_protocol::AppInfo as ApiAppInfo;
+use motyga_app_server_protocol::AppMetadata as ApiAppMetadata;
+use motyga_app_server_protocol::AppReview as ApiAppReview;
+use motyga_app_server_protocol::AppScreenshot as ApiAppScreenshot;
+use motyga_connectors::AppBranding;
+use motyga_connectors::AppInfo;
+use motyga_connectors::AppMetadata;
+use motyga_connectors::AppReview;
+use motyga_connectors::AppScreenshot;
 
-/// Converts connector-domain app metadata owned by `codex-connectors` into the app-server wire
-/// type owned by `codex-app-server-protocol`.
+/// Converts connector-domain app metadata owned by `motyga-connectors` into the app-server wire
+/// type owned by `motyga-app-server-protocol`.
 ///
 /// The types stay separate so app-server protocol ownership does not leak into the connector
 /// domain crate. Because this crate owns neither type, Rust's orphan rules require an explicit

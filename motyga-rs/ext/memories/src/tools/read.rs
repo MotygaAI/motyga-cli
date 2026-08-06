@@ -1,9 +1,9 @@
-use codex_extension_api::JsonToolOutput;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolExecutor;
-use codex_extension_api::ToolName;
-use codex_extension_api::ToolSpec;
-use codex_otel::MetricsClient;
+use motyga_extension_api::JsonToolOutput;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolExecutor;
+use motyga_extension_api::ToolName;
+use motyga_extension_api::ToolSpec;
+use motyga_otel::MetricsClient;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::json;
@@ -49,11 +49,11 @@ where
     fn spec(&self) -> ToolSpec {
         memory_function_tool::<ReadArgs, ReadMemoryResponse>(
             READ_TOOL_NAME,
-            "Read a Codex memory file by relative path, optionally starting at a 1-indexed line offset and limiting the number of lines returned.",
+            "Read a Motyga memory file by relative path, optionally starting at a 1-indexed line offset and limiting the number of lines returned.",
         )
     }
 
-    fn handle(&self, call: ToolCall) -> codex_extension_api::ToolExecutorFuture<'_> {
+    fn handle(&self, call: ToolCall) -> motyga_extension_api::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(call))
     }
 }
@@ -65,7 +65,7 @@ where
     async fn handle_call(
         &self,
         call: ToolCall,
-    ) -> Result<Box<dyn codex_extension_api::ToolOutput>, codex_extension_api::FunctionCallError>
+    ) -> Result<Box<dyn motyga_extension_api::ToolOutput>, motyga_extension_api::FunctionCallError>
     {
         let backend = self.backend.clone();
         let args: ReadArgs = parse_args(&call)?;

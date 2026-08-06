@@ -11,7 +11,7 @@ use crate::state::NetworkProxyState;
 use anyhow::Context;
 use anyhow::Result;
 use clap::Parser;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -24,7 +24,7 @@ use tokio::task::JoinHandle;
 use tracing::warn;
 
 #[derive(Debug, Clone, Parser)]
-#[command(name = "codex-network-proxy", about = "Motyga network sandbox proxy")]
+#[command(name = "motyga-network-proxy", about = "Motyga network sandbox proxy")]
 pub struct Args {}
 
 #[derive(Debug)]
@@ -100,7 +100,7 @@ pub struct NetworkProxyBuilder {
     state: Option<Arc<NetworkProxyState>>,
     http_addr: Option<SocketAddr>,
     socks_addr: Option<SocketAddr>,
-    managed_by_codex: bool,
+    managed_by_motyga: bool,
     policy_decider: Option<Arc<dyn NetworkPolicyDecider>>,
     blocked_request_observer: Option<Arc<dyn BlockedRequestObserver>>,
 }
@@ -111,7 +111,7 @@ impl Default for NetworkProxyBuilder {
             state: None,
             http_addr: None,
             socks_addr: None,
-            managed_by_codex: true,
+            managed_by_motyga: true,
             policy_decider: None,
             blocked_request_observer: None,
         }
@@ -134,8 +134,8 @@ impl NetworkProxyBuilder {
         self
     }
 
-    pub fn managed_by_codex(mut self, managed_by_codex: bool) -> Self {
-        self.managed_by_codex = managed_by_codex;
+    pub fn managed_by_motyga(mut self, managed_by_motyga: bool) -> Self {
+        self.managed_by_motyga = managed_by_motyga;
         self
     }
 
@@ -179,7 +179,7 @@ impl NetworkProxyBuilder {
             .await;
         let current_cfg = state.current_cfg().await?;
         let (requested_http_addr, requested_socks_addr, reserved_listeners) = if self
-            .managed_by_codex
+            .managed_by_motyga
         {
             let runtime = config::resolve_runtime(&current_cfg)?;
             #[cfg(target_os = "windows")]
@@ -413,8 +413,8 @@ pub const PROXY_URL_ENV_KEYS: &[&str] = &[
 ];
 
 pub const ALL_PROXY_ENV_KEYS: &[&str] = &["ALL_PROXY", "all_proxy"];
-pub const PROXY_ACTIVE_ENV_KEY: &str = "CODEX_NETWORK_PROXY_ACTIVE";
-pub const ALLOW_LOCAL_BINDING_ENV_KEY: &str = "CODEX_NETWORK_ALLOW_LOCAL_BINDING";
+pub const PROXY_ACTIVE_ENV_KEY: &str = "MOTYGA_NETWORK_PROXY_ACTIVE";
+pub const ALLOW_LOCAL_BINDING_ENV_KEY: &str = "MOTYGA_NETWORK_ALLOW_LOCAL_BINDING";
 const ELECTRON_GET_USE_PROXY_ENV_KEY: &str = "ELECTRON_GET_USE_PROXY";
 const NODE_USE_ENV_PROXY_ENV_KEY: &str = "NODE_USE_ENV_PROXY";
 #[cfg(any(target_os = "macos", test))]
@@ -482,12 +482,12 @@ pub const DEFAULT_NO_PROXY_VALUE: &str = concat!(
 );
 
 #[cfg(target_os = "macos")]
-pub const CODEX_PROXY_GIT_SSH_COMMAND_MARKER: &str = "CODEX_PROXY_GIT_SSH_COMMAND=1 ";
+pub const MOTYGA_PROXY_GIT_SSH_COMMAND_MARKER: &str = "MOTYGA_PROXY_GIT_SSH_COMMAND=1 ";
 #[cfg(target_os = "macos")]
-const CODEX_PROXY_GIT_SSH_COMMAND_PREFIX: &str =
-    "CODEX_PROXY_GIT_SSH_COMMAND=1 ssh -o ProxyCommand='nc -X 5 -x ";
+const MOTYGA_PROXY_GIT_SSH_COMMAND_PREFIX: &str =
+    "MOTYGA_PROXY_GIT_SSH_COMMAND=1 ssh -o ProxyCommand='nc -X 5 -x ";
 #[cfg(target_os = "macos")]
-const CODEX_PROXY_GIT_SSH_COMMAND_SUFFIX: &str = " %h %p'";
+const MOTYGA_PROXY_GIT_SSH_COMMAND_SUFFIX: &str = " %h %p'";
 
 pub fn proxy_url_env_value<'a>(
     env: &'a HashMap<String, String>,
@@ -513,14 +513,14 @@ fn set_env_keys(env: &mut HashMap<String, String>, keys: &[&str], value: &str) {
 }
 
 #[cfg(target_os = "macos")]
-fn codex_proxy_git_ssh_command(socks_addr: SocketAddr) -> String {
-    format!("{CODEX_PROXY_GIT_SSH_COMMAND_PREFIX}{socks_addr}{CODEX_PROXY_GIT_SSH_COMMAND_SUFFIX}")
+fn motyga_proxy_git_ssh_command(socks_addr: SocketAddr) -> String {
+    format!("{MOTYGA_PROXY_GIT_SSH_COMMAND_PREFIX}{socks_addr}{MOTYGA_PROXY_GIT_SSH_COMMAND_SUFFIX}")
 }
 
 #[cfg(target_os = "macos")]
-fn is_codex_proxy_git_ssh_command(command: &str) -> bool {
-    command.starts_with(CODEX_PROXY_GIT_SSH_COMMAND_PREFIX)
-        && command.ends_with(CODEX_PROXY_GIT_SSH_COMMAND_SUFFIX)
+fn is_motyga_proxy_git_ssh_command(command: &str) -> bool {
+    command.starts_with(MOTYGA_PROXY_GIT_SSH_COMMAND_PREFIX)
+        && command.ends_with(MOTYGA_PROXY_GIT_SSH_COMMAND_SUFFIX)
 }
 
 fn apply_proxy_env_overrides(
@@ -597,14 +597,14 @@ fn apply_proxy_env_overrides(
     #[cfg(target_os = "macos")]
     if socks_enabled {
         // Preserve existing SSH wrappers (for example: Secretive/Teleport setups)
-        // but refresh a previously injected Codex fallback so it cannot point
+        // but refresh a previously injected Motyga fallback so it cannot point
         // at a stale proxy port after the proxy is restarted.
         match env.get(GIT_SSH_COMMAND_ENV_KEY) {
-            Some(command) if !is_codex_proxy_git_ssh_command(command) => {}
+            Some(command) if !is_motyga_proxy_git_ssh_command(command) => {}
             _ => {
                 env.insert(
                     GIT_SSH_COMMAND_ENV_KEY.to_string(),
-                    codex_proxy_git_ssh_command(socks_addr),
+                    motyga_proxy_git_ssh_command(socks_addr),
                 );
             }
         }
@@ -1118,7 +1118,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn non_codex_managed_proxy_builder_uses_configured_ports() {
+    async fn non_motyga_managed_proxy_builder_uses_configured_ports() {
         let settings = NetworkProxySettings {
             proxy_url: "http://127.0.0.1:43128".to_string(),
             socks_url: "http://127.0.0.1:48081".to_string(),
@@ -1127,7 +1127,7 @@ mod tests {
         let state = Arc::new(network_proxy_state_for_policy(settings));
         let proxy = NetworkProxy::builder()
             .state(state)
-            .managed_by_codex(/*managed_by_codex*/ false)
+            .managed_by_motyga(/*managed_by_motyga*/ false)
             .build()
             .await
             .unwrap();
@@ -1369,7 +1369,7 @@ mod tests {
         assert_eq!(
             env.get(GIT_SSH_COMMAND_ENV_KEY),
             Some(
-                &"CODEX_PROXY_GIT_SSH_COMMAND=1 ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
+                &"MOTYGA_PROXY_GIT_SSH_COMMAND=1 ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
                     .to_string()
             )
         );
@@ -1402,7 +1402,7 @@ mod tests {
     #[test]
     fn apply_proxy_env_overrides_sets_mitm_ca_trust_bundle_vars() {
         let mut env = HashMap::new();
-        let mitm_ca_trust_bundle_path = Path::new("/tmp/codex-proxy/ca-bundle.pem");
+        let mitm_ca_trust_bundle_path = Path::new("/tmp/motyga-proxy/ca-bundle.pem");
         let mitm_ca_trust_bundle = crate::certs::ManagedMitmCaTrustBundle {
             path: mitm_ca_trust_bundle_path.to_path_buf(),
             startup_env_values: HashMap::new(),
@@ -1431,7 +1431,7 @@ mod tests {
             "REQUESTS_CA_BUNDLE".to_string(),
             command_ca_bundle_path.clone(),
         )]);
-        let mitm_ca_trust_bundle_path = Path::new("/tmp/codex-proxy/ca-bundle.pem");
+        let mitm_ca_trust_bundle_path = Path::new("/tmp/motyga-proxy/ca-bundle.pem");
         let mitm_ca_trust_bundle = crate::certs::ManagedMitmCaTrustBundle {
             path: mitm_ca_trust_bundle_path.to_path_buf(),
             startup_env_values: HashMap::new(),
@@ -1508,7 +1508,7 @@ mod tests {
         assert_eq!(
             env.get(GIT_SSH_COMMAND_ENV_KEY),
             Some(
-                &"CODEX_PROXY_GIT_SSH_COMMAND=1 ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
+                &"MOTYGA_PROXY_GIT_SSH_COMMAND=1 ssh -o ProxyCommand='nc -X 5 -x 127.0.0.1:8081 %h %p'"
                     .to_string()
             )
         );
@@ -1564,11 +1564,11 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     #[test]
-    fn apply_proxy_env_overrides_refreshes_previous_codex_proxy_git_ssh_command() {
+    fn apply_proxy_env_overrides_refreshes_previous_motyga_proxy_git_ssh_command() {
         let mut env = HashMap::new();
         env.insert(
             GIT_SSH_COMMAND_ENV_KEY.to_string(),
-            codex_proxy_git_ssh_command(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8081)),
+            motyga_proxy_git_ssh_command(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8081)),
         );
 
         apply_proxy_env_overrides(
@@ -1582,7 +1582,7 @@ mod tests {
 
         assert_eq!(
             env.get(GIT_SSH_COMMAND_ENV_KEY),
-            Some(&codex_proxy_git_ssh_command(SocketAddr::new(
+            Some(&motyga_proxy_git_ssh_command(SocketAddr::new(
                 IpAddr::V4(Ipv4Addr::LOCALHOST),
                 48081,
             )))

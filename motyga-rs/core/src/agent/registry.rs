@@ -1,9 +1,9 @@
-use codex_protocol::AgentPath;
-use codex_protocol::ThreadId;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
+use motyga_protocol::AgentPath;
+use motyga_protocol::ThreadId;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
 use rand::prelude::IndexedRandom;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -13,7 +13,7 @@ use std::sync::Mutex;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 
-/// This structure is used to add some limits on the multi-agent capabilities for Codex. In
+/// This structure is used to add some limits on the multi-agent capabilities for Motyga. In
 /// the current implementation, it limits:
 /// * Total number of sub-agents (i.e. threads) per user session
 ///
@@ -83,7 +83,7 @@ impl AgentRegistry {
     ) -> Result<SpawnReservation> {
         if let Some(max_threads) = max_threads {
             if !self.try_increment_spawned(max_threads) {
-                return Err(CodexErr::AgentLimitReached { max_threads });
+                return Err(MotygaErr::AgentLimitReached { max_threads });
             }
         } else {
             self.total_count.fetch_add(1, Ordering::AcqRel);
@@ -234,9 +234,9 @@ impl AgentRegistry {
             } else {
                 active_agents.used_agent_nicknames.clear();
                 active_agents.nickname_reset_count += 1;
-                if let Some(metrics) = codex_otel::global() {
+                if let Some(metrics) = motyga_otel::global() {
                     let _ = metrics.counter(
-                        "codex.multi_agent.nickname_pool_reset",
+                        "motyga.multi_agent.nickname_pool_reset",
                         /*inc*/ 1,
                         &[],
                     );
@@ -259,7 +259,7 @@ impl AgentRegistry {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         match active_agents.agent_tree.entry(agent_path.to_string()) {
-            Entry::Occupied(_) => Err(CodexErr::UnsupportedOperation(format!(
+            Entry::Occupied(_) => Err(MotygaErr::UnsupportedOperation(format!(
                 "agent path `{agent_path}` already exists"
             ))),
             Entry::Vacant(entry) => {
@@ -322,7 +322,7 @@ impl SpawnReservation {
             .state
             .reserve_agent_nickname(names, preferred)
             .ok_or_else(|| {
-                CodexErr::UnsupportedOperation("no available agent nicknames".to_string())
+                MotygaErr::UnsupportedOperation("no available agent nicknames".to_string())
             })?;
         self.reserved_agent_nickname = Some(agent_nickname.clone());
         Ok(agent_nickname)

@@ -5,9 +5,9 @@ use tempfile::tempdir;
 
 #[tokio::test]
 async fn dismiss_version_creates_cache_file_when_missing() {
-    let codex_home = tempdir().expect("temp motyga home");
+    let motyga_home = tempdir().expect("temp motyga home");
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .build()
         .await
         .expect("load config");

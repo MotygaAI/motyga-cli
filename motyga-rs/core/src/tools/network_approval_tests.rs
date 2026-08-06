@@ -1,9 +1,9 @@
 use super::*;
 use crate::sandboxing::SandboxPermissions;
-use codex_network_proxy::BlockedRequestArgs;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
+use motyga_network_proxy::BlockedRequestArgs;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
 use core_test_support::PathBufExt;
 use core_test_support::test_path_buf;
 use pretty_assertions::assert_eq;

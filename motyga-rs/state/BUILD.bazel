@@ -1,6 +1,6 @@
-load("//:defs.bzl", "codex_rust_crate")
+load("//:defs.bzl", "motyga_rust_crate")
 
-codex_rust_crate(
+motyga_rust_crate(
     name = "state",
     compile_data = glob([
         "goals_migrations/**",
@@ -8,5 +8,5 @@ codex_rust_crate(
         "memory_migrations/**",
         "migrations/**",
     ]),
-    crate_name = "codex_state",
+    crate_name = "motyga_state",
 )

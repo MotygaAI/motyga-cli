@@ -30,23 +30,23 @@ use wiremock::ResponseTemplate;
 use wiremock::matchers::method;
 use wiremock::matchers::path;
 
-fn codex_command(codex_home: &Path) -> Result<assert_cmd::Command> {
-    let mut cmd = assert_cmd::Command::new(codex_utils_cargo_bin::cargo_bin("motyga")?);
-    cmd.env("MOTYGA_HOME", codex_home);
+fn motyga_command(motyga_home: &Path) -> Result<assert_cmd::Command> {
+    let mut cmd = assert_cmd::Command::new(motyga_utils_cargo_bin::cargo_bin("motyga")?);
+    cmd.env("MOTYGA_HOME", motyga_home);
     Ok(cmd)
 }
 
 #[test]
 fn strict_config_rejects_unknown_config_fields_for_exec_server() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         r#"
 foo = "bar"
 "#,
     )?;
 
-    let mut cmd = codex_command(codex_home.path())?;
+    let mut cmd = motyga_command(motyga_home.path())?;
     cmd.args([
         "exec-server",
         "--strict-config",
@@ -62,10 +62,10 @@ foo = "bar"
 
 #[test]
 fn local_exec_server_ignores_invalid_config_without_strict_config() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    std::fs::write(codex_home.path().join("config.toml"), "not valid toml = [")?;
+    let motyga_home = TempDir::new()?;
+    std::fs::write(motyga_home.path().join("config.toml"), "not valid toml = [")?;
 
-    let mut cmd = codex_command(codex_home.path())?;
+    let mut cmd = motyga_command(motyga_home.path())?;
     cmd.args(["exec-server", "--listen", "stdio"])
         .assert()
         .success()
@@ -82,10 +82,10 @@ async fn local_exec_server_flushes_telemetry_on_stdio_disconnect() -> Result<()>
         .respond_with(ResponseTemplate::new(202))
         .mount(&collector)
         .await;
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let base_url = collector.uri();
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"
 [analytics]
@@ -104,12 +104,12 @@ metrics_exporter = {{ otlp-http = {{ endpoint = "{base_url}/v1/metrics", protoco
     let argv = vec!["ping.exe", "-n", "61", "127.0.0.1"];
     #[cfg(not(windows))]
     let argv = vec!["/bin/sleep", "60"];
-    let codex_bin = codex_utils_cargo_bin::cargo_bin("motyga")?;
-    let codex_home = codex_home.path().to_path_buf();
+    let motyga_bin = motyga_utils_cargo_bin::cargo_bin("motyga")?;
+    let motyga_home = motyga_home.path().to_path_buf();
     let subprocess = async move {
-        let mut command = tokio::process::Command::new(codex_bin);
+        let mut command = tokio::process::Command::new(motyga_bin);
         command
-            .env("MOTYGA_HOME", codex_home)
+            .env("MOTYGA_HOME", motyga_home)
             .env("NO_PROXY", "127.0.0.1,localhost")
             .env("no_proxy", "127.0.0.1,localhost")
             .args(["exec-server", "--listen", "stdio"])
@@ -237,9 +237,9 @@ async fn send_json_line(
 #[cfg(unix)]
 #[test]
 fn local_exec_server_exits_successfully_on_sigterm() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut child = std::process::Command::new(codex_utils_cargo_bin::cargo_bin("motyga")?)
-        .env("MOTYGA_HOME", codex_home.path())
+    let motyga_home = TempDir::new()?;
+    let mut child = std::process::Command::new(motyga_utils_cargo_bin::cargo_bin("motyga")?)
+        .env("MOTYGA_HOME", motyga_home.path())
         .args(["exec-server", "--listen", "ws://127.0.0.1:0"])
         .stdout(Stdio::piped())
         .spawn()?;

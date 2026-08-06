@@ -1,11 +1,11 @@
 use anyhow::Result;
-use codex_core::config::RolloutBudgetConfig;
-use codex_features::Feature;
-use codex_model_provider_info::built_in_model_providers;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_core::config::RolloutBudgetConfig;
+use motyga_features::Feature;
+use motyga_model_provider_info::built_in_model_providers;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ResponsesRequest;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -17,7 +17,7 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::json;
@@ -82,7 +82,7 @@ async fn adds_weighted_initial_and_threshold_reminders() -> Result<()> {
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config.rollout_budget = Some(RolloutBudgetConfig {
                 sampling_token_weight: 2.0,
@@ -170,7 +170,7 @@ async fn subagent_usage_draws_from_the_shared_budget() -> Result<()> {
     )
     .await;
 
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config
                 .features
@@ -223,7 +223,7 @@ async fn exhausted_budget_fails_current_and_later_turns() -> Result<()> {
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config.rollout_budget = Some(RolloutBudgetConfig {
                 limit_tokens: 30,
@@ -235,7 +235,7 @@ async fn exhausted_budget_fails_current_and_later_turns() -> Result<()> {
         .await?;
 
     for prompt in ["exhaust the budget", "try another turn"] {
-        test.codex
+        test.motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: prompt.to_string(),
@@ -248,15 +248,15 @@ async fn exhausted_budget_fails_current_and_later_turns() -> Result<()> {
             })
             .await?;
 
-        wait_for_event(&test.codex, |event| {
+        wait_for_event(&test.motyga, |event| {
             matches!(
                 event,
                 EventMsg::Error(error)
-                    if error.codex_error_info == Some(CodexErrorInfo::SessionBudgetExceeded)
+                    if error.motyga_error_info == Some(MotygaErrorInfo::SessionBudgetExceeded)
             )
         })
         .await;
-        wait_for_event(&test.codex, |event| {
+        wait_for_event(&test.motyga, |event| {
             matches!(event, EventMsg::TurnComplete(_))
         })
         .await;
@@ -291,7 +291,7 @@ async fn compaction_budget_exhaustion_fails_without_retry(remote_v2: bool) -> Re
         ])
     };
     let responses = mount_sse_sequence(&server, vec![compact_response]).await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.rollout_budget = Some(RolloutBudgetConfig {
                 limit_tokens: 10,
@@ -310,16 +310,16 @@ async fn compaction_budget_exhaustion_fails_without_retry(remote_v2: bool) -> Re
         .build(&server)
         .await?;
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::Error(error)
-                if error.codex_error_info == Some(CodexErrorInfo::SessionBudgetExceeded)
+                if error.motyga_error_info == Some(MotygaErrorInfo::SessionBudgetExceeded)
         )
     })
     .await;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -353,7 +353,7 @@ async fn restates_the_current_remainder_after_compaction() -> Result<()> {
     model_provider.name = "OpenAI-compatible test provider".to_string();
     model_provider.base_url = Some(format!("{}/v1", server.uri()));
     model_provider.supports_websockets = false;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             config.rollout_budget = Some(RolloutBudgetConfig {
@@ -365,8 +365,8 @@ async fn restates_the_current_remainder_after_compaction() -> Result<()> {
         .await?;
 
     test.submit_turn("first turn").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -409,7 +409,7 @@ async fn restates_the_current_remainder_after_rollback() -> Result<()> {
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config.rollout_budget = Some(RolloutBudgetConfig {
                 reminder_at_remaining_tokens: vec![50],
@@ -420,10 +420,10 @@ async fn restates_the_current_remainder_after_rollback() -> Result<()> {
         .await?;
 
     test.submit_turn("rolled-back turn").await?;
-    test.codex
+    test.motyga
         .submit(Op::ThreadRollback { num_turns: 1 })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::ThreadRolledBack(_))
     })
     .await;

@@ -2,40 +2,40 @@ use anyhow::Context;
 use anyhow::Result;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
-use codex_config::types::ApprovalsReviewer;
-use codex_core::compact::SUMMARIZATION_PROMPT;
-use codex_core::config::Constrained;
-use codex_exec_server::CopyOptions;
-use codex_exec_server::CreateDirectoryOptions;
-use codex_exec_server::FileSystemSandboxContext;
-use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-use codex_exec_server::REMOTE_ENVIRONMENT_ID;
-use codex_exec_server::RemoveOptions;
-use codex_features::Feature;
-use codex_protocol::models::FileSystemPermissions;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::ApplyPatchApprovalRequestEvent;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_protocol::request_permissions::PermissionGrantScope;
-use codex_protocol::request_permissions::RequestPermissionProfile;
-use codex_protocol::request_permissions::RequestPermissionsResponse;
-use codex_protocol::request_user_input::RequestUserInputAnswer;
-use codex_protocol::request_user_input::RequestUserInputResponse;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_core::compact::SUMMARIZATION_PROMPT;
+use motyga_core::config::Constrained;
+use motyga_exec_server::CopyOptions;
+use motyga_exec_server::CreateDirectoryOptions;
+use motyga_exec_server::FileSystemSandboxContext;
+use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+use motyga_exec_server::REMOTE_ENVIRONMENT_ID;
+use motyga_exec_server::RemoveOptions;
+use motyga_features::Feature;
+use motyga_protocol::models::FileSystemPermissions;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::ApplyPatchApprovalRequestEvent;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::request_permissions::PermissionGrantScope;
+use motyga_protocol::request_permissions::RequestPermissionProfile;
+use motyga_protocol::request_permissions::RequestPermissionsResponse;
+use motyga_protocol::request_user_input::RequestUserInputAnswer;
+use motyga_protocol::request_user_input::RequestUserInputResponse;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathBufExt;
 use core_test_support::PathExt;
 use core_test_support::TestTargetOs;
@@ -54,10 +54,10 @@ use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_no_remote_env;
 use core_test_support::skip_if_target_windows;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::test_env;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::test_env;
 use core_test_support::test_docker_container_name;
 use core_test_support::test_target_os;
 use core_test_support::wait_for_event;
@@ -81,8 +81,8 @@ use tokio::time::timeout;
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::accept_async;
 use tokio_tungstenite::tungstenite::Message;
-async fn unified_exec_test(server: &wiremock::MockServer) -> Result<TestCodex> {
-    let mut builder = test_codex().with_config(|config| {
+async fn unified_exec_test(server: &wiremock::MockServer) -> Result<TestMotyga> {
+    let mut builder = test_motyga().with_config(|config| {
         config.use_experimental_unified_exec_tool = true;
         let result = config.features.enable(Feature::UnifiedExec);
         assert!(
@@ -94,16 +94,16 @@ async fn unified_exec_test(server: &wiremock::MockServer) -> Result<TestCodex> {
 }
 
 async fn submit_turn_with_approval_and_environments(
-    test: &TestCodex,
+    test: &TestMotyga,
     prompt: &str,
     environments: Vec<TurnEnvironmentSelection>,
     approval_policy: AskForApproval,
 ) -> Result<()> {
-    let turn_environment_selections = codex_protocol::protocol::TurnEnvironmentSelections::new(
+    let turn_environment_selections = motyga_protocol::protocol::TurnEnvironmentSelections::new(
         test.config.cwd.clone(),
         environments,
     );
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -112,14 +112,14 @@ async fn submit_turn_with_approval_and_environments(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(turn_environment_selections),
                 approval_policy: Some(approval_policy),
                 approvals_reviewer: Some(ApprovalsReviewer::User),
                 sandbox_policy: Some(SandboxPolicy::new_read_only_policy()),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -134,10 +134,10 @@ async fn submit_turn_with_approval_and_environments(
 }
 
 async fn expect_patch_approval(
-    test: &TestCodex,
+    test: &TestMotyga,
     expected_call_id: &str,
 ) -> ApplyPatchApprovalRequestEvent {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ApplyPatchApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -155,8 +155,8 @@ async fn expect_patch_approval(
     }
 }
 
-async fn wait_for_completion_without_patch_approval(test: &TestCodex) {
-    let event = wait_for_event(&test.codex, |event| {
+async fn wait_for_completion_without_patch_approval(test: &TestMotyga) {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ApplyPatchApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -219,7 +219,7 @@ async fn remote_test_env_exposes_target_shell_to_model() -> Result<()> {
         ]),
     )
     .await;
-    let test = test_codex().build_with_auto_env(&server).await?;
+    let test = test_motyga().build_with_auto_env(&server).await?;
 
     test.submit_turn("report remote environment").await?;
 
@@ -256,11 +256,11 @@ async fn explicit_remote_shell_runs_in_remote_cwd() -> Result<()> {
     let (shell, command) = match test_target_os() {
         TestTargetOs::Linux => (
             "bash",
-            r#"case "$PWD" in /tmp/codex-core-test-cwd-*) ;; *) echo "unexpected cwd: $PWD" >&2; exit 1 ;; esac"#,
+            r#"case "$PWD" in /tmp/motyga-core-test-cwd-*) ;; *) echo "unexpected cwd: $PWD" >&2; exit 1 ;; esac"#,
         ),
         TestTargetOs::Windows => (
             "powershell",
-            r#"$cwd = (Get-Location).Path; if ($cwd -notlike 'C:\codex-core-test-cwd-*') { Write-Error "unexpected cwd: $cwd"; exit 1 }"#,
+            r#"$cwd = (Get-Location).Path; if ($cwd -notlike 'C:\motyga-core-test-cwd-*') { Write-Error "unexpected cwd: $cwd"; exit 1 }"#,
         ),
         TestTargetOs::MacOs => unreachable!("remote test targets do not run macOS"),
     };
@@ -272,7 +272,7 @@ async fn explicit_remote_shell_runs_in_remote_cwd() -> Result<()> {
         "login": false,
         "yield_time_ms": 10_000,
     }))?;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config.use_experimental_unified_exec_tool = true;
         config
             .features
@@ -332,7 +332,7 @@ async fn deferred_executor_does_not_duplicate_initial_environment_context() -> R
         ]),
     )
     .await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         assert!(config.features.enable(Feature::DeferredExecutor).is_ok());
     });
     let test = builder.build(&server).await?;
@@ -530,7 +530,7 @@ async fn deferred_executor_updates_context_and_tools_after_startup() -> Result<(
         ],
     )
     .await;
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_exec_server_url(format!("ws://{}", listener.local_addr()?))
         .with_config(|config| {
             config.project_doc_max_bytes = 0;
@@ -550,7 +550,7 @@ async fn deferred_executor_updates_context_and_tools_after_startup() -> Result<(
         .await
         .context("thread startup should not wait for the remote environment")??;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "wait for the environment".into(),
@@ -565,7 +565,7 @@ async fn deferred_executor_updates_context_and_tools_after_startup() -> Result<(
     wait_for_response_request_count(&response_mock, /*expected_count*/ 1).await;
     assert_eq!(response_mock.requests().len(), 1);
     serve_environment_info(listener).await;
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::RequestPermissions(_) | EventMsg::TurnComplete(_)
@@ -579,7 +579,7 @@ async fn deferred_executor_updates_context_and_tools_after_startup() -> Result<(
         permission_request.environment_id.as_deref(),
         Some(REMOTE_ENVIRONMENT_ID)
     );
-    test.codex
+    test.motyga
         .submit(Op::RequestPermissionsResponse {
             id: permission_request.call_id,
             response: RequestPermissionsResponse {
@@ -589,7 +589,7 @@ async fn deferred_executor_updates_context_and_tools_after_startup() -> Result<(
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -680,7 +680,7 @@ async fn deferred_executor_loads_agents_md_when_environment_becomes_ready() -> R
         ],
     )
     .await;
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_exec_server_url(format!("ws://{}", listener.local_addr()?))
         .with_config(|config| {
             assert!(config.features.enable(Feature::DeferredExecutor).is_ok());
@@ -697,7 +697,7 @@ async fn deferred_executor_loads_agents_md_when_environment_becomes_ready() -> R
         .await
         .context("thread startup should not wait for the remote environment")??;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "load the environment instructions".into(),
@@ -712,7 +712,7 @@ async fn deferred_executor_loads_agents_md_when_environment_becomes_ready() -> R
     wait_for_response_request_count(&response_mock, /*expected_count*/ 1).await;
     let agents_path = PathUri::from_abs_path(&test.config.cwd).join("AGENTS.md")?;
     attach_tx.send(()).expect("attach environment");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -725,7 +725,7 @@ async fn deferred_executor_loads_agents_md_when_environment_becomes_ready() -> R
     assert_eq!(agents_md_occurrences(&requests[0], AGENTS_CONTENT), 0);
     assert_eq!(agents_md_occurrences(&requests[1], AGENTS_CONTENT), 1);
     assert_eq!(agents_md_occurrences(&requests[2], AGENTS_CONTENT), 1);
-    assert_eq!(test.codex.instruction_sources().await, vec![agents_path]);
+    assert_eq!(test.motyga.instruction_sources().await, vec![agents_path]);
 
     Ok(())
 }
@@ -766,7 +766,7 @@ async fn deferred_executor_wait_reports_startup_failure() -> Result<()> {
         ],
     )
     .await;
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_exec_server_url(format!("ws://{}", listener.local_addr()?))
         .with_config(|config| {
             config.use_experimental_unified_exec_tool = true;
@@ -777,7 +777,7 @@ async fn deferred_executor_wait_reports_startup_failure() -> Result<()> {
         .await
         .context("thread startup should not wait for the remote environment")??;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "wait for the environment".into(),
@@ -795,7 +795,7 @@ async fn deferred_executor_wait_reports_startup_failure() -> Result<()> {
         .await
         .context("exec-server connection should arrive")??;
     drop(stream);
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -867,7 +867,7 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
         ],
     )
     .await;
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_exec_server_url(format!("ws://{}", listener.local_addr()?))
         .with_config(|config| {
             config.project_doc_max_bytes = 0;
@@ -887,7 +887,7 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
         .await
         .context("thread startup should not wait for the remote environment")??;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "wait for the environment".into(),
@@ -899,14 +899,14 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
             thread_settings: Default::default(),
         })
         .await?;
-    let request = wait_for_event_match(&test.codex, |event| match event {
+    let request = wait_for_event_match(&test.motyga, |event| match event {
         EventMsg::RequestUserInput(request) => Some(request.clone()),
         _ => None,
     })
     .await;
 
     serve_environment_info(listener).await;
-    test.codex
+    test.motyga
         .submit(Op::UserInputAnswer {
             id: request.turn_id,
             response: RequestUserInputResponse {
@@ -919,7 +919,7 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -958,9 +958,9 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
         .expect("the next sampling step should report that the environment is ready");
     assert!(starting_index < ready_index);
 
-    test.codex.ensure_rollout_materialized().await;
-    test.codex.flush_rollout().await?;
-    let rollout_path = test.codex.rollout_path().context("rollout path")?;
+    test.motyga.ensure_rollout_materialized().await;
+    test.motyga.flush_rollout().await?;
+    let rollout_path = test.motyga.rollout_path().context("rollout path")?;
     let rollout = fs::read_to_string(rollout_path)?;
     let world_state_items = rollout
         .lines()
@@ -1066,7 +1066,7 @@ fn remote_exec(script: &str) -> Result<()> {
 }
 
 async fn exec_command_routing_output(
-    test: &TestCodex,
+    test: &TestMotyga,
     server: &wiremock::MockServer,
     call_id: &str,
     arguments: Value,
@@ -1110,7 +1110,7 @@ async fn exec_command_routes_to_selected_remote_environment() -> Result<()> {
     fs::write(local_cwd.path().join("marker.txt"), "local-routing")?;
     let local_selection = local(local_cwd.path().abs());
     let remote_cwd = PathBuf::from(format!(
-        "/tmp/codex-remote-routing-{}",
+        "/tmp/motyga-remote-routing-{}",
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis()
     ))
     .abs();
@@ -1180,7 +1180,7 @@ async fn remote_request_permissions_grant_unblocks_later_remote_exec() -> Result
     skip_if_no_remote_env!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config.use_experimental_unified_exec_tool = true;
         config.permissions.approval_policy = Constrained::allow_any(AskForApproval::OnRequest);
         config.approvals_reviewer = ApprovalsReviewer::User;
@@ -1201,7 +1201,7 @@ async fn remote_request_permissions_grant_unblocks_later_remote_exec() -> Result
 
     let local_cwd = TempDir::new()?;
     let remote_cwd = PathBuf::from(format!(
-        "/tmp/codex-remote-request-permissions-{}",
+        "/tmp/motyga-remote-request-permissions-{}",
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis()
     ))
     .abs();
@@ -1296,7 +1296,7 @@ async fn remote_request_permissions_grant_unblocks_later_remote_exec() -> Result
     )
     .await?;
 
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::RequestPermissions(_) | EventMsg::TurnComplete(_)
@@ -1314,14 +1314,14 @@ async fn remote_request_permissions_grant_unblocks_later_remote_exec() -> Result
     assert_eq!(request.cwd.as_ref(), Some(&remote_cwd));
     assert_eq!(request.permissions, expected_permissions);
 
-    test.codex
+    test.motyga
         .submit(Op::RequestPermissionsResponse {
             id: "permissions-call".to_string(),
             response: approved_response.clone(),
         })
         .await?;
 
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -1385,12 +1385,12 @@ async fn apply_patch_freeform_routes_to_selected_remote_environment() -> Result<
     skip_if_no_remote_env!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_motyga();
     let test = builder.build_with_remote_and_local_env(&server).await?;
     let local_cwd = TempDir::new()?;
     let file_name = "apply_patch_remote_freeform.txt";
     let remote_cwd = PathBuf::from(format!(
-        "/tmp/codex-remote-apply-patch-freeform-{}",
+        "/tmp/motyga-remote-apply-patch-freeform-{}",
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis()
     ))
     .abs();
@@ -1471,14 +1471,14 @@ async fn apply_patch_approvals_are_remembered_per_environment() -> Result<()> {
     skip_if_no_remote_env!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config.permissions.approval_policy = Constrained::allow_any(AskForApproval::OnRequest);
         config.approvals_reviewer = ApprovalsReviewer::User;
     });
     let test = builder.build_with_remote_and_local_env(&server).await?;
     let local_cwd = TempDir::new()?;
     let remote_cwd = PathBuf::from(format!(
-        "/tmp/codex-remote-apply-patch-approval-cwd-{}",
+        "/tmp/motyga-remote-apply-patch-approval-cwd-{}",
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis()
     ))
     .abs();
@@ -1492,7 +1492,7 @@ async fn apply_patch_approvals_are_remembered_per_environment() -> Result<()> {
         .await?;
 
     let target_path = PathBuf::from(format!(
-        "/tmp/codex-apply-patch-approval-scope-{}.txt",
+        "/tmp/motyga-apply-patch-approval-scope-{}.txt",
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis()
     ))
     .abs();
@@ -1574,13 +1574,13 @@ async fn apply_patch_approvals_are_remembered_per_environment() -> Result<()> {
     )
     .await?;
     let approval = expect_patch_approval(&test, "call-local").await;
-    test.codex
+    test.motyga
         .submit(Op::PatchApproval {
             id: approval.call_id,
             decision: ReviewDecision::ApprovedForSession,
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1594,13 +1594,13 @@ async fn apply_patch_approvals_are_remembered_per_environment() -> Result<()> {
     )
     .await?;
     let approval = expect_patch_approval(&test, "call-remote").await;
-    test.codex
+    test.motyga
         .submit(Op::PatchApproval {
             id: approval.call_id,
             decision: ReviewDecision::ApprovedForSession,
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1664,7 +1664,7 @@ async fn apply_patch_intercepted_exec_command_routes_to_selected_remote_environm
     let local_cwd = TempDir::new()?;
     let file_name = "apply_patch_remote_exec.txt";
     let remote_cwd = PathBuf::from(format!(
-        "/tmp/codex-remote-apply-patch-exec-{}",
+        "/tmp/motyga-remote-apply-patch-exec-{}",
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis()
     ))
     .abs();
@@ -1757,7 +1757,7 @@ async fn remote_test_env_sandboxed_read_allows_readable_root() -> Result<()> {
     let test_env = test_env().await?;
     let file_system = test_env.environment().get_filesystem();
 
-    let allowed_dir = PathBuf::from(format!("/tmp/codex-remote-readable-{}", std::process::id()));
+    let allowed_dir = PathBuf::from(format!("/tmp/motyga-remote-readable-{}", std::process::id()));
     let file_path = allowed_dir.join("note.txt");
     let allowed_dir_uri = PathUri::from_host_native_path(&allowed_dir)?;
     let file_path_uri = PathUri::from_host_native_path(&file_path)?;
@@ -1805,7 +1805,7 @@ async fn remote_test_env_sandboxed_read_rejects_symlink_parent_dotdot_escape() -
     let test_env = test_env().await?;
     let file_system = test_env.environment().get_filesystem();
 
-    let root = PathBuf::from(format!("/tmp/codex-remote-dotdot-{}", std::process::id()));
+    let root = PathBuf::from(format!("/tmp/motyga-remote-dotdot-{}", std::process::id()));
     let allowed_dir = root.join("allowed");
     let outside_dir = root.join("outside");
     let secret_path = root.join("secret.txt");
@@ -1840,7 +1840,7 @@ async fn remote_test_env_remove_removes_symlink_not_target() -> Result<()> {
     let file_system = test_env.environment().get_filesystem();
 
     let root = PathBuf::from(format!(
-        "/tmp/codex-remote-remove-link-{}",
+        "/tmp/motyga-remote-remove-link-{}",
         std::process::id()
     ));
     let allowed_dir = root.join("allowed");
@@ -1912,7 +1912,7 @@ async fn remote_test_env_copy_preserves_symlink_source() -> Result<()> {
     let file_system = test_env.environment().get_filesystem();
 
     let root = PathBuf::from(format!(
-        "/tmp/codex-remote-copy-link-{}",
+        "/tmp/motyga-remote-copy-link-{}",
         std::process::id()
     ));
     let allowed_dir = root.join("allowed");

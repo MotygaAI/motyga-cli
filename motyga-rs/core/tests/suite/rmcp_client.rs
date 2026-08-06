@@ -17,38 +17,38 @@ use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-use codex_config::types::McpServerAuth;
-use codex_config::types::McpServerConfig;
-use codex_config::types::McpServerEnvVar;
-use codex_config::types::McpServerTransportConfig;
-use codex_core::config::Config;
-use codex_exec_server::CreateDirectoryOptions;
-use codex_exec_server::Environment;
-use codex_exec_server::HttpRedirectPolicy;
-use codex_exec_server::HttpRequestParams;
-use codex_login::CodexAuth;
-use codex_mcp::MCP_SANDBOX_STATE_META_CAPABILITY;
-use codex_mcp::SandboxState;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_utils_path_uri::LegacyAppPathString;
+use motyga_config::types::McpServerAuth;
+use motyga_config::types::McpServerConfig;
+use motyga_config::types::McpServerEnvVar;
+use motyga_config::types::McpServerTransportConfig;
+use motyga_core::config::Config;
+use motyga_exec_server::CreateDirectoryOptions;
+use motyga_exec_server::Environment;
+use motyga_exec_server::HttpRedirectPolicy;
+use motyga_exec_server::HttpRequestParams;
+use motyga_login::MotygaAuth;
+use motyga_mcp::MCP_SANDBOX_STATE_META_CAPABILITY;
+use motyga_mcp::SandboxState;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_utils_path_uri::LegacyAppPathString;
 
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::McpInvocation;
-use codex_protocol::protocol::McpToolCallBeginEvent;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
-use codex_utils_cargo_bin::cargo_bin;
-use codex_utils_path_uri::PathUri;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ConfigShellToolType;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelVisibility;
+use motyga_protocol::openai_models::ModelsResponse;
+use motyga_protocol::openai_models::ReasoningEffortPreset;
+use motyga_protocol::openai_models::TruncationPolicyConfig;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::McpInvocation;
+use motyga_protocol::protocol::McpToolCallBeginEvent;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_cargo_bin::cargo_bin;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::apps_test_server::AppsTestServer;
 use core_test_support::assert_regex_match;
 use core_test_support::is_remote_test_environment;
@@ -60,9 +60,9 @@ use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_no_remote_env;
 use core_test_support::skip_if_wine_exec;
 use core_test_support::stdio_server_bin;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::test_docker_container_name;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_mcp_server;
@@ -106,19 +106,19 @@ fn assert_wall_time_header(output: &str) {
     assert_eq!(marker, "Output:");
 }
 
-fn read_only_user_turn(fixture: &TestCodex, text: impl Into<String>) -> Op {
+fn read_only_user_turn(fixture: &TestMotyga, text: impl Into<String>) -> Op {
     read_only_user_turn_with_model(fixture, text, fixture.session_configured.model.clone())
 }
 
 fn read_only_user_turn_with_model(
-    fixture: &TestCodex,
+    fixture: &TestMotyga,
     text: impl Into<String>,
     model: String,
 ) -> Op {
     user_turn_with_permission_profile(fixture, text, model, PermissionProfile::read_only())
 }
 
-fn auto_approved_user_turn(fixture: &TestCodex, text: impl Into<String>) -> Op {
+fn auto_approved_user_turn(fixture: &TestMotyga, text: impl Into<String>) -> Op {
     user_turn_with_permission_profile(
         fixture,
         text,
@@ -128,7 +128,7 @@ fn auto_approved_user_turn(fixture: &TestCodex, text: impl Into<String>) -> Op {
 }
 
 fn user_turn_with_permission_profile(
-    fixture: &TestCodex,
+    fixture: &TestMotyga,
     text: impl Into<String>,
     model: String,
     permission_profile: PermissionProfile,
@@ -144,13 +144,13 @@ fn user_turn_with_permission_profile(
         final_output_json_schema: None,
         responsesapi_client_metadata: None,
         additional_context: Default::default(),
-        thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+        thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
             approval_policy: Some(AskForApproval::Never),
             sandbox_policy: Some(sandbox_policy),
             permission_profile,
-            collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                mode: codex_protocol::config_types::ModeKind::Default,
-                settings: codex_protocol::config_types::Settings {
+            collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                mode: motyga_protocol::config_types::ModeKind::Default,
+                settings: motyga_protocol::config_types::Settings {
                     model,
                     reasoning_effort: None,
                     developer_instructions: None,
@@ -173,7 +173,7 @@ fn remote_aware_environment_id() -> String {
     if is_remote_test_environment() {
         REMOTE_MCP_ENVIRONMENT.to_string()
     } else {
-        codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string()
+        motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string()
     }
 }
 
@@ -206,7 +206,7 @@ fn remote_aware_stdio_server_bin() -> anyhow::Result<String> {
 fn unique_remote_path(binary_name: &str) -> anyhow::Result<String> {
     let unique_suffix = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
     Ok(format!(
-        "/tmp/codex-remote-env/{binary_name}-{}-{unique_suffix}",
+        "/tmp/motyga-remote-env/{binary_name}-{}-{unique_suffix}",
         std::process::id()
     ))
 }
@@ -224,7 +224,7 @@ fn copy_binary_to_remote_env(
             container_name,
             "mkdir",
             "-p",
-            "/tmp/codex-remote-env",
+            "/tmp/motyga-remote-env",
         ])
         .output()
         .context("create remote MCP test binary directory")?;
@@ -278,7 +278,7 @@ struct TestMcpServerOptions {
 impl Default for TestMcpServerOptions {
     fn default() -> Self {
         Self {
-            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
             auth: McpServerAuth::default(),
             supports_parallel_tool_calls: false,
             tool_timeout_sec: None,
@@ -345,7 +345,7 @@ fn insert_mcp_server(
 
 async fn call_cwd_tool(
     server: &MockServer,
-    fixture: &TestCodex,
+    fixture: &TestMotyga,
     server_name: &str,
     call_id: &str,
 ) -> anyhow::Result<Value> {
@@ -354,7 +354,7 @@ async fn call_cwd_tool(
 
 async fn call_structured_tool(
     server: &MockServer,
-    fixture: &TestCodex,
+    fixture: &TestMotyga,
     server_name: &str,
     tool_name: &str,
     call_id: &str,
@@ -379,15 +379,15 @@ async fn call_structured_tool(
     .await;
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(fixture, "call the requested rmcp tool"))
         .await?;
 
-    wait_for_event(&fixture.codex, |ev| {
+    wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
     .await;
-    let end_event = wait_for_event(&fixture.codex, |ev| {
+    let end_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallEnd(_))
     })
     .await;
@@ -403,7 +403,7 @@ async fn call_structured_tool(
         .expect("structured content")
         .clone();
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     Ok(structured_content)
 }
 
@@ -427,7 +427,7 @@ async fn openai_form_capability_updates_for_loaded_thread() -> anyhow::Result<()
     let server = start_mock_server().await;
     let server_name = "capabilities";
     let command = stdio_server_bin()?;
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -438,7 +438,7 @@ async fn openai_form_capability_updates_for_loaded_thread() -> anyhow::Result<()
         })
         .build(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     let unsupported = call_structured_tool(
         &server,
@@ -454,7 +454,7 @@ async fn openai_form_capability_updates_for_loaded_thread() -> anyhow::Result<()
     );
 
     fixture
-        .codex
+        .motyga
         .set_openai_form_elicitation_support(/*supported*/ true)
         .await?;
     let supported = call_structured_tool(
@@ -478,7 +478,7 @@ async fn assert_openai_form_capability_advertisement(expected: bool) -> anyhow::
     let server = start_mock_server().await;
     let server_name = "capabilities";
     let command = stdio_server_bin()?;
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         insert_mcp_server(
             config,
             server_name,
@@ -490,7 +490,7 @@ async fn assert_openai_form_capability_advertisement(expected: bool) -> anyhow::
         builder = builder.with_openai_form_elicitation();
     }
     let fixture = builder.build(&server).await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     let structured = call_structured_tool(
         &server,
@@ -590,7 +590,7 @@ async fn stdio_server_round_trip() -> anyhow::Result<()> {
     let expected_env_value = "propagated-env";
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -611,14 +611,14 @@ async fn stdio_server_round_trip() -> anyhow::Result<()> {
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(&fixture, "call the rmcp echo tool"))
         .await?;
 
-    let begin_event = wait_for_event(&fixture.codex, |ev| {
+    let begin_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
     .await;
@@ -629,7 +629,7 @@ async fn stdio_server_round_trip() -> anyhow::Result<()> {
     assert_eq!(begin.invocation.server, server_name);
     assert_eq!(begin.invocation.tool, "echo");
 
-    let end_event = wait_for_event(&fixture.codex, |ev| {
+    let end_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallEnd(_))
     })
     .await;
@@ -665,7 +665,7 @@ async fn stdio_server_round_trip() -> anyhow::Result<()> {
         .expect("env snapshot inserted");
     assert_eq!(env_value, expected_env_value);
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let search_output = call_mock
         .single_request()
@@ -703,7 +703,7 @@ async fn shutdown_cancels_startup_prewarm_waiting_for_mcp_startup() -> anyhow::R
     let pending_mcp_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
     let pending_mcp_url = format!("http://{}/mcp", pending_mcp_listener.local_addr()?);
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -724,7 +724,7 @@ async fn shutdown_cancels_startup_prewarm_waiting_for_mcp_startup() -> anyhow::R
         tokio::time::timeout(Duration::from_secs(5), pending_mcp_listener.accept())
             .await
             .context("startup prewarm should start the MCP connection")??;
-    tokio::time::timeout(Duration::from_secs(2), fixture.codex.shutdown_and_wait())
+    tokio::time::timeout(Duration::from_secs(2), fixture.motyga.shutdown_and_wait())
         .await
         .context("shutdown should not wait for startup prewarm MCP startup")??;
     tokio::time::sleep(Duration::from_millis(100)).await;
@@ -753,7 +753,7 @@ async fn stdio_server_uses_configured_cwd_before_runtime_fallback() -> anyhow::R
     let expected_cwd_for_config = Arc::clone(&expected_cwd);
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_workspace_setup(|cwd, fs| async move {
             let configured_cwd = cwd.join("mcp-configured-cwd");
             let configured_cwd_uri = PathUri::from_host_native_path(&configured_cwd)?;
@@ -790,7 +790,7 @@ async fn stdio_server_uses_configured_cwd_before_runtime_fallback() -> anyhow::R
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     let expected_cwd = expected_cwd
         .lock()
@@ -823,7 +823,7 @@ async fn local_stdio_server_uses_runtime_fallback_cwd_when_config_omits_cwd() ->
     );
     let relative_command = relative_server_path.to_string_lossy().into_owned();
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             *expected_cwd_for_config
                 .lock()
@@ -853,7 +853,7 @@ async fn local_stdio_server_uses_runtime_fallback_cwd_when_config_omits_cwd() ->
         })
         .build(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     let expected_cwd = expected_cwd
         .lock()
@@ -902,7 +902,7 @@ async fn stdio_mcp_tool_call_includes_sandbox_state_meta() -> anyhow::Result<()>
     .await;
 
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -917,7 +917,7 @@ async fn stdio_mcp_tool_call_includes_sandbox_state_meta() -> anyhow::Result<()>
         .build_with_auto_env(&server)
         .await?;
 
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
         .submit_turn_with_permission_profile(
@@ -946,7 +946,7 @@ async fn stdio_mcp_tool_call_includes_sandbox_state_meta() -> anyhow::Result<()>
         sandbox_state,
         SandboxState {
             permission_profile: PermissionProfile::read_only(),
-            codex_linux_sandbox_exe: fixture.config.codex_linux_sandbox_exe.clone(),
+            motyga_linux_sandbox_exe: fixture.config.motyga_linux_sandbox_exe.clone(),
             sandbox_cwd: PathUri::from_abs_path(&fixture.config.cwd),
             use_legacy_landlock: false,
         }
@@ -995,7 +995,7 @@ async fn stdio_mcp_parallel_tool_calls_default_false_runs_serially() -> anyhow::
 
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -1010,10 +1010,10 @@ async fn stdio_mcp_parallel_tool_calls_default_false_runs_serially() -> anyhow::
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         // Keep this baseline on the mutable sync tool so read-only hints do not
         // make the call parallel-safe. Bypass read-only turn permissions so
         // approval behavior does not block the scheduling assertion.
@@ -1025,7 +1025,7 @@ async fn stdio_mcp_parallel_tool_calls_default_false_runs_serially() -> anyhow::
 
     let mut call_events = Vec::new();
     while call_events.len() < 4 {
-        let event = wait_for_event(&fixture.codex, |ev| {
+        let event = wait_for_event(&fixture.motyga, |ev| {
             matches!(
                 ev,
                 EventMsg::McpToolCallBegin(_) | EventMsg::McpToolCallEnd(_)
@@ -1058,7 +1058,7 @@ async fn stdio_mcp_parallel_tool_calls_default_false_runs_serially() -> anyhow::
         "default MCP tool calls should run serially; saw events: {call_events:?}"
     );
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = final_mock.single_request();
     for call_id in [first_call_id, second_call_id] {
@@ -1136,7 +1136,7 @@ async fn stdio_mcp_read_only_tool_calls_run_concurrently_without_server_opt_in()
 
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -1151,17 +1151,17 @@ async fn stdio_mcp_read_only_tool_calls_run_concurrently_without_server_opt_in()
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(
             &fixture,
             "call the rmcp sync_readonly tool twice",
         ))
         .await?;
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = final_mock.single_request();
     for call_id in [first_call_id, second_call_id] {
@@ -1225,7 +1225,7 @@ async fn stdio_mcp_parallel_tool_calls_opt_in_runs_concurrently() -> anyhow::Res
 
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -1241,10 +1241,10 @@ async fn stdio_mcp_parallel_tool_calls_opt_in_runs_concurrently() -> anyhow::Res
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         // Exercise the server opt-in with the mutable sync tool rather than the
         // read-only sync_readonly tool. Bypass read-only turn permissions so
         // approval behavior does not block the scheduling assertion.
@@ -1254,7 +1254,7 @@ async fn stdio_mcp_parallel_tool_calls_opt_in_runs_concurrently() -> anyhow::Res
         ))
         .await?;
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = final_mock.single_request();
     for call_id in [first_call_id, second_call_id] {
@@ -1311,7 +1311,7 @@ async fn stdio_image_responses_round_trip() -> anyhow::Result<()> {
     // Build the stdio rmcp server and pass the image as data URL so it can construct ImageContent.
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -1332,15 +1332,15 @@ async fn stdio_image_responses_round_trip() -> anyhow::Result<()> {
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(&fixture, "call the rmcp image tool"))
         .await?;
 
     // Wait for tool begin/end and final completion.
-    let begin_event = wait_for_event(&fixture.codex, |ev| {
+    let begin_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
     .await;
@@ -1366,7 +1366,7 @@ async fn stdio_image_responses_round_trip() -> anyhow::Result<()> {
         },
     );
 
-    let end_event = wait_for_event(&fixture.codex, |ev| {
+    let end_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallEnd(_))
     })
     .await;
@@ -1393,7 +1393,7 @@ async fn stdio_image_responses_round_trip() -> anyhow::Result<()> {
     assert_eq!(entry.get("mimeType"), Some(&json!("image/png")));
     assert_eq!(entry.get("data"), Some(&json!(base64_only)));
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let output_item = final_mock.single_request().function_call_output(call_id);
     assert_eq!(output_item["type"], "function_call_output");
@@ -1475,7 +1475,7 @@ async fn stdio_image_responses_resize_large_image() -> anyhow::Result<()> {
     .await;
 
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -1489,16 +1489,16 @@ async fn stdio_image_responses_resize_large_image() -> anyhow::Result<()> {
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(
             &fixture,
             "call the rmcp image_scenario tool",
         ))
         .await?;
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let output_item = final_mock.single_request().function_call_output(call_id);
     assert_eq!(output_item["call_id"], call_id);
@@ -1562,7 +1562,7 @@ async fn stdio_image_responses_preserve_original_detail_metadata() -> anyhow::Re
 
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_model("gpt-5.3-codex")
         .with_config(move |config| {
             insert_mcp_server(
@@ -1577,17 +1577,17 @@ async fn stdio_image_responses_preserve_original_detail_metadata() -> anyhow::Re
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(
             &fixture,
             "call the rmcp image_scenario tool",
         ))
         .await?;
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let output_item = final_mock.single_request().function_call_output(call_id);
     let output = output_item["output"]
@@ -1638,7 +1638,7 @@ async fn stdio_image_responses_are_sanitized_for_text_only_model() -> anyhow::Re
                 description: Some("Test model without image input support".to_string()),
                 default_reasoning_level: None,
                 supported_reasoning_levels: vec![ReasoningEffortPreset {
-                    effort: codex_protocol::openai_models::ReasoningEffort::Medium,
+                    effort: motyga_protocol::openai_models::ReasoningEffort::Medium,
                     description: "Medium".to_string(),
                 }],
                 shell_type: ConfigShellToolType::Default,
@@ -1702,8 +1702,8 @@ async fn stdio_image_responses_are_sanitized_for_text_only_model() -> anyhow::Re
 
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let fixture = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -1724,7 +1724,7 @@ async fn stdio_image_responses_are_sanitized_for_text_only_model() -> anyhow::Re
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
         .thread_manager
@@ -1734,7 +1734,7 @@ async fn stdio_image_responses_are_sanitized_for_text_only_model() -> anyhow::Re
     assert_eq!(models_mock.requests().len(), 1);
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn_with_model(
             &fixture,
             "call the rmcp image tool",
@@ -1742,15 +1742,15 @@ async fn stdio_image_responses_are_sanitized_for_text_only_model() -> anyhow::Re
         ))
         .await?;
 
-    wait_for_event(&fixture.codex, |ev| {
+    wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
     .await;
-    wait_for_event(&fixture.codex, |ev| {
+    wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallEnd(_))
     })
     .await;
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let output_item = final_mock.single_request().function_call_output(call_id);
     let output_text = output_item
@@ -1814,7 +1814,7 @@ async fn stdio_server_propagates_whitelisted_env_vars() -> anyhow::Result<()> {
     let _guard = EnvVarGuard::set("MCP_TEST_VALUE", OsStr::new(expected_env_value));
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -1832,14 +1832,14 @@ async fn stdio_server_propagates_whitelisted_env_vars() -> anyhow::Result<()> {
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(&fixture, "call the rmcp echo tool"))
         .await?;
 
-    let begin_event = wait_for_event(&fixture.codex, |ev| {
+    let begin_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
     .await;
@@ -1850,7 +1850,7 @@ async fn stdio_server_propagates_whitelisted_env_vars() -> anyhow::Result<()> {
     assert_eq!(begin.invocation.server, server_name);
     assert_eq!(begin.invocation.tool, "echo");
 
-    let end_event = wait_for_event(&fixture.codex, |ev| {
+    let end_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallEnd(_))
     })
     .await;
@@ -1886,7 +1886,7 @@ async fn stdio_server_propagates_whitelisted_env_vars() -> anyhow::Result<()> {
         .expect("env snapshot inserted");
     assert_eq!(env_value, expected_env_value);
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     server.verify().await;
 
@@ -1936,7 +1936,7 @@ async fn stdio_server_propagates_explicit_local_env_var_source() -> anyhow::Resu
     let _guard = EnvVarGuard::set(env_name, OsStr::new(expected_env_value));
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -1957,18 +1957,18 @@ async fn stdio_server_propagates_explicit_local_env_var_source() -> anyhow::Resu
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(&fixture, "call the rmcp echo tool"))
         .await?;
 
-    wait_for_event(&fixture.codex, |ev| {
+    wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
     .await;
-    let end_event = wait_for_event(&fixture.codex, |ev| {
+    let end_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallEnd(_))
     })
     .await;
@@ -1984,7 +1984,7 @@ async fn stdio_server_propagates_explicit_local_env_var_source() -> anyhow::Resu
         .expect("structured content");
     assert_eq!(structured["env"], expected_env_value);
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     server.verify().await;
     Ok(())
 }
@@ -2032,7 +2032,7 @@ async fn remote_stdio_env_var_source_does_not_copy_local_env() -> anyhow::Result
     let _guard = EnvVarGuard::set(env_name, OsStr::new("local-value-should-not-cross"));
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -2053,18 +2053,18 @@ async fn remote_stdio_env_var_source_does_not_copy_local_env() -> anyhow::Result
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(&fixture, "call the rmcp echo tool"))
         .await?;
 
-    wait_for_event(&fixture.codex, |ev| {
+    wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
     .await;
-    let end_event = wait_for_event(&fixture.codex, |ev| {
+    let end_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallEnd(_))
     })
     .await;
@@ -2080,13 +2080,13 @@ async fn remote_stdio_env_var_source_does_not_copy_local_env() -> anyhow::Result
         .expect("structured content");
     assert_eq!(structured["env"], Value::Null);
 
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     server.verify().await;
     Ok(())
 }
 
 /// Remote runtime websocket URL used by remote-aware MCP integration tests.
-const REMOTE_EXEC_SERVER_URL_ENV_VAR: &str = "CODEX_TEST_REMOTE_EXEC_SERVER_URL";
+const REMOTE_EXEC_SERVER_URL_ENV_VAR: &str = "MOTYGA_TEST_REMOTE_EXEC_SERVER_URL";
 /// OAuth metadata path served by the Streamable HTTP MCP test server.
 const STREAMABLE_HTTP_METADATA_PATH: &str = "/.well-known/oauth-authorization-server/mcp";
 
@@ -2133,7 +2133,7 @@ impl RemoteStreamableHttpServer {
 }
 
 impl StreamableHttpTestServer {
-    /// Returns the MCP endpoint URL that Codex should connect to.
+    /// Returns the MCP endpoint URL that Motyga should connect to.
     fn url(&self) -> &str {
         &self.server_url
     }
@@ -2163,14 +2163,14 @@ impl StreamableHttpTestServer {
     }
 }
 
-/// What this tests: Codex can discover and call a Streamable HTTP MCP tool in
+/// What this tests: Motyga can discover and call a Streamable HTTP MCP tool in
 /// both local and remote-aware placements, and the tool observes the expected
 /// environment value from the server process that actually handled the request.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn streamable_http_tool_call_round_trip() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
-    // Phase 1: script the model responses so Codex will call the MCP echo tool
+    // Phase 1: script the model responses so Motyga will call the MCP echo tool
     // and then complete the turn after the tool result is returned.
     let server = responses::start_mock_server().await;
 
@@ -2215,10 +2215,10 @@ async fn streamable_http_tool_call_round_trip() -> anyhow::Result<()> {
     };
     let server_url = http_server.url().to_string();
 
-    // Phase 3: configure Codex with the Streamable HTTP MCP server and build a
+    // Phase 3: configure Motyga with the Streamable HTTP MCP server and build a
     // fixture that selects remote MCP placement only when the remote test
     // environment is active.
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -2237,19 +2237,19 @@ async fn streamable_http_tool_call_round_trip() -> anyhow::Result<()> {
         })
         .build_with_auto_env(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     // Phase 4: submit the user turn that should trigger the MCP tool call.
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(
             &fixture,
             "call the rmcp streamable http echo tool",
         ))
         .await?;
 
-    // Phase 5: assert Codex begins the expected tool invocation.
-    let begin_event = wait_for_event(&fixture.codex, |ev| {
+    // Phase 5: assert Motyga begins the expected tool invocation.
+    let begin_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
     .await;
@@ -2262,7 +2262,7 @@ async fn streamable_http_tool_call_round_trip() -> anyhow::Result<()> {
 
     // Phase 6: assert the tool result proves the server handled the request and
     // propagated the expected environment value.
-    let end_event = wait_for_event(&fixture.codex, |ev| {
+    let end_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallEnd(_))
     })
     .await;
@@ -2300,7 +2300,7 @@ async fn streamable_http_tool_call_round_trip() -> anyhow::Result<()> {
 
     // Phase 7: verify the scripted model calls were consumed and clean up the
     // placement-aware MCP server.
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     server.verify().await;
 
@@ -2321,8 +2321,8 @@ async fn streamable_http_configured_auth_precedes_chatgpt_auth() -> anyhow::Resu
     };
     let configured_auth_url = configured_auth_server.url().to_string();
 
-    let configured_auth_fixture = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let configured_auth_fixture = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -2346,7 +2346,7 @@ async fn streamable_http_configured_auth_precedes_chatgpt_auth() -> anyhow::Resu
         .build_with_auto_env(&server)
         .await?;
 
-    wait_for_mcp_server(&configured_auth_fixture.codex, "configured_auth").await?;
+    wait_for_mcp_server(&configured_auth_fixture.motyga, "configured_auth").await?;
     drop(configured_auth_fixture);
     configured_auth_server.shutdown().await;
 
@@ -2360,11 +2360,11 @@ async fn streamable_http_chatgpt_auth_is_not_sent_to_configured_origin() -> anyh
     let server = responses::start_mock_server().await;
     let untrusted_server = MockServer::start().await;
     let untrusted_apps = AppsTestServer::mount(&untrusted_server).await?;
-    let untrusted_mcp_url = format!("{}/api/codex/apps", untrusted_apps.chatgpt_base_url);
+    let untrusted_mcp_url = format!("{}/api/motyga/apps", untrusted_apps.chatgpt_base_url);
     let untrusted_chatgpt_base_url = untrusted_apps.chatgpt_base_url;
 
-    let fixture = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let fixture = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config.chatgpt_base_url = untrusted_chatgpt_base_url;
             insert_mcp_server(
@@ -2385,13 +2385,13 @@ async fn streamable_http_chatgpt_auth_is_not_sent_to_configured_origin() -> anyh
         .build(&server)
         .await?;
 
-    wait_for_mcp_server(&fixture.codex, "untrusted_origin").await?;
+    wait_for_mcp_server(&fixture.motyga, "untrusted_origin").await?;
     let observed_requests = untrusted_server
         .received_requests()
         .await
         .expect("mock server should capture MCP startup requests")
         .into_iter()
-        .filter(|request| request.url.path() == "/api/codex/apps")
+        .filter(|request| request.url.path() == "/api/motyga/apps")
         .filter_map(|request| {
             let body: Value = serde_json::from_slice(&request.body).ok()?;
             let method = body.get("method")?.as_str()?.to_string();
@@ -2423,14 +2423,14 @@ async fn configured_chatgpt_base_url_does_not_grant_mcp_chatgpt_auth() -> anyhow
     let server = responses::start_mock_server().await;
     let untrusted_server = MockServer::start().await;
     let untrusted_apps = AppsTestServer::mount(&untrusted_server).await?;
-    let untrusted_mcp_url = format!("{}/api/codex/apps", untrusted_apps.chatgpt_base_url);
+    let untrusted_mcp_url = format!("{}/api/motyga/apps", untrusted_apps.chatgpt_base_url);
     let untrusted_chatgpt_base_url = untrusted_apps.chatgpt_base_url;
 
-    let fixture = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
-        .with_pre_build_hook(move |codex_home| {
+    let fixture = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_pre_build_hook(move |motyga_home| {
             fs::write(
-                codex_home.join("config.toml"),
+                motyga_home.join("config.toml"),
                 format!(
                     r#"
 chatgpt_base_url = "{untrusted_chatgpt_base_url}"
@@ -2446,13 +2446,13 @@ auth = "chatgpt"
         .build(&server)
         .await?;
 
-    wait_for_mcp_server(&fixture.codex, "untrusted_origin").await?;
+    wait_for_mcp_server(&fixture.motyga, "untrusted_origin").await?;
     let observed_requests = untrusted_server
         .received_requests()
         .await
         .expect("mock server should capture MCP startup requests")
         .into_iter()
-        .filter(|request| request.url.path() == "/api/codex/apps")
+        .filter(|request| request.url.path() == "/api/motyga/apps")
         .filter_map(|request| {
             let body: Value = serde_json::from_slice(&request.body).ok()?;
             let method = body.get("method")?.as_str()?.to_string();
@@ -2480,7 +2480,7 @@ auth = "chatgpt"
 /// This test writes to a fallback credentials file in MOTYGA_HOME.
 /// Ideally, we wouldn't need to serialize the test but it's much more cumbersome to wire MOTYGA_HOME through the code.
 #[test]
-#[serial(codex_home)]
+#[serial(motyga_home)]
 fn streamable_http_with_oauth_round_trip() -> anyhow::Result<()> {
     const TEST_STACK_SIZE_BYTES: usize = 8 * 1024 * 1024;
 
@@ -2506,7 +2506,7 @@ fn streamable_http_with_oauth_round_trip() -> anyhow::Result<()> {
 async fn streamable_http_with_oauth_round_trip_impl() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
-    // Phase 1: script the model responses so Codex will call the OAuth-backed
+    // Phase 1: script the model responses so Motyga will call the OAuth-backed
     // MCP echo tool and then finish the turn after receiving the result.
     let server = responses::start_mock_server().await;
 
@@ -2556,7 +2556,7 @@ async fn streamable_http_with_oauth_round_trip_impl() -> anyhow::Result<()> {
     // Phase 3: seed an isolated MOTYGA_HOME with fallback OAuth tokens for this
     // server so the test does not share credentials with other suite cases.
     let temp_home = Arc::new(tempdir()?);
-    let _codex_home_guard = EnvVarGuard::set("MOTYGA_HOME", temp_home.path().as_os_str());
+    let _motyga_home_guard = EnvVarGuard::set("MOTYGA_HOME", temp_home.path().as_os_str());
     write_fallback_oauth_tokens(
         temp_home.path(),
         server_name,
@@ -2566,9 +2566,9 @@ async fn streamable_http_with_oauth_round_trip_impl() -> anyhow::Result<()> {
         refresh_token,
     )?;
 
-    // Phase 4: configure Codex with the OAuth-backed Streamable HTTP MCP
+    // Phase 4: configure Motyga with the OAuth-backed Streamable HTTP MCP
     // server and build the fixture in the active local or remote-aware mode.
-    let fixture = test_codex()
+    let fixture = test_motyga()
         .with_home(temp_home.clone())
         .with_config(move |config| {
             // Keep OAuth credentials isolated to this test home because Bazel
@@ -2594,19 +2594,19 @@ async fn streamable_http_with_oauth_round_trip_impl() -> anyhow::Result<()> {
         .await?;
     // Phase 5: wait for MCP startup before the turn is submitted, which keeps
     // failures tied to server startup/discovery.
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.motyga, server_name).await?;
 
     // Phase 6: submit the user turn that should invoke the OAuth-backed tool.
     fixture
-        .codex
+        .motyga
         .submit(read_only_user_turn(
             &fixture,
             "call the rmcp streamable http oauth echo tool",
         ))
         .await?;
 
-    // Phase 7: assert Codex begins the expected tool invocation.
-    let begin_event = wait_for_event(&fixture.codex, |ev| {
+    // Phase 7: assert Motyga begins the expected tool invocation.
+    let begin_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
     .await;
@@ -2619,7 +2619,7 @@ async fn streamable_http_with_oauth_round_trip_impl() -> anyhow::Result<()> {
 
     // Phase 8: assert the tool result proves the authenticated request reached
     // the server and preserved the expected environment value.
-    let end_event = wait_for_event(&fixture.codex, |ev| {
+    let end_event = wait_for_event(&fixture.motyga, |ev| {
         matches!(ev, EventMsg::McpToolCallEnd(_))
     })
     .await;
@@ -2657,7 +2657,7 @@ async fn streamable_http_with_oauth_round_trip_impl() -> anyhow::Result<()> {
 
     // Phase 9: verify the scripted model calls were consumed and clean up the
     // placement-aware MCP server.
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     server.verify().await;
 
@@ -2778,7 +2778,7 @@ async fn start_remote_streamable_http_test_server(
     let server_url = format!("http://{}:{}/mcp", container_ip, remote_bind_addr.port());
     // The orchestrator can see the Docker container IP, but the behavior under
     // test is whether the remote-side MCP client can reach it. Probe through
-    // remote HTTP before handing the URL to the Codex fixture.
+    // remote HTTP before handing the URL to the Motyga fixture.
     wait_for_remote_streamable_http_server(&server_url, Duration::from_secs(5)).await?;
     if expected_token.is_some() {
         wait_for_streamable_http_metadata(&server_url, Duration::from_secs(5)).await?;

@@ -1,11 +1,11 @@
 [package]
-name = "codex-app-server-client"
+name = "motyga-app-server-client"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_app_server_client"
+name = "motyga_app_server_client"
 path = "src/lib.rs"
 doctest = false
 
@@ -13,17 +13,17 @@ doctest = false
 workspace = true
 
 [dependencies]
-codex-app-server = { workspace = true }
-codex-app-server-protocol = { workspace = true }
-codex-arg0 = { workspace = true }
-codex-config = { workspace = true }
-codex-core = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-feedback = { workspace = true }
-codex-protocol = { workspace = true }
-codex-uds = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-rustls-provider = { workspace = true }
+motyga-app-server = { workspace = true }
+motyga-app-server-protocol = { workspace = true }
+motyga-arg0 = { workspace = true }
+motyga-config = { workspace = true }
+motyga-core = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-feedback = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-uds = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-rustls-provider = { workspace = true }
 futures = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

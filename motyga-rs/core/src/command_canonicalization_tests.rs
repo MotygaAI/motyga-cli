@@ -6,12 +6,12 @@ fn canonicalizes_word_only_shell_scripts_to_inner_command() {
     let command_a = vec![
         "/bin/bash".to_string(),
         "-lc".to_string(),
-        "cargo test -p codex-core".to_string(),
+        "cargo test -p motyga-core".to_string(),
     ];
     let command_b = vec![
         "bash".to_string(),
         "-lc".to_string(),
-        "cargo   test   -p codex-core".to_string(),
+        "cargo   test   -p motyga-core".to_string(),
     ];
 
     assert_eq!(
@@ -20,7 +20,7 @@ fn canonicalizes_word_only_shell_scripts_to_inner_command() {
             "cargo".to_string(),
             "test".to_string(),
             "-p".to_string(),
-            "codex-core".to_string(),
+            "motyga-core".to_string(),
         ]
     );
     assert_eq!(
@@ -42,7 +42,7 @@ fn canonicalizes_heredoc_scripts_to_stable_script_key() {
     assert_eq!(
         canonicalize_command_for_approval(&command_a),
         vec![
-            "__codex_shell_script__".to_string(),
+            "__motyga_shell_script__".to_string(),
             "-lc".to_string(),
             script.to_string(),
         ]
@@ -71,7 +71,7 @@ fn canonicalizes_powershell_wrappers_to_stable_script_key() {
     assert_eq!(
         canonicalize_command_for_approval(&command_a),
         vec![
-            "__codex_powershell_script__".to_string(),
+            "__motyga_powershell_script__".to_string(),
             script.to_string(),
         ]
     );

@@ -8,9 +8,9 @@ use std::time::Duration;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_exec_server_protocol::JSONRPCMessage;
-use codex_exec_server_protocol::JSONRPCRequest;
-use codex_exec_server_protocol::RequestId;
+use motyga_exec_server_protocol::JSONRPCMessage;
+use motyga_exec_server_protocol::JSONRPCRequest;
+use motyga_exec_server_protocol::RequestId;
 use futures::Sink;
 use futures::SinkExt;
 use futures::StreamExt;

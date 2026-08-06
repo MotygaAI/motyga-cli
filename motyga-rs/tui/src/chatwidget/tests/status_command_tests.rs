@@ -1,11 +1,11 @@
 use super::*;
 use assert_matches::assert_matches;
-use codex_utils_path_uri::PathUri;
+use motyga_utils_path_uri::PathUri;
 
 #[tokio::test]
 async fn status_command_renders_immediately_and_refreshes_rate_limits_for_chatgpt_auth() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
-    set_chatgpt_auth(&mut chat);
+    set_chatgpt_auth_with_openai_provider(&mut chat);
 
     chat.dispatch_command(SlashCommand::Status);
 
@@ -31,7 +31,7 @@ async fn status_command_renders_immediately_and_refreshes_rate_limits_for_chatgp
 #[tokio::test]
 async fn status_command_refresh_updates_cached_limits_for_future_status_outputs() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
-    set_chatgpt_auth(&mut chat);
+    set_chatgpt_auth_with_openai_provider(&mut chat);
 
     chat.dispatch_command(SlashCommand::Status);
 
@@ -135,7 +135,7 @@ async fn status_command_renders_native_and_foreign_instruction_sources() {
 #[tokio::test]
 async fn status_command_overlapping_refreshes_update_matching_cells_only() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
-    set_chatgpt_auth(&mut chat);
+    set_chatgpt_auth_with_openai_provider(&mut chat);
 
     chat.dispatch_command(SlashCommand::Status);
     match rx.try_recv() {
@@ -179,7 +179,7 @@ async fn status_command_overlapping_refreshes_update_matching_cells_only() {
 #[tokio::test]
 async fn account_update_rejects_stale_status_rate_limit_snapshots() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
-    set_chatgpt_auth(&mut chat);
+    set_chatgpt_auth_with_openai_provider(&mut chat);
     chat.dispatch_command(SlashCommand::Status);
     assert_matches!(rx.try_recv(), Ok(AppEvent::InsertHistoryCell(_)));
     let request_id = match rx.try_recv() {
@@ -191,7 +191,7 @@ async fn account_update_rejects_stale_status_rate_limit_snapshots() {
 
     chat.update_account_state(
         /*status_account_display*/ None, /*plan_type*/ None,
-        /*has_chatgpt_account*/ true, /*has_codex_backend_auth*/ true,
+        /*has_chatgpt_account*/ true, /*has_motyga_backend_auth*/ true,
     );
     chat.finish_status_rate_limit_refresh(request_id, vec![snapshot(/*percent*/ 92.0)]);
 

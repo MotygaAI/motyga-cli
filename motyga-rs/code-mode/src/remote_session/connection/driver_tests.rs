@@ -5,24 +5,24 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use codex_code_mode_protocol::CellId;
-use codex_code_mode_protocol::CodeModeNestedToolCall;
-use codex_code_mode_protocol::CodeModeSessionDelegate;
-use codex_code_mode_protocol::ExecuteRequest;
-use codex_code_mode_protocol::NotificationFuture;
-use codex_code_mode_protocol::ToolInvocationFuture;
-use codex_code_mode_protocol::WaitRequest;
-use codex_code_mode_protocol::host::DelegateRequest;
-use codex_code_mode_protocol::host::DelegateRequestId;
-use codex_code_mode_protocol::host::HostResponse;
-use codex_code_mode_protocol::host::HostToClient;
-use codex_code_mode_protocol::host::RequestId;
-use codex_code_mode_protocol::host::SessionId;
-use codex_code_mode_protocol::host::WireNestedToolCall;
-use codex_code_mode_protocol::host::WireResult;
-use codex_code_mode_protocol::host::WireRuntimeResponse;
-use codex_code_mode_protocol::host::WireWaitOutcome;
-use codex_protocol::ToolName;
+use motyga_code_mode_protocol::CellId;
+use motyga_code_mode_protocol::CodeModeNestedToolCall;
+use motyga_code_mode_protocol::CodeModeSessionDelegate;
+use motyga_code_mode_protocol::ExecuteRequest;
+use motyga_code_mode_protocol::NotificationFuture;
+use motyga_code_mode_protocol::ToolInvocationFuture;
+use motyga_code_mode_protocol::WaitRequest;
+use motyga_code_mode_protocol::host::DelegateRequest;
+use motyga_code_mode_protocol::host::DelegateRequestId;
+use motyga_code_mode_protocol::host::HostResponse;
+use motyga_code_mode_protocol::host::HostToClient;
+use motyga_code_mode_protocol::host::RequestId;
+use motyga_code_mode_protocol::host::SessionId;
+use motyga_code_mode_protocol::host::WireNestedToolCall;
+use motyga_code_mode_protocol::host::WireResult;
+use motyga_code_mode_protocol::host::WireRuntimeResponse;
+use motyga_code_mode_protocol::host::WireWaitOutcome;
+use motyga_protocol::ToolName;
 use pretty_assertions::assert_eq;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
@@ -39,7 +39,7 @@ struct DriverHarness {
     command_tx: mpsc::Sender<DriverCommand>,
     event_tx: mpsc::Sender<DriverEvent>,
     execute_claim_tx: mpsc::UnboundedSender<RequestId>,
-    outgoing_rx: mpsc::Receiver<codex_code_mode_protocol::host::EncodedFrame>,
+    outgoing_rx: mpsc::Receiver<motyga_code_mode_protocol::host::EncodedFrame>,
     cancellation: CancellationToken,
     alive: Arc<AtomicBool>,
     driver_task: tokio::task::JoinHandle<()>,
@@ -116,7 +116,7 @@ impl DriverHarness {
         session: RemoteSession,
         request_id: i64,
         cell_id: &str,
-    ) -> codex_code_mode_protocol::StartedCell {
+    ) -> motyga_code_mode_protocol::StartedCell {
         let (response_tx, response_rx) = oneshot::channel();
         self.command_tx
             .send(DriverCommand::Execute {
@@ -165,7 +165,7 @@ impl DriverHarness {
                         cell_id: CellId::new("1".to_string()).into(),
                         runtime_tool_call_id: "tool-1".to_string(),
                         tool_name: ToolName::plain("slow").into(),
-                        tool_kind: codex_code_mode_protocol::CodeModeToolKind::Function.into(),
+                        tool_kind: motyga_code_mode_protocol::CodeModeToolKind::Function.into(),
                         input: None,
                     },
                 },
@@ -423,7 +423,7 @@ async fn delegate_cancel_is_best_effort_and_sends_no_late_response() {
                     cell_id: CellId::new("1".to_string()).into(),
                     runtime_tool_call_id: "tool-1".to_string(),
                     tool_name: ToolName::plain("slow").into(),
-                    tool_kind: codex_code_mode_protocol::CodeModeToolKind::Function.into(),
+                    tool_kind: motyga_code_mode_protocol::CodeModeToolKind::Function.into(),
                     input: None,
                 },
             },
@@ -528,8 +528,8 @@ async fn terminate_closes_cell_without_waiting_for_delegate_cleanup() {
     assert!(closure_events.contains(&HeldDelegateEvent::CellClosed(CellId::new("1".to_string()))));
     assert_eq!(
         response_rx.await.expect("terminate reply"),
-        Ok(codex_code_mode_protocol::WaitOutcome::LiveCell(
-            codex_code_mode_protocol::RuntimeResponse::Terminated {
+        Ok(motyga_code_mode_protocol::WaitOutcome::LiveCell(
+            motyga_code_mode_protocol::RuntimeResponse::Terminated {
                 cell_id: CellId::new("1".to_string()),
                 content_items: Vec::new(),
             }
@@ -702,7 +702,7 @@ async fn delegate_task_panic_becomes_tool_error_without_killing_connection() {
                     cell_id: CellId::new("1".to_string()).into(),
                     runtime_tool_call_id: "tool-1".to_string(),
                     tool_name: ToolName::plain("panic").into(),
-                    tool_kind: codex_code_mode_protocol::CodeModeToolKind::Function.into(),
+                    tool_kind: motyga_code_mode_protocol::CodeModeToolKind::Function.into(),
                     input: None,
                 },
             },
@@ -742,7 +742,7 @@ async fn delegate_for_unknown_cell_fails_connection_without_invocation() {
                     cell_id: CellId::new("missing".to_string()).into(),
                     runtime_tool_call_id: "tool-1".to_string(),
                     tool_name: ToolName::plain("slow").into(),
-                    tool_kind: codex_code_mode_protocol::CodeModeToolKind::Function.into(),
+                    tool_kind: motyga_code_mode_protocol::CodeModeToolKind::Function.into(),
                     input: None,
                 },
             },
@@ -958,8 +958,8 @@ async fn remote_wait_accepts_durations_longer_than_five_minutes() {
 
     assert_eq!(
         response_rx.await.expect("wait reply"),
-        Ok(codex_code_mode_protocol::WaitOutcome::LiveCell(
-            codex_code_mode_protocol::RuntimeResponse::Yielded {
+        Ok(motyga_code_mode_protocol::WaitOutcome::LiveCell(
+            motyga_code_mode_protocol::RuntimeResponse::Yielded {
                 cell_id: CellId::new("1".to_string()),
                 content_items: Vec::new(),
             }
@@ -1049,8 +1049,8 @@ async fn cancelled_wait_is_retired_before_next_wait_is_sent() {
 
     assert_eq!(
         second_rx.await.expect("second wait reply"),
-        Ok(codex_code_mode_protocol::WaitOutcome::LiveCell(
-            codex_code_mode_protocol::RuntimeResponse::Yielded {
+        Ok(motyga_code_mode_protocol::WaitOutcome::LiveCell(
+            motyga_code_mode_protocol::RuntimeResponse::Yielded {
                 cell_id: CellId::new("1".to_string()),
                 content_items: Vec::new(),
             }

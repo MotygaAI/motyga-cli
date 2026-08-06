@@ -1,11 +1,11 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-protocol"
+name = "motyga-protocol"
 version.workspace = true
 
 [lib]
-name = "codex_protocol"
+name = "motyga_protocol"
 path = "src/lib.rs"
 doctest = false
 
@@ -15,13 +15,13 @@ workspace = true
 [dependencies]
 chardetng = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
-codex-async-utils = { workspace = true }
-codex-execpolicy = { workspace = true }
-codex-network-proxy = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-image = { workspace = true }
-codex-utils-path-uri = { workspace = true }
-codex-utils-string = { workspace = true }
+motyga-async-utils = { workspace = true }
+motyga-execpolicy = { workspace = true }
+motyga-network-proxy = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-image = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
+motyga-utils-string = { workspace = true }
 encoding_rs = { workspace = true }
 globset = { workspace = true }
 icu_decimal = { workspace = true }

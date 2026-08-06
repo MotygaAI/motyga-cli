@@ -29,18 +29,18 @@ use self::protocol::normalize_remote_control_url;
 use super::CHANNEL_CAPACITY;
 use super::TransportEvent;
 use super::next_connection_id;
-use codex_app_server_protocol::RemoteControlClientsListParams;
-use codex_app_server_protocol::RemoteControlClientsListResponse;
-use codex_app_server_protocol::RemoteControlClientsRevokeParams;
-use codex_app_server_protocol::RemoteControlClientsRevokeResponse;
-use codex_app_server_protocol::RemoteControlConnectionStatus;
-use codex_app_server_protocol::RemoteControlPairingStartParams;
-use codex_app_server_protocol::RemoteControlPairingStartResponse;
-use codex_app_server_protocol::RemoteControlPairingStatusParams;
-use codex_app_server_protocol::RemoteControlPairingStatusResponse;
-use codex_app_server_protocol::RemoteControlStatusChangedNotification;
-use codex_login::AuthManager;
-use codex_state::StateRuntime;
+use motyga_app_server_protocol::RemoteControlClientsListParams;
+use motyga_app_server_protocol::RemoteControlClientsListResponse;
+use motyga_app_server_protocol::RemoteControlClientsRevokeParams;
+use motyga_app_server_protocol::RemoteControlClientsRevokeResponse;
+use motyga_app_server_protocol::RemoteControlConnectionStatus;
+use motyga_app_server_protocol::RemoteControlPairingStartParams;
+use motyga_app_server_protocol::RemoteControlPairingStartResponse;
+use motyga_app_server_protocol::RemoteControlPairingStatusParams;
+use motyga_app_server_protocol::RemoteControlPairingStatusResponse;
+use motyga_app_server_protocol::RemoteControlStatusChangedNotification;
+use motyga_login::AuthManager;
+use motyga_state::StateRuntime;
 use futures::FutureExt;
 use gethostname::gethostname;
 use std::error::Error;
@@ -84,7 +84,7 @@ pub enum RemoteControlStartupMode {
 
 /// Internal marker used by the daemon to disable remote control without requiring a new CLI flag.
 pub const REMOTE_CONTROL_DISABLED_ENV_VAR: &str =
-    "CODEX_INTERNAL_APP_SERVER_REMOTE_CONTROL_DISABLED";
+    "MOTYGA_INTERNAL_APP_SERVER_REMOTE_CONTROL_DISABLED";
 
 /// Reads and removes the daemon's internal disabled-start marker before worker threads start.
 pub fn take_remote_control_disabled_env() -> bool {

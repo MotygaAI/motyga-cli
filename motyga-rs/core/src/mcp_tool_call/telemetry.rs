@@ -1,15 +1,15 @@
 use std::time::Duration;
 
 use crate::session::turn_context::TurnContext;
-use codex_mcp::MCP_TOOL_CODEX_APPS_META_KEY;
-use codex_otel::sanitize_metric_tag_value;
-use codex_protocol::mcp::CallToolResult;
+use motyga_mcp::MCP_TOOL_MOTYGA_APPS_META_KEY;
+use motyga_otel::sanitize_metric_tag_value;
+use motyga_protocol::mcp::CallToolResult;
 use serde_json::Value as JsonValue;
 use tracing::Span;
 
-const MCP_CALL_COUNT_METRIC: &str = "codex.mcp.call";
-const MCP_CALL_DURATION_METRIC: &str = "codex.mcp.call.duration_ms";
-const MCP_CALL_ERROR_COUNT_METRIC: &str = "codex.mcp.call.error";
+const MCP_CALL_COUNT_METRIC: &str = "motyga.mcp.call";
+const MCP_CALL_DURATION_METRIC: &str = "motyga.mcp.call.duration_ms";
+const MCP_CALL_ERROR_COUNT_METRIC: &str = "motyga.mcp.call.error";
 // No CallToolResult was received. This includes request setup, transport, timeout, protocol, and
 // JSON-RPC failures; it does not imply that the request never reached the MCP server.
 const MCP_CALL_ERROR_TYPE_MCP_REQUEST: &str = "mcp_request";
@@ -18,7 +18,7 @@ const MCP_CALL_ERROR_TYPE_TOOL_RESULT: &str = "tool_result";
 const MCP_CALL_ERROR_CODE_UNKNOWN: &str = "unknown";
 const MCP_CALL_ERROR_CODE_MAX_CHARS: usize = 256;
 const MCP_CALL_ERROR_TYPE_SPAN_ATTR: &str = "error.type";
-const MCP_CALL_ERROR_CODE_SPAN_ATTR: &str = "codex.mcp.error.code";
+const MCP_CALL_ERROR_CODE_SPAN_ATTR: &str = "motyga.mcp.error.code";
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct McpCallMetricOutcome {
@@ -125,9 +125,9 @@ pub(super) fn mcp_call_metric_outcome(
                         .meta
                         .as_ref()
                         .and_then(JsonValue::as_object)
-                        .and_then(|meta| meta.get(MCP_TOOL_CODEX_APPS_META_KEY))
+                        .and_then(|meta| meta.get(MCP_TOOL_MOTYGA_APPS_META_KEY))
                         .and_then(JsonValue::as_object)
-                        .and_then(|codex_apps| codex_apps.get("connector_auth_failure"))
+                        .and_then(|motyga_apps| motyga_apps.get("connector_auth_failure"))
                         .and_then(JsonValue::as_object)
                         .filter(|auth_failure| {
                             auth_failure

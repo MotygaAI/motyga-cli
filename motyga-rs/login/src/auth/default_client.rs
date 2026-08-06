@@ -1,18 +1,18 @@
-//! Default Codex HTTP client: shared `User-Agent`, `originator`, optional residency header, and
-//! reqwest/`CodexHttpClient` construction.
+//! Default Motyga HTTP client: shared `User-Agent`, `originator`, optional residency header, and
+//! reqwest/`MotygaHttpClient` construction.
 //!
-//! Use [`crate::default_client`] or [`codex_login::default_client`] from other crates in this
+//! Use [`crate::default_client`] or [`motyga_login::default_client`] from other crates in this
 //! workspace.
 
-use codex_client::BuildCustomCaTransportError;
-use codex_client::BuildRouteAwareHttpClientError;
-use codex_client::ClientRouteClass;
-use codex_client::CodexHttpClient;
-pub use codex_client::CodexRequestBuilder;
-use codex_client::build_reqwest_client_for_route;
-use codex_client::build_reqwest_client_with_custom_ca;
-use codex_client::with_chatgpt_cloudflare_cookie_store;
-use codex_terminal_detection::user_agent;
+use motyga_client::BuildCustomCaTransportError;
+use motyga_client::BuildRouteAwareHttpClientError;
+use motyga_client::ClientRouteClass;
+use motyga_client::MotygaHttpClient;
+pub use motyga_client::MotygaRequestBuilder;
+use motyga_client::build_reqwest_client_for_route;
+use motyga_client::build_reqwest_client_with_custom_ca;
+use motyga_client::with_chatgpt_cloudflare_cookie_store;
+use motyga_terminal_detection::user_agent;
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderValue;
 use reqwest::header::USER_AGENT;
@@ -35,13 +35,13 @@ use crate::outbound_proxy::AuthRouteConfig;
 ///
 /// A space is automatically added between the suffix and the rest of the User-Agent string.
 /// The full user agent string is returned from the mcp initialize response.
-/// Parenthesis will be added by Codex. This should only specify what goes inside of the parenthesis.
+/// Parenthesis will be added by Motyga. This should only specify what goes inside of the parenthesis.
 pub static USER_AGENT_SUFFIX: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
 pub const DEFAULT_ORIGINATOR: &str = "motyga_cli";
-pub const CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR: &str = "CODEX_INTERNAL_ORIGINATOR_OVERRIDE";
+pub const MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR: &str = "MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE";
 pub const RESIDENCY_HEADER_NAME: &str = "x-openai-internal-codex-residency";
 
-pub use codex_config::ResidencyRequirement;
+pub use motyga_config::ResidencyRequirement;
 
 #[derive(Debug, Clone)]
 pub struct Originator {
@@ -59,7 +59,7 @@ pub enum SetOriginatorError {
 }
 
 fn get_originator_value(provided: Option<String>) -> Originator {
-    let value = std::env::var(CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR)
+    let value = std::env::var(MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR)
         .ok()
         .or(provided)
         .unwrap_or(DEFAULT_ORIGINATOR.to_string());
@@ -109,7 +109,7 @@ pub fn originator() -> Originator {
         return originator.clone();
     }
 
-    if std::env::var(CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR).is_ok() {
+    if std::env::var(MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR).is_ok() {
         let originator = get_originator_value(/*provided*/ None);
         if let Ok(mut guard) = ORIGINATOR.write() {
             match guard.as_ref() {
@@ -125,16 +125,16 @@ pub fn originator() -> Originator {
 
 pub fn is_first_party_originator(originator_value: &str) -> bool {
     originator_value == DEFAULT_ORIGINATOR
-        || originator_value == "codex-tui"
-        || originator_value == "codex_vscode"
-        || originator_value.starts_with("Codex ")
+        || originator_value == "motyga-tui"
+        || originator_value == "motyga_vscode"
+        || originator_value.starts_with("Motyga ")
 }
 
 pub fn is_first_party_chat_originator(originator_value: &str) -> bool {
-    originator_value == "codex_atlas" || originator_value == "codex_chatgpt_desktop"
+    originator_value == "motyga_atlas" || originator_value == "motyga_chatgpt_desktop"
 }
 
-pub fn get_codex_user_agent() -> String {
+pub fn get_motyga_user_agent() -> String {
     let build_version = env!("CARGO_PKG_VERSION");
     let os_info = os_info::get();
     let originator = originator();
@@ -195,21 +195,21 @@ fn sanitize_user_agent(candidate: String, fallback: &str) -> String {
 /// Create an HTTP client with default `originator` and `User-Agent` headers set.
 ///
 /// This supported default path preserves reqwest's existing proxy behavior and does not opt into
-/// Codex's route-aware system/PAC resolution.
-pub fn create_client() -> CodexHttpClient {
+/// Motyga's route-aware system/PAC resolution.
+pub fn create_client() -> MotygaHttpClient {
     let inner = build_reqwest_client();
-    CodexHttpClient::new(inner)
+    MotygaHttpClient::new(inner)
 }
 
-/// Builds the default reqwest client used for ordinary Codex HTTP traffic.
+/// Builds the default reqwest client used for ordinary Motyga HTTP traffic.
 ///
-/// This starts from the standard Codex user agent, default headers, and sandbox-specific proxy
-/// policy, then layers in shared custom CA handling from `CODEX_CA_CERTIFICATE` /
+/// This starts from the standard Motyga user agent, default headers, and sandbox-specific proxy
+/// policy, then layers in shared custom CA handling from `MOTYGA_CA_CERTIFICATE` /
 /// `SSL_CERT_FILE`. The function remains infallible for compatibility with existing call sites, so
 /// a custom-CA or builder failure is logged and falls back to `reqwest::Client::new()`.
 ///
 /// This supported default path preserves reqwest's existing proxy behavior and does not opt into
-/// Codex's route-aware system/PAC resolution. Auth callers with route settings must use
+/// Motyga's route-aware system/PAC resolution. Auth callers with route settings must use
 /// `build_default_auth_reqwest_client` or `create_default_auth_client`.
 pub fn build_reqwest_client() -> reqwest::Client {
     try_build_reqwest_client().unwrap_or_else(|error| {
@@ -226,7 +226,7 @@ pub fn build_reqwest_client() -> reqwest::Client {
     })
 }
 
-/// Tries to build the default reqwest client used for ordinary Codex HTTP traffic.
+/// Tries to build the default reqwest client used for ordinary Motyga HTTP traffic.
 ///
 /// Callers that need a structured CA-loading failure instead of the legacy logged fallback can use
 /// this method directly.
@@ -242,7 +242,7 @@ fn default_reqwest_client_builder() -> reqwest::ClientBuilder {
     with_chatgpt_cloudflare_cookie_store(builder)
 }
 
-/// Builds a raw reqwest client for an auth endpoint without Codex default headers.
+/// Builds a raw reqwest client for an auth endpoint without Motyga default headers.
 pub(crate) fn build_raw_auth_reqwest_client(
     endpoint: &str,
     auth_route_config: Option<&AuthRouteConfig>,
@@ -255,7 +255,7 @@ pub(crate) fn build_raw_auth_reqwest_client(
     )
 }
 
-/// Builds the default Codex reqwest client for an auth endpoint.
+/// Builds the default Motyga reqwest client for an auth endpoint.
 pub(crate) fn build_default_auth_reqwest_client(
     endpoint: &str,
     auth_route_config: Option<&AuthRouteConfig>,
@@ -277,18 +277,18 @@ pub(crate) fn build_default_auth_reqwest_client(
     )
 }
 
-/// Builds the default Codex HTTP client wrapper for an auth endpoint.
+/// Builds the default Motyga HTTP client wrapper for an auth endpoint.
 pub(crate) fn create_default_auth_client(
     endpoint: &str,
     auth_route_config: Option<&AuthRouteConfig>,
-) -> Result<CodexHttpClient, BuildRouteAwareHttpClientError> {
-    build_default_auth_reqwest_client(endpoint, auth_route_config).map(CodexHttpClient::new)
+) -> Result<MotygaHttpClient, BuildRouteAwareHttpClientError> {
+    build_default_auth_reqwest_client(endpoint, auth_route_config).map(MotygaHttpClient::new)
 }
 
 pub fn default_headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
     headers.insert("originator", originator().header_value);
-    if let Ok(user_agent) = HeaderValue::from_str(&get_codex_user_agent()) {
+    if let Ok(user_agent) = HeaderValue::from_str(&get_motyga_user_agent()) {
         headers.insert(USER_AGENT, user_agent);
     }
     if let Ok(guard) = REQUIREMENTS_RESIDENCY.read()
@@ -304,7 +304,7 @@ pub fn default_headers() -> HeaderMap {
 }
 
 fn is_sandboxed() -> bool {
-    std::env::var("CODEX_SANDBOX").as_deref() == Ok("seatbelt")
+    std::env::var("MOTYGA_SANDBOX").as_deref() == Ok("seatbelt")
 }
 
 #[cfg(test)]

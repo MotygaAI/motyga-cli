@@ -1,18 +1,18 @@
 use anyhow::Result;
-use codex_core::StartThreadOptions;
-use codex_core::ThreadConfigSnapshot;
-use codex_core::config::AgentRoleConfig;
-use codex_features::Feature;
-use codex_protocol::ThreadId;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::user_input::UserInput;
+use motyga_core::StartThreadOptions;
+use motyga_core::ThreadConfigSnapshot;
+use motyga_core::config::AgentRoleConfig;
+use motyga_features::Feature;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::hooks::trust_discovered_hooks;
 use core_test_support::responses::ResponsesRequest;
 use core_test_support::responses::ev_assistant_message;
@@ -29,10 +29,10 @@ use core_test_support::responses::sse_response;
 use core_test_support::responses::start_mock_server;
 use core_test_support::responses::strip_metadata_from_json;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -135,8 +135,8 @@ fn role_block(description: &str, role_name: &str) -> Option<String> {
     Some(block.join("\n"))
 }
 
-fn write_home_skill(codex_home: &Path, dir: &str, name: &str, description: &str) -> Result<()> {
-    let skill_dir = codex_home.join("skills").join(dir);
+fn write_home_skill(motyga_home: &Path, dir: &str, name: &str, description: &str) -> Result<()> {
+    let skill_dir = motyga_home.join("skills").join(dir);
     fs::create_dir_all(&skill_dir)?;
     let contents = format!("---\nname: {name}\ndescription: {description}\n---\n\n# Body\n");
     fs::write(skill_dir.join("SKILL.md"), contents)?;
@@ -319,7 +319,7 @@ async fn wait_for_hook_log(
     }
 }
 
-async fn wait_for_spawned_thread_id(test: &TestCodex) -> Result<String> {
+async fn wait_for_spawned_thread_id(test: &TestMotyga) -> Result<String> {
     let deadline = Instant::now() + Duration::from_secs(2);
     loop {
         let ids = test.thread_manager.list_thread_ids().await;
@@ -355,7 +355,7 @@ async fn wait_for_requests(
 async fn setup_turn_one_with_spawned_child(
     server: &MockServer,
     child_response_delay: Option<Duration>,
-) -> Result<(TestCodex, String)> {
+) -> Result<(TestMotyga, String)> {
     let (test, spawned_id, _child_request_log) = setup_turn_one_with_custom_spawned_child(
         server,
         json!({
@@ -375,10 +375,10 @@ async fn setup_turn_one_with_custom_spawned_child(
     child_response_delay: Option<Duration>,
     wait_for_parent_notification: bool,
     configure_test: impl FnOnce(
-        core_test_support::test_codex::TestCodexBuilder,
-    ) -> core_test_support::test_codex::TestCodexBuilder,
+        core_test_support::test_motyga::TestMotygaBuilder,
+    ) -> core_test_support::test_motyga::TestMotygaBuilder,
 ) -> Result<(
-    TestCodex,
+    TestMotyga,
     String,
     core_test_support::responses::ResponseMock,
 )> {
@@ -436,7 +436,7 @@ async fn setup_turn_one_with_custom_spawned_child(
     )
     .await;
 
-    let mut builder = configure_test(test_codex().with_config(|config| {
+    let mut builder = configure_test(test_motyga().with_config(|config| {
         config
             .features
             .enable(Feature::Collab)
@@ -449,7 +449,7 @@ async fn setup_turn_one_with_custom_spawned_child(
     if child_response_delay.is_none() && wait_for_parent_notification {
         let _ = wait_for_requests(&child_request_log).await?;
         let rollout_path = test
-            .codex
+            .motyga
             .rollout_path()
             .ok_or_else(|| anyhow::anyhow!("expected parent rollout path"))?;
         let deadline = Instant::now() + Duration::from_secs(6);
@@ -477,8 +477,8 @@ async fn spawn_child_and_capture_snapshot(
     server: &MockServer,
     spawn_args: serde_json::Value,
     configure_test: impl FnOnce(
-        core_test_support::test_codex::TestCodexBuilder,
-    ) -> core_test_support::test_codex::TestCodexBuilder,
+        core_test_support::test_motyga::TestMotygaBuilder,
+    ) -> core_test_support::test_motyga::TestMotygaBuilder,
 ) -> Result<ThreadConfigSnapshot> {
     let (test, spawned_id, _child_request_log) = setup_turn_one_with_custom_spawned_child(
         server,
@@ -551,7 +551,7 @@ async fn subagent_start_replaces_session_start_and_injects_context() -> Result<(
     )
     .await;
 
-    let test = test_codex()
+    let test = test_motyga()
         .with_pre_build_hook(|home| {
             write_subagent_lifecycle_hooks(home, /*stop_prompts*/ &[], "worker")
                 .expect("failed to write subagent hook fixture");
@@ -570,7 +570,7 @@ async fn subagent_start_replaces_session_start_and_injects_context() -> Result<(
     let _ = wait_for_requests(&child_request_log).await?;
 
     let start_inputs = wait_for_hook_log(
-        test.codex_home_path(),
+        test.motyga_home_path(),
         "subagent_start_hook_log.jsonl",
         /*expected_len*/ 1,
     )
@@ -584,7 +584,7 @@ async fn subagent_start_replaces_session_start_and_injects_context() -> Result<(
     );
 
     let user_prompt_submit_inputs = wait_for_hook_log(
-        test.codex_home_path(),
+        test.motyga_home_path(),
         "user_prompt_submit_hook_log.jsonl",
         /*expected_len*/ 2,
     )
@@ -607,7 +607,7 @@ async fn subagent_start_replaces_session_start_and_injects_context() -> Result<(
     assert_eq!(child_prompt_input["agent_type"].as_str(), Some("worker"));
 
     let session_start_inputs = wait_for_hook_log(
-        test.codex_home_path(),
+        test.motyga_home_path(),
         "session_start_hook_log.jsonl",
         /*expected_len*/ 1,
     )
@@ -695,7 +695,7 @@ async fn subagent_stop_replaces_stop_and_skips_internal_subagents() -> Result<()
     )
     .await;
 
-    let test = test_codex()
+    let test = test_motyga()
         .with_pre_build_hook(|home| {
             write_subagent_lifecycle_hooks(
                 home,
@@ -719,7 +719,7 @@ async fn subagent_stop_replaces_stop_and_skips_internal_subagents() -> Result<()
     let _ = wait_for_requests(&second_child_request).await?;
 
     let subagent_stop_inputs = wait_for_hook_log(
-        test.codex_home_path(),
+        test.motyga_home_path(),
         "subagent_stop_hook_log.jsonl",
         /*expected_len*/ 2,
     )
@@ -756,7 +756,7 @@ async fn subagent_stop_replaces_stop_and_skips_internal_subagents() -> Result<()
         Some("child done first")
     );
 
-    let stop_inputs = read_hook_log(test.codex_home_path(), "stop_hook_log.jsonl")?;
+    let stop_inputs = read_hook_log(test.motyga_home_path(), "stop_hook_log.jsonl")?;
     assert!(
         stop_inputs
             .iter()
@@ -797,7 +797,7 @@ async fn subagent_stop_replaces_stop_and_skips_internal_subagents() -> Result<()
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(sandbox_policy),
@@ -821,10 +821,10 @@ async fn subagent_stop_replaces_stop_and_skips_internal_subagents() -> Result<()
     assert_eq!(requests.len(), 1);
 
     let subagent_stop_inputs_after_internal =
-        read_hook_log(test.codex_home_path(), "subagent_stop_hook_log.jsonl")?;
+        read_hook_log(test.motyga_home_path(), "subagent_stop_hook_log.jsonl")?;
     assert_eq!(subagent_stop_inputs_after_internal, subagent_stop_inputs);
 
-    let stop_inputs_after_internal = read_hook_log(test.codex_home_path(), "stop_hook_log.jsonl")?;
+    let stop_inputs_after_internal = read_hook_log(test.motyga_home_path(), "stop_hook_log.jsonl")?;
     assert_eq!(stop_inputs_after_internal.len(), stop_input_count);
 
     Ok(())
@@ -915,7 +915,7 @@ async fn spawned_child_receives_forked_parent_context() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config
             .features
             .enable(Feature::Collab)
@@ -1027,7 +1027,7 @@ async fn spawned_multi_agent_v2_child_inherits_parent_developer_context() -> Res
     )
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config
             .features
             .enable(Feature::Collab)
@@ -1105,7 +1105,7 @@ async fn encrypted_multi_agent_v2_spawn_sends_agent_message_to_child() -> Result
     )
     .await;
 
-    let mut builder = test_codex().with_model("koffing").with_config(|config| {
+    let mut builder = test_motyga().with_model("koffing").with_config(|config| {
         config
             .features
             .enable(Feature::Collab)
@@ -1286,7 +1286,7 @@ async fn plaintext_multi_agent_v2_completion_sends_agent_message(
         ]),
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_model("koffing")
         .with_config(|config| {
             config
@@ -1376,7 +1376,7 @@ async fn skills_toggle_skips_instructions_for_parent_and_spawned_child() -> Resu
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_home_skill(home, "demo", "demo-skill", "demo skill").expect("write home skill");
         })
@@ -1423,7 +1423,7 @@ async fn spawn_agent_role_overrides_requested_model_and_reasoning_settings() -> 
         }),
         |builder| {
             builder.with_config(|config| {
-                let role_path = config.codex_home.join("custom-role.toml");
+                let role_path = config.motyga_home.join("custom-role.toml");
                 std::fs::write(
                     &role_path,
                     format!(
@@ -1479,13 +1479,13 @@ async fn spawn_agent_tool_description_mentions_role_locked_settings() -> Result<
     )
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_motyga().with_config(|config| {
         config
             .features
             .enable(Feature::Collab)
             .expect("test config should allow feature update");
         config.multi_agent_v2.hide_spawn_agent_metadata = false;
-        let role_path = config.codex_home.join("custom-role.toml");
+        let role_path = config.motyga_home.join("custom-role.toml");
         std::fs::write(
             &role_path,
             format!(

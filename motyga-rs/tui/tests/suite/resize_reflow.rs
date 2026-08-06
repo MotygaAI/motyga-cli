@@ -14,7 +14,7 @@ use tempfile::tempdir;
 use wiremock::MockServer;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[ignore = "requires tmux and a locally built codex binary; run with --ignored for manual resize smoke"]
+#[ignore = "requires tmux and a locally built motyga binary; run with --ignored for manual resize smoke"]
 async fn tmux_split_preserves_fresh_session_composer_row_after_resize_reflow() -> Result<()> {
     if cfg!(windows) {
         return Ok(());
@@ -25,16 +25,16 @@ async fn tmux_split_preserves_fresh_session_composer_row_after_resize_reflow() -
         return Ok(());
     }
 
-    let repo_root = codex_utils_cargo_bin::repo_root()?;
-    let codex = codex_binary(&repo_root)?;
-    let codex_home = tempdir()?;
+    let repo_root = motyga_utils_cargo_bin::repo_root()?;
+    let motyga = motyga_binary(&repo_root)?;
+    let motyga_home = tempdir()?;
     let server = MockServer::start().await;
     let _response_mock = responses::mount_sse_once(&server, resize_reflow_sse()).await;
     let openai_base_url_config = format!("openai_base_url=\"{}/v1\"", server.uri());
-    write_config(codex_home.path(), &repo_root)?;
-    write_auth(codex_home.path())?;
+    write_config(motyga_home.path(), &repo_root)?;
+    write_auth(motyga_home.path())?;
 
-    let session_name = format!("codex-resize-reflow-smoke-{}", std::process::id());
+    let session_name = format!("motyga-resize-reflow-smoke-{}", std::process::id());
     let _session = TmuxSession {
         name: session_name.clone(),
     };
@@ -55,9 +55,9 @@ async fn tmux_split_preserves_fresh_session_composer_row_after_resize_reflow() -
             .arg(&session_name)
             .arg("--")
             .arg("env")
-            .arg(format!("MOTYGA_HOME={}", codex_home.path().display()))
+            .arg(format!("MOTYGA_HOME={}", motyga_home.path().display()))
             .arg("OPENAI_API_KEY=dummy")
-            .arg(codex)
+            .arg(motyga)
             .arg("-c")
             .arg("analytics.enabled=false")
             .arg("-c")
@@ -67,16 +67,16 @@ async fn tmux_split_preserves_fresh_session_composer_row_after_resize_reflow() -
             .arg(&repo_root)
             .arg(prompt),
     )?;
-    let codex_pane = stdout_text(&start_output).trim().to_string();
-    anyhow::ensure!(!codex_pane.is_empty(), "tmux did not report a pane id");
+    let motyga_pane = stdout_text(&start_output).trim().to_string();
+    anyhow::ensure!(!motyga_pane.is_empty(), "tmux did not report a pane id");
 
     wait_for_capture_contains(
-        &codex_pane,
+        &motyga_pane,
         "resize reflow sentinel",
         Duration::from_secs(/*secs*/ 15),
     )?;
     wait_for_capture_contains(
-        &codex_pane,
+        &motyga_pane,
         "gpt-5.4 default",
         Duration::from_secs(/*secs*/ 15),
     )?;
@@ -85,12 +85,12 @@ async fn tmux_split_preserves_fresh_session_composer_row_after_resize_reflow() -
         Command::new("tmux")
             .arg("send-keys")
             .arg("-t")
-            .arg(&codex_pane)
+            .arg(&motyga_pane)
             .arg("-l")
             .arg(draft),
     )?;
     let baseline_capture =
-        wait_for_capture_contains(&codex_pane, draft, Duration::from_secs(/*secs*/ 15))?;
+        wait_for_capture_contains(&motyga_pane, draft, Duration::from_secs(/*secs*/ 15))?;
     let baseline_row = last_composer_row(&baseline_capture).context("composer row before split")?;
     let baseline_history_row = first_row_containing(&baseline_capture, "resize reflow sentinel")
         .context("history row before split")?;
@@ -106,18 +106,18 @@ async fn tmux_split_preserves_fresh_session_composer_row_after_resize_reflow() -
             .arg("-l")
             .arg("12")
             .arg("-t")
-            .arg(&codex_pane)
+            .arg(&motyga_pane)
             .arg("sleep")
             .arg("30"),
     )?;
     let split_pane = stdout_text(&split_output).trim().to_string();
 
     sleep(Duration::from_millis(/*millis*/ 250));
-    let first_capture = capture_pane(&codex_pane)?;
+    let first_capture = capture_pane(&motyga_pane)?;
     let first_row = last_composer_row(&first_capture).context("composer row after split")?;
 
     sleep(Duration::from_millis(/*millis*/ 1_000));
-    let second_capture = capture_pane(&codex_pane)?;
+    let second_capture = capture_pane(&motyga_pane)?;
     let second_row =
         last_composer_row(&second_capture).context("composer row after reflow wait")?;
 
@@ -142,7 +142,7 @@ async fn tmux_split_preserves_fresh_session_composer_row_after_resize_reflow() -
     )?;
 
     sleep(Duration::from_millis(/*millis*/ 500));
-    let final_capture = capture_pane(&codex_pane)?;
+    let final_capture = capture_pane(&motyga_pane)?;
     let final_row =
         last_composer_row(&final_capture).context("composer row after closing split")?;
     anyhow::ensure!(
@@ -164,7 +164,7 @@ async fn tmux_split_preserves_fresh_session_composer_row_after_resize_reflow() -
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[ignore = "requires tmux and a locally built codex binary; run with --ignored for manual resize smoke"]
+#[ignore = "requires tmux and a locally built motyga binary; run with --ignored for manual resize smoke"]
 async fn tmux_repeated_resizes_do_not_push_composer_down() -> Result<()> {
     if cfg!(windows) {
         return Ok(());
@@ -181,7 +181,7 @@ async fn tmux_repeated_resizes_do_not_push_composer_down() -> Result<()> {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[ignore = "requires tmux and a locally built codex binary; run with --ignored for manual resize smoke"]
+#[ignore = "requires tmux and a locally built motyga binary; run with --ignored for manual resize smoke"]
 async fn tmux_width_resize_restore_keeps_visible_content_anchored() -> Result<()> {
     if cfg!(windows) {
         return Ok(());
@@ -192,16 +192,16 @@ async fn tmux_width_resize_restore_keeps_visible_content_anchored() -> Result<()
         return Ok(());
     }
 
-    let repo_root = codex_utils_cargo_bin::repo_root()?;
-    let codex = codex_binary(&repo_root)?;
-    let codex_home = tempdir()?;
+    let repo_root = motyga_utils_cargo_bin::repo_root()?;
+    let motyga = motyga_binary(&repo_root)?;
+    let motyga_home = tempdir()?;
     let server = MockServer::start().await;
     let _response_mock = responses::mount_sse_once(&server, resize_reflow_sse()).await;
     let openai_base_url_config = format!("openai_base_url=\"{}/v1\"", server.uri());
-    write_config(codex_home.path(), &repo_root)?;
-    write_auth(codex_home.path())?;
+    write_config(motyga_home.path(), &repo_root)?;
+    write_auth(motyga_home.path())?;
 
-    let session_name = format!("codex-resize-width-{}", std::process::id());
+    let session_name = format!("motyga-resize-width-{}", std::process::id());
     let _session = TmuxSession {
         name: session_name.clone(),
     };
@@ -222,9 +222,9 @@ async fn tmux_width_resize_restore_keeps_visible_content_anchored() -> Result<()
             .arg(&session_name)
             .arg("--")
             .arg("env")
-            .arg(format!("MOTYGA_HOME={}", codex_home.path().display()))
+            .arg(format!("MOTYGA_HOME={}", motyga_home.path().display()))
             .arg("OPENAI_API_KEY=dummy")
-            .arg(codex)
+            .arg(motyga)
             .arg("-c")
             .arg("analytics.enabled=false")
             .arg("-c")
@@ -234,16 +234,16 @@ async fn tmux_width_resize_restore_keeps_visible_content_anchored() -> Result<()
             .arg(&repo_root)
             .arg(prompt),
     )?;
-    let codex_pane = stdout_text(&start_output).trim().to_string();
-    anyhow::ensure!(!codex_pane.is_empty(), "tmux did not report a pane id");
+    let motyga_pane = stdout_text(&start_output).trim().to_string();
+    anyhow::ensure!(!motyga_pane.is_empty(), "tmux did not report a pane id");
 
     wait_for_capture_contains(
-        &codex_pane,
+        &motyga_pane,
         "resize reflow sentinel",
         Duration::from_secs(/*secs*/ 15),
     )?;
     wait_for_capture_contains(
-        &codex_pane,
+        &motyga_pane,
         "gpt-5.4 default",
         Duration::from_secs(/*secs*/ 15),
     )?;
@@ -252,12 +252,12 @@ async fn tmux_width_resize_restore_keeps_visible_content_anchored() -> Result<()
         Command::new("tmux")
             .arg("send-keys")
             .arg("-t")
-            .arg(&codex_pane)
+            .arg(&motyga_pane)
             .arg("-l")
             .arg(draft),
     )?;
     let baseline_capture =
-        wait_for_capture_contains(&codex_pane, draft, Duration::from_secs(/*secs*/ 15))?;
+        wait_for_capture_contains(&motyga_pane, draft, Duration::from_secs(/*secs*/ 15))?;
     let baseline_row = last_composer_row(&baseline_capture).context("composer row before split")?;
     let baseline_history_row = first_row_containing(&baseline_capture, "resize reflow sentinel")
         .context("history row before split")?;
@@ -273,7 +273,7 @@ async fn tmux_width_resize_restore_keeps_visible_content_anchored() -> Result<()
             .arg("-l")
             .arg("40")
             .arg("-t")
-            .arg(&codex_pane)
+            .arg(&motyga_pane)
             .arg("sleep")
             .arg("30"),
     )?;
@@ -288,7 +288,7 @@ async fn tmux_width_resize_restore_keeps_visible_content_anchored() -> Result<()
     )?;
 
     sleep(Duration::from_millis(/*millis*/ 1_000));
-    let restored_capture = capture_pane(&codex_pane)?;
+    let restored_capture = capture_pane(&motyga_pane)?;
     let restored_row =
         last_composer_row(&restored_capture).context("composer row after width restore")?;
     let restored_history_row = first_row_containing(&restored_capture, "resize reflow sentinel")
@@ -312,16 +312,16 @@ async fn tmux_width_resize_restore_keeps_visible_content_anchored() -> Result<()
 }
 
 async fn run_repeated_resize_smoke() -> Result<()> {
-    let repo_root = codex_utils_cargo_bin::repo_root()?;
-    let codex = codex_binary(&repo_root)?;
-    let codex_home = tempdir()?;
+    let repo_root = motyga_utils_cargo_bin::repo_root()?;
+    let motyga = motyga_binary(&repo_root)?;
+    let motyga_home = tempdir()?;
     let server = MockServer::start().await;
     let _response_mock = responses::mount_sse_once(&server, resize_reflow_sse()).await;
     let openai_base_url_config = format!("openai_base_url=\"{}/v1\"", server.uri());
-    write_config(codex_home.path(), &repo_root)?;
-    write_auth(codex_home.path())?;
+    write_config(motyga_home.path(), &repo_root)?;
+    write_auth(motyga_home.path())?;
 
-    let session_name = format!("codex-resize-repeat-{}", std::process::id());
+    let session_name = format!("motyga-resize-repeat-{}", std::process::id());
     let _session = TmuxSession {
         name: session_name.clone(),
     };
@@ -342,9 +342,9 @@ async fn run_repeated_resize_smoke() -> Result<()> {
             .arg(&session_name)
             .arg("--")
             .arg("env")
-            .arg(format!("MOTYGA_HOME={}", codex_home.path().display()))
+            .arg(format!("MOTYGA_HOME={}", motyga_home.path().display()))
             .arg("OPENAI_API_KEY=dummy")
-            .arg(codex)
+            .arg(motyga)
             .arg("-c")
             .arg("analytics.enabled=false")
             .arg("-c")
@@ -354,16 +354,16 @@ async fn run_repeated_resize_smoke() -> Result<()> {
             .arg(&repo_root)
             .arg(prompt),
     )?;
-    let codex_pane = stdout_text(&start_output).trim().to_string();
-    anyhow::ensure!(!codex_pane.is_empty(), "tmux did not report a pane id");
+    let motyga_pane = stdout_text(&start_output).trim().to_string();
+    anyhow::ensure!(!motyga_pane.is_empty(), "tmux did not report a pane id");
 
     wait_for_capture_contains(
-        &codex_pane,
+        &motyga_pane,
         "resize reflow sentinel",
         Duration::from_secs(/*secs*/ 15),
     )?;
     wait_for_capture_contains(
-        &codex_pane,
+        &motyga_pane,
         "gpt-5.4 default",
         Duration::from_secs(/*secs*/ 15),
     )?;
@@ -372,12 +372,12 @@ async fn run_repeated_resize_smoke() -> Result<()> {
         Command::new("tmux")
             .arg("send-keys")
             .arg("-t")
-            .arg(&codex_pane)
+            .arg(&motyga_pane)
             .arg("-l")
             .arg(draft),
     )?;
     let baseline_capture =
-        wait_for_capture_contains(&codex_pane, draft, Duration::from_secs(/*secs*/ 15))?;
+        wait_for_capture_contains(&motyga_pane, draft, Duration::from_secs(/*secs*/ 15))?;
     let baseline_row = last_composer_row(&baseline_capture).context("composer row before split")?;
     let baseline_history_row = first_row_containing(&baseline_capture, "resize reflow sentinel")
         .context("history row before split")?;
@@ -394,7 +394,7 @@ async fn run_repeated_resize_smoke() -> Result<()> {
                 .arg("-l")
                 .arg("12")
                 .arg("-t")
-                .arg(&codex_pane)
+                .arg(&motyga_pane)
                 .arg("sleep")
                 .arg("30"),
         )?;
@@ -409,7 +409,7 @@ async fn run_repeated_resize_smoke() -> Result<()> {
         )?;
 
         sleep(Duration::from_millis(/*millis*/ 500));
-        let restored_capture = capture_pane(&codex_pane)?;
+        let restored_capture = capture_pane(&motyga_pane)?;
         let restored_row = last_composer_row(&restored_capture)
             .with_context(|| format!("composer row after resize cycle {cycle}"))?;
         let restored_history_row =
@@ -448,20 +448,20 @@ impl Drop for TmuxSession {
     }
 }
 
-fn codex_binary(repo_root: &Path) -> Result<PathBuf> {
-    if let Ok(path) = codex_utils_cargo_bin::cargo_bin("motyga") {
+fn motyga_binary(repo_root: &Path) -> Result<PathBuf> {
+    if let Ok(path) = motyga_utils_cargo_bin::cargo_bin("motyga") {
         return Ok(path);
     }
 
-    let fallback = repo_root.join("motyga-rs/target/debug/codex");
+    let fallback = repo_root.join("motyga-rs/target/debug/motyga");
     anyhow::ensure!(
         fallback.is_file(),
-        "codex binary is unavailable; run `cargo build -p codex-cli` first"
+        "motyga binary is unavailable; run `cargo build -p motyga-cli` first"
     );
     Ok(fallback)
 }
 
-fn write_config(codex_home: &Path, repo_root: &Path) -> Result<()> {
+fn write_config(motyga_home: &Path, repo_root: &Path) -> Result<()> {
     let repo_root_display = repo_root.display();
     let config = format!(
         r#"model = "gpt-5.4"
@@ -472,13 +472,13 @@ suppress_unstable_features_warning = true
 trust_level = "trusted"
 "#
     );
-    std::fs::write(codex_home.join("config.toml"), config)?;
+    std::fs::write(motyga_home.join("config.toml"), config)?;
     Ok(())
 }
 
-fn write_auth(codex_home: &Path) -> Result<()> {
+fn write_auth(motyga_home: &Path) -> Result<()> {
     std::fs::write(
-        codex_home.join("auth.json"),
+        motyga_home.join("auth.json"),
         r#"{"OPENAI_API_KEY":"dummy","tokens":null,"last_refresh":null}"#,
     )?;
     Ok(())

@@ -3,43 +3,43 @@ use crate::accepted_lines::accepted_line_fingerprint_event_requests;
 use crate::accepted_lines::accepted_line_fingerprints_from_unified_diff;
 use crate::accepted_lines::accepted_line_repo_hash_for_cwd;
 use crate::events::AppServerRpcTransport;
-use crate::events::CodexAppMentionedEventRequest;
-use crate::events::CodexAppServerClientMetadata;
-use crate::events::CodexAppUsedEventRequest;
-use crate::events::CodexCollabAgentToolCallEventParams;
-use crate::events::CodexCollabAgentToolCallEventRequest;
-use crate::events::CodexCommandExecutionEventParams;
-use crate::events::CodexCommandExecutionEventRequest;
-use crate::events::CodexCompactionEventRequest;
-use crate::events::CodexDynamicToolCallEventParams;
-use crate::events::CodexDynamicToolCallEventRequest;
-use crate::events::CodexFileChangeEventParams;
-use crate::events::CodexFileChangeEventRequest;
-use crate::events::CodexGoalEventRequest;
-use crate::events::CodexHookRunEventRequest;
-use crate::events::CodexImageGenerationEventParams;
-use crate::events::CodexImageGenerationEventRequest;
-use crate::events::CodexMcpToolCallEventParams;
-use crate::events::CodexMcpToolCallEventRequest;
-use crate::events::CodexOnboardingExternalAgentImportCompleteEventRequest;
-use crate::events::CodexOnboardingExternalAgentImportCompleteMetadata;
-use crate::events::CodexOnboardingExternalAgentImportFailureEventRequest;
-use crate::events::CodexOnboardingExternalAgentImportFailureMetadata;
-use crate::events::CodexPluginEventRequest;
-use crate::events::CodexPluginInstallFailedEventRequest;
-use crate::events::CodexPluginInstallFailedMetadata;
-use crate::events::CodexPluginInstallRequestedEventRequest;
-use crate::events::CodexPluginUsedEventRequest;
-use crate::events::CodexReviewEventParams;
-use crate::events::CodexReviewEventRequest;
-use crate::events::CodexRuntimeMetadata;
-use crate::events::CodexToolItemEventBase;
-use crate::events::CodexTurnEventParams;
-use crate::events::CodexTurnEventRequest;
-use crate::events::CodexTurnSteerEventParams;
-use crate::events::CodexTurnSteerEventRequest;
-use crate::events::CodexWebSearchEventParams;
-use crate::events::CodexWebSearchEventRequest;
+use crate::events::MotygaAppMentionedEventRequest;
+use crate::events::MotygaAppServerClientMetadata;
+use crate::events::MotygaAppUsedEventRequest;
+use crate::events::MotygaCollabAgentToolCallEventParams;
+use crate::events::MotygaCollabAgentToolCallEventRequest;
+use crate::events::MotygaCommandExecutionEventParams;
+use crate::events::MotygaCommandExecutionEventRequest;
+use crate::events::MotygaCompactionEventRequest;
+use crate::events::MotygaDynamicToolCallEventParams;
+use crate::events::MotygaDynamicToolCallEventRequest;
+use crate::events::MotygaFileChangeEventParams;
+use crate::events::MotygaFileChangeEventRequest;
+use crate::events::MotygaGoalEventRequest;
+use crate::events::MotygaHookRunEventRequest;
+use crate::events::MotygaImageGenerationEventParams;
+use crate::events::MotygaImageGenerationEventRequest;
+use crate::events::MotygaMcpToolCallEventParams;
+use crate::events::MotygaMcpToolCallEventRequest;
+use crate::events::MotygaOnboardingExternalAgentImportCompleteEventRequest;
+use crate::events::MotygaOnboardingExternalAgentImportCompleteMetadata;
+use crate::events::MotygaOnboardingExternalAgentImportFailureEventRequest;
+use crate::events::MotygaOnboardingExternalAgentImportFailureMetadata;
+use crate::events::MotygaPluginEventRequest;
+use crate::events::MotygaPluginInstallFailedEventRequest;
+use crate::events::MotygaPluginInstallFailedMetadata;
+use crate::events::MotygaPluginInstallRequestedEventRequest;
+use crate::events::MotygaPluginUsedEventRequest;
+use crate::events::MotygaReviewEventParams;
+use crate::events::MotygaReviewEventRequest;
+use crate::events::MotygaRuntimeMetadata;
+use crate::events::MotygaToolItemEventBase;
+use crate::events::MotygaTurnEventParams;
+use crate::events::MotygaTurnEventRequest;
+use crate::events::MotygaTurnSteerEventParams;
+use crate::events::MotygaTurnSteerEventRequest;
+use crate::events::MotygaWebSearchEventParams;
+use crate::events::MotygaWebSearchEventRequest;
 use crate::events::FinalApprovalOutcome;
 use crate::events::GuardianReviewEventParams;
 use crate::events::GuardianReviewEventPayload;
@@ -57,13 +57,13 @@ use crate::events::ToolItemFailureKind;
 use crate::events::ToolItemTerminalStatus;
 use crate::events::TrackEventRequest;
 use crate::events::WebSearchActionKind;
-use crate::events::codex_app_metadata;
-use crate::events::codex_compaction_event_params;
-use crate::events::codex_goal_event_params;
-use crate::events::codex_hook_run_metadata;
-use crate::events::codex_plugin_install_requested_metadata;
-use crate::events::codex_plugin_metadata;
-use crate::events::codex_plugin_used_metadata;
+use crate::events::motyga_app_metadata;
+use crate::events::motyga_compaction_event_params;
+use crate::events::motyga_goal_event_params;
+use crate::events::motyga_hook_run_metadata;
+use crate::events::motyga_plugin_install_requested_metadata;
+use crate::events::motyga_plugin_metadata;
+use crate::events::motyga_plugin_used_metadata;
 use crate::events::plugin_state_event_type;
 use crate::events::subagent_source_name;
 use crate::events::subagent_thread_started_event_request;
@@ -71,8 +71,8 @@ use crate::facts::AnalyticsFact;
 use crate::facts::AnalyticsJsonRpcError;
 use crate::facts::AppMentionedInput;
 use crate::facts::AppUsedInput;
-use crate::facts::CodexCompactionEvent;
-use crate::facts::CodexGoalEvent;
+use crate::facts::MotygaCompactionEvent;
+use crate::facts::MotygaGoalEvent;
 use crate::facts::CustomAnalyticsFact;
 use crate::facts::ExternalAgentConfigImportCompletedInput;
 use crate::facts::ExternalAgentConfigImportFailureInput;
@@ -85,8 +85,8 @@ use crate::facts::PluginUsedInput;
 use crate::facts::SkillInvokedInput;
 use crate::facts::SubAgentThreadStartedInput;
 use crate::facts::ThreadInitializationMode;
-use crate::facts::TurnCodexError;
-use crate::facts::TurnCodexErrorFact;
+use crate::facts::TurnMotygaError;
+use crate::facts::TurnMotygaErrorFact;
 use crate::facts::TurnProfile;
 use crate::facts::TurnProfileFact;
 use crate::facts::TurnResolvedConfigFact;
@@ -98,48 +98,48 @@ use crate::now_unix_seconds;
 use crate::option_i64_to_u64;
 use crate::serialize_enum_as_string;
 use crate::usize_to_u64;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::ClientResponse;
-use codex_app_server_protocol::CodexErrorInfo;
-use codex_app_server_protocol::CollabAgentStatus;
-use codex_app_server_protocol::CollabAgentTool;
-use codex_app_server_protocol::CollabAgentToolCallStatus;
-use codex_app_server_protocol::CommandAction;
-use codex_app_server_protocol::CommandExecutionApprovalDecision;
-use codex_app_server_protocol::CommandExecutionSource;
-use codex_app_server_protocol::CommandExecutionStatus;
-use codex_app_server_protocol::DynamicToolCallOutputContentItem;
-use codex_app_server_protocol::DynamicToolCallStatus;
-use codex_app_server_protocol::FileChangeApprovalDecision;
-use codex_app_server_protocol::GuardianApprovalReviewAction;
-use codex_app_server_protocol::GuardianApprovalReviewStatus;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::McpToolCallStatus;
-use codex_app_server_protocol::NetworkPolicyRuleAction;
-use codex_app_server_protocol::PatchApplyStatus;
-use codex_app_server_protocol::PatchChangeKind;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::RequestPermissionProfile;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::ServerResponse;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::TurnSteerResponse;
-use codex_app_server_protocol::UserInput;
-use codex_app_server_protocol::WebSearchAction;
-use codex_git_utils::collect_git_info;
-use codex_git_utils::get_git_repo_root;
-use codex_login::default_client::originator;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SkillScope;
-use codex_protocol::protocol::ThreadSource;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::request_permissions::PermissionGrantScope as CorePermissionGrantScope;
-use codex_protocol::request_permissions::RequestPermissionsResponse as CoreRequestPermissionsResponse;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::ClientResponse;
+use motyga_app_server_protocol::MotygaErrorInfo;
+use motyga_app_server_protocol::CollabAgentStatus;
+use motyga_app_server_protocol::CollabAgentTool;
+use motyga_app_server_protocol::CollabAgentToolCallStatus;
+use motyga_app_server_protocol::CommandAction;
+use motyga_app_server_protocol::CommandExecutionApprovalDecision;
+use motyga_app_server_protocol::CommandExecutionSource;
+use motyga_app_server_protocol::CommandExecutionStatus;
+use motyga_app_server_protocol::DynamicToolCallOutputContentItem;
+use motyga_app_server_protocol::DynamicToolCallStatus;
+use motyga_app_server_protocol::FileChangeApprovalDecision;
+use motyga_app_server_protocol::GuardianApprovalReviewAction;
+use motyga_app_server_protocol::GuardianApprovalReviewStatus;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::McpToolCallStatus;
+use motyga_app_server_protocol::NetworkPolicyRuleAction;
+use motyga_app_server_protocol::PatchApplyStatus;
+use motyga_app_server_protocol::PatchChangeKind;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::RequestPermissionProfile;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::ServerResponse;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::TurnSteerResponse;
+use motyga_app_server_protocol::UserInput;
+use motyga_app_server_protocol::WebSearchAction;
+use motyga_git_utils::collect_git_info;
+use motyga_git_utils::get_git_repo_root;
+use motyga_login::default_client::originator;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::Personality;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SkillScope;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::request_permissions::PermissionGrantScope as CorePermissionGrantScope;
+use motyga_protocol::request_permissions::RequestPermissionsResponse as CoreRequestPermissionsResponse;
 use sha1::Digest;
 use std::collections::HashMap;
 use std::path::Path;
@@ -157,8 +157,8 @@ pub(crate) struct AnalyticsReducer {
 }
 
 struct ConnectionState {
-    app_server_client: CodexAppServerClientMetadata,
-    runtime: CodexRuntimeMetadata,
+    app_server_client: MotygaAppServerClientMetadata,
+    runtime: MotygaRuntimeMetadata,
 }
 
 #[derive(Default)]
@@ -172,7 +172,7 @@ impl ThreadAnalyticsState {
     fn app_server_client(
         &self,
         connection_state: &ConnectionState,
-    ) -> CodexAppServerClientMetadata {
+    ) -> MotygaAppServerClientMetadata {
         let mut app_server_client = connection_state.app_server_client.clone();
         if let Some(originator) = self.originator.as_ref() {
             app_server_client.product_client_id.clone_from(originator);
@@ -211,7 +211,7 @@ impl<'a> AnalyticsDropSite<'a> {
         }
     }
 
-    fn compaction(input: &'a CodexCompactionEvent) -> Self {
+    fn compaction(input: &'a MotygaCompactionEvent) -> Self {
         Self {
             event_name: "compaction",
             thread_id: &input.thread_id,
@@ -221,7 +221,7 @@ impl<'a> AnalyticsDropSite<'a> {
         }
     }
 
-    fn goal(input: &'a CodexGoalEvent) -> Self {
+    fn goal(input: &'a MotygaGoalEvent) -> Self {
         Self {
             event_name: "goal",
             thread_id: &input.thread_id,
@@ -232,7 +232,7 @@ impl<'a> AnalyticsDropSite<'a> {
     }
 
     fn tool_item(
-        notification: &'a codex_app_server_protocol::ItemCompletedNotification,
+        notification: &'a motyga_app_server_protocol::ItemCompletedNotification,
         item_id: &'a str,
     ) -> Self {
         Self {
@@ -352,7 +352,7 @@ struct PendingTurnSteerState {
 #[derive(Clone)]
 struct CompletedTurnState {
     status: Option<TurnStatus>,
-    turn_error: Option<CodexErrorInfo>,
+    turn_error: Option<MotygaErrorInfo>,
     completed_at: u64,
     duration_ms: Option<u64>,
 }
@@ -367,7 +367,7 @@ struct TurnState {
     token_usage: Option<TokenUsage>,
     profile: Option<TurnProfile>,
     completed: Option<CompletedTurnState>,
-    codex_error: Option<TurnCodexError>,
+    motyga_error: Option<TurnMotygaError>,
     latest_diff: Option<String>,
     steer_count: usize,
     tool_counts: TurnToolCounts,
@@ -518,8 +518,8 @@ impl AnalyticsReducer {
                 CustomAnalyticsFact::TurnProfile(input) => {
                     self.ingest_turn_profile(*input, out).await;
                 }
-                CustomAnalyticsFact::TurnCodexError(input) => {
-                    self.ingest_turn_codex_error(*input);
+                CustomAnalyticsFact::TurnMotygaError(input) => {
+                    self.ingest_turn_motyga_error(*input);
                 }
                 CustomAnalyticsFact::SkillInvoked(input) => {
                     self.ingest_skill_invoked(input, out).await;
@@ -560,13 +560,13 @@ impl AnalyticsReducer {
         connection_id: u64,
         params: InitializeParams,
         product_client_id: String,
-        runtime: CodexRuntimeMetadata,
+        runtime: MotygaRuntimeMetadata,
         rpc_transport: AppServerRpcTransport,
     ) {
         self.connections.insert(
             connection_id,
             ConnectionState {
-                app_server_client: CodexAppServerClientMetadata {
+                app_server_client: MotygaAppServerClientMetadata {
                     product_client_id,
                     client_name: Some(params.client_info.name),
                     client_version: Some(params.client_info.version),
@@ -623,7 +623,7 @@ impl AnalyticsReducer {
         };
         out.push(TrackEventRequest::GuardianReview(Box::new(
             GuardianReviewEventRequest {
-                event_type: "codex_guardian_review",
+                event_type: "motyga_guardian_review",
                 event_params: GuardianReviewEventPayload {
                     session_id: thread_metadata.session_id.clone(),
                     app_server_client: thread_state.app_server_client(connection_state),
@@ -703,15 +703,15 @@ impl AnalyticsReducer {
         self.maybe_emit_turn_event(&turn_id, out).await;
     }
 
-    fn ingest_turn_codex_error(&mut self, input: TurnCodexErrorFact) {
-        let TurnCodexErrorFact {
+    fn ingest_turn_motyga_error(&mut self, input: TurnMotygaErrorFact) {
+        let TurnMotygaErrorFact {
             turn_id,
             thread_id,
             error,
         } = input;
         let turn_state = self.turns.entry(turn_id).or_default();
         turn_state.thread_id.get_or_insert(thread_id);
-        turn_state.codex_error = Some(error);
+        turn_state.motyga_error = Some(error);
     }
 
     async fn ingest_skill_invoked(
@@ -767,9 +767,9 @@ impl AnalyticsReducer {
     fn ingest_app_mentioned(&mut self, input: AppMentionedInput, out: &mut Vec<TrackEventRequest>) {
         let AppMentionedInput { tracking, mentions } = input;
         out.extend(mentions.into_iter().map(|mention| {
-            let event_params = codex_app_metadata(&tracking, mention);
-            TrackEventRequest::AppMentioned(CodexAppMentionedEventRequest {
-                event_type: "codex_app_mentioned",
+            let event_params = motyga_app_metadata(&tracking, mention);
+            TrackEventRequest::AppMentioned(MotygaAppMentionedEventRequest {
+                event_type: "motyga_app_mentioned",
                 event_params,
             })
         }));
@@ -777,26 +777,26 @@ impl AnalyticsReducer {
 
     fn ingest_app_used(&mut self, input: AppUsedInput, out: &mut Vec<TrackEventRequest>) {
         let AppUsedInput { tracking, app } = input;
-        let event_params = codex_app_metadata(&tracking, app);
-        out.push(TrackEventRequest::AppUsed(CodexAppUsedEventRequest {
-            event_type: "codex_app_used",
+        let event_params = motyga_app_metadata(&tracking, app);
+        out.push(TrackEventRequest::AppUsed(MotygaAppUsedEventRequest {
+            event_type: "motyga_app_used",
             event_params,
         }));
     }
 
     fn ingest_hook_run(&mut self, input: HookRunInput, out: &mut Vec<TrackEventRequest>) {
         let HookRunInput { tracking, hook } = input;
-        out.push(TrackEventRequest::HookRun(CodexHookRunEventRequest {
-            event_type: "codex_hook_run",
-            event_params: codex_hook_run_metadata(&tracking, hook),
+        out.push(TrackEventRequest::HookRun(MotygaHookRunEventRequest {
+            event_type: "motyga_hook_run",
+            event_params: motyga_hook_run_metadata(&tracking, hook),
         }));
     }
 
     fn ingest_plugin_used(&mut self, input: PluginUsedInput, out: &mut Vec<TrackEventRequest>) {
         let PluginUsedInput { tracking, plugin } = input;
-        out.push(TrackEventRequest::PluginUsed(CodexPluginUsedEventRequest {
-            event_type: "codex_plugin_used",
-            event_params: codex_plugin_used_metadata(&tracking, plugin),
+        out.push(TrackEventRequest::PluginUsed(MotygaPluginUsedEventRequest {
+            event_type: "motyga_plugin_used",
+            event_params: motyga_plugin_used_metadata(&tracking, plugin),
         }));
     }
 
@@ -807,9 +807,9 @@ impl AnalyticsReducer {
     ) {
         let PluginInstallRequestedInput { tracking, request } = input;
         out.push(TrackEventRequest::PluginInstallRequested(
-            CodexPluginInstallRequestedEventRequest {
-                event_type: "codex_plugin_install_requested",
-                event_params: codex_plugin_install_requested_metadata(&tracking, request),
+            MotygaPluginInstallRequestedEventRequest {
+                event_type: "motyga_plugin_install_requested",
+                event_params: motyga_plugin_install_requested_metadata(&tracking, request),
             },
         ));
     }
@@ -820,9 +820,9 @@ impl AnalyticsReducer {
         out: &mut Vec<TrackEventRequest>,
     ) {
         let PluginStateChangedInput { plugin, state } = input;
-        let event = CodexPluginEventRequest {
+        let event = MotygaPluginEventRequest {
             event_type: plugin_state_event_type(state),
-            event_params: codex_plugin_metadata(plugin),
+            event_params: motyga_plugin_metadata(plugin),
         };
         out.push(match state {
             PluginState::Installed => TrackEventRequest::PluginInstalled(event),
@@ -839,10 +839,10 @@ impl AnalyticsReducer {
     ) {
         let PluginInstallFailedInput { plugin, error_type } = input;
         out.push(TrackEventRequest::PluginInstallFailed(
-            CodexPluginInstallFailedEventRequest {
-                event_type: "codex_plugin_install_failed",
-                event_params: CodexPluginInstallFailedMetadata {
-                    plugin: codex_plugin_metadata(plugin),
+            MotygaPluginInstallFailedEventRequest {
+                event_type: "motyga_plugin_install_failed",
+                event_params: MotygaPluginInstallFailedMetadata {
+                    plugin: motyga_plugin_metadata(plugin),
                     error_type,
                 },
             },
@@ -855,9 +855,9 @@ impl AnalyticsReducer {
         out: &mut Vec<TrackEventRequest>,
     ) {
         out.push(TrackEventRequest::ExternalAgentConfigImportCompleted(
-            CodexOnboardingExternalAgentImportCompleteEventRequest {
-                event_type: "codex_onboarding_external_agent_import_complete",
-                event_params: CodexOnboardingExternalAgentImportCompleteMetadata {
+            MotygaOnboardingExternalAgentImportCompleteEventRequest {
+                event_type: "motyga_onboarding_external_agent_import_complete",
+                event_params: MotygaOnboardingExternalAgentImportCompleteMetadata {
                     import_id: input.import_id,
                     source: input.source,
                     item_type: input.item_type,
@@ -875,9 +875,9 @@ impl AnalyticsReducer {
         out: &mut Vec<TrackEventRequest>,
     ) {
         out.push(TrackEventRequest::ExternalAgentConfigImportFailure(
-            CodexOnboardingExternalAgentImportFailureEventRequest {
-                event_type: "codex_onboarding_external_agent_import_failure",
-                event_params: CodexOnboardingExternalAgentImportFailureMetadata {
+            MotygaOnboardingExternalAgentImportFailureEventRequest {
+                event_type: "motyga_onboarding_external_agent_import_failure",
+                event_params: MotygaOnboardingExternalAgentImportFailureMetadata {
                     import_id: input.import_id,
                     source: input.source,
                     item_type: input.item_type,
@@ -1316,7 +1316,7 @@ impl AnalyticsReducer {
                     turn_error: notification
                         .turn
                         .error
-                        .and_then(|error| error.codex_error_info),
+                        .and_then(|error| error.motyga_error_info),
                     completed_at: notification
                         .turn
                         .completed_at
@@ -1337,7 +1337,7 @@ impl AnalyticsReducer {
     fn emit_thread_initialized(
         &mut self,
         connection_id: u64,
-        thread: codex_app_server_protocol::Thread,
+        thread: motyga_app_server_protocol::Thread,
         model: String,
         initialization_mode: ThreadInitializationMode,
         thread_originator: Option<String>,
@@ -1367,7 +1367,7 @@ impl AnalyticsReducer {
         let app_server_client = thread_state.app_server_client(connection_state);
         out.push(TrackEventRequest::ThreadInitialized(
             ThreadInitializedEvent {
-                event_type: "codex_thread_initialized",
+                event_type: "motyga_thread_initialized",
                 event_params: ThreadInitializedEventParams {
                     thread_id,
                     session_id,
@@ -1386,16 +1386,16 @@ impl AnalyticsReducer {
         ));
     }
 
-    fn ingest_compaction(&mut self, input: CodexCompactionEvent, out: &mut Vec<TrackEventRequest>) {
+    fn ingest_compaction(&mut self, input: MotygaCompactionEvent, out: &mut Vec<TrackEventRequest>) {
         let Some((connection_state, thread_state, thread_metadata)) =
             self.thread_context_or_warn(AnalyticsDropSite::compaction(&input))
         else {
             return;
         };
         out.push(TrackEventRequest::Compaction(Box::new(
-            CodexCompactionEventRequest {
-                event_type: "codex_compaction_event",
-                event_params: codex_compaction_event_params(
+            MotygaCompactionEventRequest {
+                event_type: "motyga_compaction_event",
+                event_params: motyga_compaction_event_params(
                     input,
                     thread_metadata.session_id.clone(),
                     thread_state.app_server_client(connection_state),
@@ -1408,15 +1408,15 @@ impl AnalyticsReducer {
         )));
     }
 
-    fn ingest_goal(&mut self, input: CodexGoalEvent, out: &mut Vec<TrackEventRequest>) {
+    fn ingest_goal(&mut self, input: MotygaGoalEvent, out: &mut Vec<TrackEventRequest>) {
         let Some((connection_state, thread_state, thread_metadata)) =
             self.thread_context_or_warn(AnalyticsDropSite::goal(&input))
         else {
             return;
         };
-        out.push(TrackEventRequest::Goal(Box::new(CodexGoalEventRequest {
-            event_type: "codex_goal_event",
-            event_params: codex_goal_event_params(
+        out.push(TrackEventRequest::Goal(Box::new(MotygaGoalEventRequest {
+            event_type: "motyga_goal_event",
+            event_params: motyga_goal_event_params(
                 input,
                 thread_metadata.session_id.clone(),
                 thread_state.app_server_client(connection_state),
@@ -1430,7 +1430,7 @@ impl AnalyticsReducer {
 
     fn ingest_guardian_review_completed(
         &mut self,
-        notification: codex_app_server_protocol::ItemGuardianApprovalReviewCompletedNotification,
+        notification: motyga_app_server_protocol::ItemGuardianApprovalReviewCompletedNotification,
         out: &mut Vec<TrackEventRequest>,
     ) {
         let Some((status, resolution)) = guardian_review_result(notification.review.status) else {
@@ -1516,9 +1516,9 @@ impl AnalyticsReducer {
             warn_missing_analytics_context(&drop_site, MissingAnalyticsContext::ThreadMetadata);
             return;
         };
-        out.push(TrackEventRequest::TurnSteer(CodexTurnSteerEventRequest {
-            event_type: "codex_turn_steer_event",
-            event_params: CodexTurnSteerEventParams {
+        out.push(TrackEventRequest::TurnSteer(MotygaTurnSteerEventRequest {
+            event_type: "motyga_turn_steer_event",
+            event_params: MotygaTurnSteerEventParams {
                 thread_id: pending_request.thread_id,
                 session_id: thread_metadata.session_id.clone(),
                 expected_turn_id: Some(pending_request.expected_turn_id),
@@ -1559,9 +1559,9 @@ impl AnalyticsReducer {
         else {
             return;
         };
-        out.push(TrackEventRequest::ReviewEvent(CodexReviewEventRequest {
-            event_type: "codex_review_event",
-            event_params: CodexReviewEventParams {
+        out.push(TrackEventRequest::ReviewEvent(MotygaReviewEventRequest {
+            event_type: "motyga_review_event",
+            event_params: MotygaReviewEventParams {
                 thread_id: pending_review.thread_id,
                 turn_id: pending_review.turn_id,
                 item_id: pending_review.item_id,
@@ -1643,9 +1643,9 @@ impl AnalyticsReducer {
             warn_missing_analytics_context(&drop_site, MissingAnalyticsContext::ThreadMetadata);
             return;
         };
-        let turn_event = TrackEventRequest::TurnEvent(Box::new(CodexTurnEventRequest {
-            event_type: "codex_turn_event",
-            event_params: codex_turn_event_params(
+        let turn_event = TrackEventRequest::TurnEvent(Box::new(MotygaTurnEventRequest {
+            event_type: "motyga_turn_event",
+            event_params: motyga_turn_event_params(
                 thread_state.app_server_client(connection_state),
                 connection_state.runtime.clone(),
                 turn_id.to_string(),
@@ -1818,9 +1818,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::CommandExecution(
-                CodexCommandExecutionEventRequest {
-                    event_type: "codex_command_execution_event",
-                    event_params: CodexCommandExecutionEventParams {
+                MotygaCommandExecutionEventRequest {
+                    event_type: "motyga_command_execution_event",
+                    event_params: MotygaCommandExecutionEventParams {
                         base,
                         command_execution_source: *source,
                         exit_code: *exit_code,
@@ -1859,9 +1859,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                     review_summary,
                 },
             );
-            Some(TrackEventRequest::FileChange(CodexFileChangeEventRequest {
-                event_type: "codex_file_change_event",
-                event_params: CodexFileChangeEventParams {
+            Some(TrackEventRequest::FileChange(MotygaFileChangeEventRequest {
+                event_type: "motyga_file_change_event",
+                event_params: MotygaFileChangeEventParams {
                     base,
                     file_change_count: usize_to_u64(changes.len()),
                     file_add_count: counts.add,
@@ -1902,9 +1902,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::McpToolCall(
-                CodexMcpToolCallEventRequest {
-                    event_type: "codex_mcp_tool_call_event",
-                    event_params: CodexMcpToolCallEventParams {
+                MotygaMcpToolCallEventRequest {
+                    event_type: "motyga_mcp_tool_call_event",
+                    event_params: MotygaMcpToolCallEventParams {
                         base,
                         mcp_server_name: server.clone(),
                         mcp_tool_name: tool.clone(),
@@ -1947,9 +1947,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::DynamicToolCall(
-                CodexDynamicToolCallEventRequest {
-                    event_type: "codex_dynamic_tool_call_event",
-                    event_params: CodexDynamicToolCallEventParams {
+                MotygaDynamicToolCallEventRequest {
+                    event_type: "motyga_dynamic_tool_call_event",
+                    event_params: MotygaDynamicToolCallEventParams {
                         base,
                         dynamic_tool_name: tool.clone(),
                         success: *success,
@@ -1992,9 +1992,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::CollabAgentToolCall(
-                CodexCollabAgentToolCallEventRequest {
-                    event_type: "codex_collab_agent_tool_call_event",
-                    event_params: CodexCollabAgentToolCallEventParams {
+                MotygaCollabAgentToolCallEventRequest {
+                    event_type: "motyga_collab_agent_tool_call_event",
+                    event_params: MotygaCollabAgentToolCallEventParams {
                         base,
                         sender_thread_id: sender_thread_id.clone(),
                         receiver_thread_count: usize_to_u64(receiver_thread_ids.len()),
@@ -2047,9 +2047,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                     review_summary,
                 },
             );
-            Some(TrackEventRequest::WebSearch(CodexWebSearchEventRequest {
-                event_type: "codex_web_search_event",
-                event_params: CodexWebSearchEventParams {
+            Some(TrackEventRequest::WebSearch(MotygaWebSearchEventRequest {
+                event_type: "motyga_web_search_event",
+                event_params: MotygaWebSearchEventParams {
                     base,
                     web_search_action: action.as_ref().map(web_search_action_kind),
                     query_present: !query.trim().is_empty(),
@@ -2085,9 +2085,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::ImageGeneration(
-                CodexImageGenerationEventRequest {
-                    event_type: "codex_image_generation_event",
-                    event_params: CodexImageGenerationEventParams {
+                MotygaImageGenerationEventRequest {
+                    event_type: "motyga_image_generation_event",
+                    event_params: MotygaImageGenerationEventParams {
                         base,
                         revised_prompt_present: revised_prompt.is_some(),
                         saved_path_present: saved_path.is_some(),
@@ -2147,10 +2147,10 @@ fn tool_item_base(
     tool_name: String,
     outcome: ToolItemOutcome,
     context: ToolItemContext<'_>,
-) -> CodexToolItemEventBase {
+) -> MotygaToolItemEventBase {
     let thread_metadata = context.thread_metadata;
     let review_summary = context.review_summary.cloned().unwrap_or_default();
-    CodexToolItemEventBase {
+    MotygaToolItemEventBase {
         thread_id: thread_id.to_string(),
         turn_id: turn_id.to_string(),
         item_id,
@@ -2485,7 +2485,7 @@ struct FileChangeCounts {
     move_: u64,
 }
 
-fn file_change_counts(changes: &[codex_app_server_protocol::FileUpdateChange]) -> FileChangeCounts {
+fn file_change_counts(changes: &[motyga_app_server_protocol::FileUpdateChange]) -> FileChangeCounts {
     let mut counts = FileChangeCounts::default();
     for change in changes {
         match &change.kind {
@@ -2558,10 +2558,10 @@ fn accepted_line_event_input(
 
     Some((
         AcceptedLineFingerprintEventInput {
-            event_type: "codex.accepted_line_fingerprints",
+            event_type: "motyga.accepted_line_fingerprints",
             turn_id: turn_id.to_string(),
             thread_id,
-            product_surface: Some("codex".to_string()),
+            product_surface: Some("motyga".to_string()),
             model_slug: Some(resolved_config.model.clone()),
             completed_at: now_unix_seconds(),
             repo_hash: None,
@@ -2573,13 +2573,13 @@ fn accepted_line_event_input(
     ))
 }
 
-fn codex_turn_event_params(
-    app_server_client: CodexAppServerClientMetadata,
-    runtime: CodexRuntimeMetadata,
+fn motyga_turn_event_params(
+    app_server_client: MotygaAppServerClientMetadata,
+    runtime: MotygaRuntimeMetadata,
     turn_id: String,
     turn_state: &TurnState,
     thread_metadata: &ThreadMetadataState,
-) -> CodexTurnEventParams {
+) -> MotygaTurnEventParams {
     let (
         Some(thread_id),
         Some(num_input_images),
@@ -2629,8 +2629,8 @@ fn codex_turn_event_params(
         sampling_retry_count,
     } = profile;
     let token_usage = turn_state.token_usage.clone();
-    let codex_error = turn_state.codex_error.as_ref();
-    CodexTurnEventParams {
+    let motyga_error = turn_state.motyga_error.as_ref();
+    MotygaTurnEventParams {
         thread_id,
         session_id: thread_metadata.session_id.clone(),
         turn_id,
@@ -2663,8 +2663,8 @@ fn codex_turn_event_params(
         is_first_turn,
         status: completed.status,
         turn_error: completed.turn_error,
-        codex_error_kind: codex_error.map(|error| error.kind),
-        codex_error_http_status_code: codex_error.and_then(|error| error.http_status_code),
+        motyga_error_kind: motyga_error.map(|error| error.kind),
+        motyga_error_http_status_code: motyga_error.and_then(|error| error.http_status_code),
         steer_count: Some(turn_state.steer_count),
         total_tool_call_count: Some(turn_state.tool_counts.total),
         shell_command_count: Some(turn_state.tool_counts.shell_command),
@@ -2747,12 +2747,12 @@ fn personality_mode(personality: Option<Personality>) -> Option<String> {
     }
 }
 
-fn analytics_turn_status(status: codex_app_server_protocol::TurnStatus) -> Option<TurnStatus> {
+fn analytics_turn_status(status: motyga_app_server_protocol::TurnStatus) -> Option<TurnStatus> {
     match status {
-        codex_app_server_protocol::TurnStatus::Completed => Some(TurnStatus::Completed),
-        codex_app_server_protocol::TurnStatus::Failed => Some(TurnStatus::Failed),
-        codex_app_server_protocol::TurnStatus::Interrupted => Some(TurnStatus::Interrupted),
-        codex_app_server_protocol::TurnStatus::InProgress => None,
+        motyga_app_server_protocol::TurnStatus::Completed => Some(TurnStatus::Completed),
+        motyga_app_server_protocol::TurnStatus::Failed => Some(TurnStatus::Failed),
+        motyga_app_server_protocol::TurnStatus::Interrupted => Some(TurnStatus::Interrupted),
+        motyga_app_server_protocol::TurnStatus::InProgress => None,
     }
 }
 
@@ -2817,9 +2817,9 @@ pub(crate) fn normalize_path_for_skill_id(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::models::SandboxEnforcement;
-    use codex_protocol::permissions::FileSystemSandboxPolicy;
-    use codex_protocol::permissions::NetworkSandboxPolicy;
+    use motyga_protocol::models::SandboxEnforcement;
+    use motyga_protocol::permissions::FileSystemSandboxPolicy;
+    use motyga_protocol::permissions::NetworkSandboxPolicy;
 
     #[test]
     fn managed_full_disk_with_restricted_network_reports_external_sandbox() {

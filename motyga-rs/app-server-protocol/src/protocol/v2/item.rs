@@ -10,34 +10,34 @@ use super::UserInput;
 use super::shared::v2_enum_from_core;
 use crate::protocol::item_builders::command_actions_for_path_uri;
 use crate::protocol::item_builders::convert_patch_changes;
-use codex_experimental_api_macros::ExperimentalApi;
-use codex_protocol::approvals::GuardianAssessmentAction as CoreGuardianAssessmentAction;
-use codex_protocol::approvals::GuardianAssessmentDecisionSource as CoreGuardianAssessmentDecisionSource;
-use codex_protocol::approvals::GuardianCommandSource as CoreGuardianCommandSource;
-use codex_protocol::items::AgentMessageContent as CoreAgentMessageContent;
-use codex_protocol::items::CollabAgentTool as CoreCollabAgentTool;
-use codex_protocol::items::CollabAgentToolCallStatus as CoreCollabAgentToolCallStatus;
-use codex_protocol::items::CommandExecutionStatus as CoreCommandExecutionStatus;
-use codex_protocol::items::DynamicToolCallStatus as CoreDynamicToolCallStatus;
-use codex_protocol::items::McpToolCallStatus as CoreMcpToolCallStatus;
-use codex_protocol::items::TurnItem as CoreTurnItem;
-use codex_protocol::memory_citation::MemoryCitation as CoreMemoryCitation;
-use codex_protocol::memory_citation::MemoryCitationEntry as CoreMemoryCitationEntry;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::parse_command::ParsedCommand as CoreParsedCommand;
-use codex_protocol::protocol::AgentStatus as CoreAgentStatus;
-use codex_protocol::protocol::ExecCommandSource as CoreExecCommandSource;
-use codex_protocol::protocol::ExecCommandStatus as CoreExecCommandStatus;
-use codex_protocol::protocol::GuardianRiskLevel as CoreGuardianRiskLevel;
-use codex_protocol::protocol::GuardianUserAuthorization as CoreGuardianUserAuthorization;
-use codex_protocol::protocol::PatchApplyStatus as CorePatchApplyStatus;
-use codex_protocol::protocol::ReviewDecision as CoreReviewDecision;
-use codex_protocol::protocol::SubAgentActivityKind as CoreSubAgentActivityKind;
-use codex_shell_command::parse_command::shlex_join;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::LegacyAppPathString;
+use motyga_experimental_api_macros::ExperimentalApi;
+use motyga_protocol::approvals::GuardianAssessmentAction as CoreGuardianAssessmentAction;
+use motyga_protocol::approvals::GuardianAssessmentDecisionSource as CoreGuardianAssessmentDecisionSource;
+use motyga_protocol::approvals::GuardianCommandSource as CoreGuardianCommandSource;
+use motyga_protocol::items::AgentMessageContent as CoreAgentMessageContent;
+use motyga_protocol::items::CollabAgentTool as CoreCollabAgentTool;
+use motyga_protocol::items::CollabAgentToolCallStatus as CoreCollabAgentToolCallStatus;
+use motyga_protocol::items::CommandExecutionStatus as CoreCommandExecutionStatus;
+use motyga_protocol::items::DynamicToolCallStatus as CoreDynamicToolCallStatus;
+use motyga_protocol::items::McpToolCallStatus as CoreMcpToolCallStatus;
+use motyga_protocol::items::TurnItem as CoreTurnItem;
+use motyga_protocol::memory_citation::MemoryCitation as CoreMemoryCitation;
+use motyga_protocol::memory_citation::MemoryCitationEntry as CoreMemoryCitationEntry;
+use motyga_protocol::models::MessagePhase;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::parse_command::ParsedCommand as CoreParsedCommand;
+use motyga_protocol::protocol::AgentStatus as CoreAgentStatus;
+use motyga_protocol::protocol::ExecCommandSource as CoreExecCommandSource;
+use motyga_protocol::protocol::ExecCommandStatus as CoreExecCommandStatus;
+use motyga_protocol::protocol::GuardianRiskLevel as CoreGuardianRiskLevel;
+use motyga_protocol::protocol::GuardianUserAuthorization as CoreGuardianUserAuthorization;
+use motyga_protocol::protocol::PatchApplyStatus as CorePatchApplyStatus;
+use motyga_protocol::protocol::ReviewDecision as CoreReviewDecision;
+use motyga_protocol::protocol::SubAgentActivityKind as CoreSubAgentActivityKind;
+use motyga_shell_command::parse_command::shlex_join;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::LegacyAppPathString;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -803,19 +803,19 @@ pub enum WebSearchAction {
     Other,
 }
 
-impl From<codex_protocol::models::WebSearchAction> for WebSearchAction {
-    fn from(value: codex_protocol::models::WebSearchAction) -> Self {
+impl From<motyga_protocol::models::WebSearchAction> for WebSearchAction {
+    fn from(value: motyga_protocol::models::WebSearchAction) -> Self {
         match value {
-            codex_protocol::models::WebSearchAction::Search { query, queries } => {
+            motyga_protocol::models::WebSearchAction::Search { query, queries } => {
                 WebSearchAction::Search { query, queries }
             }
-            codex_protocol::models::WebSearchAction::OpenPage { url } => {
+            motyga_protocol::models::WebSearchAction::OpenPage { url } => {
                 WebSearchAction::OpenPage { url }
             }
-            codex_protocol::models::WebSearchAction::FindInPage { url, pattern } => {
+            motyga_protocol::models::WebSearchAction::FindInPage { url, pattern } => {
                 WebSearchAction::FindInPage { url, pattern }
             }
-            codex_protocol::models::WebSearchAction::Other => WebSearchAction::Other,
+            motyga_protocol::models::WebSearchAction::Other => WebSearchAction::Other,
         }
     }
 }
@@ -980,8 +980,8 @@ impl From<CoreTurnItem> for ThreadItem {
     }
 }
 
-impl From<codex_protocol::items::HookPromptFragment> for HookPromptFragment {
-    fn from(value: codex_protocol::items::HookPromptFragment) -> Self {
+impl From<motyga_protocol::items::HookPromptFragment> for HookPromptFragment {
+    fn from(value: motyga_protocol::items::HookPromptFragment) -> Self {
         Self {
             text: value.text,
             hook_run_id: value.hook_run_id,
@@ -1569,15 +1569,15 @@ pub enum DynamicToolCallOutputContentItem {
     InputImage { image_url: String },
 }
 
-impl From<codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem>
+impl From<motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem>
     for DynamicToolCallOutputContentItem
 {
-    fn from(item: codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem) -> Self {
+    fn from(item: motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem) -> Self {
         match item {
-            codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputText { text } => {
+            motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputText { text } => {
                 Self::InputText { text }
             }
-            codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputImage {
+            motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem::InputImage {
                 image_url,
             } => Self::InputImage { image_url },
         }
@@ -1585,7 +1585,7 @@ impl From<codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem>
 }
 
 impl From<DynamicToolCallOutputContentItem>
-    for codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem
+    for motyga_protocol::dynamic_tools::DynamicToolCallOutputContentItem
 {
     fn from(item: DynamicToolCallOutputContentItem) -> Self {
         match item {

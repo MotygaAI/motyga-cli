@@ -17,45 +17,45 @@ use crate::tools::handlers::multi_agents_v2::SendMessageHandler as SendMessageHa
 use crate::tools::handlers::multi_agents_v2::SpawnAgentHandler as SpawnAgentHandlerV2;
 use crate::tools::handlers::multi_agents_v2::WaitAgentHandler as WaitAgentHandlerV2;
 use crate::turn_diff_tracker::TurnDiffTracker;
-use codex_extension_api::empty_extension_registry;
-use codex_features::Feature;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_model_provider::create_model_provider;
-use codex_model_provider_info::built_in_model_providers;
-use codex_protocol::AgentPath;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::config_types::ShellEnvironmentPolicy;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::models::SandboxEnforcement;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::AgentStatus;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::FileSystemAccessMode;
-use codex_protocol::protocol::FileSystemPath;
-use codex_protocol::protocol::FileSystemSandboxEntry;
-use codex_protocol::protocol::FileSystemSandboxPolicy;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::InterAgentCommunication;
-use codex_protocol::protocol::NetworkSandboxPolicy;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::protocol::TurnAbortedEvent;
-use codex_protocol::protocol::TurnCompleteEvent;
-use codex_protocol::user_input::UserInput;
-use codex_state::DirectionalThreadSpawnEdgeStatus;
+use motyga_extension_api::empty_extension_registry;
+use motyga_features::Feature;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_model_provider::create_model_provider;
+use motyga_model_provider_info::built_in_model_providers;
+use motyga_protocol::AgentPath;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::config_types::ShellEnvironmentPolicy;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::FunctionCallOutputBody;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::models::SandboxEnforcement;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::AgentStatus;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::FileSystemAccessMode;
+use motyga_protocol::protocol::FileSystemPath;
+use motyga_protocol::protocol::FileSystemSandboxEntry;
+use motyga_protocol::protocol::FileSystemSandboxPolicy;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::InterAgentCommunication;
+use motyga_protocol::protocol::NetworkSandboxPolicy;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_protocol::protocol::TurnAbortedEvent;
+use motyga_protocol::protocol::TurnCompleteEvent;
+use motyga_protocol::user_input::UserInput;
+use motyga_state::DirectionalThreadSpawnEdgeStatus;
 use core_test_support::TempDirExt;
 use pretty_assertions::assert_eq;
 use serde::Deserialize;
@@ -82,7 +82,7 @@ fn invocation(
         cancellation_token: CancellationToken::new(),
         tracker: Arc::new(Mutex::new(TurnDiffTracker::default())),
         call_id: "call-1".to_string(),
-        tool_name: codex_tools::ToolName::plain(tool_name),
+        tool_name: motyga_tools::ToolName::plain(tool_name),
         source: crate::tools::context::ToolCallSource::Direct,
         payload,
     }
@@ -100,19 +100,19 @@ fn parse_agent_id(id: &str) -> ThreadId {
 
 fn thread_manager() -> ThreadManager {
     ThreadManager::with_models_provider_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         built_in_model_providers(/* openai_base_url */ /*openai_base_url*/ None)["openai"].clone(),
     )
 }
 
 async fn install_role_with_model_override(turn: &mut TurnContext) -> String {
     let role_name = "fork-context-role".to_string();
-    tokio::fs::create_dir_all(&turn.config.codex_home)
+    tokio::fs::create_dir_all(&turn.config.motyga_home)
         .await
         .expect("motyga home should be created");
     let role_config_path = turn
         .config
-        .codex_home
+        .motyga_home
         .as_path()
         .join("fork-context-role.toml");
     tokio::fs::write(
@@ -160,7 +160,7 @@ where
             let content = match output.body {
                 FunctionCallOutputBody::Text(text) => text,
                 FunctionCallOutputBody::ContentItems(items) => {
-                    codex_protocol::models::function_call_output_content_items_to_text(&items)
+                    motyga_protocol::models::function_call_output_content_items_to_text(&items)
                         .unwrap_or_default()
                 }
             };
@@ -397,7 +397,7 @@ async fn multi_agent_v2_spawn_fork_turns_all_rejects_agent_type_override() {
         .expect("test config should allow feature update");
     let turn = TurnContext {
         config: Arc::new(config),
-        multi_agent_version: codex_protocol::protocol::MultiAgentVersion::V2,
+        multi_agent_version: motyga_protocol::protocol::MultiAgentVersion::V2,
         ..turn
     };
 
@@ -656,12 +656,12 @@ async fn spawn_agent_service_tier_inheritance_preserves_supported_or_configured_
 
     {
         let (mut session, mut turn) = make_session_and_context().await;
-        tokio::fs::create_dir_all(&turn.config.codex_home)
+        tokio::fs::create_dir_all(&turn.config.motyga_home)
             .await
             .expect("motyga home should be created");
         let role_config_path = turn
             .config
-            .codex_home
+            .motyga_home
             .as_path()
             .join("service-tier-role.toml");
         tokio::fs::write(
@@ -732,10 +732,10 @@ async fn spawn_agent_role_service_tier_falls_back_to_supported_parent_tier() {
     let mut turn = turn
         .with_model("gpt-5.4".to_string(), &session.services.models_manager)
         .await;
-    tokio::fs::create_dir_all(&turn.config.codex_home)
+    tokio::fs::create_dir_all(&turn.config.motyga_home)
         .await
         .expect("motyga home should be created");
-    let role_config_path = turn.config.codex_home.as_path().join("tiered-role.toml");
+    let role_config_path = turn.config.motyga_home.as_path().join("tiered-role.toml");
     tokio::fs::write(
         &role_config_path,
         r#"model = "gpt-5.4"
@@ -796,10 +796,10 @@ service_tier = "turbo"
 #[tokio::test]
 async fn spawn_agent_role_service_tier_does_not_hide_invalid_spawn_request() {
     let (session, mut turn) = make_session_and_context().await;
-    tokio::fs::create_dir_all(&turn.config.codex_home)
+    tokio::fs::create_dir_all(&turn.config.motyga_home)
         .await
         .expect("motyga home should be created");
-    let role_config_path = turn.config.codex_home.as_path().join("tiered-role.toml");
+    let role_config_path = turn.config.motyga_home.as_path().join("tiered-role.toml");
     tokio::fs::write(
         &role_config_path,
         r#"model = "gpt-5.4"
@@ -975,7 +975,7 @@ async fn multi_agent_v2_spawn_partial_fork_turns_allows_agent_type_override() {
         .expect("test config should allow feature update");
     let turn = TurnContext {
         config: Arc::new(config),
-        multi_agent_version: codex_protocol::protocol::MultiAgentVersion::V2,
+        multi_agent_version: motyga_protocol::protocol::MultiAgentVersion::V2,
         ..turn
     };
 
@@ -1549,9 +1549,9 @@ async fn multi_agent_v2_list_agents_returns_completed_status_without_encrypted_s
         .get_thread(agent_id)
         .await
         .expect("child thread should exist");
-    let child_turn = child_thread.codex.session.new_default_turn().await;
+    let child_turn = child_thread.motyga.session.new_default_turn().await;
     child_thread
-        .codex
+        .motyga
         .session
         .send_event(
             child_turn.as_ref(),
@@ -1968,7 +1968,7 @@ async fn multi_agent_v2_followup_task_completion_notifies_parent_on_every_turn()
         .expect("root thread should start");
     // Production spawn_agent calls happen after the parent turn has resolved
     // and stored its runtime; mirror that before using the synthetic handler.
-    root.thread.codex.session.new_default_turn().await;
+    root.thread.motyga.session.new_default_turn().await;
     session.services.agent_control = manager.agent_control();
     session.thread_id = root.thread_id;
     let session = Arc::new(session);
@@ -1998,9 +1998,9 @@ async fn multi_agent_v2_followup_task_completion_notifies_parent_on_every_turn()
         .expect("worker thread should exist");
     let worker_path = AgentPath::try_from("/root/worker").expect("worker path");
 
-    let first_turn = thread.codex.session.new_default_turn().await;
+    let first_turn = thread.motyga.session.new_default_turn().await;
     thread
-        .codex
+        .motyga
         .session
         .send_event(
             first_turn.as_ref(),
@@ -2039,9 +2039,9 @@ async fn multi_agent_v2_followup_task_completion_notifies_parent_on_every_turn()
             )
     }));
 
-    let second_turn = thread.codex.session.new_default_turn().await;
+    let second_turn = thread.motyga.session.new_default_turn().await;
     thread
-        .codex
+        .motyga
         .session
         .send_event(
             second_turn.as_ref(),
@@ -2201,9 +2201,9 @@ async fn multi_agent_v2_interrupted_turn_does_not_notify_parent() {
         .await
         .expect("worker thread should exist");
 
-    let aborted_turn = thread.codex.session.new_default_turn().await;
+    let aborted_turn = thread.motyga.session.new_default_turn().await;
     thread
-        .codex
+        .motyga
         .session
         .send_event(
             aborted_turn.as_ref(),
@@ -2395,7 +2395,7 @@ async fn spawn_agent_reapplies_runtime_sandbox_after_role_config() {
         .get_thread(agent_id)
         .await
         .expect("spawned agent thread should exist");
-    let child_turn = child_thread.codex.session.new_default_turn().await;
+    let child_turn = child_thread.motyga.session.new_default_turn().await;
     assert_eq!(
         child_turn.file_system_sandbox_policy(),
         expected_file_system_sandbox_policy
@@ -2815,7 +2815,7 @@ async fn resume_agent_restores_closed_agent_and_accepts_send_input() {
                 phase: None,
                 internal_chat_message_metadata_passthrough: None,
             })]),
-            AuthManager::from_auth_for_testing(CodexAuth::from_api_key("dummy")),
+            AuthManager::from_auth_for_testing(MotygaAuth::from_api_key("dummy")),
             /*parent_trace*/ None,
             /*supports_openai_form_elicitation*/ false,
         )
@@ -3842,7 +3842,7 @@ async fn multi_agent_v2_interrupt_agent_accepts_task_name_target() {
         .get_thread(agent_id)
         .await
         .expect("worker thread should be resident");
-    let worker_session = worker_thread.codex.session.clone();
+    let worker_session = worker_thread.motyga.session.clone();
     SpawnAgentHandlerV2::default()
         .handle(invocation(
             worker_session.clone(),
@@ -3924,10 +3924,10 @@ async fn multi_agent_v2_interrupt_agent_accepts_unloaded_task_name_target() {
         .await
         .expect("sqlite state db should initialize");
     let manager = ThreadManager::with_models_provider_home_and_state_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         Some(state_db.clone()),
     );
     let root = manager
@@ -4252,9 +4252,9 @@ async fn tool_handlers_cascade_close_and_resume_and_keep_explicitly_closed_subtr
     let state_db = init_state_db(&config).await;
     let manager = ThreadManager::new(
         &config,
-        AuthManager::from_auth_for_testing(CodexAuth::from_api_key("dummy")),
+        AuthManager::from_auth_for_testing(MotygaAuth::from_api_key("dummy")),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -4270,7 +4270,7 @@ async fn tool_handlers_cascade_close_and_resume_and_keep_explicitly_closed_subtr
         .await
         .expect("parent thread should start");
     let parent_thread_id = parent.thread_id;
-    let parent_session = parent.thread.codex.session.clone();
+    let parent_session = parent.thread.motyga.session.clone();
 
     let child_turn = parent_session.new_default_turn().await;
     let child_spawn_output = SpawnAgentHandler::default()
@@ -4297,7 +4297,7 @@ async fn tool_handlers_cascade_close_and_resume_and_keep_explicitly_closed_subtr
         .get_thread(child_thread_id)
         .await
         .expect("child thread should exist");
-    let child_session = child_thread.codex.session.clone();
+    let child_session = child_thread.motyga.session.clone();
     let grandchild_spawn_output = SpawnAgentHandler::default()
         .handle(invocation(
             child_session.clone(),
@@ -4401,7 +4401,7 @@ async fn tool_handlers_cascade_close_and_resume_and_keep_explicitly_closed_subtr
         .start_thread(config.clone())
         .await
         .expect("operator thread should start");
-    let operator_session = operator.thread.codex.session.clone();
+    let operator_session = operator.thread.motyga.session.clone();
     let _ = manager
         .agent_control()
         .shutdown_live_agent(parent_thread_id)
@@ -4415,7 +4415,7 @@ async fn tool_handlers_cascade_close_and_resume_and_keep_explicitly_closed_subtr
     let parent_resume_output = ResumeAgentHandler
         .handle(invocation(
             operator_session,
-            operator.thread.codex.session.new_default_turn().await,
+            operator.thread.motyga.session.new_default_turn().await,
             "resume_agent",
             function_payload(json!({"id": parent_thread_id.to_string()})),
         ))
@@ -4485,7 +4485,7 @@ async fn build_agent_spawn_config_uses_turn_context_values() {
         use_profile: true,
         ..ShellEnvironmentPolicy::default()
     };
-    config.codex_linux_sandbox_exe = Some(PathBuf::from("/bin/echo"));
+    config.motyga_linux_sandbox_exe = Some(PathBuf::from("/bin/echo"));
     turn.config = Arc::new(config);
     let temp_dir = tempfile::tempdir().expect("temp dir");
     #[allow(deprecated)]

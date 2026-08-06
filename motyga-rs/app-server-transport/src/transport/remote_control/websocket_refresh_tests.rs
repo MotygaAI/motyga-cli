@@ -13,8 +13,8 @@ use super::tests::test_current_enrollment;
 use super::*;
 use crate::transport::remote_control::protocol::normalize_remote_control_url;
 use crate::transport::remote_control::tests::remote_control_handle_with_current_enrollment;
-use codex_app_server_protocol::RemoteControlPairingStartParams;
-use codex_app_server_protocol::RemoteControlPairingStartResponse;
+use motyga_app_server_protocol::RemoteControlPairingStartParams;
+use motyga_app_server_protocol::RemoteControlPairingStartResponse;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use tokio::net::TcpListener;
@@ -76,8 +76,8 @@ async fn proactive_refresh_failure_uses_valid_token_for_websocket_connect() {
             .await;
         accept_test_websocket(&listener).await
     });
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let auth_manager = remote_control_auth_manager();
     let mut enrollment = remote_control_enrollment(Some(TEST_REMOTE_CONTROL_SERVER_TOKEN));
     enrollment.expires_at = Some(time::OffsetDateTime::now_utc() + time::Duration::minutes(4));
@@ -132,8 +132,8 @@ async fn proactive_refresh_connection_failure_uses_valid_token_for_websocket_con
         drop(stream);
         accept_test_websocket(&listener).await
     });
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let auth_manager = remote_control_auth_manager();
     let mut enrollment = remote_control_enrollment(Some(TEST_REMOTE_CONTROL_SERVER_TOKEN));
     enrollment.expires_at = Some(time::OffsetDateTime::now_utc() + time::Duration::minutes(4));
@@ -195,8 +195,8 @@ async fn websocket_retry_after_throttles_pairing_refresh() {
         .await;
         first_websocket
     });
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let auth_manager = remote_control_auth_manager();
     let mut remote_handle =
         remote_control_handle_with_current_enrollment(&remote_control_url, auth_manager.clone());
@@ -290,8 +290,8 @@ async fn pairing_http_date_retry_after_throttles_websocket_refresh() {
         .await;
         accept_test_websocket(&listener).await
     });
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let auth_manager = remote_control_auth_manager();
     let mut remote_handle =
         remote_control_handle_with_current_enrollment(&remote_control_url, auth_manager.clone());
@@ -367,8 +367,8 @@ async fn assert_refresh_failure_blocks_websocket(
         .await;
         assert_no_connection_until_connect_finishes(&listener, connects_done_rx).await;
     });
-    let codex_home = TempDir::new().expect("temp dir should create");
-    let state_db = remote_control_state_runtime(&codex_home).await;
+    let motyga_home = TempDir::new().expect("temp dir should create");
+    let state_db = remote_control_state_runtime(&motyga_home).await;
     let auth_manager = remote_control_auth_manager();
     let mut enrollment = remote_control_enrollment(Some(TEST_REMOTE_CONTROL_SERVER_TOKEN));
     enrollment.expires_at = Some(time::OffsetDateTime::now_utc() + expires_in);

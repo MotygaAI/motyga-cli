@@ -2,15 +2,15 @@
 
 This directory owns reusable memory crates and the memory pipeline documentation.
 
-Runtime orchestration for Phase 1 and Phase 2 still lives in `codex-core` under
+Runtime orchestration for Phase 1 and Phase 2 still lives in `motyga-core` under
 `motyga-rs/core/src/memories/`.
 
 ## Crates
 
-- `motyga-rs/memories/read` (`codex-memories-read`) owns the read path:
+- `motyga-rs/memories/read` (`motyga-memories-read`) owns the read path:
   memory developer-instruction injection, memory citation parsing, and
   read-usage telemetry classification.
-- `motyga-rs/memories/write` (`codex-memories-write`) owns the write path:
+- `motyga-rs/memories/write` (`motyga-memories-write`) owns the write path:
   Phase 1 and Phase 2 prompt rendering, filesystem artifact helpers,
   workspace diff helpers, and extension resource pruning.
 
@@ -23,7 +23,7 @@ Memory prompt templates live with the crate that uses them:
   - `write/templates/memories/stage_one_system.md`
   - `write/templates/memories/stage_one_input.md`
   - `write/templates/memories/consolidation.md`
-- In `codex`, edit those undated template files in place.
+- In `motyga`, edit those undated template files in place.
 - The dated snapshot-copy workflow is used in the separate `openai/project/agent_memory/write` harness repo, not here.
 
 ## When it runs
@@ -97,7 +97,7 @@ What it does:
   - `raw_memories.md` (merged raw memories, stable ascending thread-id order)
   - `rollout_summaries/` (one summary file per selected rollout)
 - keeps the memories root itself as a git-baseline directory, initialized under
-  `~/.motyga/memories/.git` by `codex-git-utils`
+  `~/.motyga/memories/.git` by `motyga-git-utils`
 - prunes stale rollout summaries that are no longer selected
 - prunes memory extension resource files older than the extension retention
   window, so cleanup appears in the workspace diff

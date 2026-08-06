@@ -767,7 +767,7 @@ mod tests {
             .expect("system clock should be after unix epoch")
             .as_nanos();
         let temp_dir = std::env::temp_dir().join(format!(
-            "codex-safe-command-pwsh-test-{}-{unique}",
+            "motyga-safe-command-pwsh-test-{}-{unique}",
             std::process::id()
         ));
         fs::create_dir(&temp_dir).expect("create temp dir for fake pwsh");

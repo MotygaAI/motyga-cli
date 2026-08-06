@@ -41,17 +41,17 @@ use crate::unified_exec::NoopSpawnLifecycle;
 use crate::unified_exec::UnifiedExecError;
 use crate::unified_exec::UnifiedExecProcess;
 use crate::unified_exec::UnifiedExecProcessManager;
-use codex_network_proxy::ManagedNetworkSandboxContext;
-use codex_network_proxy::NetworkProxy;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::SandboxErr;
-use codex_protocol::models::AdditionalPermissionProfile;
-use codex_protocol::protocol::ReviewDecision;
-use codex_sandboxing::SandboxCommand;
-use codex_sandboxing::SandboxablePreference;
-use codex_shell_command::powershell::prefix_powershell_script_with_utf8;
-use codex_tools::UnifiedExecShellMode;
-use codex_utils_path_uri::PathUri;
+use motyga_network_proxy::ManagedNetworkSandboxContext;
+use motyga_network_proxy::NetworkProxy;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::SandboxErr;
+use motyga_protocol::models::AdditionalPermissionProfile;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_sandboxing::SandboxCommand;
+use motyga_sandboxing::SandboxablePreference;
+use motyga_shell_command::powershell::prefix_powershell_script_with_utf8;
+use motyga_tools::UnifiedExecShellMode;
+use motyga_utils_path_uri::PathUri;
 use futures::future::BoxFuture;
 use std::collections::HashMap;
 use std::io;
@@ -333,7 +333,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
                         Some(&req.turn_environment.environment_id),
                     )
                     .map_err(|err| {
-                        ToolError::Codex(CodexErr::Io(io::Error::other(format!(
+                        ToolError::Motyga(MotygaErr::Io(io::Error::other(format!(
                             "failed to prepare network proxy for environment `{}`: {err}",
                             req.turn_environment.environment_id
                         ))))
@@ -401,7 +401,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
                 ToolError::Rejected(_) => {
                     ToolError::Rejected("missing command line for PTY".to_string())
                 }
-                error @ ToolError::Codex(_) => error,
+                error @ ToolError::Motyga(_) => error,
             })?;
             let options = unified_exec_options(attempt.network_denial_cancellation_token.clone());
             let mut exec_env = attempt
@@ -411,7 +411,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
                     managed_network,
                     Some(&req.turn_environment.environment_id),
                 )
-                .map_err(ToolError::Codex)?;
+                .map_err(ToolError::Motyga)?;
             exec_env.exec_server_env_config = req.exec_server_env_config.clone();
             match zsh_fork_backend::maybe_prepare_unified_exec(
                 req,
@@ -441,7 +441,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
                         .await
                         .map_err(|err| match err {
                             UnifiedExecError::SandboxDenied { output, .. } => {
-                                ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+                                ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied {
                                     output: Box::new(output),
                                     network_policy_decision: None,
                                 }))
@@ -467,7 +467,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
             ToolError::Rejected(_) => {
                 ToolError::Rejected("missing command line for PTY".to_string())
             }
-            error @ ToolError::Codex(_) => error,
+            error @ ToolError::Motyga(_) => error,
         })?;
         let options = unified_exec_options(attempt.network_denial_cancellation_token.clone());
         self.manager
@@ -492,11 +492,11 @@ mod tests {
     use super::*;
     use crate::exec::DEFAULT_EXEC_COMMAND_TIMEOUT_MS;
     use crate::tools::sandboxing::ToolRuntime;
-    use codex_exec_server::Environment;
-    use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-    use codex_tools::ZshForkConfig;
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use codex_utils_path_uri::PathUri;
+    use motyga_exec_server::Environment;
+    use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+    use motyga_tools::ZshForkConfig;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_path_uri::PathUri;
     use std::sync::Arc;
     use std::time::Duration;
     use tempfile::tempdir;

@@ -4,7 +4,7 @@ use crate::agents_md::LoadedAgentsMd;
 use crate::environment_selection::TurnEnvironmentSnapshot;
 use crate::session::McpRuntimeSnapshot;
 use crate::session::turn_context::TurnContext;
-use codex_exec_server::ResolvedSelectedCapabilityRoot;
+use motyga_exec_server::ResolvedSelectedCapabilityRoot;
 
 /// Request-scoped state that may change between model sampling requests.
 #[derive(Debug)]

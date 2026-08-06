@@ -1,1 +1,1 @@
-pub use codex_prompts::PermissionsInstructions;
+pub use motyga_prompts::PermissionsInstructions;

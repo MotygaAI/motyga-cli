@@ -29,7 +29,7 @@ pub(crate) struct McpToolCallCell {
     invocation: McpInvocation,
     start_time: Instant,
     duration: Option<Duration>,
-    result: Option<Result<codex_protocol::mcp::CallToolResult, String>>,
+    result: Option<Result<motyga_protocol::mcp::CallToolResult, String>>,
     animations_enabled: bool,
 }
 
@@ -63,7 +63,7 @@ impl McpToolCallCell {
     pub(crate) fn complete(
         &mut self,
         duration: Duration,
-        result: Result<codex_protocol::mcp::CallToolResult, String>,
+        result: Result<motyga_protocol::mcp::CallToolResult, String>,
     ) -> Option<Box<dyn HistoryCell>> {
         let image_cell = try_new_completed_mcp_tool_call_with_image_output(&result)
             .map(|cell| Box::new(cell) as Box<dyn HistoryCell>);
@@ -165,7 +165,7 @@ impl HistoryCell for McpToolCallCell {
 
         if let Some(result) = &self.result {
             match result {
-                Ok(codex_protocol::mcp::CallToolResult { content, .. }) => {
+                Ok(motyga_protocol::mcp::CallToolResult { content, .. }) => {
                     if !content.is_empty() {
                         for block in content {
                             let text = Self::render_content_block(block, detail_wrap_width);
@@ -225,7 +225,7 @@ impl HistoryCell for McpToolCallCell {
 
         if let Some(result) = &self.result {
             match result {
-                Ok(codex_protocol::mcp::CallToolResult { content, .. }) => {
+                Ok(motyga_protocol::mcp::CallToolResult { content, .. }) => {
                     for block in content {
                         let text = Self::render_content_block(block, RAW_TOOL_OUTPUT_WIDTH);
                         lines.extend(raw_lines_from_source(&text));
@@ -261,12 +261,12 @@ pub(crate) fn new_active_mcp_tool_call(
 ///
 /// Manual testing tip:
 /// - Run the rmcp stdio test server (`motyga-rs/rmcp-client/src/bin/test_stdio_server.rs`) and
-///   register it as an MCP server via `codex mcp add`.
+///   register it as an MCP server via `motyga mcp add`.
 /// - Use its `image_scenario` tool with cases like `text_then_image`,
 ///   `invalid_base64_then_image`, or `invalid_image_bytes_then_image` to ensure this path triggers
 ///   even when the first block is not a valid image.
 fn try_new_completed_mcp_tool_call_with_image_output(
-    result: &Result<codex_protocol::mcp::CallToolResult, String>,
+    result: &Result<motyga_protocol::mcp::CallToolResult, String>,
 ) -> Option<CompletedMcpToolCallWithImageOutput> {
     let image = result
         .as_ref()
@@ -339,7 +339,7 @@ pub(crate) fn empty_mcp_output() -> PlainHistoryCell {
 /// Render MCP tools grouped by connection using the fully-qualified tool names.
 pub(crate) fn new_mcp_tools_output(
     config: &Config,
-    tools: HashMap<String, codex_protocol::mcp::Tool>,
+    tools: HashMap<String, motyga_protocol::mcp::Tool>,
     resources: HashMap<String, Vec<Resource>>,
     resource_templates: HashMap<String, Vec<ResourceTemplate>>,
     auth_statuses: &HashMap<String, McpAuthStatus>,
@@ -543,10 +543,10 @@ pub(crate) fn new_mcp_tools_output_from_statuses(
 
         lines.push(header.into());
         let auth_status = match status.auth_status {
-            codex_app_server_protocol::McpAuthStatus::Unsupported => McpAuthStatus::Unsupported,
-            codex_app_server_protocol::McpAuthStatus::NotLoggedIn => McpAuthStatus::NotLoggedIn,
-            codex_app_server_protocol::McpAuthStatus::BearerToken => McpAuthStatus::BearerToken,
-            codex_app_server_protocol::McpAuthStatus::OAuth => McpAuthStatus::OAuth,
+            motyga_app_server_protocol::McpAuthStatus::Unsupported => McpAuthStatus::Unsupported,
+            motyga_app_server_protocol::McpAuthStatus::NotLoggedIn => McpAuthStatus::NotLoggedIn,
+            motyga_app_server_protocol::McpAuthStatus::BearerToken => McpAuthStatus::BearerToken,
+            motyga_app_server_protocol::McpAuthStatus::OAuth => McpAuthStatus::OAuth,
         };
         lines.push(
             vec![

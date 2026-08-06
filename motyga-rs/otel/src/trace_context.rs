@@ -6,7 +6,7 @@ use std::str::FromStr;
 use std::sync::OnceLock;
 use std::sync::RwLock;
 
-use codex_protocol::protocol::W3cTraceContext;
+use motyga_protocol::protocol::W3cTraceContext;
 use opentelemetry::Context;
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry::trace::TraceContextExt;
@@ -336,7 +336,7 @@ mod tests {
     use super::context_from_trace_headers;
     use super::context_from_w3c_trace_context;
     use super::current_span_trace_id;
-    use codex_protocol::protocol::W3cTraceContext;
+    use motyga_protocol::protocol::W3cTraceContext;
     use opentelemetry::trace::SpanId;
     use opentelemetry::trace::TraceContextExt;
     use opentelemetry::trace::TraceId;
@@ -388,7 +388,7 @@ mod tests {
     #[test]
     fn current_span_trace_id_returns_hex_trace_id() {
         let provider = SdkTracerProvider::builder().build();
-        let tracer = provider.tracer("codex-otel-tests");
+        let tracer = provider.tracer("motyga-otel-tests");
         let subscriber =
             tracing_subscriber::registry().with(tracing_opentelemetry::layer().with_tracer(tracer));
         let _guard = subscriber.set_default();

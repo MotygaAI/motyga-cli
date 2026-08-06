@@ -1,16 +1,16 @@
-use codex_protocol::ThreadId;
+use motyga_protocol::ThreadId;
 #[cfg(test)]
-use codex_protocol::config_types::EnvironmentVariablePattern;
-use codex_protocol::config_types::ShellEnvironmentPolicy;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::shell_environment;
+use motyga_protocol::config_types::EnvironmentVariablePattern;
+use motyga_protocol::config_types::ShellEnvironmentPolicy;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::shell_environment;
 use std::collections::HashMap;
 
-pub use codex_protocol::shell_environment::CODEX_THREAD_ID_ENV_VAR;
+pub use motyga_protocol::shell_environment::MOTYGA_THREAD_ID_ENV_VAR;
 
 /// Informational name of the active permission profile. Child processes can
 /// overwrite this value, so it must not be treated as proof of enforcement.
-pub const CODEX_PERMISSION_PROFILE_ENV_VAR: &str = "CODEX_PERMISSION_PROFILE";
+pub const MOTYGA_PERMISSION_PROFILE_ENV_VAR: &str = "MOTYGA_PERMISSION_PROFILE";
 
 /// Construct an environment map based on the rules in the specified policy. The
 /// resulting map can be passed directly to `Command::envs()` after calling
@@ -20,7 +20,7 @@ pub const CODEX_PERMISSION_PROFILE_ENV_VAR: &str = "CODEX_PERMISSION_PROFILE";
 /// The derivation follows the algorithm documented in the struct-level comment
 /// for [`ShellEnvironmentPolicy`].
 ///
-/// `CODEX_THREAD_ID` is injected when a thread id is provided, even when
+/// `MOTYGA_THREAD_ID` is injected when a thread id is provided, even when
 /// `include_only` is set.
 pub fn create_env(
     policy: &ShellEnvironmentPolicy,
@@ -39,13 +39,13 @@ pub(crate) fn inject_permission_profile_env(
     active_permission_profile: Option<&ActivePermissionProfile>,
 ) {
     if cfg!(windows) {
-        env.retain(|key, _| !key.eq_ignore_ascii_case(CODEX_PERMISSION_PROFILE_ENV_VAR));
+        env.retain(|key, _| !key.eq_ignore_ascii_case(MOTYGA_PERMISSION_PROFILE_ENV_VAR));
     } else {
-        env.remove(CODEX_PERMISSION_PROFILE_ENV_VAR);
+        env.remove(MOTYGA_PERMISSION_PROFILE_ENV_VAR);
     }
     if let Some(active_permission_profile) = active_permission_profile {
         env.insert(
-            CODEX_PERMISSION_PROFILE_ENV_VAR.to_string(),
+            MOTYGA_PERMISSION_PROFILE_ENV_VAR.to_string(),
             active_permission_profile.id.clone(),
         );
     }

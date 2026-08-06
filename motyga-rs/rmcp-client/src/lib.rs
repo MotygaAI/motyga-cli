@@ -21,7 +21,7 @@ pub use auth_status::determine_streamable_http_auth_status_with_http_client;
 pub use auth_status::discover_streamable_http_oauth;
 pub use auth_status::discover_streamable_http_oauth_with_http_client;
 pub use auth_status::supports_oauth_login;
-pub use codex_protocol::protocol::McpAuthStatus;
+pub use motyga_protocol::protocol::McpAuthStatus;
 pub use in_process_transport::InProcessTransportFactory;
 pub use oauth::StoredOAuthTokens;
 pub use oauth::WrappedOAuthTokenResponse;

@@ -4,18 +4,18 @@ use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use codex_api::ApiError;
-use codex_api::Provider;
-use codex_api::SharedAuthProvider;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_models_manager::manager::OpenAiModelsManager;
-use codex_models_manager::manager::SharedModelsManager;
-use codex_models_manager::manager::StaticModelsManager;
-use codex_protocol::account::ProviderAccount;
-use codex_protocol::error::CodexErr;
-use codex_protocol::openai_models::ModelsResponse;
+use motyga_api::ApiError;
+use motyga_api::Provider;
+use motyga_api::SharedAuthProvider;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_models_manager::manager::OpenAiModelsManager;
+use motyga_models_manager::manager::SharedModelsManager;
+use motyga_models_manager::manager::StaticModelsManager;
+use motyga_protocol::account::ProviderAccount;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::openai_models::ModelsResponse;
 
 use crate::amazon_bedrock::AmazonBedrockModelProvider;
 use crate::auth::ProviderAuthScope;
@@ -25,7 +25,7 @@ use crate::auth::resolve_provider_auth;
 use crate::auth::resolve_provider_auth_for_scope;
 use crate::models_endpoint::OpenAiModelsEndpoint;
 
-/// Optional provider-backed features that Codex may expose at runtime.
+/// Optional provider-backed features that Motyga may expose at runtime.
 ///
 /// These capabilities are a provider-owned upper bound. Callers can disable
 /// more functionality through normal config, but should not expose a feature
@@ -83,7 +83,7 @@ pub type ProviderAccountResult = std::result::Result<ProviderAccountState, Provi
 
 /// Default model used for automatic approval review when a provider does not
 /// require a backend-specific model ID.
-pub const DEFAULT_APPROVAL_REVIEW_PREFERRED_MODEL: &str = "codex-auto-review";
+pub const DEFAULT_APPROVAL_REVIEW_PREFERRED_MODEL: &str = "motyga-auto-review";
 
 /// Default model used for memory extraction when a provider does not require a
 /// backend-specific model ID.
@@ -137,52 +137,52 @@ pub trait ModelProvider: fmt::Debug + Send + Sync {
     ///
     /// TODO(celia-oai): Make auth manager access internal to this crate so callers
     /// resolve provider-specific auth only through `ModelProvider`. We first need
-    /// to think through whether Codex should have a unified provider-specific auth
+    /// to think through whether Motyga should have a unified provider-specific auth
     /// manager throughout the codebase; that is a larger refactor than this change.
     fn auth_manager(&self) -> Option<Arc<AuthManager>>;
 
     /// Returns the current provider-scoped auth value, if one is configured.
-    fn auth(&self) -> ModelProviderFuture<'_, Option<CodexAuth>>;
+    fn auth(&self) -> ModelProviderFuture<'_, Option<MotygaAuth>>;
 
     /// Returns the current app-visible account state for this provider.
     fn account_state(&self) -> ProviderAccountResult;
 
     /// Maps an API client error into the provider's user-facing error representation.
-    fn map_api_error(&self, error: ApiError) -> CodexErr {
-        codex_api::map_api_error(error)
+    fn map_api_error(&self, error: ApiError) -> MotygaErr {
+        motyga_api::map_api_error(error)
     }
 
     /// Returns provider configuration adapted for the API client.
-    fn api_provider(&self) -> ModelProviderFuture<'_, codex_protocol::error::Result<Provider>> {
+    fn api_provider(&self) -> ModelProviderFuture<'_, motyga_protocol::error::Result<Provider>> {
         Box::pin(async move {
             let auth = self.auth().await;
             self.info()
-                .to_api_provider(auth.as_ref().map(CodexAuth::auth_mode))
+                .to_api_provider(auth.as_ref().map(MotygaAuth::auth_mode))
         })
     }
 
     /// Returns the provider base URL that will be used at request time.
     fn runtime_base_url(
         &self,
-    ) -> ModelProviderFuture<'_, codex_protocol::error::Result<Option<String>>> {
+    ) -> ModelProviderFuture<'_, motyga_protocol::error::Result<Option<String>>> {
         Box::pin(async { Ok(self.info().base_url.clone()) })
     }
 
     /// Returns the auth provider used to attach request credentials.
     fn api_auth(
         &self,
-    ) -> ModelProviderFuture<'_, codex_protocol::error::Result<SharedAuthProvider>> {
+    ) -> ModelProviderFuture<'_, motyga_protocol::error::Result<SharedAuthProvider>> {
         Box::pin(async move {
             let auth = self.auth().await;
             resolve_provider_auth(auth.as_ref(), self.info())
         })
     }
 
-    /// Returns request credentials, optionally scoped to a Codex session task.
+    /// Returns request credentials, optionally scoped to a Motyga session task.
     fn api_auth_for_scope(
         &self,
         scope: ProviderAuthScope,
-    ) -> ModelProviderFuture<'_, codex_protocol::error::Result<ResolvedProviderAuth>> {
+    ) -> ModelProviderFuture<'_, motyga_protocol::error::Result<ResolvedProviderAuth>> {
         Box::pin(async move {
             if !provider_uses_first_party_auth_path(self.info()) {
                 return self.api_auth().await.map(ResolvedProviderAuth::new);
@@ -196,7 +196,7 @@ pub trait ModelProvider: fmt::Debug + Send + Sync {
     /// Creates the model manager implementation appropriate for this provider.
     fn models_manager(
         &self,
-        codex_home: PathBuf,
+        motyga_home: PathBuf,
         config_model_catalog: Option<ModelsResponse>,
     ) -> SharedModelsManager;
 }
@@ -259,7 +259,7 @@ impl ModelProvider for ConfiguredModelProvider {
             .is_some_and(|auth| auth.is_chatgpt_auth())
     }
 
-    fn auth(&self) -> ModelProviderFuture<'_, Option<CodexAuth>> {
+    fn auth(&self) -> ModelProviderFuture<'_, Option<MotygaAuth>> {
         Box::pin(async move {
             match self.auth_manager.as_ref() {
                 Some(auth_manager) => auth_manager.auth().await,
@@ -280,14 +280,14 @@ impl ModelProvider for ConfiguredModelProvider {
                     Some(auth)
                 })
                 .map(|auth| match &auth {
-                    CodexAuth::ApiKey(_) => Ok(ProviderAccount::ApiKey),
-                    CodexAuth::BedrockApiKey(_) => {
+                    MotygaAuth::ApiKey(_) => Ok(ProviderAccount::ApiKey),
+                    MotygaAuth::BedrockApiKey(_) => {
                         Err(ProviderAccountError::UnsupportedBedrockApiKeyAuth)
                     }
-                    CodexAuth::Chatgpt(_)
-                    | CodexAuth::ChatgptAuthTokens(_)
-                    | CodexAuth::AgentIdentity(_)
-                    | CodexAuth::PersonalAccessToken(_) => {
+                    MotygaAuth::Chatgpt(_)
+                    | MotygaAuth::ChatgptAuthTokens(_)
+                    | MotygaAuth::AgentIdentity(_)
+                    | MotygaAuth::PersonalAccessToken(_) => {
                         let email = auth.get_account_email();
                         let plan_type = auth.account_plan_type();
 
@@ -309,7 +309,7 @@ impl ModelProvider for ConfiguredModelProvider {
 
     fn models_manager(
         &self,
-        codex_home: PathBuf,
+        motyga_home: PathBuf,
         config_model_catalog: Option<ModelsResponse>,
     ) -> SharedModelsManager {
         match config_model_catalog {
@@ -323,7 +323,7 @@ impl ModelProvider for ConfiguredModelProvider {
                     self.auth_manager.clone(),
                 ));
                 Arc::new(OpenAiModelsManager::new(
-                    codex_home,
+                    motyga_home,
                     endpoint,
                     self.auth_manager.clone(),
                 ))
@@ -336,17 +336,17 @@ impl ModelProvider for ConfiguredModelProvider {
 mod tests {
     use std::num::NonZeroU64;
 
-    use codex_login::auth::AgentIdentityAuthPolicy;
-    use codex_login::auth::BedrockApiKeyAuth;
-    use codex_model_provider_info::ModelProviderAwsAuthInfo;
-    use codex_model_provider_info::WireApi;
-    use codex_model_provider_info::create_oss_provider_with_base_url;
-    use codex_models_manager::manager::RefreshStrategy;
-    use codex_protocol::account::PlanType;
-    use codex_protocol::config_types::ModelProviderAuthInfo;
-    use codex_protocol::openai_models::ModelInfo;
-    use codex_protocol::openai_models::ModelsResponse;
-    use codex_protocol::protocol::SessionSource;
+    use motyga_login::auth::AgentIdentityAuthPolicy;
+    use motyga_login::auth::BedrockApiKeyAuth;
+    use motyga_model_provider_info::ModelProviderAwsAuthInfo;
+    use motyga_model_provider_info::WireApi;
+    use motyga_model_provider_info::create_oss_provider_with_base_url;
+    use motyga_models_manager::manager::RefreshStrategy;
+    use motyga_protocol::account::PlanType;
+    use motyga_protocol::config_types::ModelProviderAuthInfo;
+    use motyga_protocol::openai_models::ModelInfo;
+    use motyga_protocol::openai_models::ModelsResponse;
+    use motyga_protocol::protocol::SessionSource;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use wiremock::Mock;
@@ -376,8 +376,8 @@ mod tests {
         }
     }
 
-    fn test_codex_home() -> std::path::PathBuf {
-        std::env::temp_dir().join(format!("codex-model-provider-test-{}", std::process::id()))
+    fn test_motyga_home() -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("motyga-model-provider-test-{}", std::process::id()))
     }
 
     fn provider_for(base_url: String) -> ModelProviderInfo {
@@ -429,8 +429,8 @@ mod tests {
         .expect("valid model")
     }
 
-    fn bedrock_api_key_auth() -> CodexAuth {
-        CodexAuth::BedrockApiKey(BedrockApiKeyAuth {
+    fn bedrock_api_key_auth() -> MotygaAuth {
+        MotygaAuth::BedrockApiKey(BedrockApiKeyAuth {
             api_key: "bedrock-api-key-test".to_string(),
             region: "us-east-1".to_string(),
         })
@@ -512,10 +512,10 @@ mod tests {
     fn create_model_provider_does_not_use_openai_auth_manager_for_amazon_bedrock_provider() {
         let provider = create_model_provider(
             ModelProviderInfo::create_amazon_bedrock_provider(Some(ModelProviderAwsAuthInfo {
-                profile: Some("codex-bedrock".to_string()),
+                profile: Some("motyga-bedrock".to_string()),
                 region: None,
             })),
-            Some(AuthManager::from_auth_for_testing(CodexAuth::from_api_key(
+            Some(AuthManager::from_auth_for_testing(MotygaAuth::from_api_key(
                 "openai-api-key",
             ))),
         );
@@ -554,7 +554,7 @@ mod tests {
     fn openai_provider_returns_api_key_account_state() {
         let provider = create_model_provider(
             ModelProviderInfo::create_openai_provider(/*base_url*/ None),
-            Some(AuthManager::from_auth_for_testing(CodexAuth::from_api_key(
+            Some(AuthManager::from_auth_for_testing(MotygaAuth::from_api_key(
                 "openai-api-key",
             ))),
         );
@@ -573,7 +573,7 @@ mod tests {
         let provider = create_model_provider(
             ModelProviderInfo::create_openai_provider(/*base_url*/ None),
             Some(AuthManager::from_auth_for_testing(
-                CodexAuth::create_dummy_chatgpt_auth_for_testing(),
+                MotygaAuth::create_dummy_chatgpt_auth_for_testing(),
             )),
         );
 
@@ -636,7 +636,7 @@ mod tests {
             Ok(ProviderAccountState {
                 account: Some(ProviderAccount::AmazonBedrock {
                     credential_source:
-                        codex_protocol::account::AmazonBedrockCredentialSource::AwsManaged,
+                        motyga_protocol::account::AmazonBedrockCredentialSource::AwsManaged,
                 }),
                 requires_openai_auth: false,
             })
@@ -650,7 +650,7 @@ mod tests {
             /*auth_manager*/ None,
         );
         let manager =
-            provider.models_manager(test_codex_home(), /*config_model_catalog*/ None);
+            provider.models_manager(test_motyga_home(), /*config_model_catalog*/ None);
 
         let catalog = manager.raw_model_catalog(RefreshStrategy::Online).await;
         let model_ids = catalog
@@ -682,7 +682,7 @@ mod tests {
 
     #[tokio::test]
     async fn configured_bedrock_catalog_only_allows_default_service_tier() {
-        let configured_model = codex_models_manager::bundled_models_response()
+        let configured_model = motyga_models_manager::bundled_models_response()
             .expect("bundled models should parse")
             .models
             .into_iter()
@@ -696,7 +696,7 @@ mod tests {
             /*auth_manager*/ None,
         );
         let manager = provider.models_manager(
-            test_codex_home(),
+            test_motyga_home(),
             Some(ModelsResponse {
                 models: vec![configured_model],
             }),
@@ -738,12 +738,12 @@ mod tests {
         let provider = create_model_provider(
             provider_info,
             Some(AuthManager::from_auth_for_testing(
-                CodexAuth::create_dummy_chatgpt_auth_for_testing(),
+                MotygaAuth::create_dummy_chatgpt_auth_for_testing(),
             )),
         );
 
         let manager =
-            provider.models_manager(test_codex_home(), /*config_model_catalog*/ None);
+            provider.models_manager(test_motyga_home(), /*config_model_catalog*/ None);
         let catalog = manager.raw_model_catalog(RefreshStrategy::Online).await;
 
         assert!(

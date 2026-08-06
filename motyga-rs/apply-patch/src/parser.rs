@@ -26,9 +26,9 @@
 use crate::ApplyPatchArgs;
 use crate::streaming_parser::StreamingPatchParser;
 #[cfg(test)]
-use codex_utils_absolute_path::test_support::PathBufExt;
-use codex_utils_path_uri::PathUri;
-use codex_utils_path_uri::PathUriParseError;
+use motyga_utils_absolute_path::test_support::PathBufExt;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_path_uri::PathUriParseError;
 use std::path::Path;
 use std::path::PathBuf;
 

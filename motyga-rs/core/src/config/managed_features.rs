@@ -1,20 +1,20 @@
 use std::collections::BTreeMap;
 
-use codex_config::Constrained;
-use codex_config::ConstrainedWithSource;
-use codex_config::ConstraintError;
-use codex_config::ConstraintResult;
-use codex_config::FeatureRequirementsToml;
-use codex_config::RequirementSource;
-use codex_config::Sourced;
+use motyga_config::Constrained;
+use motyga_config::ConstrainedWithSource;
+use motyga_config::ConstraintError;
+use motyga_config::ConstraintResult;
+use motyga_config::FeatureRequirementsToml;
+use motyga_config::RequirementSource;
+use motyga_config::Sourced;
 
-use codex_config::config_toml::ConfigToml;
-use codex_features::Feature;
-use codex_features::FeatureConfigSource;
-use codex_features::FeatureOverrides;
-use codex_features::Features;
-use codex_features::canonical_feature_for_key;
-use codex_features::feature_for_key;
+use motyga_config::config_toml::ConfigToml;
+use motyga_features::Feature;
+use motyga_features::FeatureConfigSource;
+use motyga_features::FeatureOverrides;
+use motyga_features::Features;
+use motyga_features::canonical_feature_for_key;
+use motyga_features::feature_for_key;
 
 /// Wrapper around [`Features`] which enforces constraints defined in
 /// `FeatureRequirementsToml` and provides normalization to ensure constraints

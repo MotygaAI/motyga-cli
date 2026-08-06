@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 
-use codex_protocol::capabilities::CapabilityRootLocation;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_protocol::capabilities::CapabilityRootLocation;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
 
 use crate::Environment;
 use crate::EnvironmentManager;

@@ -1,18 +1,18 @@
 [package]
-name = "codex-lmstudio"
+name = "motyga-lmstudio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_lmstudio"
+name = "motyga_lmstudio"
 path = "src/lib.rs"
 doctest = false
 
 
 [dependencies]
-codex-core = { path = "../core" }
-codex-model-provider-info = { path = "../model-provider-info" }
+motyga-core = { path = "../core" }
+motyga-model-provider-info = { path = "../model-provider-info" }
 reqwest = { version = "0.12", features = ["json", "stream"] }
 serde_json = "1"
 tokio = { version = "1", features = ["rt"] }

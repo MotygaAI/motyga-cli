@@ -4,24 +4,24 @@ use crate::session::turn_context::TurnContext;
 use crate::tools::context::SharedTurnDiffTracker;
 use crate::tools::sandboxing::ToolError;
 use crate::turn_timing::now_unix_timestamp_ms;
-use codex_apply_patch::AppliedPatchDelta;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::SandboxErr;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::items::FileChangeItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::parse_command::ParsedCommand;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExecCommandBeginEvent;
-use codex_protocol::protocol::ExecCommandEndEvent;
-use codex_protocol::protocol::ExecCommandSource;
-use codex_protocol::protocol::ExecCommandStatus;
-use codex_protocol::protocol::FileChange;
-use codex_protocol::protocol::PatchApplyStatus;
-use codex_protocol::protocol::TurnDiffEvent;
-use codex_shell_command::parse_command::parse_command;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_apply_patch::AppliedPatchDelta;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::SandboxErr;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::items::FileChangeItem;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::parse_command::ParsedCommand;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExecCommandBeginEvent;
+use motyga_protocol::protocol::ExecCommandEndEvent;
+use motyga_protocol::protocol::ExecCommandSource;
+use motyga_protocol::protocol::ExecCommandStatus;
+use motyga_protocol::protocol::FileChange;
+use motyga_protocol::protocol::PatchApplyStatus;
+use motyga_protocol::protocol::TurnDiffEvent;
+use motyga_shell_command::parse_command::parse_command;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -371,13 +371,13 @@ impl ToolEmitter {
                 };
                 (event, result)
             }
-            Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Timeout { output }))) => {
+            Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Timeout { output }))) => {
                 let response = self.format_exec_output_for_model(&output, ctx);
                 let event = ToolEventStage::Failure(ToolEventFailure::Output(*output));
                 let result = Err(FunctionCallError::RespondToModel(response));
                 (event, result)
             }
-            Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied { output, .. }))) => {
+            Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied { output, .. }))) => {
                 let response = self.format_exec_output_for_model(&output, ctx);
                 // apply_patch can be denied after it has already committed a
                 // known prefix. Reuse the output-bearing path so the visible
@@ -392,7 +392,7 @@ impl ToolEmitter {
                 let result = Err(FunctionCallError::RespondToModel(response));
                 (event, result)
             }
-            Err(ToolError::Codex(err)) => {
+            Err(ToolError::Motyga(err)) => {
                 let message = format!("execution error: {err:?}");
                 let event = ToolEventStage::Failure(ToolEventFailure::Message(message.clone()));
                 let result = Err(FunctionCallError::RespondToModel(message));
@@ -626,13 +626,13 @@ mod tests {
     use super::*;
     use crate::session::tests::make_session_and_context_with_dynamic_tools_and_rx;
     use crate::turn_diff_tracker::TurnDiffTracker;
-    use codex_exec_server::LOCAL_FS;
-    use codex_protocol::error::CodexErr;
-    use codex_protocol::error::SandboxErr;
-    use codex_protocol::exec_output::ExecToolCallOutput;
-    use codex_protocol::items::TurnItem;
-    use codex_protocol::protocol::PatchApplyStatus;
-    use codex_utils_path_uri::PathUri;
+    use motyga_exec_server::LOCAL_FS;
+    use motyga_protocol::error::MotygaErr;
+    use motyga_protocol::error::SandboxErr;
+    use motyga_protocol::exec_output::ExecToolCallOutput;
+    use motyga_protocol::items::TurnItem;
+    use motyga_protocol::protocol::PatchApplyStatus;
+    use motyga_utils_path_uri::PathUri;
     use std::sync::Arc;
     use tempfile::tempdir;
     use tokio::sync::Mutex;
@@ -648,7 +648,7 @@ mod tests {
         let cwd = PathUri::from_host_native_path(dir.path()).expect("absolute cwd");
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
-        let delta = codex_apply_patch::apply_patch(
+        let delta = motyga_apply_patch::apply_patch(
             "*** Begin Patch\n*** Add File: out/dest.txt\n+after\n*** End Patch",
             &cwd,
             &mut stdout,
@@ -705,7 +705,7 @@ mod tests {
             ..Default::default()
         };
         assert_failed_apply_patch_tracks_committed_delta(
-            Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+            Err(ToolError::Motyga(MotygaErr::Sandbox(SandboxErr::Denied {
                 output: Box::new(output),
                 network_policy_decision: None,
             }))),
@@ -737,7 +737,7 @@ mod tests {
         ] {
             let mut stdout = Vec::new();
             let mut stderr = Vec::new();
-            let delta = codex_apply_patch::apply_patch(
+            let delta = motyga_apply_patch::apply_patch(
                 patch,
                 &cwd,
                 &mut stdout,
@@ -785,7 +785,7 @@ mod tests {
         let cwd = PathUri::from_host_native_path(dir.path()).expect("absolute cwd");
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
-        let delta = codex_apply_patch::apply_patch(
+        let delta = motyga_apply_patch::apply_patch(
             "*** Begin Patch\n*** Add File: a.txt\n+one\n*** End Patch",
             &cwd,
             &mut stdout,

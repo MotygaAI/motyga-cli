@@ -28,10 +28,10 @@ class Args(argparse.Namespace):
 
 
 def _request(url: str) -> bytes:
-    return github_request(url, "codex-skill-list")
+    return github_request(url, "motyga-skill-list")
 
 
-def _codex_home() -> str:
+def _motyga_home() -> str:
     return (
         os.environ.get("MOTYGA_HOME")
         or os.environ.get("MOTYGA_HOME")
@@ -40,7 +40,7 @@ def _codex_home() -> str:
 
 
 def _installed_skills() -> set[str]:
-    root = os.path.join(_codex_home(), "skills")
+    root = os.path.join(_motyga_home(), "skills")
     if not os.path.isdir(root):
         return set()
     entries = set()

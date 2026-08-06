@@ -311,7 +311,7 @@ mod tests {
                 "Found two issues.\n\n",
                 r#"::code-comment{title="Fix body= parsing" body="Keep role=\"tab\", ::git-stage{cwd=/tmp}, file=, and \n literal." file="/repo/src/app.ts" start=10 end=12 priority="P2"}"#,
                 "\n\n",
-                r#":::code-comment{title="[P1] Clamp the range" body="The line range should match the App." file="codex/src/range.ts" start=8 end=2 priority=3}"#,
+                r#":::code-comment{title="[P1] Clamp the range" body="The line range should match the App." file="motyga/src/range.ts" start=8 end=2 priority=3}"#,
             ),
             Path::new("/repo"),
         );

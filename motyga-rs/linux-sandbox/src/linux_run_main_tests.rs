@@ -5,13 +5,13 @@ use crate::linux_run_main::install_bwrap_signal_forwarders;
 #[cfg(test)]
 use crate::linux_run_main::wait_for_bwrap_child;
 #[cfg(test)]
-use codex_protocol::models::PermissionProfile;
+use motyga_protocol::models::PermissionProfile;
 #[cfg(test)]
-use codex_protocol::protocol::FileSystemSandboxPolicy;
+use motyga_protocol::protocol::FileSystemSandboxPolicy;
 #[cfg(test)]
-use codex_protocol::protocol::NetworkSandboxPolicy;
+use motyga_protocol::protocol::NetworkSandboxPolicy;
 #[cfg(test)]
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 #[cfg(test)]
 use pretty_assertions::assert_eq;
 
@@ -66,7 +66,7 @@ fn inserts_bwrap_argv0_before_command_separator() {
     apply_inner_command_argv0_for_launcher(
         &mut argv,
         /*supports_argv0*/ true,
-        "/tmp/codex-arg0-session/codex-linux-sandbox".to_string(),
+        "/tmp/motyga-arg0-session/motyga-linux-sandbox".to_string(),
     );
     assert_eq!(
         argv,
@@ -84,7 +84,7 @@ fn inserts_bwrap_argv0_before_command_separator() {
             "--proc".to_string(),
             "/proc".to_string(),
             "--argv0".to_string(),
-            "codex-linux-sandbox".to_string(),
+            "motyga-linux-sandbox".to_string(),
             "--".to_string(),
             "/bin/true".to_string(),
         ]
@@ -110,13 +110,13 @@ fn rewrites_inner_command_path_when_bwrap_lacks_argv0() {
     apply_inner_command_argv0_for_launcher(
         &mut argv,
         /*supports_argv0*/ false,
-        "/tmp/codex-arg0-session/codex-linux-sandbox".to_string(),
+        "/tmp/motyga-arg0-session/motyga-linux-sandbox".to_string(),
     );
 
     assert!(!argv.iter().any(|arg| arg == "--argv0"));
     assert!(
         argv.windows(2)
-            .any(|window| { window == ["--", "/tmp/codex-arg0-session/codex-linux-sandbox"] })
+            .any(|window| { window == ["--", "/tmp/motyga-arg0-session/motyga-linux-sandbox"] })
     );
 }
 
@@ -134,7 +134,7 @@ fn rewrites_bwrap_helper_command_not_nested_user_command_when_current_exe_appear
         "/tmp/cwd".to_string(),
         "--".to_string(),
         nested_current_exe.clone(),
-        "--codex-run-as-apply-patch".to_string(),
+        "--motyga-run-as-apply-patch".to_string(),
         "patch".to_string(),
     ];
 
@@ -154,7 +154,7 @@ fn rewrites_bwrap_helper_command_not_nested_user_command_when_current_exe_appear
             "/tmp/cwd".to_string(),
             "--".to_string(),
             nested_current_exe,
-            "--codex-run-as-apply-patch".to_string(),
+            "--motyga-run-as-apply-patch".to_string(),
             "patch".to_string(),
         ]
     );
@@ -214,17 +214,17 @@ fn split_only_filesystem_policy_requires_direct_runtime_enforcement() {
     std::fs::create_dir_all(&docs).expect("create docs");
     let docs = AbsolutePathBuf::from_absolute_path(&docs).expect("absolute docs");
     let policy = FileSystemSandboxPolicy::restricted(vec![
-        codex_protocol::permissions::FileSystemSandboxEntry {
-            path: codex_protocol::permissions::FileSystemPath::Special {
-                value: codex_protocol::permissions::FileSystemSpecialPath::project_roots(
+        motyga_protocol::permissions::FileSystemSandboxEntry {
+            path: motyga_protocol::permissions::FileSystemPath::Special {
+                value: motyga_protocol::permissions::FileSystemSpecialPath::project_roots(
                     /*subpath*/ None,
                 ),
             },
-            access: codex_protocol::permissions::FileSystemAccessMode::Write,
+            access: motyga_protocol::permissions::FileSystemAccessMode::Write,
         },
-        codex_protocol::permissions::FileSystemSandboxEntry {
-            path: codex_protocol::permissions::FileSystemPath::Path { path: docs },
-            access: codex_protocol::permissions::FileSystemAccessMode::Read,
+        motyga_protocol::permissions::FileSystemSandboxEntry {
+            path: motyga_protocol::permissions::FileSystemPath::Path { path: docs },
+            access: motyga_protocol::permissions::FileSystemAccessMode::Read,
         },
     ]);
 
@@ -240,15 +240,15 @@ fn root_write_read_only_carveout_requires_direct_runtime_enforcement() {
     std::fs::create_dir_all(&docs).expect("create docs");
     let docs = AbsolutePathBuf::from_absolute_path(&docs).expect("absolute docs");
     let policy = FileSystemSandboxPolicy::restricted(vec![
-        codex_protocol::permissions::FileSystemSandboxEntry {
-            path: codex_protocol::permissions::FileSystemPath::Special {
-                value: codex_protocol::permissions::FileSystemSpecialPath::Root,
+        motyga_protocol::permissions::FileSystemSandboxEntry {
+            path: motyga_protocol::permissions::FileSystemPath::Special {
+                value: motyga_protocol::permissions::FileSystemSpecialPath::Root,
             },
-            access: codex_protocol::permissions::FileSystemAccessMode::Write,
+            access: motyga_protocol::permissions::FileSystemAccessMode::Write,
         },
-        codex_protocol::permissions::FileSystemSandboxEntry {
-            path: codex_protocol::permissions::FileSystemPath::Path { path: docs },
-            access: codex_protocol::permissions::FileSystemAccessMode::Read,
+        motyga_protocol::permissions::FileSystemSandboxEntry {
+            path: motyga_protocol::permissions::FileSystemPath::Path { path: docs },
+            access: motyga_protocol::permissions::FileSystemAccessMode::Read,
         },
     ]);
 
@@ -308,7 +308,7 @@ fn synthetic_mount_registry_root_is_unique_to_effective_user() {
     assert_eq!(
         synthetic_mount_registry_root(),
         std::env::temp_dir().join(format!(
-            "codex-bwrap-synthetic-mount-targets-{effective_uid}"
+            "motyga-bwrap-synthetic-mount-targets-{effective_uid}"
         ))
     );
 }
@@ -549,15 +549,15 @@ fn resolve_permission_profile_preserves_direct_runtime_profile() {
     std::fs::create_dir_all(&docs).expect("create docs");
     let docs = AbsolutePathBuf::from_absolute_path(&docs).expect("absolute docs");
     let file_system_sandbox_policy = FileSystemSandboxPolicy::restricted(vec![
-        codex_protocol::permissions::FileSystemSandboxEntry {
-            path: codex_protocol::permissions::FileSystemPath::Special {
-                value: codex_protocol::permissions::FileSystemSpecialPath::Root,
+        motyga_protocol::permissions::FileSystemSandboxEntry {
+            path: motyga_protocol::permissions::FileSystemPath::Special {
+                value: motyga_protocol::permissions::FileSystemSpecialPath::Root,
             },
-            access: codex_protocol::permissions::FileSystemAccessMode::Read,
+            access: motyga_protocol::permissions::FileSystemAccessMode::Read,
         },
-        codex_protocol::permissions::FileSystemSandboxEntry {
-            path: codex_protocol::permissions::FileSystemPath::Path { path: docs },
-            access: codex_protocol::permissions::FileSystemAccessMode::Write,
+        motyga_protocol::permissions::FileSystemSandboxEntry {
+            path: motyga_protocol::permissions::FileSystemPath::Path { path: docs },
+            access: motyga_protocol::permissions::FileSystemAccessMode::Write,
         },
     ]);
     let permission_profile = PermissionProfile::from_runtime_permissions(
@@ -603,15 +603,15 @@ fn legacy_landlock_rejects_split_only_filesystem_policies() {
     std::fs::create_dir_all(&docs).expect("create docs");
     let docs = AbsolutePathBuf::from_absolute_path(&docs).expect("absolute docs");
     let policy = FileSystemSandboxPolicy::restricted(vec![
-        codex_protocol::permissions::FileSystemSandboxEntry {
-            path: codex_protocol::permissions::FileSystemPath::Special {
-                value: codex_protocol::permissions::FileSystemSpecialPath::Root,
+        motyga_protocol::permissions::FileSystemSandboxEntry {
+            path: motyga_protocol::permissions::FileSystemPath::Special {
+                value: motyga_protocol::permissions::FileSystemSpecialPath::Root,
             },
-            access: codex_protocol::permissions::FileSystemAccessMode::Read,
+            access: motyga_protocol::permissions::FileSystemAccessMode::Read,
         },
-        codex_protocol::permissions::FileSystemSandboxEntry {
-            path: codex_protocol::permissions::FileSystemPath::Path { path: docs },
-            access: codex_protocol::permissions::FileSystemAccessMode::Write,
+        motyga_protocol::permissions::FileSystemSandboxEntry {
+            path: motyga_protocol::permissions::FileSystemPath::Path { path: docs },
+            access: motyga_protocol::permissions::FileSystemAccessMode::Write,
         },
     ]);
 

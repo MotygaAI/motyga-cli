@@ -207,10 +207,10 @@ use crate::render::RectExt;
 use crate::render::renderable::Renderable;
 use crate::slash_command::SlashCommand;
 use crate::style::user_message_style;
-use codex_protocol::ThreadId;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::MAX_USER_INPUT_TEXT_CHARS;
-use codex_protocol::user_input::TextElement;
+use motyga_protocol::ThreadId;
+use motyga_protocol::user_input::ByteRange;
+use motyga_protocol::user_input::MAX_USER_INPUT_TEXT_CHARS;
+use motyga_protocol::user_input::TextElement;
 
 mod attachment_state;
 mod draft_state;
@@ -241,14 +241,14 @@ use crate::history_cell;
 use crate::skills_helpers::skill_display_name;
 use crate::tui::FrameRequester;
 use crate::ui_consts::LIVE_PREFIX_COLS;
-use codex_connectors::AppInfo;
+use motyga_connectors::AppInfo;
 #[cfg(test)]
-use codex_core_skills::model::SkillInterface;
-use codex_core_skills::model::SkillMetadata;
-use codex_file_search::FileMatch;
+use motyga_core_skills::model::SkillInterface;
+use motyga_core_skills::model::SkillMetadata;
+use motyga_file_search::FileMatch;
 #[cfg(test)]
-use codex_plugin::AppConnectorId;
-use codex_plugin::PluginCapabilitySummary;
+use motyga_plugin::AppConnectorId;
+use motyga_plugin::PluginCapabilitySummary;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -3826,9 +3826,9 @@ impl ChatComposer {
                 if !connector.is_accessible || !connector.is_enabled {
                     continue;
                 }
-                let display_name = codex_connectors::metadata::connector_display_label(connector);
+                let display_name = motyga_connectors::metadata::connector_display_label(connector);
                 let description = Some(Self::connector_brief_description(connector));
-                let slug = codex_connectors::metadata::connector_mention_slug(connector);
+                let slug = motyga_connectors::metadata::connector_mention_slug(connector);
                 let search_terms = vec![display_name.clone(), connector.id.clone(), slug.clone()];
                 let connector_id = connector.id.as_str();
                 mentions.push(MentionItem {
@@ -4481,7 +4481,7 @@ mod tests {
     use crate::bottom_pane::InputResult;
     use crate::bottom_pane::chat_composer::LARGE_PASTE_CHAR_THRESHOLD;
     use crate::bottom_pane::textarea::TextArea;
-    use codex_protocol::models::local_image_label_text;
+    use motyga_protocol::models::local_image_label_text;
     use tokio::sync::mpsc::unbounded_channel;
 
     #[test]
@@ -4778,7 +4778,7 @@ mod tests {
             |composer| {
                 composer.set_status_line_enabled(/*enabled*/ true);
                 composer.set_status_line(Some(Line::from(
-                    "gpt-5.4 high fast · ~/code/codex-1 · Context 0% used",
+                    "gpt-5.4 high fast · ~/code/motyga-1 · Context 0% used",
                 )));
                 composer.set_text_content("!git status".to_string(), Vec::new(), Vec::new());
             },
@@ -4790,7 +4790,7 @@ mod tests {
             |composer| {
                 composer.set_status_line_enabled(/*enabled*/ true);
                 composer.set_status_line(Some(Line::from(
-                    "gpt-5.4 high fast · ~/code/codex-1 · Context 0% used",
+                    "gpt-5.4 high fast · ~/code/motyga-1 · Context 0% used",
                 )));
                 composer.set_text_content("!".to_string(), Vec::new(), Vec::new());
                 let _ = composer.handle_key_event(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
@@ -4833,7 +4833,7 @@ mod tests {
         );
         composer.set_status_line_enabled(/*enabled*/ true);
         composer.set_status_line(Some(Line::from(
-            "gpt-5.4 high fast · ~/code/codex-1 · Context 0% used",
+            "gpt-5.4 high fast · ~/code/motyga-1 · Context 0% used",
         )));
         composer.set_text_content("!git status".to_string(), Vec::new(), Vec::new());
 
@@ -6247,7 +6247,7 @@ mod tests {
 
         let skill_path = test_path_buf("/tmp/skill/SKILL.md").abs();
         composer.set_skill_mentions(Some(vec![SkillMetadata {
-            name: "codex".to_string(),
+            name: "motyga".to_string(),
             description: "Primary personal Motyga repo skill.".to_string(),
             short_description: None,
             interface: None,
@@ -6264,7 +6264,7 @@ mod tests {
         let mention = popup
             .selected_mention()
             .expect("expected skill mention to be selected");
-        assert_eq!(mention.insert_text, "$codex".to_string());
+        assert_eq!(mention.insert_text, "$motyga".to_string());
         assert_eq!(mention.path, Some(skill_path.display().to_string()));
     }
 
@@ -6373,9 +6373,9 @@ mod tests {
             "default_unified_mention_popup",
             /*enhanced_keys_supported*/ false,
             |composer| {
-                let features = codex_features::Features::with_defaults();
+                let features = motyga_features::Features::with_defaults();
                 composer
-                    .set_mentions_v2_enabled(features.enabled(codex_features::Feature::MentionsV2));
+                    .set_mentions_v2_enabled(features.enabled(motyga_features::Feature::MentionsV2));
                 composer.set_text_content("@sa".to_string(), Vec::new(), Vec::new());
                 composer.set_plugin_mentions(Some(vec![PluginCapabilitySummary {
                     config_name: "sample@test".to_string(),
@@ -9005,7 +9005,7 @@ mod tests {
             vec![FileMatch {
                 score: 1,
                 path: PathBuf::from("src/main.rs"),
-                match_type: codex_file_search::MatchType::File,
+                match_type: motyga_file_search::MatchType::File,
                 root: PathBuf::from("/tmp"),
                 indices: None,
             }],
@@ -10341,7 +10341,7 @@ mod tests {
     #[test]
     fn pasting_filepath_attaches_image() {
         let tmp = tempdir().expect("create TempDir");
-        let tmp_path: PathBuf = tmp.path().join("codex_tui_test_paste_image.png");
+        let tmp_path: PathBuf = tmp.path().join("motyga_tui_test_paste_image.png");
         let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
             ImageBuffer::from_fn(3, 2, |_x, _y| Rgba([1, 2, 3, 255]));
         img.save(&tmp_path).expect("failed to write temp png");

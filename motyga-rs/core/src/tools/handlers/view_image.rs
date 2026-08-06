@@ -1,13 +1,13 @@
-use codex_protocol::items::ImageViewItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::DEFAULT_IMAGE_DETAIL;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputContentItem;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ImageDetail;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::openai_models::InputModality;
-use codex_utils_image::data_url_from_bytes;
+use motyga_protocol::items::ImageViewItem;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::models::DEFAULT_IMAGE_DETAIL;
+use motyga_protocol::models::FunctionCallOutputBody;
+use motyga_protocol::models::FunctionCallOutputContentItem;
+use motyga_protocol::models::FunctionCallOutputPayload;
+use motyga_protocol::models::ImageDetail;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::openai_models::InputModality;
+use motyga_utils_image::data_url_from_bytes;
 use serde::Deserialize;
 
 use crate::function_tool::FunctionCallError;
@@ -22,8 +22,8 @@ use crate::tools::handlers::view_image_spec::ViewImageToolOptions;
 use crate::tools::handlers::view_image_spec::create_view_image_tool;
 use crate::tools::registry::CoreToolRuntime;
 use crate::tools::registry::ToolExecutor;
-use codex_tools::ToolName;
-use codex_tools::ToolSpec;
+use motyga_tools::ToolName;
+use motyga_tools::ToolSpec;
 
 pub struct ViewImageHandler {
     options: ViewImageToolOptions,
@@ -76,7 +76,7 @@ impl ToolExecutor<ToolInvocation> for ViewImageHandler {
         true
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(invocation))
     }
 }
@@ -252,9 +252,9 @@ mod tests {
     use crate::tools::context::ToolCallSource;
     use crate::tools::context::ToolInvocation;
     use crate::turn_diff_tracker::TurnDiffTracker;
-    use codex_protocol::models::PermissionProfile;
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use codex_utils_path_uri::PathUri;
+    use motyga_protocol::models::PermissionProfile;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_path_uri::PathUri;
     use core_test_support::TempDirExt;
     use pretty_assertions::assert_eq;
     use serde_json::json;
@@ -326,7 +326,7 @@ mod tests {
                 cancellation_token: tokio_util::sync::CancellationToken::new(),
                 tracker: Arc::new(Mutex::new(TurnDiffTracker::new())),
                 call_id: "call-view-image".to_string(),
-                tool_name: codex_tools::ToolName::plain("view_image"),
+                tool_name: motyga_tools::ToolName::plain("view_image"),
                 source: ToolCallSource::Direct,
                 payload: ToolPayload::Function {
                     arguments: json!({ "path": "image.png" }).to_string(),
@@ -356,7 +356,7 @@ mod tests {
                 cancellation_token: tokio_util::sync::CancellationToken::new(),
                 tracker: Arc::new(Mutex::new(TurnDiffTracker::new())),
                 call_id: "call-view-image".to_string(),
-                tool_name: codex_tools::ToolName::plain("view_image"),
+                tool_name: motyga_tools::ToolName::plain("view_image"),
                 source: ToolCallSource::Direct,
                 payload: ToolPayload::Function {
                     arguments: json!({ "path": "image.png", "detail": "low" }).to_string(),
@@ -393,7 +393,7 @@ mod tests {
                 cancellation_token: tokio_util::sync::CancellationToken::new(),
                 tracker: Arc::new(Mutex::new(TurnDiffTracker::new())),
                 call_id: "call-view-image".to_string(),
-                tool_name: codex_tools::ToolName::plain("view_image"),
+                tool_name: motyga_tools::ToolName::plain("view_image"),
                 source: ToolCallSource::Direct,
                 payload: ToolPayload::Function {
                     arguments: json!({ "path": "image.png", "detail": "high" }).to_string(),

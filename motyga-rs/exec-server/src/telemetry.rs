@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 use std::time::Instant;
 
-use codex_otel::MetricsClient;
+use motyga_otel::MetricsClient;
 use tracing::warn;
 
 const CONNECTIONS_ACTIVE_METRIC: &str = "exec_server_connections_active";

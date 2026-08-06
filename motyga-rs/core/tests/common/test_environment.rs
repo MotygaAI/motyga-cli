@@ -1,13 +1,13 @@
 use std::ffi::OsStr;
 
 use anyhow::Result;
-use codex_utils_path_uri::LegacyAppPathString;
-use codex_utils_path_uri::PathConvention;
-use codex_utils_path_uri::PathUri;
+use motyga_utils_path_uri::LegacyAppPathString;
+use motyga_utils_path_uri::PathConvention;
+use motyga_utils_path_uri::PathUri;
 
-pub const TEST_ENVIRONMENT_ENV_VAR: &str = "CODEX_TEST_ENVIRONMENT";
-pub const LEGACY_REMOTE_ENV_ENV_VAR: &str = "CODEX_TEST_REMOTE_ENV";
-pub const DOCKER_CONTAINER_ENV_VAR: &str = "CODEX_TEST_REMOTE_ENV_CONTAINER_NAME";
+pub const TEST_ENVIRONMENT_ENV_VAR: &str = "MOTYGA_TEST_ENVIRONMENT";
+pub const LEGACY_REMOTE_ENV_ENV_VAR: &str = "MOTYGA_TEST_REMOTE_ENV";
+pub const DOCKER_CONTAINER_ENV_VAR: &str = "MOTYGA_TEST_REMOTE_ENV_CONTAINER_NAME";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TestTargetOs {
@@ -68,12 +68,12 @@ impl TestEnvironment {
         let path_uri = match self {
             Self::Local => return Ok(None),
             Self::Docker { .. } => {
-                PathUri::parse(&format!("file:///tmp/codex-core-test-cwd-{instance_id}"))?
+                PathUri::parse(&format!("file:///tmp/motyga-core-test-cwd-{instance_id}"))?
             }
             Self::WineExec => {
                 // Each Wine-exec test process has an isolated filesystem root, so this drive-root
                 // path cannot collide with a different Bazel shard.
-                PathUri::parse(&format!("file:///C:/codex-core-test-cwd-{instance_id}"))?
+                PathUri::parse(&format!("file:///C:/motyga-core-test-cwd-{instance_id}"))?
             }
         };
         Ok(Some(LegacyAppPathString::from_path_uri(

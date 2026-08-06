@@ -1,27 +1,27 @@
-use codex_api::ReqwestTransport;
-use codex_api::SearchClient;
-use codex_api::SearchCommands;
-use codex_api::SearchQuery;
-use codex_api::SearchRequest;
-use codex_api::SearchSettings;
-use codex_core::web_search_action_detail;
-use codex_extension_api::ExtensionTurnItem;
-use codex_extension_api::FunctionCallError;
-use codex_extension_api::ResponsesApiTool;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolExecutor;
-use codex_extension_api::ToolName;
-use codex_extension_api::ToolOutput;
-use codex_extension_api::ToolSpec;
-use codex_extension_api::parse_tool_input_schema_without_compaction;
-use codex_login::default_client::build_reqwest_client;
-use codex_model_provider::SharedModelProvider;
-use codex_protocol::items::WebSearchItem;
-use codex_protocol::models::WebSearchAction;
-use codex_tools::ResponsesApiNamespace;
-use codex_tools::ResponsesApiNamespaceTool;
-use codex_tools::ToolExposure;
-use codex_tools::default_namespace_description;
+use motyga_api::ReqwestTransport;
+use motyga_api::SearchClient;
+use motyga_api::SearchCommands;
+use motyga_api::SearchQuery;
+use motyga_api::SearchRequest;
+use motyga_api::SearchSettings;
+use motyga_core::web_search_action_detail;
+use motyga_extension_api::ExtensionTurnItem;
+use motyga_extension_api::FunctionCallError;
+use motyga_extension_api::ResponsesApiTool;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolExecutor;
+use motyga_extension_api::ToolName;
+use motyga_extension_api::ToolOutput;
+use motyga_extension_api::ToolSpec;
+use motyga_extension_api::parse_tool_input_schema_without_compaction;
+use motyga_login::default_client::build_reqwest_client;
+use motyga_model_provider::SharedModelProvider;
+use motyga_protocol::items::WebSearchItem;
+use motyga_protocol::models::WebSearchAction;
+use motyga_tools::ResponsesApiNamespace;
+use motyga_tools::ResponsesApiNamespaceTool;
+use motyga_tools::ToolExposure;
+use motyga_tools::default_namespace_description;
 use http::HeaderMap;
 use url::Url;
 
@@ -73,7 +73,7 @@ impl ToolExecutor<ToolCall> for WebSearchTool {
         true
     }
 
-    fn handle(&self, call: ToolCall) -> codex_extension_api::ToolExecutorFuture<'_> {
+    fn handle(&self, call: ToolCall) -> motyga_extension_api::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(call))
     }
 }
@@ -190,8 +190,8 @@ fn web_search_item(call_id: &str, action: WebSearchAction) -> ExtensionTurnItem 
 
 #[cfg(test)]
 mod tests {
-    use codex_api::SearchCommands;
-    use codex_protocol::models::WebSearchAction;
+    use motyga_api::SearchCommands;
+    use motyga_protocol::models::WebSearchAction;
     use pretty_assertions::assert_eq;
 
     use super::command_action;

@@ -3,7 +3,7 @@ name: code-review-testing
 description: Test authoring guidance
 ---
 
-For agent changes prefer integration tests over unit tests. Integration tests are under `core/suite` and use `test_codex` to set up a test instance of codex.
+For agent changes prefer integration tests over unit tests. Integration tests are under `core/suite` and use `test_motyga` to set up a test instance of motyga.
 
 Features that change the agent logic MUST add an integration test:
 - Provide a list of major logic changes and user-facing behaviors that need to be tested.

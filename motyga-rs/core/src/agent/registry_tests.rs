@@ -1,5 +1,5 @@
 use super::*;
-use codex_protocol::AgentPath;
+use motyga_protocol::AgentPath;
 use pretty_assertions::assert_eq;
 use std::collections::HashSet;
 
@@ -91,8 +91,8 @@ fn commit_holds_slot_until_release() {
         Ok(_) => panic!("limit should be enforced"),
         Err(err) => err,
     };
-    let CodexErr::AgentLimitReached { max_threads } = err else {
-        panic!("expected CodexErr::AgentLimitReached");
+    let MotygaErr::AgentLimitReached { max_threads } = err else {
+        panic!("expected MotygaErr::AgentLimitReached");
     };
     assert_eq!(max_threads, 1);
 
@@ -116,8 +116,8 @@ fn release_ignores_unknown_thread_id() {
         Ok(_) => panic!("limit should still be enforced"),
         Err(err) => err,
     };
-    let CodexErr::AgentLimitReached { max_threads } = err else {
-        panic!("expected CodexErr::AgentLimitReached");
+    let MotygaErr::AgentLimitReached { max_threads } = err else {
+        panic!("expected MotygaErr::AgentLimitReached");
     };
     assert_eq!(max_threads, 1);
 
@@ -147,8 +147,8 @@ fn release_is_idempotent_for_registered_threads() {
         Ok(_) => panic!("limit should still be enforced"),
         Err(err) => err,
     };
-    let CodexErr::AgentLimitReached { max_threads } = err else {
-        panic!("expected CodexErr::AgentLimitReached");
+    let MotygaErr::AgentLimitReached { max_threads } = err else {
+        panic!("expected MotygaErr::AgentLimitReached");
     };
     assert_eq!(max_threads, 1);
 

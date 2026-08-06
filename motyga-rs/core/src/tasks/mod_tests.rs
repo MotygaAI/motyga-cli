@@ -2,13 +2,13 @@ use super::TASK_COMPACT_METRIC;
 use super::emit_compact_metric;
 use super::emit_turn_memory_metric;
 use super::emit_turn_network_proxy_metric;
-use codex_otel::MetricsClient;
-use codex_otel::MetricsConfig;
-use codex_otel::SessionTelemetry;
-use codex_otel::TURN_MEMORY_METRIC;
-use codex_otel::TURN_NETWORK_PROXY_METRIC;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::SessionSource;
+use motyga_otel::MetricsClient;
+use motyga_otel::MetricsConfig;
+use motyga_otel::SessionTelemetry;
+use motyga_otel::TURN_MEMORY_METRIC;
+use motyga_otel::TURN_NETWORK_PROXY_METRIC;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::SessionSource;
 use opentelemetry::KeyValue;
 use opentelemetry_sdk::metrics::InMemoryMetricExporter;
 use opentelemetry_sdk::metrics::data::AggregatedMetrics;
@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 fn test_session_telemetry() -> SessionTelemetry {
     let exporter = InMemoryMetricExporter::default();
     let metrics = MetricsClient::new(
-        MetricsConfig::in_memory("test", "codex-core", env!("CARGO_PKG_VERSION"), exporter)
+        MetricsConfig::in_memory("test", "motyga-core", env!("CARGO_PKG_VERSION"), exporter)
             .with_runtime_reader(),
     )
     .expect("in-memory metrics client");

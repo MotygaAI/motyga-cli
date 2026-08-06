@@ -1,8 +1,8 @@
 //! Compatibility projections from the canonical permission profile model into
 //! legacy shapes still required by older or remote app-server APIs.
 
-use codex_protocol::models::PermissionProfile;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::models::PermissionProfile;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use std::path::Path;
 
 pub(crate) fn legacy_compatible_permission_profile(
@@ -44,12 +44,12 @@ pub(crate) fn legacy_compatible_permission_profile(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::models::ManagedFileSystemPermissions;
-    use codex_protocol::permissions::FileSystemAccessMode;
-    use codex_protocol::permissions::FileSystemPath;
-    use codex_protocol::permissions::FileSystemSandboxEntry;
-    use codex_protocol::permissions::FileSystemSpecialPath;
-    use codex_protocol::permissions::NetworkSandboxPolicy;
+    use motyga_protocol::models::ManagedFileSystemPermissions;
+    use motyga_protocol::permissions::FileSystemAccessMode;
+    use motyga_protocol::permissions::FileSystemPath;
+    use motyga_protocol::permissions::FileSystemSandboxEntry;
+    use motyga_protocol::permissions::FileSystemSpecialPath;
+    use motyga_protocol::permissions::NetworkSandboxPolicy;
     use pretty_assertions::assert_eq;
 
     #[test]

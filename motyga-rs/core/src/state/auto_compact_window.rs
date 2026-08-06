@@ -1,4 +1,4 @@
-use codex_protocol::protocol::TokenUsage;
+use motyga_protocol::protocol::TokenUsage;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

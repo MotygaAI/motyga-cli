@@ -15,8 +15,8 @@ use crate::hook_runtime::PostCompactHookOutcome;
 use crate::hook_runtime::PreCompactHookOutcome;
 use crate::hook_runtime::run_post_compact_hooks;
 use crate::hook_runtime::run_pre_compact_hooks;
-use crate::responses_metadata::CodexResponsesMetadata;
-use crate::responses_metadata::CodexResponsesRequestKind;
+use crate::responses_metadata::MotygaResponsesMetadata;
+use crate::responses_metadata::MotygaResponsesRequestKind;
 use crate::responses_metadata::CompactionTurnMetadata;
 use crate::responses_retry::ResponsesStreamRequest;
 use crate::responses_retry::handle_retryable_response_stream_error;
@@ -24,25 +24,25 @@ use crate::session::session::Session;
 use crate::session::step_context::StepContext;
 use crate::session::turn::built_tools;
 use crate::session::turn_context::TurnContext;
-use codex_analytics::CompactionImplementation;
-use codex_analytics::CompactionPhase;
-use codex_analytics::CompactionReason;
-use codex_analytics::CompactionTrigger;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::items::ContextCompactionItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::CompactedItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::protocol::TruncationPolicy;
-use codex_protocol::protocol::TurnStartedEvent;
-use codex_rollout_trace::CompactionCheckpointTracePayload;
-use codex_rollout_trace::InferenceTraceContext;
-use codex_utils_output_truncation::approx_token_count;
-use codex_utils_output_truncation::truncate_text;
+use motyga_analytics::CompactionImplementation;
+use motyga_analytics::CompactionPhase;
+use motyga_analytics::CompactionReason;
+use motyga_analytics::CompactionTrigger;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::items::ContextCompactionItem;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::CompactedItem;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::protocol::TruncationPolicy;
+use motyga_protocol::protocol::TurnStartedEvent;
+use motyga_rollout_trace::CompactionCheckpointTracePayload;
+use motyga_rollout_trace::InferenceTraceContext;
+use motyga_utils_output_truncation::approx_token_count;
+use motyga_utils_output_truncation::truncate_text;
 use futures::StreamExt;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
@@ -61,7 +61,7 @@ pub(crate) async fn run_inline_remote_auto_compact_task(
     initial_context_injection: InitialContextInjection,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     run_remote_compact_task_inner(
         &sess,
         &step_context,
@@ -77,7 +77,7 @@ pub(crate) async fn run_inline_remote_auto_compact_task(
 pub(crate) async fn run_remote_compact_task(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     // Standalone compaction is its own request boundary, so it captures a fresh step.
     let step_context = sess.capture_step_context(Arc::clone(&turn_context)).await;
     let start_event = EventMsg::TurnStarted(TurnStartedEvent {
@@ -109,7 +109,7 @@ async fn run_remote_compact_task_inner(
     trigger: CompactionTrigger,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let turn_context = &step_context.turn;
     let compaction_metadata = CompactionTurnMetadata::new(
         trigger,
@@ -134,11 +134,11 @@ async fn run_remote_compact_task_inner(
     match pre_compact_outcome {
         PreCompactHookOutcome::Continue => {}
         PreCompactHookOutcome::Stopped => {
-            let error = CodexErr::TurnAborted;
+            let error = MotygaErr::TurnAborted;
             attempt
                 .track(
                     sess.as_ref(),
-                    codex_analytics::CompactionStatus::Interrupted,
+                    motyga_analytics::CompactionStatus::Interrupted,
                     Some(&error),
                     analytics_details,
                 )
@@ -156,24 +156,24 @@ async fn run_remote_compact_task_inner(
     )
     .await;
     let status = compaction_status_from_result(&result);
-    let codex_error = result.as_ref().err();
+    let motyga_error = result.as_ref().err();
     if result.is_ok() {
         let post_compact_outcome = run_post_compact_hooks(sess, turn_context, trigger).await;
         if let PostCompactHookOutcome::Stopped = post_compact_outcome {
             attempt
-                .track(sess.as_ref(), status, codex_error, analytics_details)
+                .track(sess.as_ref(), status, motyga_error, analytics_details)
                 .await;
-            return Err(CodexErr::TurnAborted);
+            return Err(MotygaErr::TurnAborted);
         }
     }
     attempt
-        .track(sess.as_ref(), status, codex_error, analytics_details)
+        .track(sess.as_ref(), status, motyga_error, analytics_details)
         .await;
     match result {
         Ok(()) => Ok(()),
-        Err(err @ CodexErr::TurnAborted) => Err(err),
+        Err(err @ MotygaErr::TurnAborted) => Err(err),
         Err(err) => {
-            sess.track_turn_codex_error(turn_context, &err);
+            sess.track_turn_motyga_error(turn_context, &err);
             let event = EventMsg::Error(
                 err.to_error_event(Some("Error running remote compact task".to_string())),
             );
@@ -190,7 +190,7 @@ async fn run_remote_compact_task_inner_impl(
     initial_context_injection: InitialContextInjection,
     compaction_metadata: CompactionTurnMetadata,
     analytics_details: &mut CompactionAnalyticsDetails,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let turn_context = &step_context.turn;
     let context_compaction_item = ContextCompactionItem::new();
     let compaction_trace = sess.services.rollout_thread_trace.compaction_trace_context(
@@ -253,7 +253,7 @@ async fn run_remote_compact_task_inner_impl(
     let responses_metadata = turn_context.turn_metadata_state.to_responses_metadata(
         sess.installation_id.clone(),
         window_id,
-        CodexResponsesRequestKind::Compaction(compaction_metadata),
+        MotygaResponsesRequestKind::Compaction(compaction_metadata),
     );
     let trace_attempt = compaction_trace.start_attempt(&serde_json::json!({
         "model": turn_context.model_info.slug.as_str(),
@@ -349,8 +349,8 @@ async fn run_remote_compaction_request_v2(
     turn_context: &TurnContext,
     client_session: &mut ModelClientSession,
     prompt: &Prompt,
-    responses_metadata: &CodexResponsesMetadata,
-) -> CodexResult<RemoteCompactionV2Output> {
+    responses_metadata: &MotygaResponsesMetadata,
+) -> MotygaResult<RemoteCompactionV2Output> {
     let max_retries = turn_context
         .provider
         .info()
@@ -397,7 +397,7 @@ async fn run_remote_compaction_request_v2(
 
 async fn collect_compaction_output(
     mut stream: ResponseStream,
-) -> CodexResult<RemoteCompactionV2Output> {
+) -> MotygaResult<RemoteCompactionV2Output> {
     let mut output_item_count = 0usize;
     let mut compaction_count = 0usize;
     let mut compaction_output = None;
@@ -424,14 +424,14 @@ async fn collect_compaction_output(
     }
 
     if !saw_completed {
-        return Err(CodexErr::Stream(
+        return Err(MotygaErr::Stream(
             "remote compaction v2 stream closed before response.completed".to_string(),
             None,
         ));
     }
 
     if compaction_count != 1 {
-        return Err(CodexErr::Fatal(format!(
+        return Err(MotygaErr::Fatal(format!(
             "remote compaction v2 expected exactly one compaction output item, got {compaction_count} from {output_item_count} output items"
         )));
     }
@@ -581,8 +581,8 @@ fn truncate_message_text_to_token_budget(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::models::ContentItem;
-    use codex_protocol::models::MessagePhase;
+    use motyga_protocol::models::ContentItem;
+    use motyga_protocol::models::MessagePhase;
     use pretty_assertions::assert_eq;
     use tokio::sync::mpsc;
     use tokio_util::sync::CancellationToken;
@@ -599,7 +599,7 @@ mod tests {
         }
     }
 
-    fn response_stream(events: Vec<CodexResult<ResponseEvent>>) -> ResponseStream {
+    fn response_stream(events: Vec<MotygaResult<ResponseEvent>>) -> ResponseStream {
         let (tx_event, rx_event) = mpsc::channel(events.len().max(1));
         for event in events {
             tx_event

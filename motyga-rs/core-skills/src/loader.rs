@@ -12,22 +12,22 @@ use crate::model::SkillMetadata;
 use crate::model::SkillPolicy;
 use crate::model::SkillToolDependency;
 use crate::system::system_cache_root_dir;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::default_project_root_markers;
-use codex_config::merge_toml_values;
-use codex_config::project_root_markers_from_config;
-use codex_exec_server::ExecutorFileSystem;
-use codex_exec_server::LOCAL_FS;
-use codex_protocol::protocol::Product;
-use codex_protocol::protocol::SkillScope;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_absolute_path::AbsolutePathBufGuard;
-use codex_utils_path_uri::PathUri;
-use codex_utils_plugins::DISCOVERABLE_PLUGIN_MANIFEST_PATHS;
-use codex_utils_plugins::PluginSkillRoot;
-use codex_utils_plugins::plugin_namespace_for_skill_path;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::default_project_root_markers;
+use motyga_config::merge_toml_values;
+use motyga_config::project_root_markers_from_config;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_exec_server::LOCAL_FS;
+use motyga_protocol::protocol::Product;
+use motyga_protocol::protocol::SkillScope;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBufGuard;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_plugins::DISCOVERABLE_PLUGIN_MANIFEST_PATHS;
+use motyga_utils_plugins::PluginSkillRoot;
+use motyga_utils_plugins::plugin_namespace_for_skill_path;
 use dirs::home_dir;
 use futures::future::join_all;
 use serde::Deserialize;
@@ -348,8 +348,8 @@ fn skill_roots_from_layer_stack_inner(
                 });
             }
             ConfigLayerSource::System { .. } => {
-                // The system config layer lives under `/etc/codex/` on Unix, so treat
-                // `/etc/codex/skills` as admin-scoped skills.
+                // The system config layer lives under `/etc/motyga/` on Unix, so treat
+                // `/etc/motyga/skills` as admin-scoped skills.
                 roots.push(SkillRoot {
                     path: config_folder.join(SKILLS_DIR_NAME),
                     scope: SkillScope::Admin,

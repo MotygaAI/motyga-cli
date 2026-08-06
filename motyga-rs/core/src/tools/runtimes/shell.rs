@@ -40,13 +40,13 @@ use crate::tools::sandboxing::ToolRuntime;
 use crate::tools::sandboxing::managed_network_for_sandbox_permissions;
 use crate::tools::sandboxing::sandbox_permissions_preserving_denied_reads;
 use crate::tools::sandboxing::with_cached_approval;
-use codex_network_proxy::NetworkProxy;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::models::AdditionalPermissionProfile;
-use codex_protocol::protocol::ReviewDecision;
-use codex_sandboxing::SandboxablePreference;
-use codex_shell_command::powershell::prefix_powershell_script_with_utf8;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_network_proxy::NetworkProxy;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::models::AdditionalPermissionProfile;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_sandboxing::SandboxablePreference;
+use motyga_shell_command::powershell::prefix_powershell_script_with_utf8;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use futures::future::BoxFuture;
 use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
@@ -81,7 +81,7 @@ pub(crate) enum ShellRuntimeBackend {
     ShellCommandClassic,
     /// zsh-fork backend for the `shell_command` tool.
     ///
-    /// On Unix, attempts to run via the zsh-fork + `codex-shell-escalation`
+    /// On Unix, attempts to run via the zsh-fork + `motyga-shell-escalation`
     /// adapter, with fallback to the standard shell runtime flow if
     /// prerequisites are not met.
     ShellCommandZshFork,
@@ -328,10 +328,10 @@ impl ToolRuntime<ShellRequest, ExecToolCallOutput> for ShellRuntime {
                 managed_network,
                 Some(&req.turn_environment.environment_id),
             )
-            .map_err(ToolError::Codex)?;
+            .map_err(ToolError::Motyga)?;
         let out = execute_env(env, Self::stdout_stream(ctx))
             .await
-            .map_err(ToolError::Codex)?;
+            .map_err(ToolError::Motyga)?;
         Ok(out)
     }
 }

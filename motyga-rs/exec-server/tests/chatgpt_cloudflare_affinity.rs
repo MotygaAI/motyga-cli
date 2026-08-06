@@ -15,13 +15,13 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use codex_exec_server::HttpRedirectPolicy;
-use codex_exec_server::HttpRequestParams;
-use codex_exec_server::HttpRequestResponse;
-use codex_exec_server::InitializeParams;
-use codex_exec_server_protocol::JSONRPCMessage;
-use codex_exec_server_protocol::JSONRPCResponse;
-use codex_exec_server_protocol::RequestId;
+use motyga_exec_server::HttpRedirectPolicy;
+use motyga_exec_server::HttpRequestParams;
+use motyga_exec_server::HttpRequestResponse;
+use motyga_exec_server::InitializeParams;
+use motyga_exec_server_protocol::JSONRPCMessage;
+use motyga_exec_server_protocol::JSONRPCResponse;
+use motyga_exec_server_protocol::RequestId;
 use common::exec_server::ExecServerHarness;
 use common::exec_server::exec_server_with_env;
 use pretty_assertions::assert_eq;
@@ -77,7 +77,7 @@ async fn exec_server_replays_only_chatgpt_cloudflare_cookies() -> anyhow::Result
     let empty = OsString::new();
     let env = vec![
         (
-            OsString::from("CODEX_CA_CERTIFICATE"),
+            OsString::from("MOTYGA_CA_CERTIFICATE"),
             ca_path.as_os_str().to_owned(),
         ),
         (OsString::from("HTTPS_PROXY"), proxy_url.clone()),
@@ -158,7 +158,7 @@ async fn exec_server_replays_only_chatgpt_cloudflare_cookies() -> anyhow::Result
 
 impl TlsInterceptingProxy {
     fn start(expected_requests: usize) -> anyhow::Result<Self> {
-        codex_utils_rustls_provider::ensure_rustls_crypto_provider();
+        motyga_utils_rustls_provider::ensure_rustls_crypto_provider();
         let material = generate_tls_material()?;
         let listener = TcpListener::bind(("127.0.0.1", 0))?;
         let address = listener.local_addr()?;
@@ -201,7 +201,7 @@ fn generate_tls_material() -> anyhow::Result<TlsMaterial> {
     ca_params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
     ca_params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
     let mut ca_distinguished_name = DistinguishedName::new();
-    ca_distinguished_name.push(DnType::CommonName, "Codex affinity test CA");
+    ca_distinguished_name.push(DnType::CommonName, "Motyga affinity test CA");
     ca_params.distinguished_name = ca_distinguished_name;
     let ca_key_pair = KeyPair::generate_for(&PKCS_ECDSA_P256_SHA256)?;
     let ca = CertifiedIssuer::self_signed(ca_params, ca_key_pair)?;
@@ -387,7 +387,7 @@ where
     let message = server
         .wait_for_event(|event| match event {
             JSONRPCMessage::Response(JSONRPCResponse { id, .. })
-            | JSONRPCMessage::Error(codex_exec_server_protocol::JSONRPCError { id, .. }) => {
+            | JSONRPCMessage::Error(motyga_exec_server_protocol::JSONRPCError { id, .. }) => {
                 id == &request_id
             }
             _ => false,

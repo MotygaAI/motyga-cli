@@ -1,4 +1,4 @@
-//! Transcript/history cells for the Codex TUI.
+//! Transcript/history cells for the Motyga TUI.
 //!
 //! A `HistoryCell` is the unit of display in the conversation UI, representing both committed
 //! transcript entries and, transiently, an in-flight active cell that can mutate in place while
@@ -46,42 +46,42 @@ use crate::text_formatting::truncate_text;
 use crate::tooltips;
 use crate::ui_consts::LIVE_PREFIX_COLS;
 use crate::update_action::UpdateAction;
-use crate::version::CODEX_CLI_VERSION;
+use crate::version::MOTYGA_CLI_VERSION;
 use crate::wrapping::RtOptions;
 use crate::wrapping::adaptive_wrap_line;
 use crate::wrapping::adaptive_wrap_lines;
 use base64::Engine;
-use codex_app_server_protocol::AskForApproval;
-use codex_app_server_protocol::McpAuthStatus;
-use codex_app_server_protocol::McpServerStatus;
-use codex_app_server_protocol::McpServerStatusDetail;
-use codex_app_server_protocol::ToolRequestUserInputAnswer;
-use codex_app_server_protocol::ToolRequestUserInputQuestion;
-use codex_app_server_protocol::WebSearchAction;
+use motyga_app_server_protocol::AskForApproval;
+use motyga_app_server_protocol::McpAuthStatus;
+use motyga_app_server_protocol::McpServerStatus;
+use motyga_app_server_protocol::McpServerStatusDetail;
+use motyga_app_server_protocol::ToolRequestUserInputAnswer;
+use motyga_app_server_protocol::ToolRequestUserInputQuestion;
+use motyga_app_server_protocol::WebSearchAction;
 #[cfg(test)]
-use codex_config::types::McpServerTransportConfig;
+use motyga_config::types::McpServerTransportConfig;
 #[cfg(test)]
-use codex_mcp::qualified_mcp_tool_name_prefix;
-use codex_otel::RuntimeMetricsSummary;
-use codex_protocol::account::PlanType;
-use codex_protocol::approvals::ExecPolicyAmendment;
-use codex_protocol::approvals::NetworkPolicyAmendment;
+use motyga_mcp::qualified_mcp_tool_name_prefix;
+use motyga_otel::RuntimeMetricsSummary;
+use motyga_protocol::account::PlanType;
+use motyga_protocol::approvals::ExecPolicyAmendment;
+use motyga_protocol::approvals::NetworkPolicyAmendment;
 #[cfg(test)]
-use codex_protocol::mcp::Resource;
+use motyga_protocol::mcp::Resource;
 #[cfg(test)]
-use codex_protocol::mcp::ResourceTemplate;
-use codex_protocol::models::ManagedFileSystemPermissions;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::local_image_label_text;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::plan_tool::PlanItemArg;
-use codex_protocol::plan_tool::StepStatus;
-use codex_protocol::plan_tool::UpdatePlanArgs;
-use codex_protocol::user_input::TextElement;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::mcp::ResourceTemplate;
+use motyga_protocol::models::ManagedFileSystemPermissions;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::local_image_label_text;
+use motyga_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::plan_tool::PlanItemArg;
+use motyga_protocol::plan_tool::StepStatus;
+use motyga_protocol::plan_tool::UpdatePlanArgs;
+use motyga_protocol::user_input::TextElement;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 #[cfg(test)]
-use codex_utils_cli::format_env_display;
+use motyga_utils_cli::format_env_display;
 use image::DynamicImage;
 use image::ImageReader;
 use ratatui::prelude::*;

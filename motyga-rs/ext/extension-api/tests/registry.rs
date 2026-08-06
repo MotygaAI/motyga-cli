@@ -3,34 +3,34 @@
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use codex_extension_api::ApprovalReviewContributor;
-use codex_extension_api::ConfigContributor;
-use codex_extension_api::ContextContributor;
-use codex_extension_api::ContextualUserFragment;
-use codex_extension_api::ExtensionData;
-use codex_extension_api::ExtensionEventSink;
-use codex_extension_api::ExtensionFuture;
-use codex_extension_api::ExtensionRegistryBuilder;
-use codex_extension_api::PromptFragment;
-use codex_extension_api::PromptSlot;
-use codex_extension_api::ThreadLifecycleContributor;
-use codex_extension_api::TokenUsageContributor;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolContributor;
-use codex_extension_api::ToolExecutor;
-use codex_extension_api::ToolLifecycleContributor;
-use codex_extension_api::TurnContextContributionInput;
-use codex_extension_api::TurnInputContext;
-use codex_extension_api::TurnInputContributor;
-use codex_extension_api::TurnItemContributor;
-use codex_extension_api::TurnLifecycleContributor;
-use codex_extension_api::empty_extension_registry;
-use codex_protocol::items::HookPromptItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::WarningEvent;
+use motyga_extension_api::ApprovalReviewContributor;
+use motyga_extension_api::ConfigContributor;
+use motyga_extension_api::ContextContributor;
+use motyga_extension_api::ContextualUserFragment;
+use motyga_extension_api::ExtensionData;
+use motyga_extension_api::ExtensionEventSink;
+use motyga_extension_api::ExtensionFuture;
+use motyga_extension_api::ExtensionRegistryBuilder;
+use motyga_extension_api::PromptFragment;
+use motyga_extension_api::PromptSlot;
+use motyga_extension_api::ThreadLifecycleContributor;
+use motyga_extension_api::TokenUsageContributor;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolContributor;
+use motyga_extension_api::ToolExecutor;
+use motyga_extension_api::ToolLifecycleContributor;
+use motyga_extension_api::TurnContextContributionInput;
+use motyga_extension_api::TurnInputContext;
+use motyga_extension_api::TurnInputContributor;
+use motyga_extension_api::TurnItemContributor;
+use motyga_extension_api::TurnLifecycleContributor;
+use motyga_extension_api::empty_extension_registry;
+use motyga_protocol::items::HookPromptItem;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::WarningEvent;
 use pretty_assertions::assert_eq;
 
 struct AllContributors;
@@ -227,7 +227,7 @@ async fn contributors_preserve_registration_order() {
         fragments.extend(
             contributor
                 .contribute_turn_context(TurnContextContributionInput {
-                    thread_id: codex_protocol::ThreadId::default(),
+                    thread_id: motyga_protocol::ThreadId::default(),
                     turn_id: turn_store.level_id(),
                     session_store: &session_store,
                     thread_store: &thread_store,

@@ -1,7 +1,7 @@
 use super::*;
 use crate::context::world_state::WorldStateSnapshot;
 use crate::context_manager::is_user_turn_boundary;
-use codex_protocol::protocol::SessionContextWindow;
+use motyga_protocol::protocol::SessionContextWindow;
 use uuid::Uuid;
 
 // Return value of `Session::reconstruct_history_from_rollout`, bundling the rebuilt history with

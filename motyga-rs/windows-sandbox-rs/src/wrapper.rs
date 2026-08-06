@@ -1,4 +1,4 @@
-//! Internal `codex.exe --run-as-windows-sandbox` wrapper.
+//! Internal `motyga.exe --run-as-windows-sandbox` wrapper.
 //!
 //! This gives direct-spawn callers an argv-shaped Windows sandbox launcher,
 //! analogous to the macOS seatbelt and Linux sandbox wrapper paths. The wrapper
@@ -13,14 +13,14 @@ use anyhow::Context;
 use anyhow::Result;
 use anyhow::anyhow;
 use anyhow::bail;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::PermissionProfile;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::PermissionProfile;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
-pub const CODEX_WINDOWS_SANDBOX_ARG1: &str = "--run-as-windows-sandbox";
+pub const MOTYGA_WINDOWS_SANDBOX_ARG1: &str = "--run-as-windows-sandbox";
 
 const COMMAND_CWD_FLAG: &str = "--command-cwd";
-const MOTYGA_HOME_FLAG: &str = "--codex-home";
+const MOTYGA_HOME_FLAG: &str = "--motyga-home";
 const DENY_READ_PATHS_JSON_FLAG: &str = "--deny-read-paths-json";
 const DENY_WRITE_PATHS_JSON_FLAG: &str = "--deny-write-paths-json";
 const ENV_JSON_FLAG: &str = "--env-json";
@@ -50,16 +50,16 @@ pub fn create_windows_sandbox_command_args_for_permission_profile(
     write_roots_override: Option<&[PathBuf]>,
     deny_read_paths_override: &[AbsolutePathBuf],
     deny_write_paths_override: &[AbsolutePathBuf],
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> Vec<String> {
     let permission_profile_json = serde_json::to_string(permission_profile)
         .unwrap_or_else(|err| panic!("failed to serialize permission profile: {err}"));
     let env_json = serde_json::to_string(env_map)
         .unwrap_or_else(|err| panic!("failed to serialize env: {err}"));
     let mut args = vec![
-        CODEX_WINDOWS_SANDBOX_ARG1.to_string(),
+        MOTYGA_WINDOWS_SANDBOX_ARG1.to_string(),
         MOTYGA_HOME_FLAG.to_string(),
-        codex_home.to_string_lossy().into_owned(),
+        motyga_home.to_string_lossy().into_owned(),
         COMMAND_CWD_FLAG.to_string(),
         command_cwd.as_path().to_string_lossy().into_owned(),
         PERMISSION_PROFILE_FLAG.to_string(),
@@ -151,7 +151,7 @@ async fn run_windows_sandbox_wrapper_args(args: Vec<String>) -> Result<i32> {
 }
 
 struct WindowsSandboxWrapperRequest {
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     command_cwd: AbsolutePathBuf,
     workspace_roots: Vec<AbsolutePathBuf>,
     env_map: HashMap<String, String>,
@@ -176,7 +176,7 @@ async fn run_windows_sandbox_wrapper_request(request: WindowsSandboxWrapperReque
         crate::spawn_windows_sandbox_session_for_level(crate::WindowsSandboxSessionRequest {
             permission_profile: &request.permission_profile,
             workspace_roots: request.workspace_roots.as_slice(),
-            codex_home: request.codex_home.as_path(),
+            motyga_home: request.motyga_home.as_path(),
             command: request.command,
             cwd: request.command_cwd.as_path(),
             env_map: request.env_map,
@@ -200,7 +200,7 @@ async fn run_windows_sandbox_wrapper_request(request: WindowsSandboxWrapperReque
 
 fn parse_windows_sandbox_wrapper_args(args: Vec<String>) -> Result<WindowsSandboxWrapperRequest> {
     let mut args = args.into_iter();
-    let mut codex_home = None;
+    let mut motyga_home = None;
     let mut command_cwd = None;
     let mut workspace_roots = Vec::new();
     let mut env_map = None;
@@ -218,7 +218,7 @@ fn parse_windows_sandbox_wrapper_args(args: Vec<String>) -> Result<WindowsSandbo
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
-            MOTYGA_HOME_FLAG => codex_home = Some(PathBuf::from(next_flag_value(&mut args, &arg)?)),
+            MOTYGA_HOME_FLAG => motyga_home = Some(PathBuf::from(next_flag_value(&mut args, &arg)?)),
             COMMAND_CWD_FLAG => {
                 command_cwd = Some(absolute_path_arg(next_flag_value(&mut args, &arg)?, &arg)?);
             }
@@ -271,11 +271,11 @@ fn parse_windows_sandbox_wrapper_args(args: Vec<String>) -> Result<WindowsSandbo
         }
     }
 
-    let codex_home = codex_home.ok_or_else(|| anyhow!("missing required {MOTYGA_HOME_FLAG}"))?;
-    if !codex_home.is_absolute() {
+    let motyga_home = motyga_home.ok_or_else(|| anyhow!("missing required {MOTYGA_HOME_FLAG}"))?;
+    if !motyga_home.is_absolute() {
         bail!(
             "{MOTYGA_HOME_FLAG} must be absolute: {}",
-            codex_home.display()
+            motyga_home.display()
         );
     }
     let command_cwd = command_cwd.ok_or_else(|| anyhow!("missing required {COMMAND_CWD_FLAG}"))?;
@@ -283,7 +283,7 @@ fn parse_windows_sandbox_wrapper_args(args: Vec<String>) -> Result<WindowsSandbo
         workspace_roots.push(command_cwd.clone());
     }
     Ok(WindowsSandboxWrapperRequest {
-        codex_home,
+        motyga_home,
         command_cwd,
         workspace_roots,
         env_map: env_map.ok_or_else(|| anyhow!("missing required {ENV_JSON_FLAG}"))?,

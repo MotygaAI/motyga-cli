@@ -1,11 +1,11 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-skills-extension"
+name = "motyga-skills-extension"
 version.workspace = true
 
 [lib]
-name = "codex_skills_extension"
+name = "motyga_skills_extension"
 path = "src/lib.rs"
 test = false
 doctest = false
@@ -14,14 +14,14 @@ doctest = false
 workspace = true
 
 [dependencies]
-codex-core-skills = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-extension-api = { workspace = true }
-codex-mcp = { workspace = true }
-codex-protocol = { workspace = true }
-codex-tools = { workspace = true }
-codex-utils-path-uri = { workspace = true }
-codex-utils-string = { workspace = true }
+motyga-core-skills = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-extension-api = { workspace = true }
+motyga-mcp = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-tools = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
+motyga-utils-string = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -30,6 +30,6 @@ tracing = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]
-codex-utils-absolute-path = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
 pretty_assertions = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

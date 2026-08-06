@@ -3,9 +3,9 @@ use std::io;
 use std::num::NonZeroUsize;
 use std::path::Path;
 
-use codex_utils_image::PromptImageMode;
-use codex_utils_image::data_url_from_bytes;
-use codex_utils_image::load_for_prompt_bytes;
+use motyga_utils_image::PromptImageMode;
+use motyga_utils_image::data_url_from_bytes;
+use motyga_utils_image::load_for_prompt_bytes;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
@@ -21,9 +21,9 @@ use crate::permissions::FileSystemSpecialPath;
 use crate::permissions::NetworkSandboxPolicy;
 use crate::protocol::SandboxPolicy;
 use crate::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_image::ImageProcessingError;
-use codex_utils_path_uri::PathUri;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_image::ImageProcessingError;
+use motyga_utils_path_uri::PathUri;
 use schemars::JsonSchema;
 
 use crate::mcp::CallToolResult;
@@ -280,7 +280,7 @@ impl AdditionalPermissionProfile {
 )]
 #[serde(rename_all = "snake_case")]
 pub enum SandboxEnforcement {
-    /// Codex owns sandbox construction for this profile.
+    /// Motyga owns sandbox construction for this profile.
     #[default]
     Managed,
     /// No outer filesystem sandbox should be applied.
@@ -299,7 +299,7 @@ impl SandboxEnforcement {
     }
 }
 
-/// Filesystem permissions for profiles where Codex owns sandbox construction.
+/// Filesystem permissions for profiles where Motyga owns sandbox construction.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(tag = "type", rename_all = "snake_case")]
 #[ts(tag = "type")]
@@ -406,7 +406,7 @@ pub const BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS: &str = ":danger-full-a
 #[serde(tag = "type", rename_all = "snake_case")]
 #[ts(tag = "type")]
 pub enum PermissionProfile<PathType = AbsolutePathBuf> {
-    /// Codex owns sandbox construction for this profile.
+    /// Motyga owns sandbox construction for this profile.
     #[serde(rename_all = "snake_case")]
     #[ts(rename_all = "snake_case")]
     Managed {
@@ -2060,7 +2060,7 @@ impl CallToolResult {
 fn convert_mcp_content_to_items(
     contents: &[serde_json::Value],
 ) -> Option<Vec<FunctionCallOutputContentItem>> {
-    const CODEX_IMAGE_DETAIL_META_KEY: &str = "codex/imageDetail";
+    const MOTYGA_IMAGE_DETAIL_META_KEY: &str = "motyga/imageDetail";
 
     #[derive(serde::Deserialize)]
     #[serde(tag = "type")]
@@ -2102,7 +2102,7 @@ fn convert_mcp_content_to_items(
                     detail: meta
                         .as_ref()
                         .and_then(serde_json::Value::as_object)
-                        .and_then(|meta| meta.get(CODEX_IMAGE_DETAIL_META_KEY))
+                        .and_then(|meta| meta.get(MOTYGA_IMAGE_DETAIL_META_KEY))
                         .and_then(serde_json::Value::as_str)
                         .and_then(|detail| match detail {
                             "auto" => Some(ImageDetail::Auto),
@@ -2140,13 +2140,13 @@ impl std::fmt::Display for FunctionCallOutputPayload {
     }
 }
 
-// (Moved event mapping logic into codex-core to avoid coupling protocol to UI-facing events.)
+// (Moved event mapping logic into motyga-core to avoid coupling protocol to UI-facing events.)
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use anyhow::Result;
-    use codex_execpolicy::Policy;
+    use motyga_execpolicy::Policy;
     use pretty_assertions::assert_eq;
     use std::path::PathBuf;
     use tempfile::tempdir;
@@ -2740,8 +2740,8 @@ mod tests {
     fn function_call_deserializes_optional_namespace() {
         let item: ResponseItem = serde_json::from_value(serde_json::json!({
             "type": "function_call",
-            "name": "mcp__codex_apps__gmail_get_recent_emails",
-            "namespace": "mcp__codex_apps__gmail",
+            "name": "mcp__motyga_apps__gmail_get_recent_emails",
+            "namespace": "mcp__motyga_apps__gmail",
             "arguments": "{\"top_k\":5}",
             "call_id": "call-1",
         }))
@@ -2751,8 +2751,8 @@ mod tests {
             item,
             ResponseItem::FunctionCall {
                 id: None,
-                name: "mcp__codex_apps__gmail_get_recent_emails".to_string(),
-                namespace: Some("mcp__codex_apps__gmail".to_string()),
+                name: "mcp__motyga_apps__gmail_get_recent_emails".to_string(),
+                namespace: Some("mcp__motyga_apps__gmail".to_string()),
                 arguments: "{\"top_k\":5}".to_string(),
                 call_id: "call-1".to_string(),
                 internal_chat_message_metadata_passthrough: None,
@@ -2803,7 +2803,7 @@ mod tests {
             exec_policy
                 .add_prefix_rule(
                     &[format!("tool-{i:03}"), "x".repeat(500)],
-                    codex_execpolicy::Decision::Allow,
+                    motyga_execpolicy::Decision::Allow,
                 )
                 .expect("add rule");
         }
@@ -2981,7 +2981,7 @@ mod tests {
                 "data": "BASE64",
                 "mimeType": "image/png",
                 "_meta": {
-                    "codex/imageDetail": "original",
+                    "motyga/imageDetail": "original",
                 },
             })],
             structured_content: None,
@@ -3013,7 +3013,7 @@ mod tests {
                 "data": "BASE64",
                 "mimeType": "image/png",
                 "_meta": {
-                    "codex/imageDetail": "high",
+                    "motyga/imageDetail": "high",
                 },
             })],
             structured_content: None,
@@ -3350,7 +3350,7 @@ mod tests {
             execution: "client".to_string(),
             tools: vec![serde_json::json!({
                 "type": "function",
-                "name": "mcp__codex_apps__calendar_create_event",
+                "name": "mcp__motyga_apps__calendar_create_event",
                 "description": "Create a calendar event.",
                 "defer_loading": true,
                 "parameters": {
@@ -3372,7 +3372,7 @@ mod tests {
                 execution: "client".to_string(),
                 tools: vec![serde_json::json!({
                     "type": "function",
-                    "name": "mcp__codex_apps__calendar_create_event",
+                    "name": "mcp__motyga_apps__calendar_create_event",
                     "description": "Create a calendar event.",
                     "defer_loading": true,
                     "parameters": {
@@ -3397,7 +3397,7 @@ mod tests {
                 "execution": "client",
                 "tools": [{
                     "type": "function",
-                    "name": "mcp__codex_apps__calendar_create_event",
+                    "name": "mcp__motyga_apps__calendar_create_event",
                     "description": "Create a calendar event.",
                     "defer_loading": true,
                     "parameters": {

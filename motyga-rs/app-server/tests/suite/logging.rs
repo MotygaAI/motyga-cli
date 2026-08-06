@@ -6,8 +6,8 @@ use tempfile::TempDir;
 
 #[test]
 fn standalone_app_server_emits_json_info_events() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let event = app_server_json_shutdown_event("codex-app-server", &[], codex_home.path())?;
+    let motyga_home = TempDir::new()?;
+    let event = app_server_json_shutdown_event("motyga-app-server", &[], motyga_home.path())?;
 
     assert_eq!(
         event,
@@ -19,7 +19,7 @@ fn standalone_app_server_emits_json_info_events() -> Result<()> {
                 "remaining_connection_count": 0,
                 "shutdown_forced": false,
             },
-            "target": "codex_app_server",
+            "target": "motyga_app_server",
         })
     );
 

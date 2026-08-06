@@ -1,17 +1,17 @@
 use super::permission_profile_policy_tag;
 use super::permission_profile_sandbox_tag;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::ManagedFileSystemPermissions;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxKind;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_sandboxing::SandboxType;
-use codex_sandboxing::get_platform_sandbox;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::ManagedFileSystemPermissions;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxKind;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_sandboxing::SandboxType;
+use motyga_sandboxing::get_platform_sandbox;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
 use std::path::Path;
 
@@ -95,7 +95,7 @@ fn root_write_managed_profile_with_enabled_network_is_untagged() {
         file_system: ManagedFileSystemPermissions::Restricted {
             entries: vec![FileSystemSandboxEntry {
                 path: FileSystemPath::Special {
-                    value: codex_protocol::permissions::FileSystemSpecialPath::Root,
+                    value: motyga_protocol::permissions::FileSystemSpecialPath::Root,
                 },
                 access: FileSystemAccessMode::Write,
             }],
@@ -136,8 +136,8 @@ fn managed_network_enforcement_tags_unrestricted_profiles_as_sandboxed() {
 
 #[test]
 fn profile_policy_tag_reports_closest_legacy_mode() {
-    let cwd = AbsolutePathBuf::from_absolute_path(Path::new("/tmp/codex")).expect("absolute cwd");
-    let writable_root = AbsolutePathBuf::from_absolute_path(Path::new("/tmp/codex/work"))
+    let cwd = AbsolutePathBuf::from_absolute_path(Path::new("/tmp/motyga")).expect("absolute cwd");
+    let writable_root = AbsolutePathBuf::from_absolute_path(Path::new("/tmp/motyga/work"))
         .expect("absolute writable root");
     let profile = PermissionProfile::from_runtime_permissions(
         &FileSystemSandboxPolicy {

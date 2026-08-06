@@ -3,7 +3,7 @@ name: code-review-context
 description: Model visible context
 ---
 
-Codex maintains a context (history of messages) that is sent to the model in inference requests.
+Motyga maintains a context (history of messages) that is sent to the model in inference requests.
 
 1. No history rewrite - the context must be built up incrementally.
 2. Avoid frequent changes to context that cause cache misses.

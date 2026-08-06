@@ -3,8 +3,8 @@
 //! This keeps user-facing backup and lock-contention handling out of the main
 //! CLI dispatch path while preserving the TUI startup error as the boundary type.
 
-use codex_state::RuntimeDbBackup;
-use codex_tui::LocalStateDbStartupError;
+use motyga_state::RuntimeDbBackup;
+use motyga_tui::LocalStateDbStartupError;
 use std::io::IsTerminal;
 use std::path::Path;
 
@@ -14,11 +14,11 @@ pub(crate) fn startup_error(err: &std::io::Error) -> Option<&LocalStateDbStartup
 }
 
 pub(crate) fn is_locked(detail: &str) -> bool {
-    codex_state::sqlite_error_detail_is_lock(detail)
+    motyga_state::sqlite_error_detail_is_lock(detail)
 }
 
 pub(crate) fn is_corruption(detail: &str) -> bool {
-    codex_state::sqlite_error_detail_is_corruption(detail)
+    motyga_state::sqlite_error_detail_is_corruption(detail)
 }
 
 pub(crate) fn is_auto_backup_recoverable(startup_error: &LocalStateDbStartupError) -> bool {
@@ -42,7 +42,7 @@ pub(crate) fn print_auto_backup_start(startup_error: &LocalStateDbStartupError) 
 pub(crate) async fn backup_files_for_fresh_start(
     startup_error: &LocalStateDbStartupError,
 ) -> std::io::Result<Vec<RuntimeDbBackup>> {
-    codex_state::backup_runtime_db_for_fresh_start(startup_error.database_path()).await
+    motyga_state::backup_runtime_db_for_fresh_start(startup_error.database_path()).await
 }
 
 pub(crate) fn confirm_fresh_start_rebuild(
@@ -103,8 +103,8 @@ mod tests {
     #[tokio::test]
     async fn backup_backs_up_only_failed_database_file() -> std::io::Result<()> {
         let temp_dir = TempDir::new()?;
-        let state_path = codex_state::state_db_path(temp_dir.path());
-        let failed_db_path = codex_state::logs_db_path(temp_dir.path());
+        let state_path = motyga_state::state_db_path(temp_dir.path());
+        let failed_db_path = motyga_state::logs_db_path(temp_dir.path());
         tokio::fs::write(state_path.as_path(), b"state").await?;
         tokio::fs::write(failed_db_path.as_path(), b"logs").await?;
 
@@ -131,7 +131,7 @@ mod tests {
         let sqlite_home = temp_dir.path().join("sqlite-home");
         tokio::fs::write(sqlite_home.as_path(), b"not-a-directory").await?;
         let startup_error = LocalStateDbStartupError::new(
-            codex_state::state_db_path(sqlite_home.as_path()),
+            motyga_state::state_db_path(sqlite_home.as_path()),
             "File exists".to_string(),
         );
 

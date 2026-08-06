@@ -1,6 +1,6 @@
-load("//:defs.bzl", "codex_rust_crate")
+load("//:defs.bzl", "motyga_rust_crate")
 
-codex_rust_crate(
+motyga_rust_crate(
     name = "execpolicy",
-    crate_name = "codex_execpolicy",
+    crate_name = "motyga_execpolicy",
 )

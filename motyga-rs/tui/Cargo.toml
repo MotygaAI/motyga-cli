@@ -1,12 +1,12 @@
 [package]
-name = "codex-tui"
+name = "motyga-tui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 autobins = false
 
 [[bin]]
-name = "codex-tui"
+name = "motyga-tui"
 path = "src/main.rs"
 
 [[bin]]
@@ -14,7 +14,7 @@ name = "md-events"
 path = "src/bin/md-events.rs"
 
 [lib]
-name = "codex_tui"
+name = "motyga_tui"
 path = "src/lib.rs"
 doctest = false
 
@@ -26,47 +26,47 @@ anyhow = { workspace = true }
 base64 = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true, features = ["derive"] }
-codex-ansi-escape = { workspace = true }
-codex-app-server-client = { workspace = true }
-codex-app-server-protocol = { workspace = true }
-codex-arg0 = { workspace = true }
-codex-install-context = { workspace = true }
-codex-cloud-config = { workspace = true }
-codex-config = { workspace = true }
-codex-connectors = { workspace = true }
-codex-core-plugins = { workspace = true }
-codex-core-skills = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-features = { workspace = true }
-codex-feedback = { workspace = true }
-codex-file-search = { workspace = true }
-codex-git-utils = { workspace = true }
-codex-login = { workspace = true }
-codex-message-history = { workspace = true }
-codex-model-provider = { workspace = true }
-codex-model-provider-info = { workspace = true }
-codex-models-manager = { workspace = true }
-codex-otel = { workspace = true }
-codex-plugin = { workspace = true }
-codex-protocol = { workspace = true }
-codex-rollout = { workspace = true }
-codex-sandboxing = { workspace = true }
-codex-shell-command = { workspace = true }
-codex-state = { workspace = true }
-codex-terminal-detection = { workspace = true }
-codex-utils-approval-presets = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-cli = { workspace = true }
-codex-utils-elapsed = { workspace = true }
-codex-utils-fuzzy-match = { workspace = true }
-codex-utils-home-dir = { workspace = true }
-codex-utils-oss = { workspace = true }
-codex-utils-path = { workspace = true }
-codex-utils-path-uri = { workspace = true }
-codex-utils-plugins = { workspace = true }
-codex-utils-sandbox-summary = { workspace = true }
-codex-utils-sleep-inhibitor = { workspace = true }
-codex-utils-string = { workspace = true }
+motyga-ansi-escape = { workspace = true }
+motyga-app-server-client = { workspace = true }
+motyga-app-server-protocol = { workspace = true }
+motyga-arg0 = { workspace = true }
+motyga-install-context = { workspace = true }
+motyga-cloud-config = { workspace = true }
+motyga-config = { workspace = true }
+motyga-connectors = { workspace = true }
+motyga-core-plugins = { workspace = true }
+motyga-core-skills = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-features = { workspace = true }
+motyga-feedback = { workspace = true }
+motyga-file-search = { workspace = true }
+motyga-git-utils = { workspace = true }
+motyga-login = { workspace = true }
+motyga-message-history = { workspace = true }
+motyga-model-provider = { workspace = true }
+motyga-model-provider-info = { workspace = true }
+motyga-models-manager = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-plugin = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-rollout = { workspace = true }
+motyga-sandboxing = { workspace = true }
+motyga-shell-command = { workspace = true }
+motyga-state = { workspace = true }
+motyga-terminal-detection = { workspace = true }
+motyga-utils-approval-presets = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-cli = { workspace = true }
+motyga-utils-elapsed = { workspace = true }
+motyga-utils-fuzzy-match = { workspace = true }
+motyga-utils-home-dir = { workspace = true }
+motyga-utils-oss = { workspace = true }
+motyga-utils-path = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
+motyga-utils-plugins = { workspace = true }
+motyga-utils-sandbox-summary = { workspace = true }
+motyga-utils-sleep-inhibitor = { workspace = true }
+motyga-utils-string = { workspace = true }
 color-eyre = { workspace = true }
 crossterm = { workspace = true, features = ["bracketed-paste", "event-stream"] }
 derive_more = { workspace = true, features = ["is_variant"] }
@@ -122,7 +122,7 @@ urlencoding = { workspace = true }
 webbrowser = { workspace = true }
 uuid = { workspace = true }
 
-codex-windows-sandbox = { workspace = true }
+motyga-windows-sandbox = { workspace = true }
 tokio-util = { workspace = true, features = ["time"] }
 
 [target.'cfg(unix)'.dependencies]
@@ -149,10 +149,10 @@ arboard = { workspace = true }
 
 [dev-dependencies]
 app_test_support = { workspace = true }
-codex-cli = { workspace = true }
-codex-mcp = { workspace = true }
+motyga-cli = { workspace = true }
+motyga-mcp = { workspace = true }
 core_test_support = { workspace = true }
-codex-utils-cargo-bin = { workspace = true }
+motyga-utils-cargo-bin = { workspace = true }
 assert_matches = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 insta = { workspace = true }

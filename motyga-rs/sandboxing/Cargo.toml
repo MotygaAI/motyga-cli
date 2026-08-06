@@ -1,11 +1,11 @@
 [package]
-name = "codex-sandboxing"
+name = "motyga-sandboxing"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_sandboxing"
+name = "motyga_sandboxing"
 path = "src/lib.rs"
 doctest = false
 
@@ -13,11 +13,11 @@ doctest = false
 workspace = true
 
 [dependencies]
-codex-network-proxy = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-path-uri = { workspace = true }
-codex-windows-sandbox = { workspace = true }
+motyga-network-proxy = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
+motyga-windows-sandbox = { workspace = true }
 dunce = { workspace = true }
 libc = { workspace = true }
 serde_json = { workspace = true }
@@ -27,7 +27,7 @@ url = { workspace = true }
 which = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-codex-utils-home-dir = { workspace = true }
+motyga-utils-home-dir = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }

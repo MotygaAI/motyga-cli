@@ -78,15 +78,15 @@ fn write_openai_curated_marketplace(root: &Path, plugin_names: &[&str]) {
     }
 }
 
-fn write_curated_plugin_sha(codex_home: &Path) {
+fn write_curated_plugin_sha(motyga_home: &Path) {
     write_file(
-        &codex_home.join(".tmp/plugins.sha"),
+        &motyga_home.join(".tmp/plugins.sha"),
         &format!("{TEST_CURATED_PLUGIN_SHA}\n"),
     );
 }
 
-fn has_plugins_clone_dirs(codex_home: &Path) -> bool {
-    let Ok(entries) = std::fs::read_dir(codex_home.join(".tmp")) else {
+fn has_plugins_clone_dirs(motyga_home: &Path) -> bool {
+    let Ok(entries) = std::fs::read_dir(motyga_home.join(".tmp")) else {
         return false;
     };
 
@@ -181,7 +181,7 @@ async fn mount_export_archive(server: &MockServer, bytes: Vec<u8>) -> String {
 }
 
 async fn run_sync_with_transport_overrides(
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     git_binary: impl Into<String>,
     api_base_url: impl Into<String>,
     backup_archive_api_url: impl Into<String>,
@@ -191,7 +191,7 @@ async fn run_sync_with_transport_overrides(
     let backup_archive_api_url = backup_archive_api_url.into();
     tokio::task::spawn_blocking(move || {
         sync_openai_plugins_repo_with_transport_overrides(
-            codex_home.as_path(),
+            motyga_home.as_path(),
             &git_binary,
             &api_base_url,
             &backup_archive_api_url,
@@ -202,12 +202,12 @@ async fn run_sync_with_transport_overrides(
 }
 
 async fn run_http_sync(
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     api_base_url: impl Into<String>,
 ) -> Result<String, String> {
     let api_base_url = api_base_url.into();
     tokio::task::spawn_blocking(move || {
-        sync_openai_plugins_repo_via_http(codex_home.as_path(), &api_base_url)
+        sync_openai_plugins_repo_via_http(motyga_home.as_path(), &api_base_url)
     })
     .await
     .expect("sync task should join")
@@ -223,7 +223,7 @@ fn assert_curated_gmail_repo(repo_path: &Path) {
 }
 
 #[test]
-fn curated_plugins_repo_path_uses_codex_home_tmp_dir() {
+fn curated_plugins_repo_path_uses_motyga_home_tmp_dir() {
     let tmp = tempdir().expect("tempdir");
     assert_eq!(
         curated_plugins_repo_path(tmp.path()),
@@ -415,7 +415,7 @@ fn sync_openai_plugins_repo_via_git_succeeds_with_local_rewritten_remote() {
             "-c",
             "user.name=Motyga Test",
             "-c",
-            "user.email=codex@example.com",
+            "user.email=motyga@example.com",
             "commit",
             "-m",
             "init",
@@ -499,7 +499,7 @@ fn sync_openai_plugins_repo_via_git_succeeds_with_local_rewritten_remote() {
             "-c",
             "user.name=Motyga Test",
             "-c",
-            "user.email=codex@example.com",
+            "user.email=motyga@example.com",
             "commit",
             "-m",
             "update",

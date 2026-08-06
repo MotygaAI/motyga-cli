@@ -2,19 +2,19 @@ use std::io::Write;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use codex_otel::MetricsClient;
-use codex_protocol::ThreadId;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RolloutItem;
+use motyga_otel::MetricsClient;
+use motyga_protocol::ThreadId;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::RolloutItem;
 
 use crate::policy::is_persisted_rollout_item;
 
-const ITEM_BYTES_METRIC: &str = "codex.rollout.persistence.item_bytes";
-const APPEND_METRIC: &str = "codex.rollout.persistence.append";
-const TURN_BYTES_METRIC: &str = "codex.rollout.persistence.turn_bytes";
-const MEASUREMENT_ERROR_METRIC: &str = "codex.rollout.persistence.measurement_error";
+const ITEM_BYTES_METRIC: &str = "motyga.rollout.persistence.item_bytes";
+const APPEND_METRIC: &str = "motyga.rollout.persistence.append";
+const TURN_BYTES_METRIC: &str = "motyga.rollout.persistence.turn_bytes";
+const MEASUREMENT_ERROR_METRIC: &str = "motyga.rollout.persistence.measurement_error";
 const SAMPLE_DENOMINATOR: u64 = 100;
 const SAMPLE_RATE_LABEL: &str = "0.01";
 
@@ -292,7 +292,7 @@ pub struct RolloutPersistenceTelemetry {
 
 impl RolloutPersistenceTelemetry {
     pub fn new(thread_id: ThreadId) -> Self {
-        let metrics = codex_otel::global();
+        let metrics = motyga_otel::global();
         let sampled = metrics.is_some() && is_thread_sampled(thread_id);
         Self {
             metrics,

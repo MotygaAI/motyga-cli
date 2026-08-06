@@ -1,4 +1,4 @@
-# codex-utils-pty
+# motyga-utils-pty
 
 Lightweight helpers for spawning interactive processes either under a PTY (pseudo terminal) or regular pipes. The public API is minimal and mirrors both backends so callers can switch based on their needs (e.g., enabling or disabling TTY).
 
@@ -22,9 +22,9 @@ Lightweight helpers for spawning interactive processes either under a PTY (pseud
 ```rust
 use std::collections::HashMap;
 use std::path::Path;
-use codex_utils_pty::combine_output_receivers;
-use codex_utils_pty::spawn_pty_process;
-use codex_utils_pty::TerminalSize;
+use motyga_utils_pty::combine_output_receivers;
+use motyga_utils_pty::spawn_pty_process;
+use motyga_utils_pty::TerminalSize;
 
 # tokio_test::block_on(async {
 let env_map: HashMap<String, String> = std::env::vars().collect();
@@ -60,5 +60,5 @@ Use `spawn_pipe_process_no_stdin` to force stdin closed (commands that read stdi
 Unit tests live in `src/lib.rs` and cover both backends (PTY Python REPL and pipe-based stdin roundtrip). Run with:
 
 ```
-just test -p codex-utils-pty --no-capture
+just test -p motyga-utils-pty --no-capture
 ```

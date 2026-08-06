@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use codex_exec_server::EnvironmentManager;
-use codex_exec_server::ExecServerRuntimePaths;
-use codex_extension_api::UserInstructionsProvider;
-use codex_login::AuthManager;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::user_input::UserInput;
+use motyga_exec_server::EnvironmentManager;
+use motyga_exec_server::ExecServerRuntimePaths;
+use motyga_extension_api::UserInstructionsProvider;
+use motyga_login::AuthManager;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::user_input::UserInput;
 use tokio_util::sync::CancellationToken;
 
 use crate::config::Config;
@@ -19,7 +19,7 @@ use crate::session::turn::built_tools;
 use crate::state_db_bridge::StateDbHandle;
 use crate::thread_manager::ThreadManager;
 use crate::thread_manager::thread_store_from_config;
-use codex_extension_api::empty_extension_registry;
+use motyga_extension_api::empty_extension_registry;
 
 /// Build the model-visible `input` list for a single debug turn.
 #[doc(hidden)]
@@ -28,30 +28,30 @@ pub async fn build_prompt_input(
     input: Vec<UserInput>,
     state_db: Option<StateDbHandle>,
     user_instructions_provider: Arc<dyn UserInstructionsProvider>,
-) -> CodexResult<Vec<ResponseItem>> {
+) -> MotygaResult<Vec<ResponseItem>> {
     config.ephemeral = true;
 
     let auth_manager =
-        AuthManager::shared_from_config(&config, /*enable_codex_api_key_env*/ false).await;
+        AuthManager::shared_from_config(&config, /*enable_motyga_api_key_env*/ false).await;
 
     let local_runtime_paths = ExecServerRuntimePaths::from_optional_paths(
-        config.codex_self_exe.clone(),
-        config.codex_linux_sandbox_exe.clone(),
+        config.motyga_self_exe.clone(),
+        config.motyga_linux_sandbox_exe.clone(),
     )?;
 
     let thread_store = thread_store_from_config(&config, state_db.clone());
-    let installation_id = resolve_installation_id(&config.codex_home).await?;
+    let installation_id = resolve_installation_id(&config.motyga_home).await?;
     let thread_manager = ThreadManager::new(
         &config,
         Arc::clone(&auth_manager),
         SessionSource::Exec,
         Arc::new(
-            EnvironmentManager::from_codex_home(
-                config.codex_home.clone(),
+            EnvironmentManager::from_motyga_home(
+                config.motyga_home.clone(),
                 Some(local_runtime_paths),
             )
             .await
-            .map_err(|err| CodexErr::Fatal(err.to_string()))?,
+            .map_err(|err| MotygaErr::Fatal(err.to_string()))?,
         ),
         empty_extension_registry(),
         user_instructions_provider,
@@ -64,7 +64,7 @@ pub async fn build_prompt_input(
     );
     let thread = thread_manager.start_thread(config).await?;
 
-    let output = build_prompt_input_from_session(&thread.thread.codex.session, input).await;
+    let output = build_prompt_input_from_session(&thread.thread.motyga.session, input).await;
     let shutdown = thread.thread.shutdown_and_wait().await;
     let _removed = thread_manager.remove_thread(&thread.thread_id).await;
 
@@ -75,7 +75,7 @@ pub async fn build_prompt_input(
 pub(crate) async fn build_prompt_input_from_session(
     sess: &Arc<Session>,
     input: Vec<UserInput>,
-) -> CodexResult<Vec<ResponseItem>> {
+) -> MotygaResult<Vec<ResponseItem>> {
     let turn_context = sess.new_default_turn().await;
     // Prompt debugging builds a standalone request without entering run_turn.
     let step_context = sess.capture_step_context(Arc::clone(&turn_context)).await;

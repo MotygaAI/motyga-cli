@@ -1,8 +1,8 @@
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_utils_output_truncation::TruncationPolicy;
-use codex_utils_output_truncation::approx_token_count;
-use codex_utils_output_truncation::truncate_text;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_utils_output_truncation::TruncationPolicy;
+use motyga_utils_output_truncation::approx_token_count;
+use motyga_utils_output_truncation::truncate_text;
 
 /// Retains items from the earliest of the last `user_message_count` user
 /// messages through the latest user message.
@@ -72,10 +72,10 @@ pub fn truncate_assistant_output_text_to_token_budget(
 
 #[cfg(test)]
 mod tests {
-    use codex_protocol::models::ContentItem;
-    use codex_protocol::models::ResponseItem;
-    use codex_utils_output_truncation::TruncationPolicy;
-    use codex_utils_output_truncation::truncate_text;
+    use motyga_protocol::models::ContentItem;
+    use motyga_protocol::models::ResponseItem;
+    use motyga_utils_output_truncation::TruncationPolicy;
+    use motyga_utils_output_truncation::truncate_text;
     use pretty_assertions::assert_eq;
 
     use super::retain_tail_from_last_n_user_messages;

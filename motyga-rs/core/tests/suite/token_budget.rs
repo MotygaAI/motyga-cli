@@ -1,21 +1,21 @@
 use anyhow::Result;
-use codex_config::types::McpServerConfig;
-use codex_config::types::McpServerTransportConfig;
-use codex_core::config::TokenBudgetConfig;
-use codex_features::Feature;
-use codex_model_provider_info::built_in_model_providers;
-use codex_protocol::config_types::AutoCompactTokenLimitScope;
-use codex_protocol::items::TurnItem;
-use codex_protocol::protocol::CONTEXT_WINDOW_CLOSE_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_CLOSE_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_OPEN_TAG;
-use codex_protocol::protocol::CONTEXT_WINDOW_OPEN_TAG;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::HookEventName;
-use codex_protocol::protocol::HookRunStatus;
-use codex_protocol::protocol::ItemCompletedEvent;
-use codex_protocol::protocol::ItemStartedEvent;
-use codex_protocol::protocol::Op;
+use motyga_config::types::McpServerConfig;
+use motyga_config::types::McpServerTransportConfig;
+use motyga_core::config::TokenBudgetConfig;
+use motyga_features::Feature;
+use motyga_model_provider_info::built_in_model_providers;
+use motyga_protocol::config_types::AutoCompactTokenLimitScope;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::protocol::CONTEXT_WINDOW_CLOSE_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_CLOSE_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_GUIDANCE_OPEN_TAG;
+use motyga_protocol::protocol::CONTEXT_WINDOW_OPEN_TAG;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::HookRunStatus;
+use motyga_protocol::protocol::ItemCompletedEvent;
+use motyga_protocol::protocol::ItemStartedEvent;
+use motyga_protocol::protocol::Op;
 use core_test_support::PathBufExt;
 use core_test_support::assert_regex_match;
 use core_test_support::context_snapshot;
@@ -33,8 +33,8 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::stdio_server_bin;
-use core_test_support::test_codex::local;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::local;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use core_test_support::wait_for_mcp_server;
@@ -58,7 +58,7 @@ fn token_budget_contexts(request: &ResponsesRequest) -> Vec<String> {
 
 fn token_budget_window_ids(
     text: &str,
-    thread_id: codex_protocol::ThreadId,
+    thread_id: motyga_protocol::ThreadId,
 ) -> (String, Option<String>, String) {
     let captures = assert_regex_match(
         &format!(
@@ -139,12 +139,12 @@ fn write_token_budget_compact_hooks(home: &Path) {
     std::fs::write(home.join("hooks.json"), hooks.to_string()).expect("write hooks.json");
 }
 
-async fn assert_context_compaction_item_lifecycle(codex: &std::sync::Arc<codex_core::CodexThread>) {
+async fn assert_context_compaction_item_lifecycle(motyga: &std::sync::Arc<motyga_core::MotygaThread>) {
     let mut saw_compaction_started = false;
     let mut saw_compaction_completed = false;
 
     loop {
-        let event = codex.next_event().await.expect("next event");
+        let event = motyga.next_event().await.expect("next event");
         match event.msg {
             EventMsg::ItemStarted(ItemStartedEvent {
                 item: TurnItem::ContextCompaction(_),
@@ -176,7 +176,7 @@ async fn token_budget_context_is_only_emitted_with_full_context() -> Result<()> 
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config.model_context_window = Some(CONFIGURED_CONTEXT_WINDOW);
             config
@@ -227,7 +227,7 @@ async fn token_budget_guidance_follows_context_window() -> Result<()> {
     )
     .await;
     let guidance_message = "Preserve important state before compaction.";
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.model_context_window = Some(CONFIGURED_CONTEXT_WINDOW);
             config.token_budget = Some(TokenBudgetConfig {
@@ -265,7 +265,7 @@ async fn token_budget_context_injects_plain_thread_hint_text() -> Result<()> {
 
     let server = start_mock_server().await;
     let rmcp_test_server_bin = stdio_server_bin()?;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.model_context_window = Some(CONFIGURED_CONTEXT_WINDOW);
             config
@@ -307,7 +307,7 @@ async fn token_budget_context_injects_plain_thread_hint_text() -> Result<()> {
         })
         .build(&server)
         .await?;
-    wait_for_mcp_server(&test.codex, "notes").await?;
+    wait_for_mcp_server(&test.motyga, "notes").await?;
     let responses = mount_sse_sequence(
         &server,
         vec![sse(vec![
@@ -359,7 +359,7 @@ async fn token_budget_reminder_emits_after_crossing_compaction_threshold() -> Re
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config.model_context_window = Some(10_000);
             config.token_budget = Some(TokenBudgetConfig {
@@ -415,7 +415,7 @@ async fn token_budget_reminder_uses_body_after_prefix_window() -> Result<()> {
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config.model_context_window = Some(10_000);
             config.model_auto_compact_token_limit = Some(1_000);
@@ -486,7 +486,7 @@ async fn get_context_remaining_returns_token_budget_remaining_fragment() -> Resu
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config.model_context_window = Some(10_000);
             config
@@ -551,7 +551,7 @@ async fn get_context_remaining_uses_body_after_prefix_window() -> Result<()> {
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config.model_context_window = Some(10_000);
             config.model_auto_compact_token_limit = Some(7_000);
@@ -608,7 +608,7 @@ async fn get_context_remaining_returns_unknown_when_threshold_is_unbounded() -> 
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_model_info_override("gpt-5.2", |model_info| {
             model_info.context_window = None;
             model_info.max_context_window = None;
@@ -669,7 +669,7 @@ async fn token_budget_context_uses_new_window_after_compaction() -> Result<()> {
     model_provider.base_url = Some(format!("{}/v1", server.uri()));
     model_provider.supports_websockets = false;
 
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             config.model_context_window = Some(CONFIGURED_CONTEXT_WINDOW);
@@ -682,8 +682,8 @@ async fn token_budget_context_uses_new_window_after_compaction() -> Result<()> {
         .await?;
 
     test.submit_turn("before compact").await?;
-    test.codex.submit(Op::Compact).await?;
-    assert_context_compaction_item_lifecycle(&test.codex).await;
+    test.motyga.submit(Op::Compact).await?;
+    assert_context_compaction_item_lifecycle(&test.motyga).await;
     test.submit_turn("after compact").await?;
 
     let requests = responses.requests();
@@ -734,7 +734,7 @@ async fn token_budget_compaction_runs_compact_hooks() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_pre_build_hook(write_token_budget_compact_hooks)
         .with_config(|config| {
             config.model_context_window = Some(CONFIGURED_CONTEXT_WINDOW);
@@ -747,9 +747,9 @@ async fn token_budget_compaction_runs_compact_hooks() -> Result<()> {
         .build(&server)
         .await?;
 
-    test.codex.submit(Op::Compact).await?;
+    test.motyga.submit(Op::Compact).await?;
 
-    let pre_compact = wait_for_event_match(&test.codex, |event| match event {
+    let pre_compact = wait_for_event_match(&test.motyga, |event| match event {
         EventMsg::HookCompleted(completed)
             if completed.run.event_name == HookEventName::PreCompact =>
         {
@@ -760,7 +760,7 @@ async fn token_budget_compaction_runs_compact_hooks() -> Result<()> {
     .await;
     assert_eq!(pre_compact.run.status, HookRunStatus::Completed);
 
-    let post_compact = wait_for_event_match(&test.codex, |event| match event {
+    let post_compact = wait_for_event_match(&test.motyga, |event| match event {
         EventMsg::HookCompleted(completed)
             if completed.run.event_name == HookEventName::PostCompact =>
         {
@@ -770,7 +770,7 @@ async fn token_budget_compaction_runs_compact_hooks() -> Result<()> {
     })
     .await;
     assert_eq!(post_compact.run.status, HookRunStatus::Completed);
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -804,7 +804,7 @@ async fn token_budget_mid_turn_auto_compaction_resets_before_active_follow_up() 
     model_provider.name = "OpenAI (test)".into();
     model_provider.base_url = Some(format!("{}/v1", server.uri()));
     model_provider.supports_websockets = false;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             config.model_context_window = Some(10_000);
@@ -892,7 +892,7 @@ async fn new_context_tool_starts_new_window_before_follow_up() -> Result<()> {
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             config.model_context_window = Some(CONFIGURED_CONTEXT_WINDOW);
             config

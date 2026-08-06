@@ -1,5 +1,5 @@
 [package]
-name = "codex-exec-server"
+name = "motyga-exec-server"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -16,18 +16,18 @@ axum = { workspace = true, features = ["http1", "tokio", "ws"] }
 base64 = { workspace = true }
 bytes = { workspace = true }
 clatter = { workspace = true }
-codex-api = { workspace = true }
-codex-client = { workspace = true }
-codex-exec-server-protocol = { workspace = true }
-codex-file-system = { workspace = true }
-codex-network-proxy = { workspace = true }
-codex-otel = { workspace = true }
-codex-protocol = { workspace = true }
-codex-sandboxing = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-path-uri = { workspace = true }
-codex-utils-pty = { workspace = true }
-codex-utils-rustls-provider = { workspace = true }
+motyga-api = { workspace = true }
+motyga-client = { workspace = true }
+motyga-exec-server-protocol = { workspace = true }
+motyga-file-system = { workspace = true }
+motyga-network-proxy = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-sandboxing = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
+motyga-utils-pty = { workspace = true }
+motyga-utils-rustls-provider = { workspace = true }
 futures = { workspace = true }
 http = { workspace = true }
 reqwest = { workspace = true, features = ["json", "rustls-tls", "stream"] }
@@ -63,7 +63,7 @@ windows-sys = { version = "0.52", features = [
 
 [dev-dependencies]
 anyhow = { workspace = true }
-codex-test-binary-support = { workspace = true }
+motyga-test-binary-support = { workspace = true }
 ctor = { workspace = true }
 http = { workspace = true }
 opentelemetry = { workspace = true }

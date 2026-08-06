@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use codex_protocol::ThreadId;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
-use codex_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::ThreadId;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
 use serde_json::Value;
 
 use crate::ExtensionData;

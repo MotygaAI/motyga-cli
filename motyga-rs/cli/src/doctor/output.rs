@@ -478,7 +478,7 @@ fn write_footer(out: &mut String, options: HumanOutputOptions) {
 }
 
 fn header_suffix(report: &DoctorReport) -> String {
-    let version = format!("v{}", report.codex_version);
+    let version = format!("v{}", report.motyga_version);
     report
         .checks
         .iter()
@@ -531,7 +531,7 @@ fn update_note(check: &DoctorCheck, report: &DoctorReport) -> Option<DoctorNote>
         .or_else(|| detail::detail_value(check, "cached latest version"))
         .unwrap_or_else(|| "newer version".to_string());
     let dismissed = detail::detail_value(check, "dismissed version");
-    let mut parenthetical = format!("current {}", report.codex_version);
+    let mut parenthetical = format!("current {}", report.motyga_version);
     if let Some(dismissed) = dismissed
         && !detail::is_falsy(&dismissed)
     {
@@ -844,8 +844,8 @@ pub(super) fn redact_detail(detail: &str) -> String {
 
     let secret_keys = [
         "openai_api_key",
-        "codex_api_key",
-        "codex_access_token",
+        "motyga_api_key",
+        "motyga_access_token",
         "authorization",
         "bearer_token",
         "token",
@@ -1181,7 +1181,7 @@ mod tests {
             )
             .detail("terminal title source: default")
             .detail("terminal title items: activity, project-name")
-            .detail("terminal title project value: codex"),
+            .detail("terminal title project value: motyga"),
             DoctorCheck::new(
                 "state.paths",
                 "state",
@@ -1231,7 +1231,7 @@ mod tests {
             schema_version: 1,
             generated_at: "0s since unix epoch".to_string(),
             overall_status: CheckStatus::Fail,
-            codex_version: "0.0.0".to_string(),
+            motyga_version: "0.0.0".to_string(),
             checks,
         }
     }
@@ -1267,10 +1267,10 @@ Environment
       version                  git version 2.54.0
       repo detected            true
   ⚠ terminal     narrow terminal
-  ✓ title        default · project codex
+  ✓ title        default · project motyga
       title source             default
       title items              activity, project-name
-      project value            codex
+      project value            motyga
   ✓ state        state paths inspectable
 
 Configuration
@@ -1326,7 +1326,7 @@ Environment
   ✓ search       search is OK (bundled)
   ✓ git          git version 2.54.0
   ⚠ terminal     narrow terminal
-  ✓ title        default · project codex
+  ✓ title        default · project motyga
   ✓ state        state paths inspectable
 
 Configuration
@@ -1382,7 +1382,7 @@ Run motyga doctor without --summary for detailed diagnostics.
             schema_version: 1,
             generated_at: "0s since unix epoch".to_string(),
             overall_status: CheckStatus::Ok,
-            codex_version: "0.0.0".to_string(),
+            motyga_version: "0.0.0".to_string(),
             checks: vec![
                 DoctorCheck::new(
                     "state.paths",
@@ -1434,7 +1434,7 @@ Environment
   [ok] search       search is OK (bundled)
   [ok] git          git version 2.54.0
   [!!] terminal     narrow terminal
-  [ok] title        default | project codex
+  [ok] title        default | project motyga
   [ok] state        state paths inspectable
 
 Configuration
@@ -1482,7 +1482,7 @@ Run motyga doctor without --summary for detailed diagnostics.
             schema_version: 1,
             generated_at: "0s since unix epoch".to_string(),
             overall_status: CheckStatus::Warning,
-            codex_version: "0.0.0".to_string(),
+            motyga_version: "0.0.0".to_string(),
             checks: vec![
                 DoctorCheck::new(
                     "terminal.env",
@@ -1521,7 +1521,7 @@ Run motyga doctor without --summary for detailed diagnostics.
             schema_version: 1,
             generated_at: "0s since unix epoch".to_string(),
             overall_status: CheckStatus::Warning,
-            codex_version: "0.0.0".to_string(),
+            motyga_version: "0.0.0".to_string(),
             checks: vec![
                 DoctorCheck::new(
                     "updates.status",
@@ -1599,7 +1599,7 @@ Run motyga doctor without --summary for detailed diagnostics.
             schema_version: 1,
             generated_at: "0s since unix epoch".to_string(),
             overall_status: CheckStatus::Ok,
-            codex_version: "0.0.0".to_string(),
+            motyga_version: "0.0.0".to_string(),
             checks: vec![
                 DoctorCheck::new("config.load", "config", CheckStatus::Ok, "config loaded")
                     .detail("model: gpt-5.5")
@@ -1625,14 +1625,14 @@ Run motyga doctor without --summary for detailed diagnostics.
     #[test]
     fn detail_value_colors_inline_statuses_and_low_signal_values() {
         let rendered = detail_value(
-            "npm: no · commit unknown · integrity ok · ~/code/codex/target/debug/codex · <redacted>",
+            "npm: no · commit unknown · integrity ok · ~/code/motyga/target/debug/motyga · <redacted>",
             detailed_color_unicode_options(),
         );
 
         assert!(rendered.contains("npm: \u{1b}[38;5;240mno"));
         assert!(rendered.contains("\u{1b}[38;5;240munknown"));
         assert!(rendered.contains("\u{1b}[38;5;10mok"));
-        assert!(rendered.contains("\u{1b}[38;5;117m~/code/codex/target/debug/codex"));
+        assert!(rendered.contains("\u{1b}[38;5;117m~/code/motyga/target/debug/motyga"));
         assert!(rendered.contains("\u{1b}[38;5;244m"));
     }
 
@@ -1672,8 +1672,8 @@ Run motyga doctor without --summary for detailed diagnostics.
     #[test]
     fn redact_detail_preserves_env_var_names() {
         assert_eq!(
-            redact_detail("auth env vars present: OPENAI_API_KEY, CODEX_API_KEY"),
-            "auth env vars present: OPENAI_API_KEY, CODEX_API_KEY"
+            redact_detail("auth env vars present: OPENAI_API_KEY, MOTYGA_API_KEY"),
+            "auth env vars present: OPENAI_API_KEY, MOTYGA_API_KEY"
         );
     }
 

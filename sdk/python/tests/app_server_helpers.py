@@ -12,12 +12,12 @@ from app_server_harness import (
     sse,
 )
 
-from openai_codex.generated.v2_all import (
+from motyga_sdk.generated.v2_all import (
     AgentMessageDeltaNotification,
     ItemCompletedNotification,
     MessagePhase,
 )
-from openai_codex.models import Notification
+from motyga_sdk.models import Notification
 
 TINY_PNG_BYTES = bytes(
     [

@@ -5,14 +5,14 @@ use super::App;
 use crate::app_command::AppCommand;
 use crate::app_server_approval_conversions::granted_permission_profile_from_request;
 use crate::app_server_session::AppServerSession;
-use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
-use codex_app_server_protocol::FileChangeRequestApprovalResponse;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::McpServerElicitationRequestResponse;
-use codex_app_server_protocol::PermissionsRequestApprovalResponse;
-use codex_app_server_protocol::RequestId as AppServerRequestId;
-use codex_app_server_protocol::ServerRequest;
-use codex_protocol::request_permissions::RequestPermissionProfile as CoreRequestPermissionProfile;
+use motyga_app_server_protocol::CommandExecutionRequestApprovalResponse;
+use motyga_app_server_protocol::FileChangeRequestApprovalResponse;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::McpServerElicitationRequestResponse;
+use motyga_app_server_protocol::PermissionsRequestApprovalResponse;
+use motyga_app_server_protocol::RequestId as AppServerRequestId;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_protocol::request_permissions::RequestPermissionProfile as CoreRequestPermissionProfile;
 
 impl App {
     pub(super) async fn reject_app_server_request(
@@ -419,29 +419,29 @@ mod tests {
     use super::ResolvedAppServerRequest;
     use super::UnsupportedAppServerRequest;
     use crate::app_command::AppCommand as Op;
-    use codex_app_server_protocol::AdditionalFileSystemPermissions;
-    use codex_app_server_protocol::AdditionalNetworkPermissions;
-    use codex_app_server_protocol::CommandExecutionApprovalDecision;
-    use codex_app_server_protocol::CommandExecutionRequestApprovalParams;
-    use codex_app_server_protocol::FileChangeApprovalDecision;
-    use codex_app_server_protocol::FileChangeRequestApprovalParams;
-    use codex_app_server_protocol::McpElicitationObjectType;
-    use codex_app_server_protocol::McpElicitationSchema;
-    use codex_app_server_protocol::McpServerElicitationAction;
-    use codex_app_server_protocol::McpServerElicitationRequest;
-    use codex_app_server_protocol::McpServerElicitationRequestParams;
-    use codex_app_server_protocol::PermissionGrantScope;
-    use codex_app_server_protocol::PermissionsRequestApprovalParams;
-    use codex_app_server_protocol::PermissionsRequestApprovalResponse;
-    use codex_app_server_protocol::RequestId as AppServerRequestId;
-    use codex_app_server_protocol::ServerRequest;
-    use codex_app_server_protocol::ToolRequestUserInputAnswer;
-    use codex_app_server_protocol::ToolRequestUserInputParams;
-    use codex_app_server_protocol::ToolRequestUserInputResponse;
-    use codex_protocol::models::FileSystemPermissions;
-    use codex_protocol::models::NetworkPermissions;
-    use codex_protocol::request_permissions::RequestPermissionProfile;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_app_server_protocol::AdditionalFileSystemPermissions;
+    use motyga_app_server_protocol::AdditionalNetworkPermissions;
+    use motyga_app_server_protocol::CommandExecutionApprovalDecision;
+    use motyga_app_server_protocol::CommandExecutionRequestApprovalParams;
+    use motyga_app_server_protocol::FileChangeApprovalDecision;
+    use motyga_app_server_protocol::FileChangeRequestApprovalParams;
+    use motyga_app_server_protocol::McpElicitationObjectType;
+    use motyga_app_server_protocol::McpElicitationSchema;
+    use motyga_app_server_protocol::McpServerElicitationAction;
+    use motyga_app_server_protocol::McpServerElicitationRequest;
+    use motyga_app_server_protocol::McpServerElicitationRequestParams;
+    use motyga_app_server_protocol::PermissionGrantScope;
+    use motyga_app_server_protocol::PermissionsRequestApprovalParams;
+    use motyga_app_server_protocol::PermissionsRequestApprovalResponse;
+    use motyga_app_server_protocol::RequestId as AppServerRequestId;
+    use motyga_app_server_protocol::ServerRequest;
+    use motyga_app_server_protocol::ToolRequestUserInputAnswer;
+    use motyga_app_server_protocol::ToolRequestUserInputParams;
+    use motyga_app_server_protocol::ToolRequestUserInputResponse;
+    use motyga_protocol::models::FileSystemPermissions;
+    use motyga_protocol::models::NetworkPermissions;
+    use motyga_protocol::request_permissions::RequestPermissionProfile;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use std::collections::BTreeMap;
@@ -491,7 +491,7 @@ mod tests {
     fn rejects_permissions_with_paths_that_cannot_be_localized() {
         let mut pending = PendingAppServerRequests::default();
         let request_id = AppServerRequestId::Integer(7);
-        let permissions = codex_app_server_protocol::RequestPermissionProfile {
+        let permissions = motyga_app_server_protocol::RequestPermissionProfile {
             network: None,
             file_system: Some(AdditionalFileSystemPermissions {
                 read: Some(vec![
@@ -588,7 +588,7 @@ mod tests {
         let permissions = pending
             .take_resolution(&Op::RequestPermissionsResponse {
                 id: "perm-1".to_string(),
-                response: codex_protocol::request_permissions::RequestPermissionsResponse {
+                response: motyga_protocol::request_permissions::RequestPermissionsResponse {
                     permissions: RequestPermissionProfile {
                         network: Some(NetworkPermissions {
                             enabled: Some(true),
@@ -598,7 +598,7 @@ mod tests {
                             Some(vec![absolute_path(write_path)]),
                         )),
                     },
-                    scope: codex_protocol::request_permissions::PermissionGrantScope::Session,
+                    scope: motyga_protocol::request_permissions::PermissionGrantScope::Session,
                     strict_auto_review: false,
                 },
             })
@@ -609,7 +609,7 @@ mod tests {
             serde_json::from_value::<PermissionsRequestApprovalResponse>(permissions.result)
                 .expect("permissions response should decode"),
             PermissionsRequestApprovalResponse {
-                permissions: codex_app_server_protocol::GrantedPermissionProfile {
+                permissions: motyga_app_server_protocol::GrantedPermissionProfile {
                     network: Some(AdditionalNetworkPermissions {
                         enabled: Some(true),
                     }),
@@ -618,17 +618,17 @@ mod tests {
                         write: Some(vec![absolute_path(write_path).into()]),
                         glob_scan_max_depth: None,
                         entries: Some(vec![
-                            codex_app_server_protocol::FileSystemSandboxEntry {
-                                path: codex_app_server_protocol::FileSystemPath::Path {
+                            motyga_app_server_protocol::FileSystemSandboxEntry {
+                                path: motyga_app_server_protocol::FileSystemPath::Path {
                                     path: absolute_path(read_path).into(),
                                 },
-                                access: codex_app_server_protocol::FileSystemAccessMode::Read,
+                                access: motyga_app_server_protocol::FileSystemAccessMode::Read,
                             },
-                            codex_app_server_protocol::FileSystemSandboxEntry {
-                                path: codex_app_server_protocol::FileSystemPath::Path {
+                            motyga_app_server_protocol::FileSystemSandboxEntry {
+                                path: motyga_app_server_protocol::FileSystemPath::Path {
                                     path: absolute_path(write_path).into(),
                                 },
-                                access: codex_app_server_protocol::FileSystemAccessMode::Write,
+                                access: motyga_app_server_protocol::FileSystemAccessMode::Write,
                             },
                         ]),
                     }),
@@ -723,7 +723,7 @@ mod tests {
         let unsupported = pending
             .note_server_request(&ServerRequest::DynamicToolCall {
                 request_id: AppServerRequestId::Integer(99),
-                params: codex_app_server_protocol::DynamicToolCallParams {
+                params: motyga_app_server_protocol::DynamicToolCallParams {
                     thread_id: "thread-1".to_string(),
                     turn_id: "turn-1".to_string(),
                     call_id: "tool-1".to_string(),
@@ -748,8 +748,8 @@ mod tests {
         assert_eq!(
             pending.note_server_request(&ServerRequest::ChatgptAuthTokensRefresh {
                 request_id: AppServerRequestId::Integer(100),
-                params: codex_app_server_protocol::ChatgptAuthTokensRefreshParams {
-                    reason: codex_app_server_protocol::ChatgptAuthTokensRefreshReason::Unauthorized,
+                params: motyga_app_server_protocol::ChatgptAuthTokensRefreshParams {
+                    reason: motyga_app_server_protocol::ChatgptAuthTokensRefreshReason::Unauthorized,
                     previous_account_id: Some("workspace-1".to_string()),
                 },
             }),

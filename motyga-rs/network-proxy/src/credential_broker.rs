@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
-pub const CREDENTIAL_BROKER_ACTIVE_ENV_KEY: &str = "CODEX_NETWORK_PROXY_CREDENTIAL_BROKER_ACTIVE";
-pub(crate) const BROKERED_CREDENTIALS_ENV_KEY: &str = "CODEX_NETWORK_PROXY_BROKERED_CREDENTIALS";
+pub const CREDENTIAL_BROKER_ACTIVE_ENV_KEY: &str = "MOTYGA_NETWORK_PROXY_CREDENTIAL_BROKER_ACTIVE";
+pub(crate) const BROKERED_CREDENTIALS_ENV_KEY: &str = "MOTYGA_NETWORK_PROXY_BROKERED_CREDENTIALS";
 
 #[derive(Clone)]
 pub(crate) struct CredentialBroker {

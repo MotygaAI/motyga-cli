@@ -9,8 +9,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-const AUDIT_TARGET: &str = "codex_otel.network_proxy";
-const POLICY_DECISION_EVENT_NAME: &str = "codex.network_proxy.policy_decision";
+const AUDIT_TARGET: &str = "motyga_otel.network_proxy";
+const POLICY_DECISION_EVENT_NAME: &str = "motyga.network_proxy.policy_decision";
 const POLICY_SCOPE_DOMAIN: &str = "domain";
 const POLICY_SCOPE_NON_DOMAIN: &str = "non_domain";
 const POLICY_DECISION_ALLOW: &str = "allow";
@@ -557,8 +557,8 @@ mod tests {
     use std::sync::atomic::Ordering;
 
     const LEGACY_DOMAIN_POLICY_DECISION_EVENT_NAME: &str =
-        "codex.network_proxy.domain_policy_decision";
-    const LEGACY_BLOCK_DECISION_EVENT_NAME: &str = "codex.network_proxy.block_decision";
+        "motyga.network_proxy.domain_policy_decision";
+    const LEGACY_BLOCK_DECISION_EVENT_NAME: &str = "motyga.network_proxy.block_decision";
 
     #[derive(Clone)]
     struct StaticReloader {
@@ -648,7 +648,7 @@ mod tests {
         let event = find_event_by_name(&events, POLICY_DECISION_EVENT_NAME)
             .expect("expected policy decision audit event");
         assert_eq!(event.target, AUDIT_TARGET);
-        assert!(event.target.starts_with("codex_otel."));
+        assert!(event.target.starts_with("motyga_otel."));
         assert_eq!(
             event.field("network.policy.scope"),
             Some(POLICY_SCOPE_DOMAIN)

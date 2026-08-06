@@ -1,11 +1,11 @@
-use codex_protocol::models::WebSearchAction;
+use motyga_protocol::models::WebSearchAction;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use ts_rs::TS;
 
-/// Top-level JSONL events emitted by codex exec
+/// Top-level JSONL events emitted by motyga exec
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 #[serde(tag = "type")]
 pub enum ThreadEvent {

@@ -1,1 +1,1 @@
-pub const MEMORIES_USAGE_METRIC: &str = "codex.memories.usage";
+pub const MEMORIES_USAGE_METRIC: &str = "motyga.memories.usage";

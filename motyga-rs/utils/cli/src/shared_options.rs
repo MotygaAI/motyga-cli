@@ -1,8 +1,8 @@
-//! Shared command-line flags used by both interactive and non-interactive Codex entry points.
+//! Shared command-line flags used by both interactive and non-interactive Motyga entry points.
 
 use crate::SandboxModeCliArg;
 use clap::Args;
-use codex_protocol::config_types::ProfileV2Name;
+use motyga_protocol::config_types::ProfileV2Name;
 use std::path::PathBuf;
 
 #[derive(Args, Clone, Debug, Default)]

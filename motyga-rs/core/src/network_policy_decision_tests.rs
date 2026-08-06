@@ -1,8 +1,8 @@
 use super::*;
-use codex_network_proxy::BlockedRequest;
-use codex_network_proxy::NetworkDecisionSource;
-use codex_protocol::approvals::NetworkPolicyAmendment;
-use codex_protocol::approvals::NetworkPolicyRuleAction;
+use motyga_network_proxy::BlockedRequest;
+use motyga_network_proxy::NetworkDecisionSource;
+use motyga_protocol::approvals::NetworkPolicyAmendment;
+use motyga_protocol::approvals::NetworkPolicyRuleAction;
 use pretty_assertions::assert_eq;
 
 #[test]

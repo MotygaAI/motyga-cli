@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Watch GitHub PR CI and review activity for Codex PR babysitting workflows."""
+"""Watch GitHub PR CI and review activity for Motyga PR babysitting workflows."""
 
 import argparse
 import json
@@ -28,7 +28,7 @@ PENDING_CHECK_STATES = {
     "REQUESTED",
 }
 REVIEW_BOT_LOGIN_KEYWORDS = {
-    "codex",
+    "motyga",
 }
 TRUSTED_AUTHOR_ASSOCIATIONS = {
     "OWNER",
@@ -54,7 +54,7 @@ class GhCommandError(RuntimeError):
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
-            "Normalize PR/CI/review state for Codex PR babysitting and optionally "
+            "Normalize PR/CI/review state for Motyga PR babysitting and optionally "
             "trigger flaky reruns."
         )
     )
@@ -258,7 +258,7 @@ def save_state(path, state):
 
 def default_state_file_for(pr):
     repo_slug = pr["repo"].replace("/", "-")
-    return Path(f"/tmp/codex-babysit-pr-{repo_slug}-pr{pr['number']}.json")
+    return Path(f"/tmp/motyga-babysit-pr-{repo_slug}-pr{pr['number']}.json")
 
 
 def get_pr_checks(pr_spec, repo):

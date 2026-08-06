@@ -2,25 +2,25 @@
 //!
 //! Each test sets up a mocked SSE conversation and drives the conversation through
 //! a specific sequence of operations. After every operation we capture the
-//! request payload that Codex would send to the model and assert that the
+//! request payload that Motyga would send to the model and assert that the
 //! model-visible history matches the expected sequence of messages.
 
 use super::compact::COMPACT_WARNING_MESSAGE;
 use super::compact::FIRST_REPLY;
 use super::compact::SUMMARY_TEXT;
 use anyhow::Result;
-use codex_core::CodexThread;
-use codex_core::ThreadManager;
-use codex_core::compact::SUMMARIZATION_PROMPT;
-use codex_core::config::Config;
-use codex_core::spawn::CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Settings;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::WarningEvent;
-use codex_protocol::user_input::UserInput;
+use motyga_core::MotygaThread;
+use motyga_core::ThreadManager;
+use motyga_core::compact::SUMMARIZATION_PROMPT;
+use motyga_core::config::Config;
+use motyga_core::spawn::MOTYGA_SANDBOX_NETWORK_DISABLED_ENV_VAR;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::Settings;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::WarningEvent;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::context_snapshot;
 use core_test_support::context_snapshot::ContextSnapshotOptions;
 use core_test_support::context_snapshot::ContextSnapshotRenderMode;
@@ -32,8 +32,8 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_once_match;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -46,7 +46,7 @@ const AFTER_SECOND_RESUME: &str = "AFTER_SECOND_RESUME";
 const AFTER_ROLLBACK: &str = "AFTER_ROLLBACK";
 
 fn network_disabled() -> bool {
-    std::env::var(CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR).is_ok()
+    std::env::var(MOTYGA_SANDBOX_NETWORK_DISABLED_ENV_VAR).is_ok()
 }
 
 fn body_contains_text(body: &str, text: &str) -> bool {
@@ -549,7 +549,7 @@ async fn snapshot_rollback_followup_turn_trims_context_updates() -> Result<()> {
     std::fs::create_dir_all(&override_cwd)?;
     core_test_support::submit_thread_settings(
         &conversation,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             environments: Some(local_selections(override_cwd.clone())),
             collaboration_mode: Some(CollaborationMode {
                 mode: ModeKind::Default,
@@ -753,10 +753,10 @@ async fn mount_second_compact_sequence(server: &MockServer) -> ResponseMock {
 async fn start_test_conversation(
     server: &MockServer,
     model: Option<&str>,
-) -> (Arc<TempDir>, Config, Arc<ThreadManager>, Arc<CodexThread>) {
+) -> (Arc<TempDir>, Config, Arc<ThreadManager>, Arc<MotygaThread>) {
     let base_url = format!("{}/v1", server.uri());
     let model = model.map(str::to_string);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config.model_provider.name = "Non-OpenAI Model provider".to_string();
         config.model_provider.base_url = Some(base_url);
         config.compact_prompt = Some(SUMMARIZATION_PROMPT.to_string());
@@ -767,10 +767,10 @@ async fn start_test_conversation(
     let test = Box::pin(builder.build(server))
         .await
         .expect("create conversation");
-    (test.home, test.config, test.thread_manager, test.codex)
+    (test.home, test.config, test.thread_manager, test.motyga)
 }
 
-async fn user_turn(conversation: &Arc<CodexThread>, text: &str) {
+async fn user_turn(conversation: &Arc<MotygaThread>, text: &str) {
     conversation
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
@@ -787,7 +787,7 @@ async fn user_turn(conversation: &Arc<CodexThread>, text: &str) {
     wait_for_event(conversation, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
-async fn compact_conversation(conversation: &Arc<CodexThread>) {
+async fn compact_conversation(conversation: &Arc<MotygaThread>) {
     conversation
         .submit(Op::Compact)
         .await
@@ -806,11 +806,11 @@ async fn compact_conversation(conversation: &Arc<CodexThread>) {
     wait_for_event(conversation, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
-fn fetch_conversation_path(conversation: &Arc<CodexThread>) -> std::path::PathBuf {
+fn fetch_conversation_path(conversation: &Arc<MotygaThread>) -> std::path::PathBuf {
     conversation.rollout_path().expect("rollout path")
 }
 
-async fn shutdown_conversation(conversation: &Arc<CodexThread>) {
+async fn shutdown_conversation(conversation: &Arc<MotygaThread>) {
     conversation
         .shutdown_and_wait()
         .await
@@ -821,9 +821,9 @@ async fn resume_conversation(
     manager: &ThreadManager,
     config: &Config,
     path: std::path::PathBuf,
-) -> Arc<CodexThread> {
-    let auth_manager = codex_core::test_support::auth_manager_from_auth(
-        codex_login::CodexAuth::from_api_key("dummy"),
+) -> Arc<MotygaThread> {
+    let auth_manager = motyga_core::test_support::auth_manager_from_auth(
+        motyga_login::MotygaAuth::from_api_key("dummy"),
     );
     Box::pin(manager.resume_thread_from_rollout(
         config.clone(),
@@ -843,7 +843,7 @@ async fn fork_thread(
     config: &Config,
     path: std::path::PathBuf,
     nth_user_message: usize,
-) -> Arc<CodexThread> {
+) -> Arc<MotygaThread> {
     Box::pin(manager.fork_thread(
         nth_user_message,
         config.clone(),

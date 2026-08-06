@@ -234,14 +234,14 @@ async fn steer_rejection_queues_review_follow_up_before_existing_queued_messages
     handle_error(
         &mut chat,
         "cannot steer a review turn",
-        Some(CodexErrorInfo::ActiveTurnNotSteerable {
+        Some(MotygaErrorInfo::ActiveTurnNotSteerable {
             turn_kind: NonSteerableTurnKind::Review,
         }),
     );
     handle_error(
         &mut chat,
         "cannot steer a review turn",
-        Some(CodexErrorInfo::ActiveTurnNotSteerable {
+        Some(MotygaErrorInfo::ActiveTurnNotSteerable {
             turn_kind: NonSteerableTurnKind::Review,
         }),
     );
@@ -1134,10 +1134,10 @@ async fn custom_prompt_submit_sends_review_op() {
     chat.handle_paste("  please audit dependencies  ".to_string());
     chat.handle_key_event(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
 
-    // Expect AppEvent::CodexOp(Op::Review { .. }) with trimmed prompt
+    // Expect AppEvent::MotygaOp(Op::Review { .. }) with trimmed prompt
     let evt = rx.try_recv().expect("expected one app event");
     match evt {
-        AppEvent::CodexOp(Op::Review { target }) => {
+        AppEvent::MotygaOp(Op::Review { target }) => {
             assert_eq!(
                 target,
                 ReviewTarget::Custom {
@@ -1158,7 +1158,7 @@ async fn custom_prompt_enter_empty_does_not_send() {
     // Enter without any text
     chat.handle_key_event(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
 
-    // No AppEvent::CodexOp should be sent
+    // No AppEvent::MotygaOp should be sent
     assert!(rx.try_recv().is_err(), "no app event should be sent");
 }
 
@@ -1213,14 +1213,14 @@ async fn interrupted_turn_after_goal_budget_limited_uses_budget_message_snapshot
     chat.set_feature_enabled(Feature::Goals, /*enabled*/ true);
 
     chat.handle_server_notification(
-        codex_app_server_protocol::ServerNotification::TurnStarted(
-            codex_app_server_protocol::TurnStartedNotification {
+        motyga_app_server_protocol::ServerNotification::TurnStarted(
+            motyga_app_server_protocol::TurnStartedNotification {
                 thread_id: "thread-1".to_string(),
-                turn: codex_app_server_protocol::Turn {
+                turn: motyga_app_server_protocol::Turn {
                     id: "turn-1".to_string(),
-                    items_view: codex_app_server_protocol::TurnItemsView::Full,
+                    items_view: motyga_app_server_protocol::TurnItemsView::Full,
                     items: Vec::new(),
-                    status: codex_app_server_protocol::TurnStatus::InProgress,
+                    status: motyga_app_server_protocol::TurnStatus::InProgress,
                     error: None,
                     started_at: None,
                     completed_at: None,
@@ -1231,14 +1231,14 @@ async fn interrupted_turn_after_goal_budget_limited_uses_budget_message_snapshot
         /*replay_kind*/ None,
     );
     chat.handle_server_notification(
-        codex_app_server_protocol::ServerNotification::ThreadGoalUpdated(
-            codex_app_server_protocol::ThreadGoalUpdatedNotification {
+        motyga_app_server_protocol::ServerNotification::ThreadGoalUpdated(
+            motyga_app_server_protocol::ThreadGoalUpdatedNotification {
                 thread_id: "thread-1".to_string(),
                 turn_id: Some("turn-1".to_string()),
-                goal: codex_app_server_protocol::ThreadGoal {
+                goal: motyga_app_server_protocol::ThreadGoal {
                     thread_id: "thread-1".to_string(),
                     objective: "Run until the token budget is limited".to_string(),
-                    status: codex_app_server_protocol::ThreadGoalStatus::BudgetLimited,
+                    status: motyga_app_server_protocol::ThreadGoalStatus::BudgetLimited,
                     token_budget: Some(10_000),
                     tokens_used: 10_500,
                     time_used_seconds: 0,
@@ -1250,14 +1250,14 @@ async fn interrupted_turn_after_goal_budget_limited_uses_budget_message_snapshot
         /*replay_kind*/ None,
     );
     chat.handle_server_notification(
-        codex_app_server_protocol::ServerNotification::TurnCompleted(
-            codex_app_server_protocol::TurnCompletedNotification {
+        motyga_app_server_protocol::ServerNotification::TurnCompleted(
+            motyga_app_server_protocol::TurnCompletedNotification {
                 thread_id: "thread-1".to_string(),
-                turn: codex_app_server_protocol::Turn {
+                turn: motyga_app_server_protocol::Turn {
                     id: "turn-1".to_string(),
-                    items_view: codex_app_server_protocol::TurnItemsView::Full,
+                    items_view: motyga_app_server_protocol::TurnItemsView::Full,
                     items: Vec::new(),
-                    status: codex_app_server_protocol::TurnStatus::Interrupted,
+                    status: motyga_app_server_protocol::TurnStatus::Interrupted,
                     error: None,
                     started_at: None,
                     completed_at: None,
@@ -1455,7 +1455,7 @@ async fn review_queues_user_messages_snapshot() {
     handle_error(
         &mut chat,
         "cannot steer a review turn",
-        Some(CodexErrorInfo::ActiveTurnNotSteerable {
+        Some(MotygaErrorInfo::ActiveTurnNotSteerable {
             turn_kind: NonSteerableTurnKind::Review,
         }),
     );

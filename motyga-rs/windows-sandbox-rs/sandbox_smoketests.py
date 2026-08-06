@@ -1,5 +1,5 @@
 # sandbox_smoketests.py
-# Run a suite of smoke tests against the Windows sandbox via the Codex CLI
+# Run a suite of smoke tests against the Windows sandbox via the Motyga CLI
 # Requires: Python 3.8+ on Windows. No pip requirements.
 
 import os
@@ -14,43 +14,43 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from urllib.parse import urlsplit
 
-def _resolve_codex_cmd() -> List[str]:
-    """Resolve the Codex CLI to invoke `codex sandbox windows`.
+def _resolve_motyga_cmd() -> List[str]:
+    """Resolve the Motyga CLI to invoke `motyga sandbox windows`.
 
     Prefer local builds (debug first), then fall back to PATH.
-    Returns the argv prefix to run Codex.
+    Returns the argv prefix to run Motyga.
     """
     root = Path(__file__).parent
     ws_root = root.parent
     cargo_target = os.environ.get("CARGO_TARGET_DIR")
 
     candidates = [
-        ws_root / "target" / "debug" / "codex.exe",
-        ws_root / "target" / "release" / "codex.exe",
+        ws_root / "target" / "debug" / "motyga.exe",
+        ws_root / "target" / "release" / "motyga.exe",
     ]
     if cargo_target:
         cargo_base = Path(cargo_target)
         candidates.extend([
-            cargo_base / "debug" / "codex.exe",
-            cargo_base / "release" / "codex.exe",
+            cargo_base / "debug" / "motyga.exe",
+            cargo_base / "release" / "motyga.exe",
         ])
 
     for candidate in candidates:
         if candidate.exists():
             return [str(candidate)]
 
-    if shutil.which("codex"):
-        return ["codex"]
+    if shutil.which("motyga"):
+        return ["motyga"]
 
     raise FileNotFoundError(
-        "Codex CLI not found. Build it first, e.g.\n"
-        "  cargo build -p codex-cli --release\n"
+        "Motyga CLI not found. Build it first, e.g.\n"
+        "  cargo build -p motyga-cli --release\n"
         "or for debug:\n"
-        "  cargo build -p codex-cli\n"
+        "  cargo build -p motyga-cli\n"
     )
 
-CODEX_CMD = _resolve_codex_cmd()
-print(CODEX_CMD)
+MOTYGA_CMD = _resolve_motyga_cmd()
+print(MOTYGA_CMD)
 TIMEOUT_SEC = 20
 
 WS_ROOT = Path(os.environ["USERPROFILE"]) / "sbx_ws_tests"
@@ -74,7 +74,7 @@ def run_sbx(
     env.update(ENV_BASE)
     if env_extra:
         env.update(env_extra)
-    # Map policy to codex CLI overrides.
+    # Map policy to motyga CLI overrides.
     # read-only => default; workspace-write => legacy sandbox_mode override
     if policy not in ("read-only", "workspace-write"):
         raise ValueError(f"unknown policy: {policy}")
@@ -90,7 +90,7 @@ def run_sbx(
             f'sandbox_workspace_write.writable_roots=["{additional_root.as_posix()}"]',
         ]
 
-    argv = [*CODEX_CMD, "sandbox", "windows", *policy_flags, *overrides, "--", *cmd_argv]
+    argv = [*MOTYGA_CMD, "sandbox", "windows", *policy_flags, *overrides, "--", *cmd_argv]
     print(cmd_argv)
     cp = subprocess.run(argv, cwd=str(cwd), env=env,
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -350,7 +350,7 @@ def main() -> int:
     # 17. WS: direct loopback blocked, proxy loopback allowed via env proxy
     if have("curl"):
         with start_loopback_proxy_fixture() as (target_port, proxy_port):
-            proxy_home = WS_ROOT / ".codex_proxy_smoke"
+            proxy_home = WS_ROOT / ".motyga_proxy_smoke"
             remove_if_exists(proxy_home)
             proxy_home.mkdir(parents=True, exist_ok=True)
             proxy_url = f"http://127.0.0.1:{proxy_port}"
@@ -488,7 +488,7 @@ def main() -> int:
     rc, out, err = run_sbx("workspace-write", ["cmd", "/c", "type \\\\.\\PhysicalDrive0"], WS_ROOT)
     add("WS: raw device access denied", rc != 0, f"rc={rc}")
 
-    rc, out, err = run_sbx("workspace-write", ["cmd", "/c", "echo hi > \\\\.\\pipe\\codex_testpipe"], WS_ROOT)
+    rc, out, err = run_sbx("workspace-write", ["cmd", "/c", "echo hi > \\\\.\\pipe\\motyga_testpipe"], WS_ROOT)
     add("WS: named pipe creation denied", rc != 0, f"rc={rc}")
 
     # 32. WS: ADS/long-path escape denied
@@ -508,17 +508,17 @@ def main() -> int:
     rc, out, err = run_sbx("workspace-write", ["cmd", "/c", "echo hack > .GiT\\config"], WS_ROOT)
     add("WS: protected path case-variation denied", rc != 0 and assert_not_exists(git_variation), f"rc={rc}")
 
-    # 34. WS: policy tamper (.codex artifacts) denied
-    codex_home = Path(os.environ["USERPROFILE"]) / ".codex"
-    cap_sid_target = codex_home / "cap_sid"
+    # 34. WS: policy tamper (.motyga artifacts) denied
+    motyga_home = Path(os.environ["USERPROFILE"]) / ".motyga"
+    cap_sid_target = motyga_home / "cap_sid"
     rc, out, err = run_sbx(
         "workspace-write",
         ["cmd", "/c", f"echo tamper > \"{cap_sid_target}\""],
         WS_ROOT,
     )
-    rc2, out2, err2 = run_sbx("workspace-write", ["cmd", "/c", "echo tamper > .codex\\policy.json"], WS_ROOT)
-    add("WS: .codex cap_sid tamper denied", rc != 0, f"rc={rc}, err={err}")
-    add("WS: .codex policy tamper denied", rc2 != 0, f"rc={rc2}, err={err2}")
+    rc2, out2, err2 = run_sbx("workspace-write", ["cmd", "/c", "echo tamper > .motyga\\policy.json"], WS_ROOT)
+    add("WS: .motyga cap_sid tamper denied", rc != 0, f"rc={rc}, err={err}")
+    add("WS: .motyga policy tamper denied", rc2 != 0, f"rc={rc2}, err={err2}")
 
     # 35. WS: PATH stub bypass denied (ssh before stubs)
     tools_dir = WS_ROOT / "tools"
@@ -570,7 +570,7 @@ def main() -> int:
     # Simulate workspace replaced by symlink to C:\; expect writes to be denied.
     fake_root = WS_ROOT / "fake_root"
     if make_symlink(fake_root, Path("C:/")):
-        rc, out, err = run_sbx("workspace-write", ["cmd", "/c", "echo owned > codex_escape.txt"], fake_root)
+        rc, out, err = run_sbx("workspace-write", ["cmd", "/c", "echo owned > motyga_escape.txt"], fake_root)
         add("WS: workspace-root symlink poisoning denied", rc != 0, f"rc={rc}")
     else:
         add("WS: workspace-root symlink poisoning denied (setup skipped)", True, "symlink creation failed")
@@ -612,7 +612,7 @@ def main() -> int:
             "-NoLogo",
             "-NoProfile",
             "-Command",
-            "Start-Process 'https://codex-invalid.local/smoke'",
+            "Start-Process 'https://motyga-invalid.local/smoke'",
         ],
         WS_ROOT,
     )

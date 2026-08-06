@@ -16,11 +16,11 @@ class RuntimeBuildHook(BuildHookInterface):
         del version
         if self.target_name == "sdist":
             raise RuntimeError(
-                "openai-codex-cli-bin is wheel-only; build and publish platform wheels only."
+                "motyga-cli-bin is wheel-only; build and publish platform wheels only."
             )
 
         platform_tag = self.config.get("platform-tag") or os.environ.get(
-            "CODEX_CLI_BIN_PLATFORM_TAG"
+            "MOTYGA_CLI_BIN_PLATFORM_TAG"
         )
         if not isinstance(platform_tag, str) or not platform_tag:
             platform_tag = _platform_tag()

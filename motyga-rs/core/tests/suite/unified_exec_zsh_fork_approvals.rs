@@ -1,26 +1,26 @@
 use anyhow::Context;
 use anyhow::Result;
-use codex_config::permissions_toml::FilesystemPermissionToml;
-use codex_config::permissions_toml::PermissionProfileToml;
-use codex_config::types::ApprovalsReviewer;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Settings;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExecApprovalRequestEvent;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::ThreadSettingsOverrides;
-use codex_protocol::user_input::UserInput;
+use motyga_config::permissions_toml::FilesystemPermissionToml;
+use motyga_config::permissions_toml::PermissionProfileToml;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_core::sandboxing::SandboxPermissions;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::Settings;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExecApprovalRequestEvent;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::ThreadSettingsOverrides;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ResponseMock;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -30,9 +30,9 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_with_timeout;
 use core_test_support::zsh_fork::build_unified_exec_zsh_fork_test;
@@ -219,7 +219,7 @@ async fn unified_exec_zsh_fork_parent_approval_keeps_explicit_prompt_rule() -> R
     approve_expected_exec(&test, &command).await?;
 
     let approval_event = wait_for_event_with_timeout(
-        &test.codex,
+        &test.motyga,
         |event| {
             matches!(
                 event,
@@ -273,7 +273,7 @@ async fn build_unified_exec_zsh_fork_test_or_skip<F>(
     approval_policy: AskForApproval,
     permission_profile: PermissionProfile,
     pre_build_hook: F,
-) -> Result<Option<(MockServer, TestCodex)>>
+) -> Result<Option<(MockServer, TestMotyga)>>
 where
     F: FnOnce(&Path) + Send + 'static,
 {
@@ -392,7 +392,7 @@ async fn mount_unified_exec_command(
 }
 
 async fn submit_turn_with_session_permissions(
-    test: &TestCodex,
+    test: &TestMotyga,
     prompt: &str,
     approval_policy: AskForApproval,
 ) -> Result<()> {
@@ -401,7 +401,7 @@ async fn submit_turn_with_session_permissions(
         test.session_configured.permission_profile.clone(),
         test.cwd.path(),
     );
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -432,13 +432,13 @@ async fn submit_turn_with_session_permissions(
     Ok(())
 }
 
-async fn approve_expected_exec(test: &TestCodex, expected_command: &str) -> Result<()> {
+async fn approve_expected_exec(test: &TestMotyga, expected_command: &str) -> Result<()> {
     let approval = expect_exec_approval(test, expected_command).await;
     approve_exec(test, approval.effective_approval_id()).await
 }
 
-async fn approve_exec(test: &TestCodex, approval_id: String) -> Result<()> {
-    test.codex
+async fn approve_exec(test: &TestMotyga, approval_id: String) -> Result<()> {
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval_id,
             turn_id: None,
@@ -512,10 +512,10 @@ fn parsed_regex_result(pattern: &str, output_str: &str) -> Option<CommandResult>
 }
 
 async fn expect_exec_approval(
-    test: &TestCodex,
+    test: &TestMotyga,
     expected_command: &str,
 ) -> ExecApprovalRequestEvent {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -541,8 +541,8 @@ async fn expect_exec_approval(
     }
 }
 
-async fn wait_for_completion_without_approval(test: &TestCodex) {
-    let event = wait_for_event(&test.codex, |event| {
+async fn wait_for_completion_without_approval(test: &TestMotyga) {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -559,8 +559,8 @@ async fn wait_for_completion_without_approval(test: &TestCodex) {
     }
 }
 
-async fn wait_for_completion(test: &TestCodex) {
-    wait_for_event(&test.codex, |event| {
+async fn wait_for_completion(test: &TestMotyga) {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

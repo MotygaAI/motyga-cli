@@ -1,25 +1,25 @@
 use anyhow::Context;
 use anyhow::Result;
-use codex_config::types::ApprovalsReviewer;
-use codex_core::config::Constrained;
-use codex_exec_server::CreateDirectoryOptions;
-use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-use codex_exec_server::REMOTE_ENVIRONMENT_ID;
-use codex_exec_server::RemoveOptions;
-use codex_features::Feature;
-use codex_protocol::approvals::NetworkApprovalContext;
-use codex_protocol::approvals::NetworkApprovalProtocol;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExecApprovalRequestEvent;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_protocol::protocol::TurnEnvironmentSelections;
-use codex_protocol::user_input::UserInput;
-use codex_utils_path_uri::PathUri;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_core::config::Constrained;
+use motyga_exec_server::CreateDirectoryOptions;
+use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+use motyga_exec_server::REMOTE_ENVIRONMENT_ID;
+use motyga_exec_server::RemoveOptions;
+use motyga_features::Feature;
+use motyga_protocol::approvals::NetworkApprovalContext;
+use motyga_protocol::approvals::NetworkApprovalProtocol;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExecApprovalRequestEvent;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::protocol::TurnEnvironmentSelections;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathBufExt;
 use core_test_support::PathExt;
 use core_test_support::managed_network_requirements_loader;
@@ -36,10 +36,10 @@ use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_no_remote_env;
 use core_test_support::skip_if_sandbox;
 use core_test_support::skip_if_target_windows;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::local;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::local;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_with_timeout;
 use pretty_assertions::assert_eq;
@@ -53,8 +53,8 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use tempfile::TempDir;
 
-const NETWORK_TEST_HOST: &str = "codex-network-test.invalid";
-const NETWORK_TEST_TARGET: &str = "http://codex-network-test.invalid:80";
+const NETWORK_TEST_HOST: &str = "motyga-network-test.invalid";
+const NETWORK_TEST_TARGET: &str = "http://motyga-network-test.invalid:80";
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn approved_network_host_for_one_environment_still_prompts_in_another() -> Result<()> {
@@ -68,7 +68,7 @@ async fn approved_network_host_for_one_environment_still_prompts_in_another() ->
     let test = managed_network_unified_exec_test(&server).await?;
     let local_cwd = TempDir::new()?;
     let remote_cwd = PathBuf::from(format!(
-        "/tmp/codex-network-approval-{}",
+        "/tmp/motyga-network-approval-{}",
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis()
     ))
     .abs();
@@ -102,7 +102,7 @@ async fn approved_network_host_for_one_environment_still_prompts_in_another() ->
     )
     .await?;
     let approval = expect_network_approval(&test, LOCAL_ENVIRONMENT_ID).await?;
-    test.codex
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
@@ -125,7 +125,7 @@ async fn approved_network_host_for_one_environment_still_prompts_in_another() ->
     )
     .await?;
     let approval = expect_network_approval(&test, REMOTE_ENVIRONMENT_ID).await?;
-    test.codex
+    test.motyga
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
@@ -148,7 +148,7 @@ async fn approved_network_host_for_one_environment_still_prompts_in_another() ->
     Ok(())
 }
 
-async fn managed_network_unified_exec_test(server: &wiremock::MockServer) -> Result<TestCodex> {
+async fn managed_network_unified_exec_test(server: &wiremock::MockServer) -> Result<TestMotyga> {
     let home = Arc::new(TempDir::new()?);
     fs::write(
         home.path().join("config.toml"),
@@ -171,7 +171,7 @@ allow_local_binding = true
         /*exclude_slash_tmp*/ false,
     );
     let permission_profile_for_config = permission_profile.clone();
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(home)
         .with_cloud_config_bundle(managed_network_requirements_loader())
         .with_config(move |config| {
@@ -235,7 +235,7 @@ fn network_fetch_args(environment_id: &str) -> Value {
 }
 
 async fn submit_managed_network_turn(
-    test: &TestCodex,
+    test: &TestMotyga,
     prompt: &str,
     environments: Vec<TurnEnvironmentSelection>,
 ) -> Result<()> {
@@ -250,7 +250,7 @@ async fn submit_managed_network_turn(
     let turn_environment_selections =
         TurnEnvironmentSelections::new(test.config.cwd.clone(), environments);
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -259,15 +259,15 @@ async fn submit_managed_network_turn(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(turn_environment_selections),
                 approval_policy: Some(AskForApproval::OnRequest),
                 approvals_reviewer: Some(ApprovalsReviewer::User),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -282,7 +282,7 @@ async fn submit_managed_network_turn(
 }
 
 async fn expect_network_approval(
-    test: &TestCodex,
+    test: &TestMotyga,
     expected_environment_id: &str,
 ) -> Result<ExecApprovalRequestEvent> {
     let deadline = std::time::Instant::now() + Duration::from_secs(30);
@@ -290,7 +290,7 @@ async fn expect_network_approval(
         .checked_duration_since(std::time::Instant::now())
         .context("timed out waiting for network approval request")?;
     let event = wait_for_event_with_timeout(
-        &test.codex,
+        &test.motyga,
         |event| {
             matches!(
                 event,
@@ -329,8 +329,8 @@ async fn expect_network_approval(
     }
 }
 
-async fn wait_for_turn_complete(test: &TestCodex) {
-    wait_for_event(&test.codex, |event| {
+async fn wait_for_turn_complete(test: &TestMotyga) {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

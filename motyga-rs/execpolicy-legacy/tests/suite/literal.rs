@@ -1,13 +1,13 @@
-use codex_execpolicy_legacy::ArgType;
-use codex_execpolicy_legacy::Error;
-use codex_execpolicy_legacy::ExecCall;
-use codex_execpolicy_legacy::MatchedArg;
-use codex_execpolicy_legacy::MatchedExec;
-use codex_execpolicy_legacy::PolicyParser;
-use codex_execpolicy_legacy::Result;
-use codex_execpolicy_legacy::ValidExec;
+use motyga_execpolicy_legacy::ArgType;
+use motyga_execpolicy_legacy::Error;
+use motyga_execpolicy_legacy::ExecCall;
+use motyga_execpolicy_legacy::MatchedArg;
+use motyga_execpolicy_legacy::MatchedExec;
+use motyga_execpolicy_legacy::PolicyParser;
+use motyga_execpolicy_legacy::Result;
+use motyga_execpolicy_legacy::ValidExec;
 
-extern crate codex_execpolicy_legacy;
+extern crate motyga_execpolicy_legacy;
 
 #[test]
 fn test_invalid_subcommand() -> Result<()> {

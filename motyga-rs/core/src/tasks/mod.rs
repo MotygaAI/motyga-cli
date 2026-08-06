@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
-use codex_extension_api::ExtensionData;
+use motyga_extension_api::ExtensionData;
 use futures::future::BoxFuture;
 use tokio::select;
 use tokio::sync::Notify;
@@ -22,7 +22,7 @@ use tracing::trace;
 use tracing::trace_span;
 use tracing::warn;
 
-use crate::codex_thread::BackgroundTerminalInfo;
+use crate::motyga_thread::BackgroundTerminalInfo;
 use crate::config::Config;
 use crate::context::ContextualUserFragment;
 use crate::hook_runtime::inspect_pending_input;
@@ -34,29 +34,29 @@ use crate::session::turn_context::TurnContext;
 use crate::state::ActiveTurn;
 use crate::state::RunningTask;
 use crate::state::TaskKind;
-use codex_analytics::TurnProfileFact;
-use codex_analytics::TurnTokenUsageFact;
-use codex_login::AuthManager;
-use codex_models_manager::manager::SharedModelsManager;
-use codex_otel::SessionTelemetry;
-use codex_otel::TURN_E2E_DURATION_METRIC;
-use codex_otel::TURN_MEMORY_METRIC;
-use codex_otel::TURN_NETWORK_PROXY_METRIC;
-use codex_otel::TURN_TOKEN_USAGE_METRIC;
-use codex_otel::TURN_TOOL_CALL_METRIC;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::protocol::TurnAbortedEvent;
-use codex_protocol::protocol::TurnCompleteEvent;
-use codex_protocol::protocol::WarningEvent;
+use motyga_analytics::TurnProfileFact;
+use motyga_analytics::TurnTokenUsageFact;
+use motyga_login::AuthManager;
+use motyga_models_manager::manager::SharedModelsManager;
+use motyga_otel::SessionTelemetry;
+use motyga_otel::TURN_E2E_DURATION_METRIC;
+use motyga_otel::TURN_MEMORY_METRIC;
+use motyga_otel::TURN_NETWORK_PROXY_METRIC;
+use motyga_otel::TURN_TOKEN_USAGE_METRIC;
+use motyga_otel::TURN_TOOL_CALL_METRIC;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_protocol::protocol::TurnAbortedEvent;
+use motyga_protocol::protocol::TurnCompleteEvent;
+use motyga_protocol::protocol::WarningEvent;
 
-use codex_features::Feature;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::models::ContentItem;
+use motyga_features::Feature;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::models::ContentItem;
 pub(crate) use compact::CompactTask;
 pub(crate) use regular::RegularTask;
 pub(crate) use review::ReviewTask;
@@ -65,9 +65,9 @@ pub(crate) use user_shell::UserShellCommandTask;
 pub(crate) use user_shell::execute_user_shell_command;
 
 const GRACEFULL_INTERRUPTION_TIMEOUT_MS: u64 = 100;
-const TASK_COMPACT_METRIC: &str = "codex.task.compact";
+const TASK_COMPACT_METRIC: &str = "motyga.task.compact";
 
-pub(crate) type SessionTaskResult = CodexResult<Option<String>>;
+pub(crate) type SessionTaskResult = MotygaResult<Option<String>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum InterruptedTurnHistoryMarker {
@@ -205,7 +205,7 @@ impl SessionTaskContext {
 
 /// Async task that drives a [`Session`] turn.
 ///
-/// Implementations encapsulate a specific Codex workflow (regular chat,
+/// Implementations encapsulate a specific Motyga workflow (regular chat,
 /// reviews, ghost snapshots, etc.). Each task instance is owned by a
 /// [`Session`] and executed on a background Tokio task. The trait is
 /// intentionally small: implementers identify themselves via
@@ -227,7 +227,7 @@ pub(crate) trait SessionTask: Send + Sync + 'static {
     /// abort; implementers should watch for it and terminate quickly once it
     /// fires. Returning [`Some`] yields a final message that
     /// [`Session::on_task_finished`] will emit to the client. Returning
-    /// [`CodexErr::TurnAborted`] completes the task through the aborted-turn
+    /// [`MotygaErr::TurnAborted`] completes the task through the aborted-turn
     /// lifecycle instead.
     fn run(
         self: Arc<Self>,
@@ -390,13 +390,13 @@ impl Session {
             thread.id = %self.thread_id,
             turn.id = %turn_context.sub_id,
             model = %turn_context.model_info.slug,
-            codex.turn.reasoning_effort = %reasoning_effort,
-            codex.turn.token_usage.input_tokens = field::Empty,
-            codex.turn.token_usage.cached_input_tokens = field::Empty,
-            codex.turn.token_usage.non_cached_input_tokens = field::Empty,
-            codex.turn.token_usage.output_tokens = field::Empty,
-            codex.turn.token_usage.reasoning_output_tokens = field::Empty,
-            codex.turn.token_usage.total_tokens = field::Empty,
+            motyga.turn.reasoning_effort = %reasoning_effort,
+            motyga.turn.token_usage.input_tokens = field::Empty,
+            motyga.turn.token_usage.cached_input_tokens = field::Empty,
+            motyga.turn.token_usage.non_cached_input_tokens = field::Empty,
+            motyga.turn.token_usage.output_tokens = field::Empty,
+            motyga.turn.token_usage.reasoning_output_tokens = field::Empty,
+            motyga.turn.token_usage.total_tokens = field::Empty,
         );
         let handle = tokio::spawn(
             async move {
@@ -567,7 +567,7 @@ impl Session {
     ) {
         let (last_agent_message, abort_reason) = match task_result {
             Ok(last_agent_message) => (last_agent_message, None),
-            Err(CodexErr::TurnAborted) => (None, Some(TurnAbortReason::Interrupted)),
+            Err(MotygaErr::TurnAborted) => (None, Some(TurnAbortReason::Interrupted)),
             Err(err) => {
                 warn!(%err, "session task returned an unexpected error");
                 (None, None)
@@ -678,27 +678,27 @@ impl Session {
             };
             let current_span = Span::current();
             current_span.record(
-                "codex.turn.token_usage.input_tokens",
+                "motyga.turn.token_usage.input_tokens",
                 turn_token_usage.input_tokens,
             );
             current_span.record(
-                "codex.turn.token_usage.cached_input_tokens",
+                "motyga.turn.token_usage.cached_input_tokens",
                 turn_token_usage.cached_input(),
             );
             current_span.record(
-                "codex.turn.token_usage.non_cached_input_tokens",
+                "motyga.turn.token_usage.non_cached_input_tokens",
                 turn_token_usage.non_cached_input(),
             );
             current_span.record(
-                "codex.turn.token_usage.output_tokens",
+                "motyga.turn.token_usage.output_tokens",
                 turn_token_usage.output_tokens,
             );
             current_span.record(
-                "codex.turn.token_usage.reasoning_output_tokens",
+                "motyga.turn.token_usage.reasoning_output_tokens",
                 turn_token_usage.reasoning_output_tokens,
             );
             current_span.record(
-                "codex.turn.token_usage.total_tokens",
+                "motyga.turn.token_usage.total_tokens",
                 turn_token_usage.total_tokens,
             );
             self.services

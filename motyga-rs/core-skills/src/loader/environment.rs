@@ -2,14 +2,14 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io;
 
-use codex_exec_server::ExecutorFileSystem;
-use codex_exec_server::WalkEntryKind;
-use codex_exec_server::WalkOptions;
-use codex_protocol::protocol::Product;
-use codex_utils_path_uri::PathUri;
-use codex_utils_plugins::DISCOVERABLE_PLUGIN_MANIFEST_PATHS;
-use codex_utils_plugins::plugin_namespace_for_root_uri;
-use codex_utils_plugins::plugin_namespace_for_skill_uri;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_exec_server::WalkEntryKind;
+use motyga_exec_server::WalkOptions;
+use motyga_protocol::protocol::Product;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_plugins::DISCOVERABLE_PLUGIN_MANIFEST_PATHS;
+use motyga_utils_plugins::plugin_namespace_for_root_uri;
+use motyga_utils_plugins::plugin_namespace_for_skill_uri;
 use futures::StreamExt;
 use futures::future::join_all;
 

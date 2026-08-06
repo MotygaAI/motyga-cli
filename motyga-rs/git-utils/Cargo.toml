@@ -1,5 +1,5 @@
 [package]
-name = "codex-git-utils"
+name = "motyga-git-utils"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -11,10 +11,10 @@ workspace = true
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
-codex-file-system = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-path-uri = { workspace = true }
+motyga-file-system = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
 futures = { workspace = true, features = ["alloc"] }
 gix = { workspace = true }
 once_cell = { workspace = true }

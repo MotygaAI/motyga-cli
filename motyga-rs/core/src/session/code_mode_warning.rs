@@ -1,6 +1,6 @@
-use codex_features::Feature;
-use codex_features::Features;
-use codex_protocol::openai_models::ModelInfo;
+use motyga_features::Feature;
+use motyga_features::Features;
+use motyga_protocol::openai_models::ModelInfo;
 
 pub(super) fn unsupported_code_mode_warning(
     model_info: &ModelInfo,

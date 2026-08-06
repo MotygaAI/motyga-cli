@@ -1,4 +1,4 @@
-use codex_context_fragments::ContextualUserFragment;
+use motyga_context_fragments::ContextualUserFragment;
 
 use crate::injection::SkillInjection;
 

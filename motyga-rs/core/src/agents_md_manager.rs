@@ -2,8 +2,8 @@ use crate::agents_md::LoadedAgentsMd;
 use crate::agents_md::load_project_instructions;
 use crate::config::Config;
 use crate::environment_selection::TurnEnvironmentSnapshot;
-use codex_extension_api::UserInstructions;
-use codex_protocol::protocol::TurnEnvironmentSelection;
+use motyga_extension_api::UserInstructions;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 

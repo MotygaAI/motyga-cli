@@ -3,7 +3,7 @@ name: pushing-ci-changes
 description: Pushing GitHub Actions changes, resolving push rejection, requesting upload exceptions.
 ---
 
-The Codex repository prevents anyone from uploading changes to its CI configuration unless they've
+The Motyga repository prevents anyone from uploading changes to its CI configuration unless they've
 been granted a temporary role.
 
 In order to push changes to `.github/**/*.yml` and related files you'll need the user to read

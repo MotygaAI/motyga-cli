@@ -2,25 +2,25 @@
 #![allow(clippy::unwrap_used)]
 
 use anyhow::Result;
-use codex_config::types::ToolSuggestDisabledTool;
-use codex_config::types::ToolSuggestDiscoverable;
-use codex_config::types::ToolSuggestDiscoverableType;
-use codex_core::config::Config;
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_models_manager::bundled_models_response;
-use codex_protocol::approvals::ElicitationAction;
-use codex_protocol::approvals::ElicitationRequest;
-use codex_protocol::approvals::ElicitationRequestEvent;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Settings;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ThreadSettingsOverrides;
-use codex_protocol::user_input::UserInput;
+use motyga_config::types::ToolSuggestDisabledTool;
+use motyga_config::types::ToolSuggestDiscoverable;
+use motyga_config::types::ToolSuggestDiscoverableType;
+use motyga_core::config::Config;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_models_manager::bundled_models_response;
+use motyga_protocol::approvals::ElicitationAction;
+use motyga_protocol::approvals::ElicitationRequest;
+use motyga_protocol::approvals::ElicitationRequestEvent;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::Settings;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ThreadSettingsOverrides;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::apps_test_server::AppsTestServer;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -31,9 +31,9 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::TestMotyga;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use serde_json::Value;
@@ -54,7 +54,7 @@ const DISCOVERABLE_GMAIL_ID: &str = "connector_68df038e0ba48191908c8434991bbac2"
 const REMOTE_CALENDAR_PLUGIN_CONFIG_ID: &str = "calendar@openai-curated-remote";
 const REMOTE_CALENDAR_PLUGIN_ID: &str = "plugin_calendar";
 const CALENDAR_CONNECTOR_ID: &str = "calendar";
-const CALENDAR_NAMESPACE: &str = "mcp__codex_apps__calendar";
+const CALENDAR_NAMESPACE: &str = "mcp__motyga_apps__calendar";
 const CALENDAR_CREATE_EVENT_TOOL: &str = "_create_event";
 
 fn tool_names(body: &Value) -> Vec<String> {
@@ -132,9 +132,9 @@ fn assert_legacy_tools(body: &Value) {
 async fn build_test(
     server: &wiremock::MockServer,
     apps_server: &AppsTestServer,
-) -> Result<TestCodex> {
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+) -> Result<TestMotyga> {
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config({
             let apps_base_url = apps_server.chatgpt_base_url.clone();
             move |config| configure_apps_without_search_tool(config, apps_base_url.as_str())
@@ -142,10 +142,10 @@ async fn build_test(
     builder.build(server).await
 }
 
-async fn start_install_turn(test: &TestCodex, prompt: &str) -> Result<ElicitationRequestEvent> {
+async fn start_install_turn(test: &TestMotyga, prompt: &str) -> Result<ElicitationRequestEvent> {
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.config.cwd.as_path());
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.to_string(),
@@ -171,7 +171,7 @@ async fn start_install_turn(test: &TestCodex, prompt: &str) -> Result<Elicitatio
         })
         .await?;
 
-    Ok(wait_for_event_match(&test.codex, |event| match event {
+    Ok(wait_for_event_match(&test.motyga, |event| match event {
         EventMsg::ElicitationRequest(request) => Some(request.clone()),
         _ => None,
     })
@@ -179,11 +179,11 @@ async fn start_install_turn(test: &TestCodex, prompt: &str) -> Result<Elicitatio
 }
 
 async fn resolve_install_elicitation(
-    test: &TestCodex,
+    test: &TestMotyga,
     elicitation: ElicitationRequestEvent,
     decision: ElicitationAction,
 ) -> Result<()> {
-    test.codex
+    test.motyga
         .submit(Op::ResolveElicitation {
             server_name: elicitation.server_name,
             request_id: elicitation.id,
@@ -192,7 +192,7 @@ async fn resolve_install_elicitation(
             meta: None,
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -481,13 +481,13 @@ async fn run_remote_plugin_install_metadata_case() -> Result<()> {
         let requests = server.received_requests().await.unwrap_or_default();
         if let Some(event) = requests
             .into_iter()
-            .filter(|request| request.url.path() == "/codex/analytics-events/events")
+            .filter(|request| request.url.path() == "/motyga/analytics-events/events")
             .find_map(|request| {
                 let payload: Value = serde_json::from_slice(&request.body).ok()?;
                 payload["events"].as_array().and_then(|events| {
                     events
                         .iter()
-                        .find(|event| event["event_type"] == "codex_plugin_install_requested")
+                        .find(|event| event["event_type"] == "motyga_plugin_install_requested")
                         .cloned()
                 })
             })
@@ -504,7 +504,7 @@ async fn run_remote_plugin_install_metadata_case() -> Result<()> {
     assert_eq!(
         analytics_event,
         json!({
-            "event_type": "codex_plugin_install_requested",
+            "event_type": "motyga_plugin_install_requested",
             "event_params": {
                 "suggestion_id": "request_plugin_install_install-github",
                 "plugins": [{
@@ -517,7 +517,7 @@ async fn run_remote_plugin_install_metadata_case() -> Result<()> {
                 "thread_id": thread_id,
                 "turn_id": turn_id,
                 "model_slug": "gpt-5.4",
-                "product_client_id": codex_login::default_client::originator().value,
+                "product_client_id": motyga_login::default_client::originator().value,
             }
         })
     );
@@ -659,8 +659,8 @@ async fn endpoint_mode_with_no_eligible_candidates_exposes_no_suggestion_tools()
         ]),
     )
     .await;
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config({
             let apps_base_url = apps_server.chatgpt_base_url.clone();
             move |config| {

@@ -2,16 +2,16 @@
 
 use std::collections::HashSet;
 
-pub use codex_utils_plugins::mention_syntax;
-pub use codex_utils_plugins::plugin_namespace_for_skill_path;
+pub use motyga_utils_plugins::mention_syntax;
+pub use motyga_utils_plugins::plugin_namespace_for_skill_path;
 
 mod load_outcome;
 pub mod manifest;
 mod plugin_id;
 mod provider;
 
-use codex_config::HookEventsToml;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_config::HookEventsToml;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 pub use load_outcome::EffectiveSkillRoots;
 pub use load_outcome::LoadedPlugin;
 pub use load_outcome::PluginLoadOutcome;
@@ -70,7 +70,7 @@ pub struct PluginHookSource {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PluginTelemetryMetadata {
-    /// Local plugin identifier used by Codex configuration and the plugin cache,
+    /// Local plugin identifier used by Motyga configuration and the plugin cache,
     /// when it has been resolved.
     pub plugin_id: Option<PluginId>,
     /// Optional backend identifier for remote plugins.

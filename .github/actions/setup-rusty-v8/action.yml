@@ -1,8 +1,8 @@
 name: setup-rusty-v8
-description: Download and verify Codex-built rusty_v8 artifacts for Cargo builds.
+description: Download and verify Motyga-built rusty_v8 artifacts for Cargo builds.
 inputs:
   target:
-    description: Rust target triple with Codex-built V8 release artifacts.
+    description: Rust target triple with Motyga-built V8 release artifacts.
     required: true
 
 runs:

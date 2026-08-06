@@ -1,12 +1,12 @@
 use crate::manifest::PluginManifestInterface;
 use crate::manifest::load_plugin_manifest;
-use codex_app_server_protocol::PluginAuthPolicy;
-use codex_app_server_protocol::PluginInstallPolicy;
-use codex_git_utils::get_git_repo_root;
-use codex_plugin::PluginId;
-use codex_plugin::PluginIdError;
-use codex_protocol::protocol::Product;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::PluginAuthPolicy;
+use motyga_app_server_protocol::PluginInstallPolicy;
+use motyga_git_utils::get_git_repo_root;
+use motyga_plugin::PluginId;
+use motyga_plugin::PluginIdError;
+use motyga_protocol::protocol::Product;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use serde::Deserialize;
 use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
@@ -156,7 +156,7 @@ impl MarketplacePluginSource {
 pub struct MarketplacePluginPolicy {
     pub installation: MarketplacePluginInstallPolicy,
     pub authentication: MarketplacePluginAuthPolicy,
-    // TODO: Surface or enforce product gating at the Codex/plugin consumer boundary instead of
+    // TODO: Surface or enforce product gating at the Motyga/plugin consumer boundary instead of
     // only carrying it through core marketplace metadata.
     pub products: Option<Vec<Product>>,
 }
@@ -522,7 +522,7 @@ fn resolve_marketplace_plugin_entry(
 
     let manifest = match &source {
         MarketplacePluginSource::Local { path } => {
-            if codex_utils_plugins::find_plugin_manifest_path(path.as_path()).is_some() {
+            if motyga_utils_plugins::find_plugin_manifest_path(path.as_path()).is_some() {
                 load_plugin_manifest(path.as_path())
             } else if manifest_fallback.has_metadata {
                 manifest_fallback.parse_for_plugin_root(path.as_path())

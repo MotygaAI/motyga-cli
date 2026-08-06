@@ -1,6 +1,6 @@
-use codex_protocol::ThreadId;
-use codex_protocol::memory_citation::MemoryCitation;
-use codex_protocol::memory_citation::MemoryCitationEntry;
+use motyga_protocol::ThreadId;
+use motyga_protocol::memory_citation::MemoryCitation;
+use motyga_protocol::memory_citation::MemoryCitationEntry;
 use std::collections::HashSet;
 
 pub fn parse_memory_citation(citations: Vec<String>) -> Option<MemoryCitation> {

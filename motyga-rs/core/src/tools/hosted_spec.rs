@@ -1,7 +1,7 @@
-use codex_protocol::config_types::WebSearchConfig;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::openai_models::WebSearchToolType;
-use codex_tools::ToolSpec;
+use motyga_protocol::config_types::WebSearchConfig;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::openai_models::WebSearchToolType;
+use motyga_tools::ToolSpec;
 
 const WEB_SEARCH_TEXT_AND_IMAGE_CONTENT_TYPES: [&str; 2] = ["text", "image"];
 

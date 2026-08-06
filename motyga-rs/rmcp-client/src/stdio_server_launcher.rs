@@ -30,18 +30,18 @@ use std::time::Duration;
 
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_config::types::McpServerEnvVar;
-use codex_exec_server::ExecBackend;
-use codex_exec_server::ExecEnvPolicy;
-use codex_exec_server::ExecParams;
-use codex_exec_server::ExecProcess;
-use codex_protocol::config_types::ShellEnvironmentPolicyInherit;
-use codex_utils_path_uri::LegacyAppPathString;
-use codex_utils_path_uri::PathUri;
+use motyga_config::types::McpServerEnvVar;
+use motyga_exec_server::ExecBackend;
+use motyga_exec_server::ExecEnvPolicy;
+use motyga_exec_server::ExecParams;
+use motyga_exec_server::ExecProcess;
+use motyga_protocol::config_types::ShellEnvironmentPolicyInherit;
+use motyga_utils_path_uri::LegacyAppPathString;
+use motyga_utils_path_uri::PathUri;
 #[cfg(unix)]
-use codex_utils_pty::process_group::kill_process_group;
+use motyga_utils_pty::process_group::kill_process_group;
 #[cfg(unix)]
-use codex_utils_pty::process_group::terminate_process_group;
+use motyga_utils_pty::process_group::terminate_process_group;
 use futures::FutureExt;
 use futures::future::BoxFuture;
 use rmcp::service::RoleClient;
@@ -562,7 +562,7 @@ impl ExecutorStdioServerLauncher {
             Vec::new()
         } else {
             // `source = "remote"` means the value is read from the executor's
-            // environment, not copied from Codex. Start from `All` only so the
+            // environment, not copied from Motyga. Start from `All` only so the
             // named remote variable is available to the filter below; the
             // effective child env is still limited by `include_only`.
             crate::utils::DEFAULT_ENV_VARS
@@ -588,9 +588,9 @@ impl ExecutorStdioServerLauncher {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::config_types::EnvironmentVariablePattern;
-    use codex_protocol::config_types::ShellEnvironmentPolicy;
-    use codex_protocol::shell_environment;
+    use motyga_protocol::config_types::EnvironmentVariablePattern;
+    use motyga_protocol::config_types::ShellEnvironmentPolicy;
+    use motyga_protocol::shell_environment;
 
     #[test]
     fn remote_env_policy_uses_core_env_without_remote_source_vars() {

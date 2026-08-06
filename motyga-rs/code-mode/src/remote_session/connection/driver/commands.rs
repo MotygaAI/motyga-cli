@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use codex_code_mode_protocol::CellId;
-use codex_code_mode_protocol::CodeModeSessionDelegate;
-use codex_code_mode_protocol::ExecuteRequest;
-use codex_code_mode_protocol::WaitOutcome;
-use codex_code_mode_protocol::WaitRequest;
-use codex_code_mode_protocol::host::ClientToHost;
-use codex_code_mode_protocol::host::EncodedFrame;
-use codex_code_mode_protocol::host::HostRequest;
-use codex_code_mode_protocol::host::WireWaitRequest;
+use motyga_code_mode_protocol::CellId;
+use motyga_code_mode_protocol::CodeModeSessionDelegate;
+use motyga_code_mode_protocol::ExecuteRequest;
+use motyga_code_mode_protocol::WaitOutcome;
+use motyga_code_mode_protocol::WaitRequest;
+use motyga_code_mode_protocol::host::ClientToHost;
+use motyga_code_mode_protocol::host::EncodedFrame;
+use motyga_code_mode_protocol::host::HostRequest;
+use motyga_code_mode_protocol::host::WireWaitRequest;
 use tokio::sync::oneshot;
 use tokio_util::sync::CancellationToken;
 

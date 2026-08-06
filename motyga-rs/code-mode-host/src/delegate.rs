@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use codex_code_mode_protocol::CellId;
-use codex_code_mode_protocol::CodeModeNestedToolCall;
-use codex_code_mode_protocol::CodeModeSessionDelegate;
-use codex_code_mode_protocol::NotificationFuture;
-use codex_code_mode_protocol::ToolInvocationFuture;
-use codex_code_mode_protocol::host::DelegateRequest;
-use codex_code_mode_protocol::host::DelegateResponse;
-use codex_code_mode_protocol::host::SessionId;
+use motyga_code_mode_protocol::CellId;
+use motyga_code_mode_protocol::CodeModeNestedToolCall;
+use motyga_code_mode_protocol::CodeModeSessionDelegate;
+use motyga_code_mode_protocol::NotificationFuture;
+use motyga_code_mode_protocol::ToolInvocationFuture;
+use motyga_code_mode_protocol::host::DelegateRequest;
+use motyga_code_mode_protocol::host::DelegateResponse;
+use motyga_code_mode_protocol::host::SessionId;
 use tokio_util::sync::CancellationToken;
 
 use crate::peer::HostPeer;

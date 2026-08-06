@@ -168,14 +168,14 @@ impl Drop for WineTestProcess {
 
 impl WineRuntimePaths {
     fn from_runfiles() -> Result<Self> {
-        let wine = codex_utils_cargo_bin::cargo_bin("wine")?;
-        let runtime_marker = codex_utils_cargo_bin::cargo_bin("wine-runtime-marker")?;
+        let wine = motyga_utils_cargo_bin::cargo_bin("wine")?;
+        let runtime_marker = motyga_utils_cargo_bin::cargo_bin("wine-runtime-marker")?;
         let dll_path = runtime_marker
             .parent()
             .context("locate Wine runtime directory")?
             .to_path_buf();
-        let wineserver = codex_utils_cargo_bin::cargo_bin("wineserver")?;
-        let powershell_runtime = codex_utils_cargo_bin::cargo_bin("pwsh-runtime-marker")?
+        let wineserver = motyga_utils_cargo_bin::cargo_bin("wineserver")?;
+        let powershell_runtime = motyga_utils_cargo_bin::cargo_bin("pwsh-runtime-marker")?
             .parent()
             .context("locate PowerShell runtime directory")?
             .to_path_buf();

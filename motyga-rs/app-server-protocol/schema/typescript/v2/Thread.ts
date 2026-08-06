@@ -9,7 +9,7 @@ import type { ThreadStatus } from "./ThreadStatus";
 import type { Turn } from "./Turn";
 
 export type Thread = {/**
- * Identifier for this thread. Codex-generated thread IDs are UUIDv7.
+ * Identifier for this thread. Motyga-generated thread IDs are UUIDv7.
  */
 id: string, /**
  * Session id shared by threads that belong to the same session tree.
@@ -51,7 +51,7 @@ cwd: AbsolutePathBuf, /**
  * Version of the CLI that created the thread.
  */
 cliVersion: string, /**
- * Origin of the thread (CLI, VSCode, codex exec, codex app-server, etc.).
+ * Origin of the thread (CLI, VSCode, motyga exec, motyga app-server, etc.).
  */
 source: SessionSource, /**
  * Optional analytics source classification for this thread.

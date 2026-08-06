@@ -2,19 +2,19 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
-use codex_agent_identity::AgentIdentityKey;
-use codex_agent_identity::authorization_header_for_agent_task;
-use codex_api::AgentIdentityTelemetry;
-use codex_api::AuthProvider;
-use codex_api::SharedAuthProvider;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::auth::AgentIdentityAuth;
-use codex_login::auth::AgentIdentityAuthError;
-use codex_login::auth::AgentIdentityAuthPolicy;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_protocol::error::CodexErr;
-use codex_protocol::protocol::SessionSource;
+use motyga_agent_identity::AgentIdentityKey;
+use motyga_agent_identity::authorization_header_for_agent_task;
+use motyga_api::AgentIdentityTelemetry;
+use motyga_api::AuthProvider;
+use motyga_api::SharedAuthProvider;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::auth::AgentIdentityAuth;
+use motyga_login::auth::AgentIdentityAuthError;
+use motyga_login::auth::AgentIdentityAuthPolicy;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::protocol::SessionSource;
 use http::HeaderMap;
 use http::HeaderValue;
 
@@ -136,11 +136,11 @@ pub(crate) fn auth_manager_for_provider(
 }
 
 pub(crate) fn resolve_provider_auth(
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     provider: &ModelProviderInfo,
-) -> codex_protocol::error::Result<SharedAuthProvider> {
-    if matches!(auth, Some(CodexAuth::BedrockApiKey(_))) {
-        return Err(CodexErr::UnsupportedOperation(
+) -> motyga_protocol::error::Result<SharedAuthProvider> {
+    if matches!(auth, Some(MotygaAuth::BedrockApiKey(_))) {
+        return Err(MotygaErr::UnsupportedOperation(
             BEDROCK_API_KEY_UNSUPPORTED_MESSAGE.to_string(),
         ));
     }
@@ -156,8 +156,8 @@ pub(crate) fn resolve_provider_auth(
             // the fresh login. Kept deliberately narrow — first-party provider and an API-key login
             // only, so a third-party provider can never be handed a credential minted for us.
             let stored_login_usable =
-                provider.is_motyga() && matches!(auth, Some(CodexAuth::ApiKey(_)));
-            if !(stored_login_usable && matches!(err, CodexErr::EnvVar(_))) {
+                provider.is_motyga() && matches!(auth, Some(MotygaAuth::ApiKey(_)));
+            if !(stored_login_usable && matches!(err, MotygaErr::EnvVar(_))) {
                 return Err(err);
             }
         }
@@ -171,16 +171,16 @@ pub(crate) fn resolve_provider_auth(
 
 pub(crate) async fn resolve_provider_auth_for_scope(
     auth_manager: Option<Arc<AuthManager>>,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     provider: &ModelProviderInfo,
     scope: ProviderAuthScope,
-) -> codex_protocol::error::Result<ResolvedProviderAuth> {
+) -> motyga_protocol::error::Result<ResolvedProviderAuth> {
     let ProviderAuthScope {
         agent_identity_policy,
         session_source,
         agent_identity_session_fallback,
     } = scope;
-    if let Some(CodexAuth::AgentIdentity(agent_identity_auth)) = auth {
+    if let Some(MotygaAuth::AgentIdentity(agent_identity_auth)) = auth {
         return Ok(ResolvedProviderAuth::for_agent_identity(
             agent_identity_auth.clone(),
         ));
@@ -231,15 +231,15 @@ pub(crate) async fn resolve_provider_auth_for_scope(
 
 fn should_bootstrap_chatgpt_agent_identity(
     agent_identity_policy: AgentIdentityAuthPolicy,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
 ) -> bool {
     agent_identity_policy == AgentIdentityAuthPolicy::ChatGptAuth
-        && matches!(auth, Some(CodexAuth::Chatgpt(_)))
+        && matches!(auth, Some(MotygaAuth::Chatgpt(_)))
 }
 
 fn bearer_auth_for_provider(
     provider: &ModelProviderInfo,
-) -> codex_protocol::error::Result<Option<BearerAuthProvider>> {
+) -> motyga_protocol::error::Result<Option<BearerAuthProvider>> {
     if let Some(api_key) = provider.api_key()? {
         return Ok(Some(BearerAuthProvider::new(api_key)));
     }
@@ -251,17 +251,17 @@ fn bearer_auth_for_provider(
     Ok(None)
 }
 
-/// Builds request-header auth for a first-party Codex auth snapshot.
-pub fn auth_provider_from_auth(auth: &CodexAuth) -> SharedAuthProvider {
+/// Builds request-header auth for a first-party Motyga auth snapshot.
+pub fn auth_provider_from_auth(auth: &MotygaAuth) -> SharedAuthProvider {
     match auth {
-        CodexAuth::AgentIdentity(auth) => {
+        MotygaAuth::AgentIdentity(auth) => {
             Arc::new(AgentIdentityAuthProvider { auth: auth.clone() })
         }
-        CodexAuth::BedrockApiKey(_) => unreachable!("{BEDROCK_API_KEY_UNSUPPORTED_MESSAGE}"),
-        CodexAuth::ApiKey(_)
-        | CodexAuth::Chatgpt(_)
-        | CodexAuth::ChatgptAuthTokens(_)
-        | CodexAuth::PersonalAccessToken(_) => Arc::new(BearerAuthProvider {
+        MotygaAuth::BedrockApiKey(_) => unreachable!("{BEDROCK_API_KEY_UNSUPPORTED_MESSAGE}"),
+        MotygaAuth::ApiKey(_)
+        | MotygaAuth::Chatgpt(_)
+        | MotygaAuth::ChatgptAuthTokens(_)
+        | MotygaAuth::PersonalAccessToken(_) => Arc::new(BearerAuthProvider {
             token: auth.get_token().ok(),
             account_id: auth.get_account_id(),
             is_fedramp_account: auth.is_fedramp_account(),
@@ -271,14 +271,14 @@ pub fn auth_provider_from_auth(auth: &CodexAuth) -> SharedAuthProvider {
 
 #[cfg(test)]
 mod tests {
-    use codex_agent_identity::generate_agent_key_material;
-    use codex_login::AuthCredentialsStoreMode;
-    use codex_login::AuthKeyringBackendKind;
-    use codex_login::auth::AgentIdentityAuthRecord;
-    use codex_login::auth::BedrockApiKeyAuth;
-    use codex_model_provider_info::WireApi;
-    use codex_model_provider_info::create_oss_provider_with_base_url;
-    use codex_protocol::account::PlanType;
+    use motyga_agent_identity::generate_agent_key_material;
+    use motyga_login::AuthCredentialsStoreMode;
+    use motyga_login::AuthKeyringBackendKind;
+    use motyga_login::auth::AgentIdentityAuthRecord;
+    use motyga_login::auth::BedrockApiKeyAuth;
+    use motyga_model_provider_info::WireApi;
+    use motyga_model_provider_info::create_oss_provider_with_base_url;
+    use motyga_protocol::account::PlanType;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use std::path::Path;
@@ -327,10 +327,10 @@ mod tests {
         }
     }
 
-    fn test_codex_home() -> PathBuf {
+    fn test_motyga_home() -> PathBuf {
         let id = NEXT_MOTYGA_HOME_ID.fetch_add(1, Ordering::Relaxed);
         let path = std::env::temp_dir().join(format!(
-            "codex-model-provider-agent-identity-{pid}-{id}",
+            "motyga-model-provider-agent-identity-{pid}-{id}",
             pid = std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&path);
@@ -338,7 +338,7 @@ mod tests {
         path
     }
 
-    fn write_chatgpt_auth_json(codex_home: &Path) {
+    fn write_chatgpt_auth_json(motyga_home: &Path) {
         let auth_json = json!({
             "tokens": {
                 "id_token": TEST_CHATGPT_ID_TOKEN,
@@ -349,7 +349,7 @@ mod tests {
             "last_refresh": "2099-01-01T00:00:00Z"
         });
         std::fs::write(
-            codex_home.join("auth.json"),
+            motyga_home.join("auth.json"),
             serde_json::to_string_pretty(&auth_json).expect("serialize auth.json"),
         )
         .expect("write auth.json");
@@ -357,12 +357,12 @@ mod tests {
 
     async fn chatgpt_auth_manager(
         agent_identity_authapi_base_url: String,
-    ) -> (PathBuf, Arc<AuthManager>, CodexAuth) {
-        let codex_home = test_codex_home();
-        write_chatgpt_auth_json(&codex_home);
+    ) -> (PathBuf, Arc<AuthManager>, MotygaAuth) {
+        let motyga_home = test_motyga_home();
+        write_chatgpt_auth_json(&motyga_home);
         let auth_manager = AuthManager::shared(
-            codex_home.clone(),
-            /*enable_codex_api_key_env*/ false,
+            motyga_home.clone(),
+            /*enable_motyga_api_key_env*/ false,
             AuthCredentialsStoreMode::File,
             /*forced_chatgpt_workspace_id*/ None,
             /*chatgpt_base_url*/ None,
@@ -375,7 +375,7 @@ mod tests {
             auth.clone(),
             agent_identity_authapi_base_url,
         );
-        (codex_home, auth_manager, auth)
+        (motyga_home, auth_manager, auth)
     }
 
     async fn mount_transient_agent_registration(
@@ -405,13 +405,13 @@ mod tests {
     #[test]
     fn openai_provider_rejects_bedrock_api_key_auth() {
         let provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None);
-        let auth = CodexAuth::BedrockApiKey(BedrockApiKeyAuth {
+        let auth = MotygaAuth::BedrockApiKey(BedrockApiKeyAuth {
             api_key: "bedrock-api-key-test".to_string(),
             region: "us-east-1".to_string(),
         });
 
         match resolve_provider_auth(Some(&auth), &provider) {
-            Err(CodexErr::UnsupportedOperation(message)) => {
+            Err(MotygaErr::UnsupportedOperation(message)) => {
                 assert_eq!(message, BEDROCK_API_KEY_UNSUPPORTED_MESSAGE);
             }
             Err(err) => panic!("unexpected auth error: {err:?}"),
@@ -421,7 +421,7 @@ mod tests {
 
     #[tokio::test]
     async fn first_party_run_scope_uses_agent_assertion_and_exposes_telemetry() {
-        let auth = CodexAuth::AgentIdentity(
+        let auth = MotygaAuth::AgentIdentity(
             agent_identity_auth(/*chatgpt_account_is_fedramp*/ false).await,
         );
         let provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None);
@@ -457,7 +457,7 @@ mod tests {
     #[tokio::test]
     async fn agent_identity_auth_provider_preserves_account_routing_headers() {
         let auth = agent_identity_auth(/*chatgpt_account_is_fedramp*/ true).await;
-        let provider = auth_provider_from_auth(&CodexAuth::AgentIdentity(auth));
+        let provider = auth_provider_from_auth(&MotygaAuth::AgentIdentity(auth));
 
         let headers = provider.to_auth_headers();
 
@@ -491,7 +491,7 @@ mod tests {
             Arc::clone(&registration_count),
         )
         .await;
-        let (_codex_home, auth_manager, auth) = chatgpt_auth_manager(server.uri()).await;
+        let (_motyga_home, auth_manager, auth) = chatgpt_auth_manager(server.uri()).await;
         let provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None);
         let fallback = AgentIdentitySessionFallback::default();
 
@@ -531,7 +531,7 @@ mod tests {
             Arc::clone(&registration_count),
         )
         .await;
-        let (_codex_home, auth_manager, auth) = chatgpt_auth_manager(server.uri()).await;
+        let (_motyga_home, auth_manager, auth) = chatgpt_auth_manager(server.uri()).await;
         let provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None);
         let fallback = AgentIdentitySessionFallback::default();
 
@@ -565,7 +565,7 @@ mod tests {
             Arc::clone(&registration_count),
         )
         .await;
-        let (_codex_home, auth_manager, auth) = chatgpt_auth_manager(server.uri()).await;
+        let (_motyga_home, auth_manager, auth) = chatgpt_auth_manager(server.uri()).await;
         let provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None);
         let first_fallback = AgentIdentitySessionFallback::default();
         let second_fallback = AgentIdentitySessionFallback::default();
@@ -607,7 +607,7 @@ mod tests {
     #[test]
     fn motyga_provider_uses_stored_login_when_env_key_is_absent() {
         let provider = motyga_provider_without_env_key();
-        let auth = CodexAuth::from_api_key("nb-stored-login-secret");
+        let auth = MotygaAuth::from_api_key("nb-stored-login-secret");
 
         let resolved = resolve_provider_auth(Some(&auth), &provider)
             .expect("a stored device login should authenticate without the env var");
@@ -629,7 +629,7 @@ mod tests {
             experimental_bearer_token: Some("nb-env-override".to_string()),
             ..ModelProviderInfo::create_motyga_provider()
         };
-        let auth = CodexAuth::from_api_key("nb-stored-login-secret");
+        let auth = MotygaAuth::from_api_key("nb-stored-login-secret");
 
         let resolved =
             resolve_provider_auth(Some(&auth), &provider).expect("override should resolve");
@@ -653,7 +653,7 @@ mod tests {
             panic!("no env var and no login is still a hard error");
         };
 
-        assert!(matches!(err, CodexErr::EnvVar(_)), "unexpected error: {err}");
+        assert!(matches!(err, MotygaErr::EnvVar(_)), "unexpected error: {err}");
     }
 
     #[test]
@@ -664,12 +664,12 @@ mod tests {
             name: "Some Other Provider".to_string(),
             ..motyga_provider_without_env_key()
         };
-        let auth = CodexAuth::from_api_key("nb-stored-login-secret");
+        let auth = MotygaAuth::from_api_key("nb-stored-login-secret");
 
         let Err(err) = resolve_provider_auth(Some(&auth), &provider) else {
             panic!("a third-party provider must not fall back to the Motyga login");
         };
 
-        assert!(matches!(err, CodexErr::EnvVar(_)), "unexpected error: {err}");
+        assert!(matches!(err, MotygaErr::EnvVar(_)), "unexpected error: {err}");
     }
 }

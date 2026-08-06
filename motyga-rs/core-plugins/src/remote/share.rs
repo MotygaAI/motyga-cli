@@ -1,9 +1,9 @@
 use super::*;
 use crate::plugin_bundle_archive::PluginBundlePackError;
 use crate::plugin_bundle_archive::pack_plugin_bundle_tar_gz;
-use codex_login::CodexAuth;
-use codex_login::default_client::build_reqwest_client;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_login::MotygaAuth;
+use motyga_login::default_client::build_reqwest_client;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use reqwest::RequestBuilder;
 use reqwest::StatusCode;
 use serde::Deserialize;
@@ -137,8 +137,8 @@ struct RemotePluginShareUpdateTargetsResponse {
 
 pub async fn save_remote_plugin_share(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
-    codex_home: &Path,
+    auth: Option<&MotygaAuth>,
+    motyga_home: &Path,
     plugin_path: &AbsolutePathBuf,
     remote_plugin_id: Option<&str>,
     access_policy: RemotePluginShareAccessPolicy,
@@ -186,7 +186,7 @@ pub async fn save_remote_plugin_share(
     }
 
     if let Err(err) = local_paths::record_plugin_share_local_path(
-        codex_home,
+        motyga_home,
         &response.plugin_id,
         plugin_path.clone(),
     ) {
@@ -204,8 +204,8 @@ pub async fn save_remote_plugin_share(
 
 pub async fn list_remote_plugin_shares(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
-    codex_home: &Path,
+    auth: Option<&MotygaAuth>,
+    motyga_home: &Path,
 ) -> Result<Vec<RemotePluginShareSummary>, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let created_plugins = fetch_created_workspace_plugins(config, auth).await?;
@@ -220,7 +220,7 @@ pub async fn list_remote_plugin_shares(
             .map(|plugin| (plugin.plugin.id.clone(), plugin))
             .collect::<BTreeMap<_, _>>();
     let local_plugin_paths =
-        local_paths::load_plugin_share_local_paths(codex_home).map_err(|err| {
+        local_paths::load_plugin_share_local_paths(motyga_home).map_err(|err| {
             RemotePluginCatalogError::UnexpectedResponse(format!(
                 "failed to load plugin share local path mapping: {err}"
             ))
@@ -251,9 +251,9 @@ pub async fn list_remote_plugin_shares(
 }
 
 pub fn load_plugin_share_remote_ids_by_local_path(
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> io::Result<BTreeMap<AbsolutePathBuf, String>> {
-    let local_paths = local_paths::load_plugin_share_local_paths(codex_home)?;
+    let local_paths = local_paths::load_plugin_share_local_paths(motyga_home)?;
     local_paths
         .into_iter()
         .map(|(remote_plugin_id, local_plugin_path)| {
@@ -272,8 +272,8 @@ pub fn load_plugin_share_remote_ids_by_local_path(
 
 pub async fn delete_remote_plugin_share(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
-    codex_home: &Path,
+    auth: Option<&MotygaAuth>,
+    motyga_home: &Path,
     remote_plugin_id: &str,
 ) -> Result<(), RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
@@ -282,7 +282,7 @@ pub async fn delete_remote_plugin_share(
     let client = build_reqwest_client();
     let request = authenticated_request(client.delete(&url), auth)?;
     send_and_expect_status(request, &url, &[StatusCode::NO_CONTENT]).await?;
-    if let Err(err) = local_paths::remove_plugin_share_local_path(codex_home, remote_plugin_id) {
+    if let Err(err) = local_paths::remove_plugin_share_local_path(motyga_home, remote_plugin_id) {
         warn!(
             remote_plugin_id = %remote_plugin_id,
             "failed to remove plugin share local path mapping: {err}"
@@ -293,7 +293,7 @@ pub async fn delete_remote_plugin_share(
 
 pub async fn update_remote_plugin_share_targets(
     config: &RemotePluginServiceConfig,
-    auth: Option<&CodexAuth>,
+    auth: Option<&MotygaAuth>,
     remote_plugin_id: &str,
     targets: Vec<RemotePluginShareTarget>,
     discoverability: RemotePluginShareUpdateDiscoverability,
@@ -327,7 +327,7 @@ pub async fn update_remote_plugin_share_targets(
 }
 
 fn ensure_unlisted_workspace_target(
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     discoverability: Option<RemotePluginShareDiscoverability>,
     targets: Option<Vec<RemotePluginShareTarget>>,
 ) -> Result<Option<Vec<RemotePluginShareTarget>>, RemotePluginCatalogError> {
@@ -355,7 +355,7 @@ fn ensure_unlisted_workspace_target(
 
 async fn fetch_created_workspace_plugins(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
 ) -> Result<Vec<RemotePluginDirectoryItem>, RemotePluginCatalogError> {
     let mut plugins = Vec::new();
     let mut page_token = None;
@@ -373,7 +373,7 @@ async fn fetch_created_workspace_plugins(
 
 async fn get_created_workspace_plugins_page(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     page_token: Option<&str>,
 ) -> Result<RemotePluginListResponse, RemotePluginCatalogError> {
     let base_url = config.chatgpt_base_url.trim_end_matches('/');
@@ -389,7 +389,7 @@ async fn get_created_workspace_plugins_page(
 
 async fn create_workspace_plugin_upload(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     filename: &str,
     size_bytes: usize,
     remote_plugin_id: Option<&str>,
@@ -440,7 +440,7 @@ async fn put_workspace_plugin_upload(
 
 async fn finalize_workspace_plugin_upload(
     config: &RemotePluginServiceConfig,
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     remote_plugin_id: Option<&str>,
     body: RemoteWorkspacePluginCreateRequest,
 ) -> Result<RemoteWorkspacePluginCreateResponse, RemotePluginCatalogError> {

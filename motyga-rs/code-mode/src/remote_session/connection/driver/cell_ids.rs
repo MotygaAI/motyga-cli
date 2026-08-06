@@ -1,11 +1,11 @@
-use codex_code_mode_protocol::CellId;
-use codex_code_mode_protocol::RuntimeResponse;
-use codex_code_mode_protocol::WaitOutcome;
-use codex_code_mode_protocol::WaitRequest;
-use codex_code_mode_protocol::host::WireCellId;
-use codex_code_mode_protocol::host::WireRuntimeResponse;
-use codex_code_mode_protocol::host::WireWaitOutcome;
-use codex_code_mode_protocol::host::WireWaitRequest;
+use motyga_code_mode_protocol::CellId;
+use motyga_code_mode_protocol::RuntimeResponse;
+use motyga_code_mode_protocol::WaitOutcome;
+use motyga_code_mode_protocol::WaitRequest;
+use motyga_code_mode_protocol::host::WireCellId;
+use motyga_code_mode_protocol::host::WireRuntimeResponse;
+use motyga_code_mode_protocol::host::WireWaitOutcome;
+use motyga_code_mode_protocol::host::WireWaitRequest;
 
 use super::RemoteSession;
 

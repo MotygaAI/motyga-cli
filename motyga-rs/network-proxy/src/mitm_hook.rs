@@ -5,7 +5,7 @@ use crate::policy::normalize_host;
 use anyhow::Context as _;
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use globset::GlobBuilder;
 use globset::GlobMatcher;
 use rama_http::HeaderValue;
@@ -672,7 +672,7 @@ mod tests {
                 strip_request_headers: vec!["authorization".to_string()],
                 inject_request_headers: vec![InjectedHeaderConfig {
                     name: "authorization".to_string(),
-                    secret_env_var: Some("CODEX_GITHUB_TOKEN".to_string()),
+                    secret_env_var: Some("MOTYGA_GITHUB_TOKEN".to_string()),
                     secret_file: None,
                     prefix: Some("Bearer ".to_string()),
                 }],
@@ -745,7 +745,7 @@ mod tests {
 
         let hooks = compile_mitm_hooks_with_resolvers(
             &config,
-            |name| (name == "CODEX_GITHUB_TOKEN").then(|| "ghp-secret".to_string()),
+            |name| (name == "MOTYGA_GITHUB_TOKEN").then(|| "ghp-secret".to_string()),
             |_| Err(anyhow!("unexpected file lookup")),
         )
         .unwrap();
@@ -754,7 +754,7 @@ mod tests {
         assert_eq!(compiled.len(), 1);
         assert_eq!(
             compiled[0].actions.inject_request_headers[0].source,
-            SecretSource::EnvVar("CODEX_GITHUB_TOKEN".to_string())
+            SecretSource::EnvVar("MOTYGA_GITHUB_TOKEN".to_string())
         );
         assert_eq!(
             compiled[0].actions.inject_request_headers[0].value,
@@ -854,7 +854,7 @@ mod tests {
     fn evaluate_matches_wildcard_path_query_and_header_constraints() {
         let mut config = base_config();
         let mut hook = github_hook();
-        hook.matcher.path_prefixes = vec!["pattern:/repos/*/codex/issues*".to_string()];
+        hook.matcher.path_prefixes = vec!["pattern:/repos/*/motyga/issues*".to_string()];
         hook.matcher.query =
             BTreeMap::from([("state".to_string(), vec!["pattern:op*".to_string()])]);
         hook.matcher.headers = BTreeMap::from([(
@@ -899,7 +899,7 @@ mod tests {
     fn evaluate_path_wildcard_does_not_cross_segment_boundaries() {
         let mut config = base_config();
         let mut hook = github_hook();
-        hook.matcher.path_prefixes = vec!["pattern:/repos/*/codex/issues*".to_string()];
+        hook.matcher.path_prefixes = vec!["pattern:/repos/*/motyga/issues*".to_string()];
         config.network.mitm_hooks = vec![hook];
 
         let hooks = compile_mitm_hooks_with_resolvers(
@@ -940,13 +940,13 @@ mod tests {
         .unwrap();
         let exact_req = Request::builder()
             .method(Method::POST)
-            .uri("/repos/[draft]/codex/issues?state=op*")
+            .uri("/repos/[draft]/motyga/issues?state=op*")
             .header("x-github-api-version", "2022-11-28[preview]")
             .body(Body::empty())
             .unwrap();
         let non_literal_req = Request::builder()
             .method(Method::POST)
-            .uri("/repos/draft/codex/issues?state=open")
+            .uri("/repos/draft/motyga/issues?state=open")
             .header("x-github-api-version", "2022-11-28-preview")
             .body(Body::empty())
             .unwrap();

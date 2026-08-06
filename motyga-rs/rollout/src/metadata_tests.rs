@@ -5,17 +5,17 @@ use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::Timelike;
 use chrono::Utc;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::CompactedItem;
-use codex_protocol::protocol::GitInfo;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::ThreadHistoryMode;
-use codex_state::BackfillStatus;
-use codex_state::ThreadMetadataBuilder;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::CompactedItem;
+use motyga_protocol::protocol::GitInfo;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::protocol::SessionMeta;
+use motyga_protocol::protocol::SessionMetaLine;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::ThreadHistoryMode;
+use motyga_state::BackfillStatus;
+use motyga_state::ThreadMetadataBuilder;
 use pretty_assertions::assert_eq;
 use std::fs::File;
 use std::io::Write;
@@ -223,28 +223,28 @@ fn builder_from_items_falls_back_to_filename() {
 #[tokio::test]
 async fn backfill_sessions_resumes_from_watermark_and_marks_complete() {
     let dir = tempdir().expect("tempdir");
-    let codex_home = dir.path().to_path_buf();
+    let motyga_home = dir.path().to_path_buf();
     let first_uuid = Uuid::new_v4();
     let second_uuid = Uuid::new_v4();
     let first_path = write_rollout_in_sessions(
-        codex_home.as_path(),
+        motyga_home.as_path(),
         "2026-01-27T12-34-56",
         "2026-01-27T12:34:56Z",
         first_uuid,
         /*git*/ None,
     );
     let second_path = write_rollout_in_sessions(
-        codex_home.as_path(),
+        motyga_home.as_path(),
         "2026-01-27T12-35-56",
         "2026-01-27T12:35:56Z",
         second_uuid,
         /*git*/ None,
     );
 
-    let runtime = codex_state::StateRuntime::init(codex_home.clone(), "test-provider".to_string())
+    let runtime = motyga_state::StateRuntime::init(motyga_home.clone(), "test-provider".to_string())
         .await
         .expect("initialize runtime");
-    let first_watermark = backfill_watermark_for_path(codex_home.as_path(), first_path.as_path());
+    let first_watermark = backfill_watermark_for_path(motyga_home.as_path(), first_path.as_path());
     runtime.mark_backfill_running().await.expect("mark running");
     runtime
         .checkpoint_backfill(first_watermark.as_str())
@@ -255,7 +255,7 @@ async fn backfill_sessions_resumes_from_watermark_and_marks_complete() {
     ))
     .await;
 
-    backfill_sessions(runtime.as_ref(), codex_home.as_path(), "test-provider").await;
+    backfill_sessions(runtime.as_ref(), motyga_home.as_path(), "test-provider").await;
 
     let first_id = ThreadId::from_string(&first_uuid.to_string()).expect("first thread id");
     let second_id = ThreadId::from_string(&second_uuid.to_string()).expect("second thread id");
@@ -282,7 +282,7 @@ async fn backfill_sessions_resumes_from_watermark_and_marks_complete() {
     assert_eq!(
         state.last_watermark,
         Some(backfill_watermark_for_path(
-            codex_home.as_path(),
+            motyga_home.as_path(),
             second_path.as_path()
         ))
     );
@@ -292,21 +292,21 @@ async fn backfill_sessions_resumes_from_watermark_and_marks_complete() {
 #[tokio::test]
 async fn backfill_sessions_preserves_existing_git_branch_and_fills_missing_git_fields() {
     let dir = tempdir().expect("tempdir");
-    let codex_home = dir.path().to_path_buf();
+    let motyga_home = dir.path().to_path_buf();
     let thread_uuid = Uuid::new_v4();
     let rollout_path = write_rollout_in_sessions(
-        codex_home.as_path(),
+        motyga_home.as_path(),
         "2026-01-27T12-34-56",
         "2026-01-27T12:34:56Z",
         thread_uuid,
         Some(GitInfo {
-            commit_hash: Some(codex_git_utils::GitSha::new("rollout-sha")),
+            commit_hash: Some(motyga_git_utils::GitSha::new("rollout-sha")),
             branch: Some("rollout-branch".to_string()),
             repository_url: Some("git@example.com:openai/codex.git".to_string()),
         }),
     );
 
-    let runtime = codex_state::StateRuntime::init(codex_home.clone(), "test-provider".to_string())
+    let runtime = motyga_state::StateRuntime::init(motyga_home.clone(), "test-provider".to_string())
         .await
         .expect("initialize runtime");
     let thread_id = ThreadId::from_string(&thread_uuid.to_string()).expect("thread id");
@@ -322,7 +322,7 @@ async fn backfill_sessions_preserves_existing_git_branch_and_fills_missing_git_f
         .await
         .expect("existing metadata upsert");
 
-    backfill_sessions(runtime.as_ref(), codex_home.as_path(), "test-provider").await;
+    backfill_sessions(runtime.as_ref(), motyga_home.as_path(), "test-provider").await;
 
     let persisted = runtime
         .get_thread(thread_id)
@@ -340,11 +340,11 @@ async fn backfill_sessions_preserves_existing_git_branch_and_fills_missing_git_f
 #[tokio::test]
 async fn backfill_sessions_normalizes_cwd_before_upsert() {
     let dir = tempdir().expect("tempdir");
-    let codex_home = dir.path().to_path_buf();
+    let motyga_home = dir.path().to_path_buf();
     let thread_uuid = Uuid::new_v4();
-    let session_cwd = codex_home.join(".");
+    let session_cwd = motyga_home.join(".");
     let rollout_path = write_rollout_in_sessions_with_cwd(
-        codex_home.as_path(),
+        motyga_home.as_path(),
         "2026-01-27T12-34-56",
         "2026-01-27T12:34:56Z",
         thread_uuid,
@@ -352,11 +352,11 @@ async fn backfill_sessions_normalizes_cwd_before_upsert() {
         /*git*/ None,
     );
 
-    let runtime = codex_state::StateRuntime::init(codex_home.clone(), "test-provider".to_string())
+    let runtime = motyga_state::StateRuntime::init(motyga_home.clone(), "test-provider".to_string())
         .await
         .expect("initialize runtime");
 
-    backfill_sessions(runtime.as_ref(), codex_home.as_path(), "test-provider").await;
+    backfill_sessions(runtime.as_ref(), motyga_home.as_path(), "test-provider").await;
 
     let thread_id = ThreadId::from_string(&thread_uuid.to_string()).expect("thread id");
     let stored = runtime
@@ -370,24 +370,24 @@ async fn backfill_sessions_normalizes_cwd_before_upsert() {
 }
 
 fn write_rollout_in_sessions(
-    codex_home: &Path,
+    motyga_home: &Path,
     filename_ts: &str,
     event_ts: &str,
     thread_uuid: Uuid,
     git: Option<GitInfo>,
 ) -> PathBuf {
     write_rollout_in_sessions_with_cwd(
-        codex_home,
+        motyga_home,
         filename_ts,
         event_ts,
         thread_uuid,
-        codex_home.to_path_buf(),
+        motyga_home.to_path_buf(),
         git,
     )
 }
 
 fn write_rollout_in_sessions_with_cwd(
-    codex_home: &Path,
+    motyga_home: &Path,
     filename_ts: &str,
     event_ts: &str,
     thread_uuid: Uuid,
@@ -395,7 +395,7 @@ fn write_rollout_in_sessions_with_cwd(
     git: Option<GitInfo>,
 ) -> PathBuf {
     let id = ThreadId::from_string(&thread_uuid.to_string()).expect("thread id");
-    let sessions_dir = codex_home.join("sessions");
+    let sessions_dir = motyga_home.join("sessions");
     std::fs::create_dir_all(sessions_dir.as_path()).expect("create sessions dir");
     let path = sessions_dir.join(format!("rollout-{filename_ts}-{thread_uuid}.jsonl"));
     let session_meta = SessionMeta {

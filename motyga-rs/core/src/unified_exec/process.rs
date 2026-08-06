@@ -13,20 +13,20 @@ use tokio::time::Duration;
 use tokio_util::sync::CancellationToken;
 
 use crate::exec::is_likely_sandbox_denied;
-use codex_exec_server::ExecProcess;
-use codex_exec_server::ExecProcessEvent;
-use codex_exec_server::ProcessSignal as ExecServerProcessSignal;
-use codex_exec_server::ReadResponse as ExecReadResponse;
-use codex_exec_server::StartedExecProcess;
-use codex_exec_server::WriteStatus;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::exec_output::StreamOutput;
-use codex_protocol::protocol::TruncationPolicy;
-use codex_sandboxing::SandboxType;
-use codex_utils_output_truncation::formatted_truncate_text;
-use codex_utils_pty::ExecCommandSession;
-use codex_utils_pty::ProcessSignal as PtyProcessSignal;
-use codex_utils_pty::SpawnedPty;
+use motyga_exec_server::ExecProcess;
+use motyga_exec_server::ExecProcessEvent;
+use motyga_exec_server::ProcessSignal as ExecServerProcessSignal;
+use motyga_exec_server::ReadResponse as ExecReadResponse;
+use motyga_exec_server::StartedExecProcess;
+use motyga_exec_server::WriteStatus;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::exec_output::StreamOutput;
+use motyga_protocol::protocol::TruncationPolicy;
+use motyga_sandboxing::SandboxType;
+use motyga_utils_output_truncation::formatted_truncate_text;
+use motyga_utils_pty::ExecCommandSession;
+use motyga_utils_pty::ProcessSignal as PtyProcessSignal;
+use motyga_utils_pty::SpawnedPty;
 
 use super::UNIFIED_EXEC_OUTPUT_MAX_TOKENS;
 use super::UnifiedExecError;
@@ -325,7 +325,7 @@ impl UnifiedExecProcess {
             stderr_rx,
             mut exit_rx,
         } = spawned;
-        let output_rx = codex_utils_pty::combine_output_receivers(stdout_rx, stderr_rx);
+        let output_rx = motyga_utils_pty::combine_output_receivers(stdout_rx, stderr_rx);
         let mut managed = Self::new(
             ProcessHandle::Local(Box::new(process_handle)),
             sandbox_type,

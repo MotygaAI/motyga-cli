@@ -6,22 +6,22 @@ NOTE: The code might not completely match this spec. There are a few minor chang
 
 ## Entities
 
-These are entities exit on the codex backend. The intent of this section is to establish vocabulary and construct a shared mental model for the `Codex` core system.
+These are entities exit on the motyga backend. The intent of this section is to establish vocabulary and construct a shared mental model for the `Motyga` core system.
 
 0. `Model`
    - In our case, this is the Responses REST API
-1. `Codex`
-   - The core engine of codex
+1. `Motyga`
+   - The core engine of motyga
    - Runs locally, either in a background thread or separate process
    - Communicated to via a queue pair – SQ (Submission Queue) / EQ (Event Queue)
    - Takes user input, makes requests to the `Model`, executes commands and applies patches.
 2. `Session`
-   - The `Codex`'s current configuration and state
-   - `Codex` starts with no `Session`, and it is initialized by `Op::ConfigureSession`, which should be the first message sent by the UI.
+   - The `Motyga`'s current configuration and state
+   - `Motyga` starts with no `Session`, and it is initialized by `Op::ConfigureSession`, which should be the first message sent by the UI.
    - The current `Session` can be reconfigured with additional `Op::ConfigureSession` calls.
    - Any running execution is aborted when the session is reconfigured.
 3. `Task`
-   - A `Task` is `Codex` executing work in response to user input.
+   - A `Task` is `Motyga` executing work in response to user input.
    - `Session` has at most one `Task` running at a time.
    - Receiving `Op::UserTurn` starts a `Task` (`Op::UserInput` is legacy)
    - Consists of a series of `Turn`s
@@ -35,29 +35,29 @@ These are entities exit on the codex backend. The intent of this section is to e
    - One cycle of iteration in a `Task`, consists of:
      - A request to the `Model` - (initially) prompt + (optional) `last_response_id`, or (in loop) previous turn output
      - The `Model` streams responses back in an SSE, which are collected until "completed" message and the SSE terminates
-     - `Codex` then executes command(s), applies patch(es), and outputs message(s) returned by the `Model`
+     - `Motyga` then executes command(s), applies patch(es), and outputs message(s) returned by the `Model`
      - Pauses to request approval when necessary
    - The output of one `Turn` is the input to the next `Turn`
    - A `Turn` yielding no output terminates the `Task`
 
-The term "UI" is used to refer to the application driving `Codex`. This may be the CLI / TUI chat-like interface that users operate, or it may be a GUI interface like a VSCode extension. The UI is external to `Codex`, as `Codex` is intended to be operated by arbitrary UI implementations.
+The term "UI" is used to refer to the application driving `Motyga`. This may be the CLI / TUI chat-like interface that users operate, or it may be a GUI interface like a VSCode extension. The UI is external to `Motyga`, as `Motyga` is intended to be operated by arbitrary UI implementations.
 
 When a `Turn` completes, the `response_id` from the `Model`'s final `response.completed` message is stored in the `Session` state to resume the thread given the next user turn. The `response_id` is also returned in the `EventMsg::TurnComplete` to the UI, which can be used to fork the thread from an earlier point by providing it in a future user turn.
 
-Since only 1 `Task` can be run at a time, for parallel tasks it is recommended that a single `Codex` be run for each thread of work.
+Since only 1 `Task` can be run at a time, for parallel tasks it is recommended that a single `Motyga` be run for each thread of work.
 
 ## Interface
 
-- `Codex`
+- `Motyga`
   - Communicates with UI via a `SQ` (Submission Queue) and `EQ` (Event Queue).
 - `Submission`
-  - These are messages sent on the `SQ` (UI -> `Codex`)
+  - These are messages sent on the `SQ` (UI -> `Motyga`)
   - Has an string ID provided by the UI, referred to as `sub_id`
   - `Op` refers to the enum of all possible `Submission` payloads
   - In the current codebase these are primarily in-process Rust types rather than a stable serde wire contract
     - This enum is `non_exhaustive`; variants can be added at future dates
 - `Event`
-  - These are messages sent on the `EQ` (`Codex` -> UI)
+  - These are messages sent on the `EQ` (`Motyga` -> UI)
   - Each `Event` has a non-unique ID, matching the `sub_id` from the user-turn op that started the current task.
   - `EventMsg` refers to the enum of all possible `Event` payloads
     - This enum is `non_exhaustive`; variants can be added at future dates
@@ -120,16 +120,16 @@ sequenceDiagram
     participant user as User
     end
     box Daemon
-    participant codex as Codex
+    participant motyga as Motyga
     participant session as Session
     participant task as Task
     end
     box Rest API
     participant agent as Model
     end
-    user->>codex: Op::ConfigureSession
-    codex-->>session: create session
-    codex->>user: Event::SessionConfigured
+    user->>motyga: Op::ConfigureSession
+    motyga-->>session: create session
+    motyga->>user: Event::SessionConfigured
     user->>session: Op::UserTurn
     session-->>+task: start task
     task->>user: Event::TurnStarted

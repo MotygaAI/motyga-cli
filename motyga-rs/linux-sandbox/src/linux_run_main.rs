@@ -25,11 +25,11 @@ use crate::launcher::exec_bwrap;
 use crate::launcher::preferred_bwrap_supports_argv0;
 use crate::proxy_routing::activate_proxy_routes_in_netns;
 use crate::proxy_routing::prepare_host_proxy_route_spec;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::FileSystemSandboxPolicy;
-use codex_protocol::protocol::NetworkSandboxPolicy;
-use codex_sandboxing::landlock::CODEX_LINUX_SANDBOX_ARG0;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::FileSystemSandboxPolicy;
+use motyga_protocol::protocol::NetworkSandboxPolicy;
+use motyga_sandboxing::landlock::MOTYGA_LINUX_SANDBOX_ARG0;
 
 static BWRAP_CHILD_PID: AtomicI32 = AtomicI32::new(0);
 static PENDING_FORWARDED_SIGNAL: AtomicI32 = AtomicI32::new(0);
@@ -377,7 +377,7 @@ fn build_bwrap_argv(
     sandbox_policy_cwd: &Path,
     command_cwd: &Path,
     options: BwrapOptions,
-) -> CodexResult<crate::bwrap::BwrapArgs> {
+) -> MotygaResult<crate::bwrap::BwrapArgs> {
     let bwrap_args = create_bwrap_command_args(
         inner,
         file_system_sandbox_policy,
@@ -396,7 +396,7 @@ fn build_bwrap_argv(
     })
 }
 
-fn exit_with_bwrap_build_error(err: codex_protocol::error::CodexErr) -> ! {
+fn exit_with_bwrap_build_error(err: motyga_protocol::error::MotygaErr) -> ! {
     eprintln!("error building bubblewrap command: {err}");
     std::process::exit(1);
 }
@@ -422,7 +422,7 @@ fn apply_inner_command_argv0_for_launcher(
     if supports_argv0 {
         argv.splice(
             command_separator_index..command_separator_index,
-            ["--argv0".to_string(), CODEX_LINUX_SANDBOX_ARG0.to_string()],
+            ["--argv0".to_string(), MOTYGA_LINUX_SANDBOX_ARG0.to_string()],
         );
         return;
     }
@@ -446,7 +446,7 @@ fn preflight_proc_mount_support(
     command_cwd: &Path,
     file_system_sandbox_policy: &FileSystemSandboxPolicy,
     network_mode: BwrapNetworkMode,
-) -> CodexResult<bool> {
+) -> MotygaResult<bool> {
     let preflight_argv = build_preflight_bwrap_argv(
         sandbox_policy_cwd,
         command_cwd,
@@ -462,7 +462,7 @@ fn build_preflight_bwrap_argv(
     command_cwd: &Path,
     file_system_sandbox_policy: &FileSystemSandboxPolicy,
     network_mode: BwrapNetworkMode,
-) -> CodexResult<crate::bwrap::BwrapArgs> {
+) -> MotygaResult<crate::bwrap::BwrapArgs> {
     let preflight_command = vec![resolve_true_command()];
     build_bwrap_argv(
         preflight_command,
@@ -1244,7 +1244,7 @@ fn synthetic_mount_marker_dir(path: &Path) -> PathBuf {
 fn synthetic_mount_registry_root() -> PathBuf {
     let effective_uid = unsafe { libc::geteuid() };
     std::env::temp_dir().join(format!(
-        "codex-bwrap-synthetic-mount-targets-{effective_uid}"
+        "motyga-bwrap-synthetic-mount-targets-{effective_uid}"
     ))
 }
 

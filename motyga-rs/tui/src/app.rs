@@ -78,91 +78,91 @@ use crate::transcript_reflow::TranscriptReflowState;
 use crate::tui;
 use crate::tui::TuiEvent;
 use crate::update_action::UpdateAction;
-use crate::version::CODEX_CLI_VERSION;
+use crate::version::MOTYGA_CLI_VERSION;
 use crate::workspace_command::AppServerWorkspaceCommandRunner;
 use crate::workspace_command::WorkspaceCommandRunner;
-use codex_ansi_escape::ansi_escape_line;
-use codex_app_server_client::AppServerRequestHandle;
-use codex_app_server_client::TypedRequestError;
-use codex_app_server_protocol::AddCreditsNudgeCreditType;
-use codex_app_server_protocol::AskForApproval;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::CodexErrorInfo as AppServerCodexErrorInfo;
-use codex_app_server_protocol::ConfigBatchWriteParams;
-use codex_app_server_protocol::ConfigReadResponse;
-use codex_app_server_protocol::ConfigValueWriteParams;
-use codex_app_server_protocol::ConfigWriteResponse;
-use codex_app_server_protocol::FeedbackUploadParams;
-use codex_app_server_protocol::FeedbackUploadResponse;
-use codex_app_server_protocol::GetAccountRateLimitsResponse;
-use codex_app_server_protocol::HooksListEntry;
-use codex_app_server_protocol::ListMcpServerStatusParams;
-use codex_app_server_protocol::ListMcpServerStatusResponse;
+use motyga_ansi_escape::ansi_escape_line;
+use motyga_app_server_client::AppServerRequestHandle;
+use motyga_app_server_client::TypedRequestError;
+use motyga_app_server_protocol::AddCreditsNudgeCreditType;
+use motyga_app_server_protocol::AskForApproval;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::MotygaErrorInfo as AppServerMotygaErrorInfo;
+use motyga_app_server_protocol::ConfigBatchWriteParams;
+use motyga_app_server_protocol::ConfigReadResponse;
+use motyga_app_server_protocol::ConfigValueWriteParams;
+use motyga_app_server_protocol::ConfigWriteResponse;
+use motyga_app_server_protocol::FeedbackUploadParams;
+use motyga_app_server_protocol::FeedbackUploadResponse;
+use motyga_app_server_protocol::GetAccountRateLimitsResponse;
+use motyga_app_server_protocol::HooksListEntry;
+use motyga_app_server_protocol::ListMcpServerStatusParams;
+use motyga_app_server_protocol::ListMcpServerStatusResponse;
 #[cfg(test)]
-use codex_app_server_protocol::McpAuthStatus;
-use codex_app_server_protocol::McpServerStatus;
-use codex_app_server_protocol::McpServerStatusDetail;
-use codex_app_server_protocol::MergeStrategy;
-use codex_app_server_protocol::PluginInstallParams;
-use codex_app_server_protocol::PluginInstallResponse;
-use codex_app_server_protocol::PluginListMarketplaceKind;
-use codex_app_server_protocol::PluginListParams;
-use codex_app_server_protocol::PluginListResponse;
-use codex_app_server_protocol::PluginMarketplaceEntry;
-use codex_app_server_protocol::PluginReadParams;
-use codex_app_server_protocol::PluginReadResponse;
-use codex_app_server_protocol::PluginUninstallParams;
-use codex_app_server_protocol::PluginUninstallResponse;
-use codex_app_server_protocol::SandboxMode as AppServerSandboxMode;
-use codex_app_server_protocol::SendAddCreditsNudgeEmailParams;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::SkillErrorInfo;
-use codex_app_server_protocol::SkillsListParams;
-use codex_app_server_protocol::SkillsListResponse;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadLoadedListParams;
-use codex_app_server_protocol::ThreadMemoryMode;
-use codex_app_server_protocol::ThreadRollbackResponse;
-use codex_app_server_protocol::ThreadStartSource;
-use codex_app_server_protocol::Turn;
-use codex_app_server_protocol::TurnError as AppServerTurnError;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::WriteStatus;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::LoaderOverrides;
-use codex_config::types::ApprovalsReviewer;
-use codex_config::types::MemoriesToml;
-use codex_config::types::ModelAvailabilityNuxConfig;
+use motyga_app_server_protocol::McpAuthStatus;
+use motyga_app_server_protocol::McpServerStatus;
+use motyga_app_server_protocol::McpServerStatusDetail;
+use motyga_app_server_protocol::MergeStrategy;
+use motyga_app_server_protocol::PluginInstallParams;
+use motyga_app_server_protocol::PluginInstallResponse;
+use motyga_app_server_protocol::PluginListMarketplaceKind;
+use motyga_app_server_protocol::PluginListParams;
+use motyga_app_server_protocol::PluginListResponse;
+use motyga_app_server_protocol::PluginMarketplaceEntry;
+use motyga_app_server_protocol::PluginReadParams;
+use motyga_app_server_protocol::PluginReadResponse;
+use motyga_app_server_protocol::PluginUninstallParams;
+use motyga_app_server_protocol::PluginUninstallResponse;
+use motyga_app_server_protocol::SandboxMode as AppServerSandboxMode;
+use motyga_app_server_protocol::SendAddCreditsNudgeEmailParams;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::SkillErrorInfo;
+use motyga_app_server_protocol::SkillsListParams;
+use motyga_app_server_protocol::SkillsListResponse;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadLoadedListParams;
+use motyga_app_server_protocol::ThreadMemoryMode;
+use motyga_app_server_protocol::ThreadRollbackResponse;
+use motyga_app_server_protocol::ThreadStartSource;
+use motyga_app_server_protocol::Turn;
+use motyga_app_server_protocol::TurnError as AppServerTurnError;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_app_server_protocol::WriteStatus;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::LoaderOverrides;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_config::types::MemoriesToml;
+use motyga_config::types::ModelAvailabilityNuxConfig;
 #[cfg(target_os = "windows")]
-use codex_config::types::WindowsToml;
-use codex_exec_server::EnvironmentManager;
-use codex_features::Feature;
-use codex_features::FeaturesToml;
-use codex_model_provider::create_model_provider;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_models_manager::model_presets::HIDE_GPT_5_1_CODEX_MAX_MIGRATION_PROMPT_CONFIG;
-use codex_models_manager::model_presets::HIDE_GPT5_1_MIGRATION_PROMPT_CONFIG;
-use codex_otel::SessionTelemetry;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::Personality;
+use motyga_config::types::WindowsToml;
+use motyga_exec_server::EnvironmentManager;
+use motyga_features::Feature;
+use motyga_features::FeaturesToml;
+use motyga_model_provider::create_model_provider;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_models_manager::model_presets::HIDE_GPT_5_1_MOTYGA_MAX_MIGRATION_PROMPT_CONFIG;
+use motyga_models_manager::model_presets::HIDE_GPT5_1_MIGRATION_PROMPT_CONFIG;
+use motyga_otel::SessionTelemetry;
+use motyga_otel::TelemetryAuthMode;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::Personality;
 #[cfg(target_os = "windows")]
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ModelAvailabilityNux;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ModelUpgrade;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ModelAvailabilityNux;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::openai_models::ModelUpgrade;
+use motyga_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
 #[cfg(target_os = "windows")]
-use codex_protocol::permissions::FileSystemSandboxKind;
-use codex_rollout::StateDbHandle;
-use codex_terminal_detection::user_agent;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_approval_presets::builtin_permission_profile_for_active_permission_profile;
+use motyga_protocol::permissions::FileSystemSandboxKind;
+use motyga_rollout::StateDbHandle;
+use motyga_terminal_detection::user_agent;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_approval_presets::builtin_permission_profile_for_active_permission_profile;
 use color_eyre::eyre::Result;
 use color_eyre::eyre::WrapErr;
 use crossterm::event::KeyCode;
@@ -292,7 +292,7 @@ fn collab_receiver_is_not_found(
                 agents_states.get(receiver_thread_id).is_some_and(|state| {
                     matches!(
                         &state.status,
-                        codex_app_server_protocol::CollabAgentStatus::NotFound
+                        motyga_app_server_protocol::CollabAgentStatus::NotFound
                     )
                 })
             }
@@ -303,15 +303,15 @@ fn collab_receiver_is_not_found(
 }
 
 fn default_exec_approval_decisions(
-    network_approval_context: Option<&codex_app_server_protocol::NetworkApprovalContext>,
-    proposed_execpolicy_amendment: Option<&codex_app_server_protocol::ExecPolicyAmendment>,
+    network_approval_context: Option<&motyga_app_server_protocol::NetworkApprovalContext>,
+    proposed_execpolicy_amendment: Option<&motyga_app_server_protocol::ExecPolicyAmendment>,
     proposed_network_policy_amendments: Option<
-        &[codex_app_server_protocol::NetworkPolicyAmendment],
+        &[motyga_app_server_protocol::NetworkPolicyAmendment],
     >,
-    additional_permissions: Option<&codex_app_server_protocol::AdditionalPermissionProfile>,
-) -> Vec<codex_app_server_protocol::CommandExecutionApprovalDecision> {
-    use codex_app_server_protocol::CommandExecutionApprovalDecision;
-    use codex_app_server_protocol::NetworkPolicyRuleAction;
+    additional_permissions: Option<&motyga_app_server_protocol::AdditionalPermissionProfile>,
+) -> Vec<motyga_app_server_protocol::CommandExecutionApprovalDecision> {
+    use motyga_app_server_protocol::CommandExecutionApprovalDecision;
+    use motyga_app_server_protocol::NetworkPolicyRuleAction;
 
     if network_approval_context.is_some() {
         let mut decisions = vec![
@@ -472,7 +472,7 @@ fn resume_hint_for_resumable_thread(
     rollout_path: Option<&Path>,
 ) -> Option<String> {
     let thread = resumable_thread(thread_id, thread_name, rollout_path)?;
-    codex_utils_cli::resume_hint(thread.thread_name.as_deref(), Some(thread.thread_id))
+    motyga_utils_cli::resume_hint(thread.thread_name.as_deref(), Some(thread.thread_id))
 }
 
 fn rollout_path_is_resumable(rollout_path: &Path) -> bool {
@@ -546,7 +546,7 @@ pub(crate) struct App {
     /// This is used after a confirmed thread rollback to ensure scrollback reflects the trimmed
     /// transcript cells.
     pub(crate) backtrack_render_pending: bool,
-    pub(crate) feedback: codex_feedback::CodexFeedback,
+    pub(crate) feedback: motyga_feedback::MotygaFeedback,
     feedback_audience: FeedbackAudience,
     environment_manager: Arc<EnvironmentManager>,
     app_server_target: AppServerTarget,
@@ -609,8 +609,8 @@ fn active_turn_not_steerable_turn_error(error: &TypedRequestError) -> Option<App
     };
     let turn_error: AppServerTurnError = serde_json::from_value(source.data.clone()?).ok()?;
     matches!(
-        turn_error.codex_error_info,
-        Some(AppServerCodexErrorInfo::ActiveTurnNotSteerable { .. })
+        turn_error.motyga_error_info,
+        Some(AppServerMotygaErrorInfo::ActiveTurnNotSteerable { .. })
     )
     .then_some(turn_error)
 }
@@ -737,7 +737,7 @@ impl App {
             initial_user_message,
             enhanced_keys_supported: self.enhanced_keys_supported,
             has_chatgpt_account: self.chat_widget.has_chatgpt_account(),
-            has_codex_backend_auth: self.chat_widget.has_codex_backend_auth(),
+            has_motyga_backend_auth: self.chat_widget.has_motyga_backend_auth(),
             model_catalog: self.model_catalog.clone(),
             feedback: self.feedback.clone(),
             is_first_run: false,
@@ -767,7 +767,7 @@ impl App {
         initial_prompt: Option<String>,
         initial_images: Vec<PathBuf>,
         session_selection: SessionSelection,
-        feedback: codex_feedback::CodexFeedback,
+        feedback: motyga_feedback::MotygaFeedback,
         is_first_run: bool,
         should_prompt_windows_sandbox_nux_at_startup: bool,
         app_server_target: AppServerTarget,
@@ -837,7 +837,7 @@ impl App {
         let feedback_audience = bootstrap.feedback_audience;
         let auth_mode = bootstrap.auth_mode;
         let has_chatgpt_account = bootstrap.has_chatgpt_account;
-        let has_codex_backend_auth = matches!(auth_mode, Some(TelemetryAuthMode::Chatgpt));
+        let has_motyga_backend_auth = matches!(auth_mode, Some(TelemetryAuthMode::Chatgpt));
         let requires_openai_auth = bootstrap.requires_openai_auth;
         let status_account_display = bootstrap.status_account_display.clone();
         let initial_plan_type = bootstrap.plan_type;
@@ -848,7 +848,7 @@ impl App {
             /*account_id*/ None,
             bootstrap.account_email.clone(),
             auth_mode,
-            codex_login::default_client::originator().value,
+            motyga_login::default_client::originator().value,
             config.otel.log_user_prompt,
             user_agent(),
             serde_json::from_value(serde_json::json!("cli"))
@@ -859,7 +859,7 @@ impl App {
             .as_ref()
             .is_some_and(|cmd| !cmd.is_empty())
         {
-            session_telemetry.counter("codex.status_line", /*inc*/ 1, &[]);
+            session_telemetry.counter("motyga.status_line", /*inc*/ 1, &[]);
         }
 
         let status_line_invalid_items_warned = Arc::new(AtomicBool::new(false));
@@ -906,7 +906,7 @@ impl App {
                     ),
                     enhanced_keys_supported,
                     has_chatgpt_account,
-                    has_codex_backend_auth,
+                    has_motyga_backend_auth,
                     model_catalog: model_catalog.clone(),
                     feedback: feedback.clone(),
                     is_first_run,
@@ -942,7 +942,7 @@ impl App {
                     ),
                     enhanced_keys_supported,
                     has_chatgpt_account,
-                    has_codex_backend_auth,
+                    has_motyga_backend_auth,
                     model_catalog: model_catalog.clone(),
                     feedback: feedback.clone(),
                     is_first_run,
@@ -960,7 +960,7 @@ impl App {
             }
             SessionSelection::Fork(target_session) => {
                 session_telemetry.counter(
-                    "codex.thread.fork",
+                    "motyga.thread.fork",
                     /*inc*/ 1,
                     &[("source", "cli_subcommand")],
                 );
@@ -981,7 +981,7 @@ impl App {
                     ),
                     enhanced_keys_supported,
                     has_chatgpt_account,
-                    has_codex_backend_auth,
+                    has_motyga_backend_auth,
                     model_catalog: model_catalog.clone(),
                     feedback: feedback.clone(),
                     is_first_run,
@@ -1098,7 +1098,7 @@ See the Motyga keymap documentation for supported actions and examples."
                 let workspace_roots = app.config.effective_workspace_roots();
                 let env_map: std::collections::HashMap<String, String> = std::env::vars().collect();
                 let tx = app.app_event_tx.clone();
-                let logs_base_dir = app.config.codex_home.clone();
+                let logs_base_dir = app.config.motyga_home.clone();
                 Self::spawn_world_writable_scan(
                     cwd,
                     workspace_roots,

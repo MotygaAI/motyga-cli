@@ -10,7 +10,7 @@ use crate::ConfigLayer;
 use crate::ConfigLayerMetadata;
 use crate::ConfigLayerSource;
 use crate::ProfileV2Name;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::path::Path;
@@ -57,7 +57,7 @@ impl LoaderOverrides {
     ///
     /// This is intended for tests that should load only repo-controlled config fixtures.
     pub fn without_managed_config_for_tests() -> Self {
-        let base = std::env::temp_dir().join("codex-config-tests");
+        let base = std::env::temp_dir().join("motyga-config-tests");
         Self {
             user_config_path: None,
             user_config_profile: None,
@@ -89,12 +89,12 @@ impl LoaderOverrides {
         }
     }
 
-    pub fn user_config_path(&self, codex_home: &Path) -> std::io::Result<AbsolutePathBuf> {
+    pub fn user_config_path(&self, motyga_home: &Path) -> std::io::Result<AbsolutePathBuf> {
         match self.user_config_path.as_ref() {
             Some(path) => Ok(path.clone()),
             None => Ok(AbsolutePathBuf::resolve_path_against_base(
                 crate::CONFIG_TOML_FILE,
-                codex_home,
+                motyga_home,
             )),
         }
     }
@@ -210,7 +210,7 @@ impl ConfigLayerEntry {
             ConfigLayerSource::System { file } => file.parent(),
             ConfigLayerSource::EnterpriseManaged { .. } => None,
             ConfigLayerSource::User { file, .. } => file.parent(),
-            ConfigLayerSource::Project { dot_codex_folder } => Some(dot_codex_folder.clone()),
+            ConfigLayerSource::Project { dot_motyga_folder } => Some(dot_motyga_folder.clone()),
             ConfigLayerSource::SessionFlags => None,
             ConfigLayerSource::LegacyManagedConfigTomlFromFile { .. } => None,
             ConfigLayerSource::LegacyManagedConfigTomlFromMdm => None,
@@ -554,25 +554,25 @@ fn verify_layer_ordering(layers: &[ConfigLayerEntry]) -> std::io::Result<Option<
     // user layers are allowed so a profile override can layer on top of the base
     // user config.
     let mut user_layer_index: Option<usize> = None;
-    let mut previous_project_dot_codex_folder: Option<&AbsolutePathBuf> = None;
+    let mut previous_project_dot_motyga_folder: Option<&AbsolutePathBuf> = None;
     for (index, layer) in layers.iter().enumerate() {
         if matches!(layer.name, ConfigLayerSource::User { .. }) {
             user_layer_index = Some(index);
         }
 
         if let ConfigLayerSource::Project {
-            dot_codex_folder: current_project_dot_codex_folder,
+            dot_motyga_folder: current_project_dot_motyga_folder,
         } = &layer.name
         {
-            if let Some(previous) = previous_project_dot_codex_folder {
+            if let Some(previous) = previous_project_dot_motyga_folder {
                 let Some(parent) = previous.as_path().parent() else {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidData,
                         "project layer has no parent directory",
                     ));
                 };
-                if previous == current_project_dot_codex_folder
-                    || !current_project_dot_codex_folder
+                if previous == current_project_dot_motyga_folder
+                    || !current_project_dot_motyga_folder
                         .as_path()
                         .ancestors()
                         .any(|ancestor| ancestor == parent)
@@ -583,7 +583,7 @@ fn verify_layer_ordering(layers: &[ConfigLayerEntry]) -> std::io::Result<Option<
                     ));
                 }
             }
-            previous_project_dot_codex_folder = Some(current_project_dot_codex_folder);
+            previous_project_dot_motyga_folder = Some(current_project_dot_motyga_folder);
         }
     }
 

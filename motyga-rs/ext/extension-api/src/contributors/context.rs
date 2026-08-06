@@ -1,4 +1,4 @@
-use codex_protocol::ThreadId;
+use motyga_protocol::ThreadId;
 
 use crate::ExtensionData;
 

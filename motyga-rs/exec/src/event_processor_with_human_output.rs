@@ -1,22 +1,22 @@
 use std::io::IsTerminal;
 use std::path::PathBuf;
 
-use codex_app_server_protocol::CommandExecutionStatus;
-use codex_app_server_protocol::McpToolCallStatus;
-use codex_app_server_protocol::PatchApplyStatus;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadTokenUsage;
-use codex_app_server_protocol::TurnStatus;
-use codex_core::config::Config;
-use codex_model_provider_info::WireApi;
-use codex_protocol::num_format::format_with_separators;
-use codex_protocol::protocol::SessionConfiguredEvent;
-use codex_utils_sandbox_summary::summarize_permission_profile;
+use motyga_app_server_protocol::CommandExecutionStatus;
+use motyga_app_server_protocol::McpToolCallStatus;
+use motyga_app_server_protocol::PatchApplyStatus;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadTokenUsage;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_core::config::Config;
+use motyga_model_provider_info::WireApi;
+use motyga_protocol::num_format::format_with_separators;
+use motyga_protocol::protocol::SessionConfiguredEvent;
+use motyga_utils_sandbox_summary::summarize_permission_profile;
 use owo_colors::OwoColorize;
 use owo_colors::Style;
 
-use crate::event_processor::CodexStatus;
+use crate::event_processor::MotygaStatus;
 use crate::event_processor::EventProcessor;
 use crate::event_processor::handle_last_message;
 
@@ -223,7 +223,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
         eprintln!("{}\n{}", "user".style(self.cyan), prompt);
     }
 
-    fn process_server_notification(&mut self, notification: ServerNotification) -> CodexStatus {
+    fn process_server_notification(&mut self, notification: ServerNotification) -> MotygaStatus {
         match notification {
             ServerNotification::ConfigWarning(notification) => {
                 let details = notification
@@ -236,7 +236,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     notification.summary,
                     details
                 );
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::Warning(notification) => self.process_warning(notification.message),
             ServerNotification::Error(notification) => {
@@ -245,7 +245,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     "ERROR:".style(self.red).style(self.bold),
                     notification.error
                 );
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::DeprecationNotice(notification) => {
                 eprintln!(
@@ -256,7 +256,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                 if let Some(details) = notification.details {
                     eprintln!("{}", details.style(self.dimmed));
                 }
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::HookStarted(notification) => {
                 eprintln!(
@@ -264,7 +264,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     "hook:".style(self.bold),
                     format!("{:?}", notification.run.event_name).style(self.dimmed)
                 );
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::HookCompleted(notification) => {
                 eprintln!(
@@ -273,15 +273,15 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     format!("{:?}", notification.run.event_name).style(self.dimmed),
                     notification.run.status
                 );
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::ItemStarted(notification) => {
                 self.render_item_started(&notification.item);
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::ItemCompleted(notification) => {
                 self.render_item_completed(notification.item);
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::ModelRerouted(notification) => {
                 eprintln!(
@@ -290,12 +290,12 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     notification.from_model,
                     notification.to_model
                 );
-                CodexStatus::Running
+                MotygaStatus::Running
             }
-            ServerNotification::ModelVerification(_) => CodexStatus::Running,
+            ServerNotification::ModelVerification(_) => MotygaStatus::Running,
             ServerNotification::ThreadTokenUsageUpdated(notification) => {
                 self.last_total_token_usage = Some(notification.token_usage);
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::TurnCompleted(notification) => match notification.turn.status {
                 TurnStatus::Completed => {
@@ -311,7 +311,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                         self.final_message = Some(final_message);
                     }
                     self.emit_final_message_on_shutdown = true;
-                    CodexStatus::InitiateShutdown
+                    MotygaStatus::InitiateShutdown
                 }
                 TurnStatus::Failed => {
                     self.final_message = None;
@@ -320,22 +320,22 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     if let Some(error) = notification.turn.error {
                         eprintln!("{} {}", "ERROR:".style(self.red).style(self.bold), error);
                     }
-                    CodexStatus::InitiateShutdown
+                    MotygaStatus::InitiateShutdown
                 }
                 TurnStatus::Interrupted => {
                     self.final_message = None;
                     self.final_message_rendered = false;
                     self.emit_final_message_on_shutdown = false;
                     eprintln!("{}", "turn interrupted".style(self.dimmed));
-                    CodexStatus::InitiateShutdown
+                    MotygaStatus::InitiateShutdown
                 }
-                TurnStatus::InProgress => CodexStatus::Running,
+                TurnStatus::InProgress => MotygaStatus::Running,
             },
             ServerNotification::TurnDiffUpdated(notification) => {
                 if !notification.diff.trim().is_empty() {
                     eprintln!("{}", notification.diff);
                 }
-                CodexStatus::Running
+                MotygaStatus::Running
             }
             ServerNotification::TurnPlanUpdated(notification) => {
                 if let Some(explanation) = notification.explanation {
@@ -343,13 +343,13 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                 }
                 for step in notification.plan {
                     match step.status {
-                        codex_app_server_protocol::TurnPlanStepStatus::Completed => {
+                        motyga_app_server_protocol::TurnPlanStepStatus::Completed => {
                             eprintln!("  {} {}", "✓".style(self.green), step.step);
                         }
-                        codex_app_server_protocol::TurnPlanStepStatus::InProgress => {
+                        motyga_app_server_protocol::TurnPlanStepStatus::InProgress => {
                             eprintln!("  {} {}", "→".style(self.cyan), step.step);
                         }
-                        codex_app_server_protocol::TurnPlanStepStatus::Pending => {
+                        motyga_app_server_protocol::TurnPlanStepStatus::Pending => {
                             eprintln!(
                                 "  {} {}",
                                 "•".style(self.dimmed),
@@ -358,19 +358,19 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                         }
                     }
                 }
-                CodexStatus::Running
+                MotygaStatus::Running
             }
-            ServerNotification::TurnStarted(_) => CodexStatus::Running,
-            _ => CodexStatus::Running,
+            ServerNotification::TurnStarted(_) => MotygaStatus::Running,
+            _ => MotygaStatus::Running,
         }
     }
 
-    fn process_warning(&mut self, message: String) -> CodexStatus {
+    fn process_warning(&mut self, message: String) -> MotygaStatus {
         eprintln!(
             "{} {message}",
             "warning:".style(self.yellow).style(self.bold)
         );
-        CodexStatus::Running
+        MotygaStatus::Running
     }
 
     fn print_final_output(&mut self) {

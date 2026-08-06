@@ -1,6 +1,6 @@
 use crate::manifest::PluginManifest;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
-use codex_utils_path_uri::PathUri;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_utils_path_uri::PathUri;
 use std::error::Error as StdError;
 use std::future::Future;
 use thiserror::Error;

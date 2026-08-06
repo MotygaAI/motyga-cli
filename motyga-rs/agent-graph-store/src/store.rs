@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use codex_protocol::ThreadId;
+use motyga_protocol::ThreadId;
 
 use crate::AgentGraphStoreResult;
 use crate::ThreadSpawnEdgeStatus;

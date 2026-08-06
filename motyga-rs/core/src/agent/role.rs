@@ -12,13 +12,13 @@ use crate::config::ConfigOverrides;
 use crate::config::agent_roles::parse_agent_role_file_contents;
 use crate::config::deserialize_config_toml_with_base;
 use anyhow::anyhow;
-use codex_config::ConfigLayerEntry;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::config_toml::ConfigToml;
-use codex_config::loader::resolve_relative_paths_in_config_toml;
-use codex_exec_server::LOCAL_FS;
+use motyga_config::ConfigLayerEntry;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::config_toml::ConfigToml;
+use motyga_config::loader::resolve_relative_paths_in_config_toml;
+use motyga_exec_server::LOCAL_FS;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -93,7 +93,7 @@ async fn load_role_layer_toml(
             .map(str::to_owned)
             .ok_or(anyhow!("No corresponding config content"))?;
         let role_config_toml: TomlValue = toml::from_str(&role_config_contents)?;
-        (role_config_toml, config.codex_home.as_path())
+        (role_config_toml, config.motyga_home.as_path())
     } else {
         let role_config_contents = tokio::fs::read_to_string(config_file).await?;
         let role_config_base = config_file
@@ -146,7 +146,7 @@ mod reload {
                 preserve_current_provider,
                 preserve_current_service_tier,
             ),
-            config.codex_home.clone(),
+            config.motyga_home.clone(),
             config_layer_stack,
         )
         .await?;
@@ -172,7 +172,7 @@ mod reload {
     ) -> anyhow::Result<ConfigToml> {
         Ok(deserialize_config_toml_with_base(
             config_layer_stack.effective_config(),
-            &config.codex_home,
+            &config.motyga_home,
         )?)
     }
 
@@ -207,7 +207,7 @@ mod reload {
             cwd: Some(config.cwd.to_path_buf()),
             model_provider: preserve_current_provider.then(|| config.model_provider_id.clone()),
             service_tier: preserve_current_service_tier.then(|| config.service_tier.clone()),
-            codex_linux_sandbox_exe: config.codex_linux_sandbox_exe.clone(),
+            motyga_linux_sandbox_exe: config.motyga_linux_sandbox_exe.clone(),
             main_execve_wrapper_exe: config.main_execve_wrapper_exe.clone(),
             ..Default::default()
         }

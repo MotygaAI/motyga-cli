@@ -1,6 +1,6 @@
-use codex_client::CodexHttpClient;
-use codex_protocol::account::PlanType as AccountPlanType;
-use codex_protocol::auth::PlanType as InternalPlanType;
+use motyga_client::MotygaHttpClient;
+use motyga_protocol::account::PlanType as AccountPlanType;
+use motyga_protocol::auth::PlanType as InternalPlanType;
 use serde::Deserialize;
 use std::env;
 use std::fmt;
@@ -9,7 +9,7 @@ use crate::default_client::create_default_auth_client;
 use crate::outbound_proxy::AuthRouteConfig;
 
 const PROD_AUTHAPI_BASE_URL: &str = "https://api.motyga.com/api/accounts";
-const CODEX_AUTHAPI_BASE_URL_ENV_VAR: &str = "CODEX_AUTHAPI_BASE_URL";
+const MOTYGA_AUTHAPI_BASE_URL_ENV_VAR: &str = "MOTYGA_AUTHAPI_BASE_URL";
 const WHOAMI_PATH: &str = "/v1/user-auth-credential/whoami";
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
@@ -41,7 +41,7 @@ impl PersonalAccessTokenAuth {
         access_token: &str,
         auth_route_config: Option<&AuthRouteConfig>,
     ) -> std::io::Result<Self> {
-        let authapi_base_url = env::var(CODEX_AUTHAPI_BASE_URL_ENV_VAR)
+        let authapi_base_url = env::var(MOTYGA_AUTHAPI_BASE_URL_ENV_VAR)
             .ok()
             .map(|base_url| base_url.trim().trim_end_matches('/').to_string())
             .filter(|base_url| !base_url.is_empty())
@@ -77,7 +77,7 @@ impl PersonalAccessTokenAuth {
 }
 
 async fn hydrate_personal_access_token(
-    client: &CodexHttpClient,
+    client: &MotygaHttpClient,
     endpoint: &str,
     access_token: &str,
 ) -> std::io::Result<PersonalAccessTokenAuth> {

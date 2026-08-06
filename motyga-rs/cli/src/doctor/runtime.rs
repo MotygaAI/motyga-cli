@@ -1,4 +1,4 @@
-//! Captures how this Codex process was launched.
+//! Captures how this Motyga process was launched.
 //!
 //! Runtime diagnostics answer provenance questions that are hard to infer from
 //! user reports: which binary is running, which install channel it resembles,
@@ -8,8 +8,8 @@
 use std::env;
 use std::process::Command;
 
-use codex_install_context::InstallContext;
-use codex_install_context::InstallMethod;
+use motyga_install_context::InstallContext;
+use motyga_install_context::InstallMethod;
 
 use super::CheckStatus;
 use super::DoctorCheck;
@@ -17,7 +17,7 @@ use super::describe_install_context;
 use super::doctor_install_context;
 use super::push_path_detail;
 
-/// Builds the process provenance row for the current Codex executable.
+/// Builds the process provenance row for the current Motyga executable.
 ///
 /// This check is informational and should not fail on its own; inconsistent
 /// install state is reported by the installation and update checks instead.
@@ -149,7 +149,7 @@ fn search_provider(context: &InstallContext) -> &'static str {
 }
 
 fn build_commit() -> &'static str {
-    option_env!("CODEX_BUILD_COMMIT")
+    option_env!("MOTYGA_BUILD_COMMIT")
         .or(option_env!("GIT_COMMIT"))
         .unwrap_or("unknown")
 }

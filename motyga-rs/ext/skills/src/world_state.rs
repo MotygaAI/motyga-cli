@@ -1,9 +1,9 @@
-use codex_extension_api::ContextualUserFragment;
-use codex_extension_api::PreviousWorldStateSection;
-use codex_extension_api::RenderedWorldStateFragment;
-use codex_extension_api::WorldStateSectionContribution;
-use codex_protocol::protocol::SKILLS_INSTRUCTIONS_CLOSE_TAG;
-use codex_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
+use motyga_extension_api::ContextualUserFragment;
+use motyga_extension_api::PreviousWorldStateSection;
+use motyga_extension_api::RenderedWorldStateFragment;
+use motyga_extension_api::WorldStateSectionContribution;
+use motyga_protocol::protocol::SKILLS_INSTRUCTIONS_CLOSE_TAG;
+use motyga_protocol::protocol::SKILLS_INSTRUCTIONS_OPEN_TAG;
 use serde_json::json;
 
 use crate::catalog::SkillCatalog;

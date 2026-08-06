@@ -1,3 +1,3 @@
-# Getting started with Codex CLI
+# Getting started with Motyga CLI
 
-For an overview of Codex CLI features, see [this documentation](https://motyga.com/docs).
+For an overview of Motyga CLI features, see [this documentation](https://motyga.com/docs).

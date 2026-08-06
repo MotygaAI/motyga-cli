@@ -3,9 +3,9 @@ requires = ["hatchling>=1.24.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "openai-codex-cli-bin"
+name = "motyga-cli-bin"
 version = "0.0.0-dev"
-description = "Pinned Codex CLI runtime for the Python SDK"
+description = "Pinned Motyga CLI runtime for the Python SDK"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
@@ -34,12 +34,12 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/codex_cli_bin"]
+packages = ["src/motyga_cli_bin"]
 include = [
-  "src/codex_cli_bin/codex-package.json",
-  "src/codex_cli_bin/bin/**",
-  "src/codex_cli_bin/codex-resources/**",
-  "src/codex_cli_bin/codex-path/**",
+  "src/motyga_cli_bin/motyga-package.json",
+  "src/motyga_cli_bin/bin/**",
+  "src/motyga_cli_bin/motyga-resources/**",
+  "src/motyga_cli_bin/motyga-path/**",
 ]
 
 [tool.hatch.build.targets.wheel.hooks.custom]

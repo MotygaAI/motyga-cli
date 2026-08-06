@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
-use codex_mcp::ToolInfo;
-use codex_tools::ToolName;
+use motyga_mcp::MOTYGA_APPS_MCP_SERVER_NAME;
+use motyga_mcp::ToolInfo;
+use motyga_tools::ToolName;
 use pretty_assertions::assert_eq;
 use rmcp::model::JsonObject;
 use rmcp::model::Meta;
@@ -81,7 +81,7 @@ fn numbered_mcp_tools(count: usize) -> Vec<ToolInfo> {
 fn tool_names(tools: &[ToolInfo]) -> HashSet<ToolName> {
     tools
         .iter()
-        .map(codex_mcp::ToolInfo::canonical_tool_name)
+        .map(motyga_mcp::ToolInfo::canonical_tool_name)
         .collect()
 }
 
@@ -143,9 +143,9 @@ async fn excludes_tools_hidden_from_model_exposure() {
     );
     let visible_app_tool = with_visibility(
         make_mcp_tool(
-            CODEX_APPS_MCP_SERVER_NAME,
+            MOTYGA_APPS_MCP_SERVER_NAME,
             "calendar_read",
-            "mcp__codex_apps__calendar",
+            "mcp__motyga_apps__calendar",
             "read",
             Some("calendar"),
             Some("Calendar"),
@@ -154,9 +154,9 @@ async fn excludes_tools_hidden_from_model_exposure() {
     );
     let hidden_app_tool = with_visibility(
         make_mcp_tool(
-            CODEX_APPS_MCP_SERVER_NAME,
+            MOTYGA_APPS_MCP_SERVER_NAME,
             "calendar_open",
-            "mcp__codex_apps__calendar",
+            "mcp__motyga_apps__calendar",
             "open",
             Some("calendar"),
             Some("Calendar"),
@@ -188,9 +188,9 @@ async fn excludes_tools_hidden_from_model_exposure() {
 
 #[tokio::test]
 async fn applies_per_tool_app_policy_across_the_exposure_build() {
-    let codex_home = tempdir().expect("tempdir should succeed");
+    let motyga_home = tempdir().expect("tempdir should succeed");
     std::fs::write(
-        codex_home.path().join(CONFIG_TOML_FILE),
+        motyga_home.path().join(CONFIG_TOML_FILE),
         r#"
 [apps.calendar]
 default_tools_enabled = false
@@ -201,22 +201,22 @@ enabled = true
     )
     .expect("write config");
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .build()
         .await
         .expect("config should build");
     let enabled_tool = make_mcp_tool(
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         "events/create",
-        "mcp__codex_apps__calendar",
+        "mcp__motyga_apps__calendar",
         "create",
         Some("calendar"),
         Some("Calendar"),
     );
     let disabled_tool = make_mcp_tool(
-        CODEX_APPS_MCP_SERVER_NAME,
+        MOTYGA_APPS_MCP_SERVER_NAME,
         "events/list",
-        "mcp__codex_apps__calendar",
+        "mcp__motyga_apps__calendar",
         "list",
         Some("calendar"),
         Some("Calendar"),
@@ -267,9 +267,9 @@ async fn defers_apps_and_non_app_mcp_tools() {
             /*connector_name*/ None,
         ),
         make_mcp_tool(
-            CODEX_APPS_MCP_SERVER_NAME,
+            MOTYGA_APPS_MCP_SERVER_NAME,
             "calendar_create_event",
-            "mcp__codex_apps__calendar",
+            "mcp__motyga_apps__calendar",
             "_create_event",
             Some("calendar"),
             Some("Calendar"),
@@ -292,7 +292,7 @@ async fn defers_apps_and_non_app_mcp_tools() {
     let deferred_tool_names = tool_names(deferred_tools);
     assert!(deferred_tool_names.contains(&ToolName::namespaced("mcp__rmcp", "tool")));
     assert!(deferred_tool_names.contains(&ToolName::namespaced(
-        "mcp__codex_apps__calendar",
+        "mcp__motyga_apps__calendar",
         "_create_event"
     )));
 }

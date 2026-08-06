@@ -1,2 +1,2 @@
-pub use codex_protocol::auth::RefreshTokenFailedError;
-pub use codex_protocol::auth::RefreshTokenFailedReason;
+pub use motyga_protocol::auth::RefreshTokenFailedError;
+pub use motyga_protocol::auth::RefreshTokenFailedReason;

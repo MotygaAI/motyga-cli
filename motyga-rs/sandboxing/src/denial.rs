@@ -1,4 +1,4 @@
-use codex_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::exec_output::ExecToolCallOutput;
 
 use crate::SandboxType;
 

@@ -110,7 +110,7 @@ where
     W: AsyncWrite + Unpin + Send + 'static,
 {
     let processor = ConnectionProcessor::new_with_telemetry(runtime_paths, telemetry);
-    tracing::info!("codex-exec-server listening on stdio");
+    tracing::info!("motyga-exec-server listening on stdio");
     processor
         .run_connection(
             JsonRpcConnection::from_stdio(reader, writer, "exec-server stdio".to_string()),
@@ -130,7 +130,7 @@ async fn run_websocket_listener(
     let listener = TcpListener::bind(bind_address).await?;
     let local_addr = listener.local_addr()?;
     let processor = ConnectionProcessor::new_with_telemetry(runtime_paths, telemetry);
-    info!("codex-exec-server listening on ws://{local_addr}");
+    info!("motyga-exec-server listening on ws://{local_addr}");
     println!("ws://{local_addr}");
     std::io::stdout().flush()?;
 

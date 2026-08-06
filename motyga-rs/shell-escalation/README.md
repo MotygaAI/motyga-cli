@@ -1,19 +1,19 @@
-# codex-shell-escalation
+# motyga-shell-escalation
 
 This crate contains the Unix shell-escalation protocol implementation and the
-`codex-execve-wrapper` executable.
+`motyga-execve-wrapper` executable.
 
-`codex-execve-wrapper` receives the arguments to an intercepted `execve(2)` call and delegates the
+`motyga-execve-wrapper` receives the arguments to an intercepted `execve(2)` call and delegates the
 decision to the shell-escalation protocol over a shared file descriptor (specified by the
-`CODEX_ESCALATE_SOCKET` environment variable). The server on the other side replies with one of:
+`MOTYGA_ESCALATE_SOCKET` environment variable). The server on the other side replies with one of:
 
-- `Run`: `codex-execve-wrapper` should invoke `execve(2)` on itself to run the original command
+- `Run`: `motyga-execve-wrapper` should invoke `execve(2)` on itself to run the original command
   within the sandboxed shell.
 - `Escalate`: forward the file descriptors of the current process so the command can be run
   faithfully outside the sandbox. When the process completes, the server forwards the exit code
-  back to `codex-execve-wrapper`.
+  back to `motyga-execve-wrapper`.
 - `Deny`: the server has declared the proposed command to be forbidden, so
-  `codex-execve-wrapper` prints an error to `stderr` and exits with `1`.
+  `motyga-execve-wrapper` prints an error to `stderr` and exits with `1`.
 
 ## Patched zsh
 

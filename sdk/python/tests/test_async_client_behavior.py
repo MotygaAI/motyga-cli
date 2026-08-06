@@ -3,11 +3,11 @@ from __future__ import annotations
 import asyncio
 import time
 
-from openai_codex.async_client import AsyncCodexClient
-from openai_codex.generated.v2_all import (
+from motyga_sdk.async_client import AsyncMotygaClient
+from motyga_sdk.generated.v2_all import (
     TurnCompletedNotification,
 )
-from openai_codex.models import Notification, UnknownNotification
+from motyga_sdk.models import Notification, UnknownNotification
 
 
 def test_async_client_allows_concurrent_transport_calls() -> None:
@@ -15,7 +15,7 @@ def test_async_client_allows_concurrent_transport_calls() -> None:
 
     async def scenario() -> int:
         """Run two blocking sync calls and report peak overlap."""
-        client = AsyncCodexClient()
+        client = AsyncMotygaClient()
         active = 0
         max_active = 0
 
@@ -40,7 +40,7 @@ def test_async_client_turn_notification_methods_delegate_to_sync_client() -> Non
 
     async def scenario() -> tuple[list[tuple[str, str]], Notification, str]:
         """Record the sync-client calls made by async turn notification wrappers."""
-        client = AsyncCodexClient()
+        client = AsyncMotygaClient()
         event = Notification(
             method="unknown/direct",
             payload=UnknownNotification(params={"turnId": "turn-1"}),

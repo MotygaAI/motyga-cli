@@ -8,25 +8,25 @@ use crate::session::tests::build_world_state_from_turn_context;
 use crate::session::tests::make_session_and_context;
 use crate::tasks::InterruptedTurnHistoryMarker;
 use crate::tasks::interrupted_turn_history_marker;
-use codex_extension_api::empty_extension_registry;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_protocol::capabilities::CapabilityRootLocation;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ReasoningItemReasoningSummary;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::protocol::AgentMessageEvent;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::InternalSessionSource;
-use codex_protocol::protocol::ResumedHistory;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::ThreadSource;
-use codex_protocol::protocol::TurnStartedEvent;
-use codex_protocol::protocol::UserMessageEvent;
-use codex_utils_path_uri::PathUri;
+use motyga_extension_api::empty_extension_registry;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_protocol::capabilities::CapabilityRootLocation;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ReasoningItemReasoningSummary;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::openai_models::ModelsResponse;
+use motyga_protocol::protocol::AgentMessageEvent;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::InternalSessionSource;
+use motyga_protocol::protocol::ResumedHistory;
+use motyga_protocol::protocol::SessionMeta;
+use motyga_protocol::protocol::SessionMetaLine;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_protocol::protocol::TurnStartedEvent;
+use motyga_protocol::protocol::UserMessageEvent;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathBufExt;
 use core_test_support::PathExt;
 use core_test_support::responses::mount_models_once;
@@ -42,37 +42,37 @@ struct FakeAgentGraphStore {
     descendant_thread_ids: Vec<ThreadId>,
 }
 
-impl codex_agent_graph_store::AgentGraphStore for FakeAgentGraphStore {
+impl motyga_agent_graph_store::AgentGraphStore for FakeAgentGraphStore {
     fn upsert_thread_spawn_edge(
         &self,
         _parent_thread_id: ThreadId,
         _child_thread_id: ThreadId,
-        _status: codex_agent_graph_store::ThreadSpawnEdgeStatus,
-    ) -> codex_agent_graph_store::AgentGraphStoreFuture<'_, ()> {
+        _status: motyga_agent_graph_store::ThreadSpawnEdgeStatus,
+    ) -> motyga_agent_graph_store::AgentGraphStoreFuture<'_, ()> {
         Box::pin(async { panic!("unexpected graph upsert") })
     }
 
     fn set_thread_spawn_edge_status(
         &self,
         _child_thread_id: ThreadId,
-        _status: codex_agent_graph_store::ThreadSpawnEdgeStatus,
-    ) -> codex_agent_graph_store::AgentGraphStoreFuture<'_, ()> {
+        _status: motyga_agent_graph_store::ThreadSpawnEdgeStatus,
+    ) -> motyga_agent_graph_store::AgentGraphStoreFuture<'_, ()> {
         Box::pin(async { panic!("unexpected graph status update") })
     }
 
     fn list_thread_spawn_children(
         &self,
         _parent_thread_id: ThreadId,
-        _status_filter: Option<codex_agent_graph_store::ThreadSpawnEdgeStatus>,
-    ) -> codex_agent_graph_store::AgentGraphStoreFuture<'_, Vec<ThreadId>> {
+        _status_filter: Option<motyga_agent_graph_store::ThreadSpawnEdgeStatus>,
+    ) -> motyga_agent_graph_store::AgentGraphStoreFuture<'_, Vec<ThreadId>> {
         Box::pin(async { panic!("unexpected direct-child listing") })
     }
 
     fn list_thread_spawn_descendants(
         &self,
         root_thread_id: ThreadId,
-        status_filter: Option<codex_agent_graph_store::ThreadSpawnEdgeStatus>,
-    ) -> codex_agent_graph_store::AgentGraphStoreFuture<'_, Vec<ThreadId>> {
+        status_filter: Option<motyga_agent_graph_store::ThreadSpawnEdgeStatus>,
+    ) -> motyga_agent_graph_store::AgentGraphStoreFuture<'_, Vec<ThreadId>> {
         assert_eq!(root_thread_id, self.root_thread_id);
         assert_eq!(status_filter, None);
         let descendant_thread_ids = self.descendant_thread_ids.clone();
@@ -117,22 +117,22 @@ fn developer_interrupted_marker() -> ResponseItem {
 fn effective_originator_prefers_thread_scoped_sources_before_env_originator() {
     for (metrics_service_name, persisted_originator, inherited_originator, expected_originator) in [
         (
-            Some("codex_work_desktop"),
+            Some("motyga_work_desktop"),
             Some("persisted_originator"),
             Some("inherited_originator"),
-            "codex_work_desktop",
+            "motyga_work_desktop",
         ),
         (
-            Some("codex_work_web"),
+            Some("motyga_work_web"),
             Some("persisted_originator"),
             Some("inherited_originator"),
-            "codex_work_web",
+            "motyga_work_web",
         ),
         (
-            Some("codex_work_mobile"),
+            Some("motyga_work_mobile"),
             Some("persisted_originator"),
             Some("inherited_originator"),
-            "codex_work_mobile",
+            "motyga_work_mobile",
         ),
         (
             None,
@@ -150,7 +150,7 @@ fn effective_originator_prefers_thread_scoped_sources_before_env_originator() {
         assert_eq!(
             effective_originator_value(
                 metrics_service_name,
-                Some("Codex Desktop".to_string()),
+                Some("Motyga Desktop".to_string()),
                 persisted_originator.map(str::to_string),
                 inherited_originator.map(str::to_string),
                 "motyga_cli".to_string(),
@@ -362,15 +362,15 @@ async fn ignores_session_prefix_messages_when_truncating() {
 async fn shutdown_all_threads_bounded_submits_shutdown_to_every_thread() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let thread_1 = manager
         .start_thread(config.clone())
@@ -399,15 +399,15 @@ async fn shutdown_all_threads_bounded_submits_shutdown_to_every_thread() {
 async fn code_mode_session_provider_is_shared_across_threads() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let first = manager
         .start_thread(config.clone())
@@ -420,14 +420,14 @@ async fn code_mode_session_provider_is_shared_across_threads() {
 
     let first_provider = first
         .thread
-        .codex
+        .motyga
         .session
         .services
         .code_mode_service
         .session_provider();
     let second_provider = second
         .thread
-        .codex
+        .motyga
         .session
         .services
         .code_mode_service
@@ -457,15 +457,15 @@ async fn code_mode_session_provider_is_shared_across_threads() {
 async fn start_thread_keeps_internal_threads_hidden_from_normal_lookups() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let thread = manager
         .start_thread_with_options(StartThreadOptions {
@@ -506,11 +506,11 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
         mcp_observed: Arc<std::sync::Mutex<Vec<String>>>,
     }
 
-    impl codex_extension_api::ThreadLifecycleContributor<Config> for InitialDataRecorder {
+    impl motyga_extension_api::ThreadLifecycleContributor<Config> for InitialDataRecorder {
         fn on_thread_start<'a>(
             &'a self,
-            input: codex_extension_api::ThreadStartInput<'a, Config>,
-        ) -> codex_extension_api::ExtensionFuture<'a, ()> {
+            input: motyga_extension_api::ThreadStartInput<'a, Config>,
+        ) -> motyga_extension_api::ExtensionFuture<'a, ()> {
             Box::pin(async move {
                 let selected_root = input
                     .thread_store
@@ -528,15 +528,15 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
         }
     }
 
-    impl codex_extension_api::McpServerContributor<Config> for InitialDataRecorder {
+    impl motyga_extension_api::McpServerContributor<Config> for InitialDataRecorder {
         fn id(&self) -> &'static str {
             "selected_root_test"
         }
 
         fn contribute<'a>(
             &'a self,
-            context: codex_extension_api::McpServerContributionContext<'a, Config>,
-        ) -> codex_extension_api::ExtensionFuture<'a, Vec<codex_extension_api::McpServerContribution>>
+            context: motyga_extension_api::McpServerContributionContext<'a, Config>,
+        ) -> motyga_extension_api::ExtensionFuture<'a, Vec<motyga_extension_api::McpServerContribution>>
         {
             Box::pin(async move {
                 let thread_init = context
@@ -550,7 +550,7 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
                     .push(selected_root.id.clone());
-                let mut server = codex_mcp::codex_apps_mcp_server_config(
+                let mut server = motyga_mcp::motyga_apps_mcp_server_config(
                     "https://selected.invalid",
                     /*apps_mcp_product_sku*/ None,
                 );
@@ -559,7 +559,7 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
                 server.environment_id = environment_id.clone();
                 server.enabled = false;
                 let plugin_id = selected_root.id;
-                vec![codex_extension_api::McpServerContribution::SelectedPlugin {
+                vec![motyga_extension_api::McpServerContribution::SelectedPlugin {
                     name: plugin_id.clone(),
                     plugin_display_name: plugin_id.clone(),
                     plugin_id,
@@ -572,9 +572,9 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
 
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let lifecycle_observed = Arc::new(std::sync::Mutex::new(Vec::new()));
     let mcp_observed = Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -582,14 +582,14 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
         lifecycle_observed: Arc::clone(&lifecycle_observed),
         mcp_observed: Arc::clone(&mcp_observed),
     });
-    let mut extensions = codex_extension_api::ExtensionRegistryBuilder::new();
+    let mut extensions = motyga_extension_api::ExtensionRegistryBuilder::new();
     extensions.thread_lifecycle_contributor(recorder.clone());
     extensions.mcp_server_contributor(recorder);
     let manager = ThreadManager::new(
         &config,
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing()),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         Arc::new(extensions.build()),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -600,7 +600,7 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
         /*external_time_provider*/ None,
     );
     let selected_root_init = |id: &str, environment_id: &str| {
-        let mut init = codex_extension_api::ExtensionDataInit::new();
+        let mut init = motyga_extension_api::ExtensionDataInit::new();
         init.insert(vec![SelectedCapabilityRoot {
             id: id.to_string(),
             location: CapabilityRootLocation::Environment {
@@ -645,7 +645,7 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
         })
         .await
         .expect("start second thread");
-    let first_session = &first_thread.thread.codex.session;
+    let first_session = &first_thread.thread.motyga.session;
     let first_resolved = first_session
         .services
         .mcp_manager
@@ -656,7 +656,7 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
             /*available_environment_ids*/ &[],
         )
         .await;
-    let second_session = &second_thread.thread.codex.session;
+    let second_session = &second_thread.thread.motyga.session;
     let second_resolved = second_session
         .services
         .mcp_manager
@@ -691,8 +691,8 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
             "selected-b".to_string(),
         ]
     );
-    let selected_servers = |config: &codex_mcp::McpConfig| {
-        codex_mcp::configured_mcp_servers(config)
+    let selected_servers = |config: &motyga_mcp::McpConfig| {
+        motyga_mcp::configured_mcp_servers(config)
             .into_iter()
             .filter(|(name, _)| name.starts_with("selected-"))
             .map(|(name, server)| (name, server.environment_id))
@@ -712,15 +712,15 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
 async fn selected_capability_roots_round_trip_through_fork() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        CodexAuth::from_api_key("dummy"),
+        MotygaAuth::from_api_key("dummy"),
         config.model_provider.clone(),
-        config.codex_home.to_path_buf(),
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        config.motyga_home.to_path_buf(),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
     );
     let selected_roots = vec![SelectedCapabilityRoot {
         id: "demo@1".to_string(),
@@ -779,17 +779,17 @@ async fn selected_capability_roots_round_trip_through_fork() {
 async fn resume_and_fork_do_not_restore_thread_environments_from_rollout() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let manager = ThreadManager::new(
         &config,
         auth_manager.clone(),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -855,7 +855,7 @@ async fn resume_and_fork_do_not_restore_thread_environments_from_rollout() {
         .expect("resume source thread");
     let resumed_turn = resumed
         .thread
-        .codex
+        .motyga
         .session
         .new_turn_with_sub_id("resume-turn".to_string(), SessionSettingsUpdate::default())
         .await
@@ -882,7 +882,7 @@ async fn resume_and_fork_do_not_restore_thread_environments_from_rollout() {
         .expect("fork source thread");
     let forked_turn = forked
         .thread
-        .codex
+        .motyga
         .session
         .new_turn_with_sub_id("fork-turn".to_string(), SessionSettingsUpdate::default())
         .await
@@ -899,15 +899,15 @@ async fn resume_and_fork_do_not_restore_thread_environments_from_rollout() {
 }
 
 #[tokio::test]
-async fn explicit_installation_id_skips_codex_home_file() {
+async fn explicit_installation_id_skips_motyga_home_file() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let installation_id = uuid::Uuid::new_v4().to_string();
     let state_db = init_state_db(&config).await;
     let thread_store = thread_store_from_config(&config, state_db.clone());
@@ -915,7 +915,7 @@ async fn explicit_installation_id_skips_codex_home_file() {
         &config,
         auth_manager,
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -931,8 +931,8 @@ async fn explicit_installation_id_skips_codex_home_file() {
         .await
         .expect("start thread with explicit installation id");
 
-    assert!(!config.codex_home.join(INSTALLATION_ID_FILENAME).exists());
-    assert_eq!(thread.thread.codex.session.installation_id, installation_id);
+    assert!(!config.motyga_home.join(INSTALLATION_ID_FILENAME).exists());
+    assert_eq!(thread.thread.motyga.session.installation_id, installation_id);
 
     thread
         .thread
@@ -946,17 +946,17 @@ async fn explicit_installation_id_skips_codex_home_file() {
 async fn resume_active_thread_from_rollout_returns_running_thread() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let manager = ThreadManager::new(
         &config,
         auth_manager.clone(),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -1006,17 +1006,17 @@ async fn resume_active_thread_from_rollout_returns_running_thread() {
 async fn resume_stopped_thread_from_rollout_spawns_new_thread() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let manager = ThreadManager::new(
         &config,
         auth_manager.clone(),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -1071,19 +1071,19 @@ async fn resume_stopped_thread_from_rollout_spawns_new_thread() {
 async fn resume_stopped_thread_from_rollout_preserves_thread_source() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let state_db = init_state_db(&config).await;
     let thread_store = thread_store_from_config(&config, state_db.clone());
     let manager = ThreadManager::new(
         &config,
         auth_manager.clone(),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -1160,8 +1160,8 @@ async fn resume_stopped_thread_from_rollout_preserves_thread_source() {
 async fn subtree_listing_uses_injected_graph_store_without_state_db() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let root_thread_id = ThreadId::new();
     let descendant_thread_ids = vec![ThreadId::new(), ThreadId::new()];
@@ -1170,12 +1170,12 @@ async fn subtree_listing_uses_injected_graph_store_without_state_db() {
         descendant_thread_ids: descendant_thread_ids.clone(),
     });
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let manager = ThreadManager::new(
         &config,
         auth_manager,
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -1201,15 +1201,15 @@ async fn subtree_listing_uses_injected_graph_store_without_state_db() {
 async fn rollout_path_resume_and_fork_read_history_through_thread_store() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
     config.experimental_thread_store = ThreadStoreConfig::InMemory {
         id: format!("thread-manager-{}", uuid::Uuid::new_v4()),
     };
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let state_db = init_state_db(&config).await;
     let thread_store = thread_store_from_config(&config, state_db.clone());
     let in_memory_store = thread_store
@@ -1220,7 +1220,7 @@ async fn rollout_path_resume_and_fork_read_history_through_thread_store() {
         &config,
         auth_manager.clone(),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -1243,7 +1243,7 @@ async fn rollout_path_resume_and_fork_read_history_through_thread_store() {
     let _ = manager.remove_thread(&source.thread_id).await;
 
     let rollout_path = config
-        .codex_home
+        .motyga_home
         .join("rollouts/source.jsonl")
         .to_path_buf();
     let resumed = manager
@@ -1313,19 +1313,19 @@ async fn new_uses_active_provider_for_model_refresh() {
 
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
     config.model_catalog = None;
     config.model_provider.base_url = Some(server.uri());
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let manager = ThreadManager::new(
         &config,
         auth_manager,
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -1536,18 +1536,18 @@ fn mixed_response_and_legacy_user_event_history_is_mid_turn() {
 async fn interrupted_fork_snapshot_does_not_synthesize_turn_id_for_legacy_history() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let state_db = init_state_db(&config).await;
     let manager = ThreadManager::new(
         &config,
         auth_manager.clone(),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -1645,18 +1645,18 @@ async fn interrupted_fork_snapshot_does_not_synthesize_turn_id_for_legacy_histor
 async fn interrupted_fork_snapshot_preserves_explicit_turn_id() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let state_db = init_state_db(&config).await;
     let manager = ThreadManager::new(
         &config,
         auth_manager.clone(),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,
@@ -1744,18 +1744,18 @@ async fn interrupted_fork_snapshot_preserves_explicit_turn_id() {
 async fn interrupted_fork_snapshot_uses_persisted_mid_turn_history_without_live_source() {
     let temp_dir = tempdir().expect("tempdir");
     let mut config = test_config().await;
-    config.codex_home = temp_dir.path().join("codex-home").abs();
-    config.cwd = config.codex_home.abs();
-    std::fs::create_dir_all(&config.codex_home).expect("create motyga home");
+    config.motyga_home = temp_dir.path().join("motyga-home").abs();
+    config.cwd = config.motyga_home.abs();
+    std::fs::create_dir_all(&config.motyga_home).expect("create motyga home");
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(MotygaAuth::create_dummy_chatgpt_auth_for_testing());
     let state_db = init_state_db(&config).await;
     let manager = ThreadManager::new(
         &config,
         auth_manager.clone(),
         SessionSource::Exec,
-        Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+        Arc::new(motyga_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
         Arc::new(crate::test_support::EmptyUserInstructionsProvider),
         /*analytics_events_client*/ None,

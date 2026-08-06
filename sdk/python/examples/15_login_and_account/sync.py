@@ -9,15 +9,15 @@ from _bootstrap import ensure_local_sdk_src, runtime_config
 
 ensure_local_sdk_src()
 
-from openai_codex import Codex
+from motyga_sdk import Motyga
 
-with Codex(config=runtime_config()) as codex:
+with Motyga(config=runtime_config()) as motyga:
     # Browser login returns a live handle. Open `auth_url` and call `wait()`
     # in a real app; this example cancels immediately so it stays non-blocking.
-    login = codex.login_chatgpt()
+    login = motyga.login_chatgpt()
     canceled = login.cancel()
     completed = login.wait()
-    account = codex.account()
+    account = motyga.account()
 
     print("login.id:", login.login_id)
     print("login.auth_url:", login.auth_url)

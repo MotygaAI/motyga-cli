@@ -4,13 +4,13 @@ use std::fmt;
 use std::sync::Arc;
 
 use arc_swap::ArcSwap;
-use codex_exec_server::Environment;
-use codex_exec_server::EnvironmentManager;
-use codex_exec_server::ExecServerError;
-use codex_exec_server::ExecutorFileSystem;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::Environment;
+use motyga_exec_server::EnvironmentManager;
+use motyga_exec_server::ExecServerError;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use futures::FutureExt;
 use futures::future::BoxFuture;
 use futures::future::Shared;
@@ -257,7 +257,7 @@ impl TurnEnvironmentSnapshot {
     }
 
     #[cfg(test)]
-    pub(crate) fn primary_environment(&self) -> Option<Arc<codex_exec_server::Environment>> {
+    pub(crate) fn primary_environment(&self) -> Option<Arc<motyga_exec_server::Environment>> {
         self.primary()
             .map(|environment| Arc::clone(&environment.environment))
     }
@@ -296,13 +296,13 @@ impl TurnEnvironmentSnapshot {
 mod tests {
     use std::time::Duration;
 
-    use codex_exec_server::Environment;
-    use codex_exec_server::ExecServerRuntimePaths;
-    use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-    use codex_exec_server::REMOTE_ENVIRONMENT_ID;
-    use codex_protocol::protocol::TurnEnvironmentSelection;
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use codex_utils_path_uri::PathUri;
+    use motyga_exec_server::Environment;
+    use motyga_exec_server::ExecServerRuntimePaths;
+    use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+    use motyga_exec_server::REMOTE_ENVIRONMENT_ID;
+    use motyga_protocol::protocol::TurnEnvironmentSelection;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_path_uri::PathUri;
     use futures::SinkExt;
     use futures::StreamExt;
     use pretty_assertions::assert_eq;
@@ -335,7 +335,7 @@ mod tests {
     fn test_runtime_paths() -> ExecServerRuntimePaths {
         ExecServerRuntimePaths::new(
             std::env::current_exe().expect("current exe"),
-            /*codex_linux_sandbox_exe*/ None,
+            /*motyga_linux_sandbox_exe*/ None,
         )
         .expect("runtime paths")
     }
@@ -429,7 +429,7 @@ url = "ws://127.0.0.1:8765"
         let cwd = AbsolutePathBuf::current_dir().expect("cwd");
         let cwd_uri = PathUri::from_abs_path(&cwd);
         let manager =
-            EnvironmentManager::from_codex_home(temp_dir.path(), Some(test_runtime_paths()))
+            EnvironmentManager::from_motyga_home(temp_dir.path(), Some(test_runtime_paths()))
                 .await
                 .expect("environment manager");
 

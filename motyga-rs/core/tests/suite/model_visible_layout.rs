@@ -1,15 +1,15 @@
-use core_test_support::test_codex::local_selections;
+use core_test_support::test_motyga::local_selections;
 use std::fs;
 use std::sync::Arc;
 
 use anyhow::Result;
-use codex_config::types::Personality;
-use codex_features::Feature;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_config::types::Personality;
+use motyga_features::Feature;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::PathBufExt;
 use core_test_support::context_snapshot;
 use core_test_support::context_snapshot::ContextSnapshotOptions;
@@ -23,8 +23,8 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use serde_json::json;
 
@@ -100,7 +100,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model("gpt-5.3-codex")
         .with_config(|config| {
             config
@@ -117,7 +117,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
     let (first_sandbox_policy, first_permission_profile) =
         turn_permission_fields(PermissionProfile::read_only(), first_turn_cwd.as_path());
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn".into(),
@@ -126,14 +126,14 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(first_turn_cwd)),
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(first_sandbox_policy),
                 permission_profile: first_permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: test.config.model_reasoning_effort.clone(),
                         developer_instructions: None,
@@ -143,7 +143,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -152,7 +152,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
         PermissionProfile::read_only(),
         preturn_context_diff_cwd.as_path(),
     );
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "second turn with context updates".into(),
@@ -161,15 +161,15 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(preturn_context_diff_cwd)),
                 approval_policy: Some(AskForApproval::OnRequest),
                 sandbox_policy: Some(second_sandbox_policy),
                 permission_profile: second_permission_profile,
                 personality: Some(Personality::Friendly),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: test.config.model_reasoning_effort.clone(),
                         developer_instructions: None,
@@ -179,7 +179,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -224,7 +224,7 @@ async fn snapshot_model_visible_layout_cwd_change_does_not_refresh_agents() -> R
     )
     .await;
 
-    let mut builder = test_codex().with_model("gpt-5.3-codex");
+    let mut builder = test_motyga().with_model("gpt-5.3-codex");
     let test = builder.build(&server).await?;
     let cwd_one = test.cwd_path().join("agents_one");
     let cwd_two = test.cwd_path().join("agents_two");
@@ -243,7 +243,7 @@ async fn snapshot_model_visible_layout_cwd_change_does_not_refresh_agents() -> R
     let (first_sandbox_policy, first_permission_profile) =
         turn_permission_fields(PermissionProfile::read_only(), cwd_one.as_path());
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn in agents_one".into(),
@@ -252,14 +252,14 @@ async fn snapshot_model_visible_layout_cwd_change_does_not_refresh_agents() -> R
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(cwd_one.clone())),
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(first_sandbox_policy),
                 permission_profile: first_permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: test.config.model_reasoning_effort.clone(),
                         developer_instructions: None,
@@ -269,14 +269,14 @@ async fn snapshot_model_visible_layout_cwd_change_does_not_refresh_agents() -> R
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     let (second_sandbox_policy, second_permission_profile) =
         turn_permission_fields(PermissionProfile::read_only(), cwd_two.as_path());
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "second turn in agents_two".into(),
@@ -285,14 +285,14 @@ async fn snapshot_model_visible_layout_cwd_change_does_not_refresh_agents() -> R
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(cwd_two)),
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(second_sandbox_policy),
                 permission_profile: second_permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: test.config.model_reasoning_effort.clone(),
                         developer_instructions: None,
@@ -302,7 +302,7 @@ async fn snapshot_model_visible_layout_cwd_change_does_not_refresh_agents() -> R
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -338,11 +338,11 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut initial_builder = test_codex().with_config(|config| {
+    let mut initial_builder = test_motyga().with_config(|config| {
         config.model = Some("gpt-5.2".to_string());
     });
     let initial = initial_builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let motyga = Arc::clone(&initial.motyga);
     let home = initial.home.clone();
     let rollout_path = initial
         .session_configured
@@ -359,7 +359,7 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
         ]),
     )
     .await;
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "seed resume history".into(),
@@ -371,7 +371,7 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
     let initial_request = initial_mock.single_request();
 
     let resumed_mock = mount_sse_once(
@@ -384,7 +384,7 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
     )
     .await;
 
-    let mut resume_builder = test_codex().with_config(|config| {
+    let mut resume_builder = test_motyga().with_config(|config| {
         config.model = Some("gpt-5.3-codex".to_string());
         config
             .features
@@ -401,7 +401,7 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
         resume_override_cwd.as_path(),
     );
     resumed
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "resume and change personality".into(),
@@ -410,15 +410,15 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(resume_override_cwd)),
                 approval_policy: Some(AskForApproval::Never),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
                 personality: Some(Personality::Friendly),
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: resumed.session_configured.model.clone(),
                         reasoning_effort: resumed.config.model_reasoning_effort.clone(),
                         developer_instructions: None,
@@ -428,7 +428,7 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
             },
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -453,11 +453,11 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut initial_builder = test_codex().with_config(|config| {
+    let mut initial_builder = test_motyga().with_config(|config| {
         config.model = Some("gpt-5.2".to_string());
     });
     let initial = initial_builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let motyga = Arc::clone(&initial.motyga);
     let home = initial.home.clone();
     let rollout_path = initial
         .session_configured
@@ -474,7 +474,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
         ]),
     )
     .await;
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "seed resume history".into(),
@@ -486,7 +486,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
     let initial_request = initial_mock.single_request();
 
     let resumed_mock = mount_sse_once(
@@ -499,7 +499,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
     )
     .await;
 
-    let mut resume_builder = test_codex().with_config(|config| {
+    let mut resume_builder = test_motyga().with_config(|config| {
         config.model = Some("gpt-5.3-codex".to_string());
     });
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
@@ -507,8 +507,8 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
     fs::create_dir_all(&resume_override_cwd)?;
     let resume_override_cwd = resume_override_cwd.abs();
     core_test_support::submit_thread_settings(
-        &resumed.codex,
-        codex_protocol::protocol::ThreadSettingsOverrides {
+        &resumed.motyga,
+        motyga_protocol::protocol::ThreadSettingsOverrides {
             environments: Some(local_selections(resume_override_cwd)),
             model: Some("gpt-5.2".to_string()),
             ..Default::default()
@@ -516,7 +516,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
     )
     .await?;
     resumed
-        .codex
+        .motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first resumed turn after model override".into(),
@@ -528,7 +528,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

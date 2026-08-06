@@ -1,20 +1,20 @@
 use super::*;
 
-use crate::responses_metadata::CodexResponsesRequestKind;
+use crate::responses_metadata::MotygaResponsesRequestKind;
 use crate::responses_metadata::CompactionTurnMetadata;
 use crate::responses_metadata::INSTALLATION_ID_KEY;
 use crate::responses_metadata::WINDOW_ID_KEY;
 use crate::sandbox_tags::permission_profile_sandbox_tag;
-use codex_analytics::CompactionImplementation;
-use codex_analytics::CompactionPhase;
-use codex_analytics::CompactionReason;
-use codex_analytics::CompactionTrigger;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::ThreadSource;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_analytics::CompactionImplementation;
+use motyga_analytics::CompactionPhase;
+use motyga_analytics::CompactionReason;
+use motyga_analytics::CompactionTrigger;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use core_test_support::PathBufExt;
 use core_test_support::PathExt;
 use pretty_assertions::assert_eq;
@@ -34,7 +34,7 @@ fn test_mcp_turn_metadata_context() -> McpTurnMetadataContext<'static> {
 fn test_responses_metadata_json(
     state: &TurnMetadataState,
     window_id: &str,
-    request_kind: CodexResponsesRequestKind,
+    request_kind: MotygaResponsesRequestKind,
 ) -> String {
     state
         .to_responses_metadata(
@@ -47,7 +47,7 @@ fn test_responses_metadata_json(
 }
 
 fn test_turn_responses_metadata_json(state: &TurnMetadataState, window_id: &str) -> String {
-    test_responses_metadata_json(state, window_id, CodexResponsesRequestKind::Turn)
+    test_responses_metadata_json(state, window_id, MotygaResponsesRequestKind::Turn)
 }
 
 fn test_compaction_responses_metadata_json(
@@ -58,7 +58,7 @@ fn test_compaction_responses_metadata_json(
     test_responses_metadata_json(
         state,
         window_id,
-        CodexResponsesRequestKind::Compaction(compaction),
+        MotygaResponsesRequestKind::Compaction(compaction),
     )
 }
 

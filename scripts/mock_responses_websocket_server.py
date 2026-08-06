@@ -170,7 +170,7 @@ model_provider = "localapi_ws"
 model_reasoning_effort = "medium"
 
 
-start codex with `codex --profile localapi_ws`
+start motyga with `motyga --profile localapi_ws`
 """)
     sys.stdout.flush()
 
@@ -185,7 +185,7 @@ start codex with `codex --profile localapi_ws`
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Mock a minimal Responses API WebSocket endpoint for the `test_codex` flow.\n"
+            "Mock a minimal Responses API WebSocket endpoint for the `test_motyga` flow.\n"
             f"Binds to {HOST}:{DEFAULT_PORT} by default and logs incoming JSON requests to stdout."
         ),
         formatter_class=argparse.RawTextHelpFormatter,

@@ -10,32 +10,32 @@ use app_test_support::create_mock_responses_server_sequence;
 use app_test_support::to_response;
 use app_test_support::write_mock_responses_config_toml;
 use axum::Router;
-use codex_app_server_protocol::CapabilityRootLocation;
-use codex_app_server_protocol::EnvironmentAddResponse;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::McpElicitationSchema;
-use codex_app_server_protocol::McpServerElicitationAction;
-use codex_app_server_protocol::McpServerElicitationRequest;
-use codex_app_server_protocol::McpServerElicitationRequestParams;
-use codex_app_server_protocol::McpServerElicitationRequestResponse;
-use codex_app_server_protocol::McpServerToolCallParams;
-use codex_app_server_protocol::McpServerToolCallResponse;
-use codex_app_server_protocol::McpToolCallStatus;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SelectedCapabilityRoot;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnEnvironmentParams;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_features::Feature;
-use codex_utils_path_uri::PathUri;
-use codex_utils_pty::DEFAULT_OUTPUT_BYTES_CAP;
+use motyga_app_server_protocol::CapabilityRootLocation;
+use motyga_app_server_protocol::EnvironmentAddResponse;
+use motyga_app_server_protocol::ItemCompletedNotification;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::McpElicitationSchema;
+use motyga_app_server_protocol::McpServerElicitationAction;
+use motyga_app_server_protocol::McpServerElicitationRequest;
+use motyga_app_server_protocol::McpServerElicitationRequestParams;
+use motyga_app_server_protocol::McpServerElicitationRequestResponse;
+use motyga_app_server_protocol::McpServerToolCallParams;
+use motyga_app_server_protocol::McpServerToolCallResponse;
+use motyga_app_server_protocol::McpToolCallStatus;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::SelectedCapabilityRoot;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnEnvironmentParams;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_features::Feature;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_pty::DEFAULT_OUTPUT_BYTES_CAP;
 use core_test_support::responses;
 use futures::SinkExt;
 use pretty_assertions::assert_eq;
@@ -86,9 +86,9 @@ const LATE_ENVIRONMENT_ID: &str = "late-environment";
 async fn mcp_server_tool_call_returns_tool_result() -> Result<()> {
     let responses_server = responses::start_mock_server().await;
     let (mcp_server_url, mcp_server_handle) = start_mcp_server().await?;
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_mock_responses_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         &BTreeMap::new(),
         /*auto_compact_limit*/ 1024,
@@ -97,7 +97,7 @@ async fn mcp_server_tool_call_returns_tool_result() -> Result<()> {
         "compact",
     )?;
 
-    let config_path = codex_home.path().join("config.toml");
+    let config_path = motyga_home.path().join("config.toml");
     let mut config_toml = std::fs::read_to_string(&config_path)?;
     config_toml.push_str(&format!(
         r#"
@@ -107,7 +107,7 @@ url = "{mcp_server_url}/mcp"
     ));
     std::fs::write(config_path, config_toml)?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_start_id = mcp
@@ -173,8 +173,8 @@ url = "{mcp_server_url}/mcp"
 
 #[tokio::test]
 async fn mcp_server_tool_call_returns_error_for_unknown_thread() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -204,9 +204,9 @@ async fn mcp_server_tool_call_returns_error_for_unknown_thread() -> Result<()> {
 async fn mcp_server_tool_call_round_trips_elicitation() -> Result<()> {
     let responses_server = responses::start_mock_server().await;
     let (mcp_server_url, mcp_server_handle) = start_mcp_server().await?;
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_mock_responses_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         &BTreeMap::new(),
         /*auto_compact_limit*/ 1024,
@@ -215,7 +215,7 @@ async fn mcp_server_tool_call_round_trips_elicitation() -> Result<()> {
         "compact",
     )?;
 
-    let config_path = codex_home.path().join("config.toml");
+    let config_path = motyga_home.path().join("config.toml");
     let mut config_toml = std::fs::read_to_string(&config_path)?;
     config_toml.push_str(&format!(
         r#"
@@ -225,13 +225,13 @@ url = "{mcp_server_url}/mcp"
     ));
     std::fs::write(config_path, config_toml)?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_start_id = mcp
         .send_thread_start_request_with_auto_env(ThreadStartParams {
             model: Some("mock-model".to_string()),
-            approval_policy: Some(codex_app_server_protocol::AskForApproval::UnlessTrusted),
+            approval_policy: Some(motyga_app_server_protocol::AskForApproval::UnlessTrusted),
             ..Default::default()
         })
         .await?;
@@ -316,9 +316,9 @@ async fn mcp_server_elicitation_survives_environment_runtime_refresh() -> Result
     let (mcp_server_url, mcp_server_handle) = start_mcp_server().await?;
     let exec_listener = TcpListener::bind("127.0.0.1:0").await?;
     let exec_server_url = format!("ws://{}", exec_listener.local_addr()?);
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_mock_responses_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         &BTreeMap::from([(Feature::DeferredExecutor, true)]),
         /*auto_compact_limit*/ 1024,
@@ -326,7 +326,7 @@ async fn mcp_server_elicitation_survives_environment_runtime_refresh() -> Result
         "mock_provider",
         "compact",
     )?;
-    let config_path = codex_home.path().join("config.toml");
+    let config_path = motyga_home.path().join("config.toml");
     let mut config_toml = std::fs::read_to_string(&config_path)?;
     config_toml.push_str(&format!(
         r#"
@@ -336,7 +336,7 @@ url = "{mcp_server_url}/mcp"
     ));
     std::fs::write(config_path, config_toml)?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
     let add_environment_id = mcp
         .send_raw_request(
@@ -359,10 +359,10 @@ url = "{mcp_server_url}/mcp"
     let thread_start_id = mcp
         .send_thread_start_request(ThreadStartParams {
             model: Some("mock-model".to_string()),
-            approval_policy: Some(codex_app_server_protocol::AskForApproval::UnlessTrusted),
+            approval_policy: Some(motyga_app_server_protocol::AskForApproval::UnlessTrusted),
             environments: Some(vec![TurnEnvironmentParams {
                 environment_id: LATE_ENVIRONMENT_ID.to_string(),
-                cwd: codex_utils_absolute_path::AbsolutePathBuf::try_from(
+                cwd: motyga_utils_absolute_path::AbsolutePathBuf::try_from(
                     capability_root.path().to_path_buf(),
                 )?
                 .into(),
@@ -453,9 +453,9 @@ url = "{mcp_server_url}/mcp"
 async fn mcp_server_tool_call_forwards_url_elicitation() -> Result<()> {
     let responses_server = responses::start_mock_server().await;
     let (mcp_server_url, mcp_server_handle) = start_mcp_server().await?;
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_mock_responses_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         &BTreeMap::new(),
         /*auto_compact_limit*/ 1024,
@@ -464,7 +464,7 @@ async fn mcp_server_tool_call_forwards_url_elicitation() -> Result<()> {
         "compact",
     )?;
 
-    let config_path = codex_home.path().join("config.toml");
+    let config_path = motyga_home.path().join("config.toml");
     let mut config_toml = std::fs::read_to_string(&config_path)?;
     config_toml.push_str(&format!(
         r#"
@@ -474,13 +474,13 @@ url = "{mcp_server_url}/mcp"
     ));
     std::fs::write(config_path, config_toml)?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_start_id = mcp
         .send_thread_start_request_with_auto_env(ThreadStartParams {
             model: Some("mock-model".to_string()),
-            approval_policy: Some(codex_app_server_protocol::AskForApproval::UnlessTrusted),
+            approval_policy: Some(motyga_app_server_protocol::AskForApproval::UnlessTrusted),
             ..Default::default()
         })
         .await?;
@@ -573,9 +573,9 @@ async fn mcp_tool_call_completion_notification_contains_truncated_large_result()
     ];
     let responses_server = create_mock_responses_server_sequence(responses).await;
     let (mcp_server_url, mcp_server_handle) = start_mcp_server().await?;
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_mock_responses_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         &BTreeMap::new(),
         /*auto_compact_limit*/ 1_000_000,
@@ -584,7 +584,7 @@ async fn mcp_tool_call_completion_notification_contains_truncated_large_result()
         "compact",
     )?;
 
-    let config_path = codex_home.path().join("config.toml");
+    let config_path = motyga_home.path().join("config.toml");
     let mut config_toml = std::fs::read_to_string(&config_path)?;
     config_toml.push_str(&format!(
         r#"
@@ -594,7 +594,7 @@ url = "{mcp_server_url}/mcp"
     ));
     std::fs::write(config_path, config_toml)?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_start_id = mcp

@@ -1,6 +1,6 @@
 ---
 name: update-v8-version
-description: Update Codex's pinned `v8` / `rusty_v8` versions, validate the release-candidate path, and investigate failed V8 canary or artifact builds. Use when asked to bump V8, update `rusty_v8` artifacts, prepare or validate a V8 release candidate, check `v8-canary`, or diagnose why a V8 version update no longer builds.
+description: Update Motyga's pinned `v8` / `rusty_v8` versions, validate the release-candidate path, and investigate failed V8 canary or artifact builds. Use when asked to bump V8, update `rusty_v8` artifacts, prepare or validate a V8 release candidate, check `v8-canary`, or diagnose why a V8 version update no longer builds.
 ---
 
 # Update V8 Version
@@ -51,7 +51,7 @@ Enter this path only when the canary or local build path fails.
    - custom libc++ / libc++abi / llvm-libc inputs
    - sandbox or pointer-compression feature relationships
    - patch hunks in `patches/` that no longer apply or no longer match upstream
-4. Trace each failing delta back into Codex's build graph:
+4. Trace each failing delta back into Motyga's build graph:
    - `MODULE.bazel`
    - `third_party/v8/BUILD.bazel`
    - `.github/scripts/rusty_v8_bazel.py`
@@ -68,5 +68,5 @@ Enter this path only when the canary or local build path fails.
 - Say whether validation came from hosted `v8-canary` or from a local
   substitute.
 - Distinguish "version bump complete" from "release published".
-- When blocked, report the upstream delta that matters, the Codex file it hits,
+- When blocked, report the upstream delta that matters, the Motyga file it hits,
   and the next concrete fix to try.

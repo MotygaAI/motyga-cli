@@ -1,8 +1,8 @@
-use codex_backend_client::Client as BackendClient;
-use codex_core::config::Config;
-use codex_login::AuthManager;
-use codex_protocol::protocol::RateLimitSnapshot;
-use codex_protocol::protocol::RateLimitWindow;
+use motyga_backend_client::Client as BackendClient;
+use motyga_core::config::Config;
+use motyga_login::AuthManager;
+use motyga_protocol::protocol::RateLimitSnapshot;
+use motyga_protocol::protocol::RateLimitWindow;
 use tracing::info;
 use tracing::warn;
 
@@ -14,7 +14,7 @@ pub(crate) async fn rate_limits_ok(auth_manager: &AuthManager, config: &Config) 
 
 async fn rate_limits_check(auth_manager: &AuthManager, config: &Config) -> Option<bool> {
     let auth = auth_manager.auth().await?;
-    if !auth.uses_codex_backend() {
+    if !auth.uses_motyga_backend() {
         return None;
     }
 
@@ -30,7 +30,7 @@ async fn rate_limits_check(auth_manager: &AuthManager, config: &Config) -> Optio
 
     let snapshot = snapshots
         .iter()
-        .find(|s| s.limit_id.as_deref() == Some(crate::guard_limits::CODEX_LIMIT_ID))
+        .find(|s| s.limit_id.as_deref() == Some(crate::guard_limits::MOTYGA_LIMIT_ID))
         .or_else(|| snapshots.first())?;
 
     let min_remaining_percent = config.memories.min_rate_limit_remaining_percent;
@@ -39,7 +39,7 @@ async fn rate_limits_check(auth_manager: &AuthManager, config: &Config) -> Optio
     if !allowed {
         info!(
             min_remaining_percent,
-            "skipping memories startup because Codex rate limits are below the configured threshold"
+            "skipping memories startup because Motyga rate limits are below the configured threshold"
         );
     }
 

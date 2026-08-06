@@ -8,8 +8,8 @@ use crate::ConfigRequirementsToml;
 use crate::ConfigRequirementsWithSources;
 use crate::RequirementSource;
 use crate::Sourced;
-use codex_protocol::protocol::AskForApproval;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
 use std::cell::Cell;
 use std::collections::BTreeMap;
@@ -158,7 +158,7 @@ fn composition_strategy_applies_to_non_cloud_layers() {
     let system_file = if cfg!(windows) {
         "C:\\requirements.toml"
     } else {
-        "/etc/codex/requirements.toml"
+        "/etc/motyga/requirements.toml"
     };
     let system_source = RequirementSource::SystemRequirementsToml {
         file: AbsolutePathBuf::from_absolute_path(system_file).expect("absolute path"),

@@ -3,7 +3,7 @@ use super::*;
 use chrono::DateTime;
 #[cfg(test)]
 use chrono::Utc;
-use codex_protocol::config_types::MultiAgentMode;
+use motyga_protocol::config_types::MultiAgentMode;
 
 #[cfg(test)]
 pub(crate) async fn read_summary_from_rollout(
@@ -92,7 +92,7 @@ fn extract_conversation_summary(
     let preview = head
         .iter()
         .filter_map(|value| serde_json::from_value::<ResponseItem>(value.clone()).ok())
-        .find_map(|item| match codex_core::parse_turn_item(&item) {
+        .find_map(|item| match motyga_core::parse_turn_item(&item) {
             Some(TurnItem::UserMessage(user)) => Some(user.message()),
             _ => None,
         })?;
@@ -139,25 +139,25 @@ fn map_git_info(git_info: &CoreGitInfo) -> ConversationGitInfo {
 }
 
 pub(super) fn with_thread_spawn_agent_metadata(
-    source: codex_protocol::protocol::SessionSource,
+    source: motyga_protocol::protocol::SessionSource,
     agent_nickname: Option<String>,
     agent_role: Option<String>,
-) -> codex_protocol::protocol::SessionSource {
+) -> motyga_protocol::protocol::SessionSource {
     if agent_nickname.is_none() && agent_role.is_none() {
         return source;
     }
 
     match source {
-        codex_protocol::protocol::SessionSource::SubAgent(
-            codex_protocol::protocol::SubAgentSource::ThreadSpawn {
+        motyga_protocol::protocol::SessionSource::SubAgent(
+            motyga_protocol::protocol::SubAgentSource::ThreadSpawn {
                 parent_thread_id,
                 depth,
                 agent_path,
                 agent_nickname: existing_agent_nickname,
                 agent_role: existing_agent_role,
             },
-        ) => codex_protocol::protocol::SessionSource::SubAgent(
-            codex_protocol::protocol::SubAgentSource::ThreadSpawn {
+        ) => motyga_protocol::protocol::SessionSource::SubAgent(
+            motyga_protocol::protocol::SubAgentSource::ThreadSpawn {
                 parent_thread_id,
                 depth,
                 agent_path,
@@ -170,16 +170,16 @@ pub(super) fn with_thread_spawn_agent_metadata(
 }
 
 pub(crate) fn thread_response_active_permission_profile(
-    active_permission_profile: Option<codex_protocol::models::ActivePermissionProfile>,
-) -> Option<codex_app_server_protocol::ActivePermissionProfile> {
+    active_permission_profile: Option<motyga_protocol::models::ActivePermissionProfile>,
+) -> Option<motyga_app_server_protocol::ActivePermissionProfile> {
     active_permission_profile.map(Into::into)
 }
 
 pub(crate) fn thread_response_sandbox_policy(
-    permission_profile: &codex_protocol::models::PermissionProfile,
+    permission_profile: &motyga_protocol::models::PermissionProfile,
     cwd: &Path,
-) -> codex_app_server_protocol::SandboxPolicy {
-    let sandbox_policy = codex_sandboxing::compatibility_sandbox_policy_for_permission_profile(
+) -> motyga_app_server_protocol::SandboxPolicy {
+    let sandbox_policy = motyga_sandboxing::compatibility_sandbox_policy_for_permission_profile(
         permission_profile,
         cwd,
     );
@@ -212,9 +212,9 @@ pub(crate) fn thread_settings_from_config_snapshot(
 }
 
 pub(crate) fn thread_settings_from_core_snapshot(
-    snapshot: codex_protocol::protocol::ThreadSettingsSnapshot,
+    snapshot: motyga_protocol::protocol::ThreadSettingsSnapshot,
 ) -> ThreadSettings {
-    let codex_protocol::protocol::ThreadSettingsSnapshot {
+    let motyga_protocol::protocol::ThreadSettingsSnapshot {
         model,
         model_provider_id,
         service_tier,

@@ -10,8 +10,8 @@ use crate::tools::handlers::multi_agents_spec::SpawnAgentToolOptions;
 use crate::tools::handlers::multi_agents_spec::create_spawn_agent_tool_v2;
 use crate::tools::handlers::multi_agents_v2::message_tool::message_content;
 use crate::turn_timing::now_unix_timestamp_ms;
-use codex_protocol::AgentPath;
-use codex_tools::ToolSpec;
+use motyga_protocol::AgentPath;
+use motyga_tools::ToolSpec;
 
 #[derive(Default)]
 pub(crate) struct Handler {
@@ -33,7 +33,7 @@ impl ToolExecutor<ToolInvocation> for Handler {
         create_spawn_agent_tool_v2(self.options.clone())
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(async move { handle_spawn_agent(invocation).await.map(boxed_tool_output) })
     }
 }
@@ -155,7 +155,7 @@ async fn handle_spawn_agent(
         .await;
     let role_tag = role_name.unwrap_or(DEFAULT_ROLE_NAME);
     turn.session_telemetry.counter(
-        "codex.multi_agent.spawn",
+        "motyga.multi_agent.spawn",
         /*inc*/ 1,
         &[("role", role_tag), ("version", "v2")],
     );

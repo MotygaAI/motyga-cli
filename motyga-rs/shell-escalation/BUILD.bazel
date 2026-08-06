@@ -1,6 +1,6 @@
-load("//:defs.bzl", "codex_rust_crate")
+load("//:defs.bzl", "motyga_rust_crate")
 
-codex_rust_crate(
+motyga_rust_crate(
     name = "shell-escalation",
-    crate_name = "codex_shell_escalation",
+    crate_name = "motyga_shell_escalation",
 )

@@ -108,7 +108,7 @@ fn prologue_encoding_is_stable_and_unambiguous() {
 
     assert_eq!(
         prologue,
-        b"\x00\x00\x00\x00\x00\x00\x00\x20codex-exec-server-relay-noise/v1\
+        b"\x00\x00\x00\x00\x00\x00\x00\x20motyga-exec-server-relay-noise/v1\
           \x00\x00\x00\x00\x00\x00\x00\x05env-1\
           \x00\x00\x00\x00\x00\x00\x00\x0eregistration-1\
           \x00\x00\x00\x00\x00\x00\x00\x08stream-1"

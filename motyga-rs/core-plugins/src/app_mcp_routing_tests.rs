@@ -1,5 +1,5 @@
 use super::*;
-use codex_plugin::AppConnectorId;
+use motyga_plugin::AppConnectorId;
 use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 

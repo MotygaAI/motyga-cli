@@ -1,5 +1,5 @@
-use codex_features::FEATURES;
-use codex_protocol::account::PlanType;
+use motyga_features::FEATURES;
+use motyga_protocol::account::PlanType;
 use lazy_static::lazy_static;
 use rand::Rng;
 
@@ -29,7 +29,7 @@ lazy_static! {
             if line.is_empty() || line.starts_with('#') {
                 return false;
             }
-            if !IS_MACOS && !IS_WINDOWS && line.contains("codex app") {
+            if !IS_MACOS && !IS_WINDOWS && line.contains("motyga app") {
                 return false;
             }
             true
@@ -124,10 +124,10 @@ fn pick_tooltip<R: Rng + ?Sized>(rng: &mut R) -> Option<&'static str> {
 
 pub(crate) mod announcement {
     use crate::tooltips::ANNOUNCEMENT_TIP_URL;
-    use crate::version::CODEX_CLI_VERSION;
+    use crate::version::MOTYGA_CLI_VERSION;
     use chrono::NaiveDate;
     use chrono::Utc;
-    use codex_protocol::account::PlanType;
+    use motyga_protocol::account::PlanType;
     use regex_lite::Regex;
     use serde::Deserialize;
     use std::sync::OnceLock;
@@ -245,7 +245,7 @@ pub(crate) mod announcement {
                 .target_oses
                 .as_ref()
                 .is_none_or(|target_oses| target_oses.contains(&CURRENT_OS));
-            if tip.version_matches(CODEX_CLI_VERSION)
+            if tip.version_matches(MOTYGA_CLI_VERSION)
                 && tip.date_matches(today)
                 && tip.target_app == "cli"
                 && plan_matches
@@ -461,7 +461,7 @@ from_date = "2000-01-01"
 # target_oses optionally restricts the announcement to operating systems like ["macos", "windows"].
 
 [[announcements]]
-content = "Welcome to Codex! Check out the new onboarding flow."
+content = "Welcome to Motyga! Check out the new onboarding flow."
 from_date = "2024-10-01"
 to_date = "2024-10-15"
 target_app = "cli"

@@ -21,7 +21,7 @@
           "type": "string"
         },
         {
-          "description": "Plugin-service currently sends `\"ENABLED\"` for available remote plugins. Codex app-server exposes `\"AVAILABLE\"` in its API; the alias keeps decoding compatible with that upstream response.",
+          "description": "Plugin-service currently sends `\"ENABLED\"` for available remote plugins. Motyga app-server exposes `\"AVAILABLE\"` in its API; the alias keeps decoding compatible with that upstream response.",
           "enum": [
             "AVAILABLE"
           ],

@@ -47,7 +47,7 @@ pub enum ProviderAccount {
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub enum AmazonBedrockCredentialSource {
-    CodexManaged,
+    MotygaManaged,
     AwsManaged,
 }
 

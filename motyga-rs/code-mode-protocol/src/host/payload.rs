@@ -1,6 +1,6 @@
 use std::num::TryFromIntError;
 
-use codex_protocol::ToolName;
+use motyga_protocol::ToolName;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value as JsonValue;

@@ -1,7 +1,7 @@
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
-use codex_exec_server_protocol::JSONRPCErrorError;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server_protocol::JSONRPCErrorError;
+use motyga_utils_path_uri::PathUri;
 use tokio::io;
 
 use crate::CopyOptions;

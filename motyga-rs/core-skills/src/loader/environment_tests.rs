@@ -1,8 +1,8 @@
 use std::fs;
 
-use codex_exec_server::LOCAL_FS;
-use codex_protocol::protocol::Product;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::LOCAL_FS;
+use motyga_protocol::protocol::Product;
+use motyga_utils_path_uri::PathUri;
 use pretty_assertions::assert_eq;
 use tempfile::tempdir;
 
@@ -39,14 +39,14 @@ dependencies:
       description: Deploy MCP
 policy:
   allow_implicit_invocation: false
-  products: [codex]
+  products: [motyga]
 "#,
     )
     .expect("metadata");
 
     let root_uri = PathUri::from_host_native_path(root.path()).expect("root URI");
     let outcome =
-        load_environment_skills_from_root(LOCAL_FS.as_ref(), &root_uri, Some(Product::Codex)).await;
+        load_environment_skills_from_root(LOCAL_FS.as_ref(), &root_uri, Some(Product::Motyga)).await;
 
     assert_eq!(
         outcome.skills,
@@ -67,7 +67,7 @@ policy:
             }),
             policy: Some(SkillPolicy {
                 allow_implicit_invocation: Some(false),
-                products: vec![Product::Codex],
+                products: vec![Product::Motyga],
             }),
         }]
     );

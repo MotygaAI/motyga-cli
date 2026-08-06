@@ -4,12 +4,12 @@ use std::fmt;
 use std::io;
 use std::sync::Arc;
 
-use codex_exec_server::ExecutorFileSystem;
-use codex_exec_server::LOCAL_FS;
-use codex_protocol::protocol::Product;
-use codex_protocol::protocol::SkillScope;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_exec_server::LOCAL_FS;
+use motyga_protocol::protocol::Product;
+use motyga_protocol::protocol::SkillScope;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SkillMetadata {
@@ -52,7 +52,7 @@ impl SkillMetadata {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SkillPolicy {
     pub allow_implicit_invocation: Option<bool>,
-    // TODO: Enforce product gating in Codex skill selection/injection instead of only parsing and
+    // TODO: Enforce product gating in Motyga skill selection/injection instead of only parsing and
     // storing this metadata.
     pub products: Vec<Product>,
 }

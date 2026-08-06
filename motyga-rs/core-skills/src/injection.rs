@@ -5,16 +5,16 @@ use std::sync::Arc;
 use crate::SkillLoadOutcome;
 use crate::SkillMetadata;
 use crate::build_skill_name_counts;
-use codex_analytics::AnalyticsEventsClient;
-use codex_analytics::InvocationType;
-use codex_analytics::SkillInvocation;
-use codex_analytics::TrackEventsContext;
-use codex_exec_server::LOCAL_FS;
-use codex_otel::SessionTelemetry;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
-use codex_utils_plugins::mention_syntax::TOOL_MENTION_SIGIL;
+use motyga_analytics::AnalyticsEventsClient;
+use motyga_analytics::InvocationType;
+use motyga_analytics::SkillInvocation;
+use motyga_analytics::TrackEventsContext;
+use motyga_exec_server::LOCAL_FS;
+use motyga_otel::SessionTelemetry;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
+use motyga_utils_plugins::mention_syntax::TOOL_MENTION_SIGIL;
 
 #[derive(Debug, Default)]
 pub struct SkillInjections {
@@ -129,7 +129,7 @@ fn emit_skill_injected_metric(
     };
 
     otel.counter(
-        "codex.skill.injected",
+        "motyga.skill.injected",
         /*inc*/ 1,
         &[("status", status), ("skill", skill.name.as_str())],
     );

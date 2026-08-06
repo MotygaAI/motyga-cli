@@ -1,6 +1,6 @@
 mod common;
 
-#[path = "../src/proto/codex.exec_server.relay.v1.rs"]
+#[path = "../src/proto/motyga.exec_server.relay.v1.rs"]
 mod relay_proto;
 
 use std::collections::HashMap;
@@ -12,19 +12,19 @@ use anyhow::Context;
 use anyhow::Result;
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
-use codex_api::AuthProvider;
-use codex_exec_server::ExecParams;
-use codex_exec_server::ExecResponse;
-use codex_exec_server::ExecServerClient;
-use codex_exec_server::ExecServerRuntimePaths;
-use codex_exec_server::FsReadFileParams;
-use codex_exec_server::NoiseChannelIdentity;
-use codex_exec_server::NoiseChannelPublicKey;
-use codex_exec_server::NoiseRendezvousConnectArgs;
-use codex_exec_server::NoiseRendezvousConnectBundle;
-use codex_exec_server::ProcessId;
-use codex_exec_server::RemoteEnvironmentConfig;
-use codex_utils_path_uri::PathUri;
+use motyga_api::AuthProvider;
+use motyga_exec_server::ExecParams;
+use motyga_exec_server::ExecResponse;
+use motyga_exec_server::ExecServerClient;
+use motyga_exec_server::ExecServerRuntimePaths;
+use motyga_exec_server::FsReadFileParams;
+use motyga_exec_server::NoiseChannelIdentity;
+use motyga_exec_server::NoiseChannelPublicKey;
+use motyga_exec_server::NoiseRendezvousConnectArgs;
+use motyga_exec_server::NoiseRendezvousConnectBundle;
+use motyga_exec_server::ProcessId;
+use motyga_exec_server::RemoteEnvironmentConfig;
+use motyga_utils_path_uri::PathUri;
 use futures::SinkExt;
 use futures::StreamExt;
 use http::HeaderMap;
@@ -65,7 +65,7 @@ impl AuthProvider for StaticRegistryAuthProvider {
     }
 }
 
-fn static_registry_auth_provider() -> codex_api::SharedAuthProvider {
+fn static_registry_auth_provider() -> motyga_api::SharedAuthProvider {
     Arc::new(StaticRegistryAuthProvider)
 }
 
@@ -98,14 +98,14 @@ async fn remote_environment_routes_encrypted_exec_server_rpc() -> Result<()> {
         .mount(&registry)
         .await;
 
-    let (codex_exe, codex_linux_sandbox_exe) = common::current_test_binary_helper_paths()?;
-    let runtime_paths = ExecServerRuntimePaths::new(codex_exe, codex_linux_sandbox_exe)?;
+    let (motyga_exe, motyga_linux_sandbox_exe) = common::current_test_binary_helper_paths()?;
+    let runtime_paths = ExecServerRuntimePaths::new(motyga_exe, motyga_linux_sandbox_exe)?;
     let config = RemoteEnvironmentConfig::new(
         registry.uri(),
         ENVIRONMENT_ID.to_string(),
         static_registry_auth_provider(),
     )?;
-    let remote_environment = tokio::spawn(codex_exec_server::run_remote_environment(
+    let remote_environment = tokio::spawn(motyga_exec_server::run_remote_environment(
         config,
         runtime_paths,
     ));

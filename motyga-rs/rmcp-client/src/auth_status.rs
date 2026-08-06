@@ -3,8 +3,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use codex_exec_server::HttpClient;
-use codex_protocol::protocol::McpAuthStatus;
+use motyga_exec_server::HttpClient;
+use motyga_protocol::protocol::McpAuthStatus;
 use futures::FutureExt;
 use reqwest::Client;
 use reqwest::header::AUTHORIZATION;
@@ -18,8 +18,8 @@ use crate::oauth::oauth_token_status;
 use crate::oauth_http_client::OAuthHttpClientAdapter;
 use crate::utils::apply_default_headers;
 use crate::utils::build_default_headers;
-use codex_config::types::AuthKeyringBackendKind;
-use codex_config::types::OAuthCredentialsStoreMode;
+use motyga_config::types::AuthKeyringBackendKind;
+use motyga_config::types::OAuthCredentialsStoreMode;
 
 const DISCOVERY_TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -369,7 +369,7 @@ mod tests {
     #[tokio::test]
     #[serial(auth_status_env)]
     async fn determine_auth_status_uses_bearer_token_when_env_authorization_header_present() {
-        let _guard = EnvVarGuard::set("CODEX_RMCP_CLIENT_AUTH_STATUS_TEST_TOKEN", "Bearer token");
+        let _guard = EnvVarGuard::set("MOTYGA_RMCP_CLIENT_AUTH_STATUS_TEST_TOKEN", "Bearer token");
         let status = determine_streamable_http_auth_status(
             "server",
             "not-a-url",
@@ -377,7 +377,7 @@ mod tests {
             /*http_headers*/ None,
             Some(HashMap::from([(
                 "Authorization".to_string(),
-                "CODEX_RMCP_CLIENT_AUTH_STATUS_TEST_TOKEN".to_string(),
+                "MOTYGA_RMCP_CLIENT_AUTH_STATUS_TEST_TOKEN".to_string(),
             )])),
             OAuthCredentialsStoreMode::Keyring,
             AuthKeyringBackendKind::default(),

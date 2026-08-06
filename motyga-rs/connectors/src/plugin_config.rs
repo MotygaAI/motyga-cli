@@ -1,5 +1,5 @@
-use codex_plugin::AppConnectorId;
-use codex_plugin::AppDeclaration;
+use motyga_plugin::AppConnectorId;
+use motyga_plugin::AppDeclaration;
 use indexmap::IndexMap;
 use serde::Deserialize;
 use serde_json::Value;

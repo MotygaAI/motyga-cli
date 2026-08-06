@@ -7,20 +7,20 @@ use axum::Router;
 use axum::body::Bytes;
 use axum::routing::get;
 use axum::routing::post;
-use codex_app_server_protocol::CapabilityRootLocation;
-use codex_app_server_protocol::ListMcpServerStatusParams;
-use codex_app_server_protocol::ListMcpServerStatusResponse;
-use codex_app_server_protocol::McpServerOauthLoginCompletedNotification;
-use codex_app_server_protocol::McpServerOauthLoginResponse;
-use codex_app_server_protocol::McpServerToolCallParams;
-use codex_app_server_protocol::McpServerToolCallResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SelectedCapabilityRoot;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::UserInput;
-use codex_utils_path_uri::PathUri;
+use motyga_app_server_protocol::CapabilityRootLocation;
+use motyga_app_server_protocol::ListMcpServerStatusParams;
+use motyga_app_server_protocol::ListMcpServerStatusResponse;
+use motyga_app_server_protocol::McpServerOauthLoginCompletedNotification;
+use motyga_app_server_protocol::McpServerOauthLoginResponse;
+use motyga_app_server_protocol::McpServerToolCallParams;
+use motyga_app_server_protocol::McpServerToolCallResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::SelectedCapabilityRoot;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::UserInput;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::responses;
 use core_test_support::stdio_server_bin;
 use pretty_assertions::assert_eq;
@@ -113,9 +113,9 @@ async fn selected_executor_plugin_exposes_its_mcps_only_to_that_thread() -> Resu
     let http_server_handle = tokio::spawn(async move {
         let _ = axum::serve(http_listener, http_router).await;
     });
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_mock_responses_config_toml(
-        codex_home.path(),
+        motyga_home.path(),
         &responses_server.uri(),
         &BTreeMap::new(),
         /*auto_compact_limit*/ 1024,
@@ -123,21 +123,21 @@ async fn selected_executor_plugin_exposes_its_mcps_only_to_that_thread() -> Resu
         "mock_provider",
         "compact",
     )?;
-    let codex_bin = toml::Value::String(
-        codex_utils_cargo_bin::cargo_bin("motyga")?
+    let motyga_bin = toml::Value::String(
+        motyga_utils_cargo_bin::cargo_bin("motyga")?
             .to_string_lossy()
             .into_owned(),
     );
     let http_proxy = toml::Value::String(format!("http://{http_addr}"));
     std::fs::write(
-        codex_home.path().join("environments.toml"),
+        motyga_home.path().join("environments.toml"),
         format!(
             r#"
 include_local = true
 
 [[environments]]
 id = "{EXECUTOR_ID}"
-program = {codex_bin}
+program = {motyga_bin}
 args = ["exec-server", "--listen", "stdio"]
 [environments.env]
 {EXECUTOR_ENV_NAME} = "{EXECUTOR_ENV_VALUE}"
@@ -176,7 +176,7 @@ HTTP_PROXY = {http_proxy}
         }))?,
     )?;
 
-    let mut app_server = TestAppServer::new(codex_home.path()).await?;
+    let mut app_server = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, app_server.initialize()).await??;
 
     let selected_thread = start_thread(
@@ -191,7 +191,7 @@ HTTP_PROXY = {http_proxy}
     )
     .await?;
 
-    let config_path = codex_home.path().join("config.toml");
+    let config_path = motyga_home.path().join("config.toml");
     let mut config = std::fs::read_to_string(&config_path)?;
     config.push_str(&format!(
         r#"

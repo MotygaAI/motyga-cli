@@ -1,11 +1,11 @@
 use crate::model::ThreadMetadata;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::TurnContextItem;
-use codex_protocol::protocol::USER_MESSAGE_BEGIN;
-use codex_protocol::protocol::UserMessageEvent;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::SessionMetaLine;
+use motyga_protocol::protocol::TurnContextItem;
+use motyga_protocol::protocol::USER_MESSAGE_BEGIN;
+use motyga_protocol::protocol::UserMessageEvent;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -163,25 +163,25 @@ mod tests {
     use crate::model::ThreadMetadata;
     use chrono::DateTime;
     use chrono::Utc;
-    use codex_protocol::ThreadId;
-    use codex_protocol::models::ContentItem;
-    use codex_protocol::models::PermissionProfile;
-    use codex_protocol::models::ResponseItem;
-    use codex_protocol::openai_models::ReasoningEffort;
-    use codex_protocol::protocol::AskForApproval;
-    use codex_protocol::protocol::EventMsg;
-    use codex_protocol::protocol::RolloutItem;
-    use codex_protocol::protocol::SandboxPolicy;
-    use codex_protocol::protocol::SessionMeta;
-    use codex_protocol::protocol::SessionMetaLine;
-    use codex_protocol::protocol::SessionSource;
-    use codex_protocol::protocol::ThreadGoal;
-    use codex_protocol::protocol::ThreadGoalStatus;
-    use codex_protocol::protocol::ThreadGoalUpdatedEvent;
-    use codex_protocol::protocol::ThreadHistoryMode;
-    use codex_protocol::protocol::TurnContextItem;
-    use codex_protocol::protocol::USER_MESSAGE_BEGIN;
-    use codex_protocol::protocol::UserMessageEvent;
+    use motyga_protocol::ThreadId;
+    use motyga_protocol::models::ContentItem;
+    use motyga_protocol::models::PermissionProfile;
+    use motyga_protocol::models::ResponseItem;
+    use motyga_protocol::openai_models::ReasoningEffort;
+    use motyga_protocol::protocol::AskForApproval;
+    use motyga_protocol::protocol::EventMsg;
+    use motyga_protocol::protocol::RolloutItem;
+    use motyga_protocol::protocol::SandboxPolicy;
+    use motyga_protocol::protocol::SessionMeta;
+    use motyga_protocol::protocol::SessionMetaLine;
+    use motyga_protocol::protocol::SessionSource;
+    use motyga_protocol::protocol::ThreadGoal;
+    use motyga_protocol::protocol::ThreadGoalStatus;
+    use motyga_protocol::protocol::ThreadGoalUpdatedEvent;
+    use motyga_protocol::protocol::ThreadHistoryMode;
+    use motyga_protocol::protocol::TurnContextItem;
+    use motyga_protocol::protocol::USER_MESSAGE_BEGIN;
+    use motyga_protocol::protocol::UserMessageEvent;
 
     use pretty_assertions::assert_eq;
     use std::path::PathBuf;
@@ -381,7 +381,7 @@ mod tests {
                 multi_agent_mode: None,
                 realtime_active: None,
                 effort: None,
-                summary: codex_protocol::config_types::ReasoningSummary::Auto,
+                summary: motyga_protocol::config_types::ReasoningSummary::Auto,
             }),
             "test-provider",
         );
@@ -426,7 +426,7 @@ mod tests {
                 multi_agent_mode: None,
                 realtime_active: None,
                 effort: None,
-                summary: codex_protocol::config_types::ReasoningSummary::Auto,
+                summary: motyga_protocol::config_types::ReasoningSummary::Auto,
             }),
             "test-provider",
         );
@@ -467,7 +467,7 @@ mod tests {
                 multi_agent_mode: None,
                 realtime_active: None,
                 effort: Some(ReasoningEffort::High),
-                summary: codex_protocol::config_types::ReasoningSummary::Auto,
+                summary: motyga_protocol::config_types::ReasoningSummary::Auto,
             }),
             "test-provider",
         );
@@ -505,7 +505,7 @@ mod tests {
                 multi_agent_mode: None,
                 realtime_active: None,
                 effort: Some(ReasoningEffort::High),
-                summary: codex_protocol::config_types::ReasoningSummary::Auto,
+                summary: motyga_protocol::config_types::ReasoningSummary::Auto,
             }),
             "test-provider",
         );

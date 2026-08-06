@@ -11,25 +11,25 @@ use super::Turn;
 use super::TurnEnvironmentParams;
 use super::TurnItemsView;
 use super::shared::v2_enum_from_core;
-use codex_experimental_api_macros::ExperimentalApi;
-pub use codex_protocol::capabilities::CapabilityRootLocation;
-pub use codex_protocol::capabilities::SelectedCapabilityRoot;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::MultiAgentMode;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ReasoningSummary;
-pub use codex_protocol::dynamic_tools::DynamicToolFunctionSpec;
-pub use codex_protocol::dynamic_tools::DynamicToolNamespaceSpec;
-pub use codex_protocol::dynamic_tools::DynamicToolNamespaceTool;
-pub use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::ThreadGoalStatus as CoreThreadGoalStatus;
-use codex_protocol::protocol::TokenUsage as CoreTokenUsage;
-use codex_protocol::protocol::TokenUsageInfo as CoreTokenUsageInfo;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::LegacyAppPathString;
-use codex_utils_path_uri::PathUri;
+use motyga_experimental_api_macros::ExperimentalApi;
+pub use motyga_protocol::capabilities::CapabilityRootLocation;
+pub use motyga_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::MultiAgentMode;
+use motyga_protocol::config_types::Personality;
+use motyga_protocol::config_types::ReasoningSummary;
+pub use motyga_protocol::dynamic_tools::DynamicToolFunctionSpec;
+pub use motyga_protocol::dynamic_tools::DynamicToolNamespaceSpec;
+pub use motyga_protocol::dynamic_tools::DynamicToolNamespaceTool;
+pub use motyga_protocol::dynamic_tools::DynamicToolSpec;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::ThreadGoalStatus as CoreThreadGoalStatus;
+use motyga_protocol::protocol::TokenUsage as CoreTokenUsage;
+use motyga_protocol::protocol::TokenUsageInfo as CoreTokenUsageInfo;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::LegacyAppPathString;
+use motyga_utils_path_uri::PathUri;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -127,7 +127,7 @@ pub struct ThreadStartParams {
     #[experimental("thread/start.dynamicTools")]
     #[serde(
         default,
-        deserialize_with = "codex_protocol::dynamic_tools::deserialize_dynamic_tool_specs"
+        deserialize_with = "motyga_protocol::dynamic_tools::deserialize_dynamic_tool_specs"
     )]
     #[ts(optional = nullable)]
     pub dynamic_tools: Option<Vec<DynamicToolSpec>>,
@@ -141,7 +141,7 @@ pub struct ThreadStartParams {
     #[ts(optional = nullable)]
     pub mock_experimental_field: Option<String>,
     /// If true, opt into emitting raw Responses API items on the event stream.
-    /// This is for internal use only (e.g. Codex Cloud).
+    /// This is for internal use only (e.g. Motyga Cloud).
     #[experimental("thread/start.experimentalRawEvents")]
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub experimental_raw_events: bool,
@@ -324,7 +324,7 @@ pub struct ThreadSettingsUpdatedNotification {
 pub struct ThreadResumeParams {
     pub thread_id: String,
 
-    /// [UNSTABLE] FOR CODEX CLOUD - DO NOT USE.
+    /// [UNSTABLE] FOR MOTYGA CLOUD - DO NOT USE.
     /// If specified, the thread will be resumed with the provided history
     /// instead of loaded from disk.
     #[experimental("thread/resume.history")]
@@ -760,8 +760,8 @@ pub struct ThreadGoal {
     pub updated_at: i64,
 }
 
-impl From<codex_protocol::protocol::ThreadGoal> for ThreadGoal {
-    fn from(value: codex_protocol::protocol::ThreadGoal) -> Self {
+impl From<motyga_protocol::protocol::ThreadGoal> for ThreadGoal {
+    fn from(value: motyga_protocol::protocol::ThreadGoal) -> Self {
         Self {
             thread_id: value.thread_id.to_string(),
             objective: value.objective,
@@ -900,10 +900,10 @@ impl ThreadMemoryMode {
         }
     }
 
-    pub fn to_core(self) -> codex_protocol::protocol::ThreadMemoryMode {
+    pub fn to_core(self) -> motyga_protocol::protocol::ThreadMemoryMode {
         match self {
-            Self::Enabled => codex_protocol::protocol::ThreadMemoryMode::Enabled,
-            Self::Disabled => codex_protocol::protocol::ThreadMemoryMode::Disabled,
+            Self::Enabled => motyga_protocol::protocol::ThreadMemoryMode::Enabled,
+            Self::Disabled => motyga_protocol::protocol::ThreadMemoryMode::Disabled,
         }
     }
 }
@@ -967,7 +967,7 @@ pub struct ThreadShellCommandResponse {}
 #[ts(export_to = "v2/")]
 pub struct ThreadApproveGuardianDeniedActionParams {
     pub thread_id: String,
-    /// Serialized `codex_protocol::protocol::GuardianAssessmentEvent`.
+    /// Serialized `motyga_protocol::protocol::GuardianAssessmentEvent`.
     pub event: JsonValue,
 }
 

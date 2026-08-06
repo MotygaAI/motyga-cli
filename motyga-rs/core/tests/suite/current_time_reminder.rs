@@ -8,20 +8,20 @@ use anyhow::Result;
 use anyhow::anyhow;
 use chrono::DateTime;
 use chrono::Utc;
-use codex_core::SleepFuture;
-use codex_core::TimeFuture;
-use codex_core::TimeProvider;
-use codex_core::config::CurrentTimeReminderConfig;
-use codex_features::CurrentTimeReminderDeliveryMode;
-use codex_features::CurrentTimeSource;
-use codex_features::Feature;
-use codex_model_provider_info::built_in_model_providers;
-use codex_protocol::ThreadId;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_core::SleepFuture;
+use motyga_core::TimeFuture;
+use motyga_core::TimeProvider;
+use motyga_core::config::CurrentTimeReminderConfig;
+use motyga_features::CurrentTimeReminderDeliveryMode;
+use motyga_features::CurrentTimeSource;
+use motyga_features::Feature;
+use motyga_model_provider_info::built_in_model_providers;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::assert_regex_match;
 use core_test_support::responses::ResponsesRequest;
 use core_test_support::responses::ev_assistant_message;
@@ -34,7 +34,7 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::json;
@@ -96,7 +96,7 @@ fn current_time_reminders(request: &ResponsesRequest) -> Vec<String> {
 }
 
 fn enable_current_time_reminder(
-    config: &mut codex_core::config::Config,
+    config: &mut motyga_core::config::Config,
     interval: u64,
     clock_source: CurrentTimeSource,
 ) {
@@ -141,7 +141,7 @@ async fn current_time_reminders_follow_time_interval_and_persist_in_history() ->
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             enable_current_time_reminder(config, /*interval*/ 120, CurrentTimeSource::External)
         })
@@ -178,7 +178,7 @@ async fn zero_current_time_reminder_interval_delivers_when_time_moves_backward()
     )
     .await;
     let time_provider = Arc::new(TestTimeProvider::default());
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             enable_current_time_reminder(config, /*interval*/ 0, CurrentTimeSource::External)
         })
@@ -235,7 +235,7 @@ async fn current_time_reminders_can_follow_only_user_or_tool_outputs() -> Result
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             enable_current_time_reminder(config, /*interval*/ 0, CurrentTimeSource::External);
             config
@@ -275,7 +275,7 @@ async fn system_time_source_adds_current_time_reminder() -> Result<()> {
         sse(vec![ev_response_created("resp-1"), ev_completed("resp-1")]),
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             enable_current_time_reminder(config, /*interval*/ 1, CurrentTimeSource::System)
         })
@@ -316,7 +316,7 @@ async fn current_time_reminder_is_refreshed_after_compaction() -> Result<()> {
     model_provider.name = "OpenAI-compatible test provider".to_string();
     model_provider.base_url = Some(format!("{}/v1", server.uri()));
     model_provider.supports_websockets = false;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(move |config| {
             config.model_provider = model_provider;
             enable_current_time_reminder(
@@ -335,8 +335,8 @@ async fn current_time_reminder_is_refreshed_after_compaction() -> Result<()> {
         .await?;
 
     test.submit_turn("before compact").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -366,7 +366,7 @@ async fn time_provider_failure_stops_before_inference() -> Result<()> {
         ]),
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             enable_current_time_reminder(config, /*interval*/ 1, CurrentTimeSource::External)
         })
@@ -374,7 +374,7 @@ async fn time_provider_failure_stops_before_inference() -> Result<()> {
         .build(&server)
         .await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "fail before inference".into(),
@@ -388,7 +388,7 @@ async fn time_provider_failure_stops_before_inference() -> Result<()> {
         .await?;
 
     let EventMsg::Error(error) =
-        wait_for_event(&test.codex, |event| matches!(event, EventMsg::Error(_))).await
+        wait_for_event(&test.motyga, |event| matches!(event, EventMsg::Error(_))).await
     else {
         unreachable!();
     };
@@ -396,9 +396,9 @@ async fn time_provider_failure_stops_before_inference() -> Result<()> {
         error.message,
         "Fatal error: failed to read current time: test clock unavailable"
     );
-    assert_eq!(error.codex_error_info, Some(CodexErrorInfo::Other));
+    assert_eq!(error.motyga_error_info, Some(MotygaErrorInfo::Other));
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -426,7 +426,7 @@ async fn current_time_tool_returns_the_latest_time() -> Result<()> {
         ],
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             enable_current_time_reminder(
                 config,
@@ -483,7 +483,7 @@ async fn sleep_tool_uses_configured_time_provider() -> Result<()> {
     )
     .await;
     let time_provider = Arc::new(TestTimeProvider::default());
-    let test = test_codex()
+    let test = test_motyga()
         .with_config(|config| {
             enable_current_time_reminder(
                 config,

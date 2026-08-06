@@ -5,31 +5,31 @@ use std::time::Duration;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
-use codex_app_server_protocol::ClientResponsePayload;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::ProcessExitedNotification;
-use codex_app_server_protocol::ProcessKillParams;
-use codex_app_server_protocol::ProcessKillResponse;
-use codex_app_server_protocol::ProcessOutputDeltaNotification;
-use codex_app_server_protocol::ProcessOutputStream;
-use codex_app_server_protocol::ProcessResizePtyParams;
-use codex_app_server_protocol::ProcessResizePtyResponse;
-use codex_app_server_protocol::ProcessSpawnParams;
-use codex_app_server_protocol::ProcessSpawnResponse;
-use codex_app_server_protocol::ProcessTerminalSize;
-use codex_app_server_protocol::ProcessWriteStdinParams;
-use codex_app_server_protocol::ProcessWriteStdinResponse;
-use codex_app_server_protocol::ServerNotification;
-use codex_core::exec::ExecExpiration;
-use codex_core::exec::ExecExpirationOutcome;
-use codex_core::exec::IO_DRAIN_TIMEOUT_MS;
-use codex_exec_server::EnvironmentManager;
-use codex_protocol::exec_output::bytes_to_string_smart;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_pty::DEFAULT_OUTPUT_BYTES_CAP;
-use codex_utils_pty::ProcessHandle;
-use codex_utils_pty::SpawnedProcess;
-use codex_utils_pty::TerminalSize;
+use motyga_app_server_protocol::ClientResponsePayload;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::ProcessExitedNotification;
+use motyga_app_server_protocol::ProcessKillParams;
+use motyga_app_server_protocol::ProcessKillResponse;
+use motyga_app_server_protocol::ProcessOutputDeltaNotification;
+use motyga_app_server_protocol::ProcessOutputStream;
+use motyga_app_server_protocol::ProcessResizePtyParams;
+use motyga_app_server_protocol::ProcessResizePtyResponse;
+use motyga_app_server_protocol::ProcessSpawnParams;
+use motyga_app_server_protocol::ProcessSpawnResponse;
+use motyga_app_server_protocol::ProcessTerminalSize;
+use motyga_app_server_protocol::ProcessWriteStdinParams;
+use motyga_app_server_protocol::ProcessWriteStdinResponse;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_core::exec::ExecExpiration;
+use motyga_core::exec::ExecExpirationOutcome;
+use motyga_core::exec::IO_DRAIN_TIMEOUT_MS;
+use motyga_exec_server::EnvironmentManager;
+use motyga_protocol::exec_output::bytes_to_string_smart;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_pty::DEFAULT_OUTPUT_BYTES_CAP;
+use motyga_utils_pty::ProcessHandle;
+use motyga_utils_pty::SpawnedProcess;
+use motyga_utils_pty::TerminalSize;
 use tokio::sync::Mutex;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
@@ -305,7 +305,7 @@ impl ProcessExecManager {
         }
 
         let spawned = if tty {
-            codex_utils_pty::spawn_pty_process(
+            motyga_utils_pty::spawn_pty_process(
                 program,
                 args,
                 cwd.as_path(),
@@ -315,9 +315,9 @@ impl ProcessExecManager {
             )
             .await
         } else if stream_stdin {
-            codex_utils_pty::spawn_pipe_process(program, args, cwd.as_path(), &env, &arg0).await
+            motyga_utils_pty::spawn_pipe_process(program, args, cwd.as_path(), &env, &arg0).await
         } else {
-            codex_utils_pty::spawn_pipe_process_no_stdin(program, args, cwd.as_path(), &env, &arg0)
+            motyga_utils_pty::spawn_pipe_process_no_stdin(program, args, cwd.as_path(), &env, &arg0)
                 .await
         };
         let spawned = match spawned {

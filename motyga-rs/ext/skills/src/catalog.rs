@@ -1,10 +1,10 @@
-use codex_core_skills::model::SkillDependencies;
-use codex_utils_path_uri::PathUri;
+use motyga_core_skills::model::SkillDependencies;
+use motyga_utils_path_uri::PathUri;
 
 /// Source authority that owns a skill package and must be used to read it.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum SkillSourceKind {
-    /// Codex-hosted skills, including bundled, user, repo, plugin-installed,
+    /// Motyga-hosted skills, including bundled, user, repo, plugin-installed,
     /// and downloaded/materialized remote skills.
     Host,
     /// Skills owned by an execution environment.

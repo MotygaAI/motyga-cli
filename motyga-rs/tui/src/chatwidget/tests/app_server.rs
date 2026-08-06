@@ -4,18 +4,18 @@ use pretty_assertions::assert_eq;
 fn thread_settings_for_test(
     model: &str,
     thread_id: ThreadId,
-) -> codex_app_server_protocol::ThreadSettingsUpdatedNotification {
-    codex_app_server_protocol::ThreadSettingsUpdatedNotification {
+) -> motyga_app_server_protocol::ThreadSettingsUpdatedNotification {
+    motyga_app_server_protocol::ThreadSettingsUpdatedNotification {
         thread_id: thread_id.to_string(),
-        thread_settings: codex_app_server_protocol::ThreadSettings {
+        thread_settings: motyga_app_server_protocol::ThreadSettings {
             cwd: test_path_buf("/tmp/thread-settings").abs(),
             approval_policy: AskForApproval::OnRequest,
-            approvals_reviewer: codex_app_server_protocol::ApprovalsReviewer::AutoReview,
-            sandbox_policy: codex_app_server_protocol::SandboxPolicy::ReadOnly {
+            approvals_reviewer: motyga_app_server_protocol::ApprovalsReviewer::AutoReview,
+            sandbox_policy: motyga_app_server_protocol::SandboxPolicy::ReadOnly {
                 network_access: false,
             },
             active_permission_profile: Some(
-                codex_app_server_protocol::ActivePermissionProfile::read_only(),
+                motyga_app_server_protocol::ActivePermissionProfile::read_only(),
             ),
             model: model.to_string(),
             model_provider: "openai".to_string(),
@@ -24,7 +24,7 @@ fn thread_settings_for_test(
             summary: None,
             collaboration_mode: CollaborationMode {
                 mode: ModeKind::Plan,
-                settings: codex_protocol::config_types::Settings {
+                settings: motyga_protocol::config_types::Settings {
                     model: model.to_string(),
                     reasoning_effort: Some(ReasoningEffortConfig::High),
                     developer_instructions: None,
@@ -77,7 +77,7 @@ fn start_safety_buffering_test_turn(
             thread_id: thread_id.to_string(),
             turn: AppServerTurn {
                 id: turn_id.to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: AppServerTurnStatus::InProgress,
                 error: None,
@@ -135,7 +135,9 @@ async fn safety_buffering_offers_one_retry_with_app_wording() {
             Err(err) => panic!("expected learn-more URL event: {err}"),
         }
     };
-    assert_eq!(opened_url, "https://help.openai.com/en/articles/20001326");
+    // Matches SAFETY_BUFFERING_LEARN_MORE_URL; the learn-more link was pointed at
+    // the Motyga docs when the product was rebranded, but this expectation was not.
+    assert_eq!(opened_url, "https://motyga.com/docs");
     assert!(render_bottom_popup(&chat, /*width*/ 80).contains("Additional safety checks"));
 
     chat.handle_key_event(KeyEvent::new(KeyCode::Up, KeyModifiers::NONE));
@@ -280,12 +282,12 @@ async fn invalid_url_elicitation_is_declined() {
     chat.thread_id = Some(visible_thread_id);
 
     chat.handle_elicitation_request_now(
-        codex_app_server_protocol::RequestId::Integer(9),
-        codex_app_server_protocol::McpServerElicitationRequestParams {
+        motyga_app_server_protocol::RequestId::Integer(9),
+        motyga_app_server_protocol::McpServerElicitationRequestParams {
             thread_id: request_thread_id.to_string(),
             turn_id: Some("turn-auth".to_string()),
             server_name: "payments".to_string(),
-            request: codex_app_server_protocol::McpServerElicitationRequest::Url {
+            request: motyga_app_server_protocol::McpServerElicitationRequest::Url {
                 meta: None,
                 message: "Review the payment details to continue.".to_string(),
                 url: "http://payments.example/checkout/123".to_string(),
@@ -300,8 +302,8 @@ async fn invalid_url_elicitation_is_declined() {
             thread_id: op_thread_id,
             op: Op::ResolveElicitation {
                 server_name,
-                request_id: codex_app_server_protocol::RequestId::Integer(9),
-                decision: codex_app_server_protocol::McpServerElicitationAction::Decline,
+                request_id: motyga_app_server_protocol::RequestId::Integer(9),
+                decision: motyga_app_server_protocol::McpServerElicitationAction::Decline,
                 content: None,
                 meta: None,
             },
@@ -345,7 +347,7 @@ async fn thread_settings_updated_updates_visible_state_without_transcript() {
             .active_permission_profile()
             .expect("active profile")
             .id,
-        codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY
+        motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY
     );
     assert_eq!(chat.config_ref().personality, Some(Personality::Pragmatic));
     assert_eq!(chat.active_collaboration_mode_kind(), ModeKind::Plan);
@@ -517,7 +519,7 @@ async fn live_app_server_turn_completed_clears_working_status_after_answer_item(
             thread_id: "thread-1".to_string(),
             turn: AppServerTurn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: AppServerTurnStatus::InProgress,
                 error: None,
@@ -561,7 +563,7 @@ async fn live_app_server_turn_completed_clears_working_status_after_answer_item(
             thread_id: "thread-1".to_string(),
             turn: AppServerTurn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: AppServerTurnStatus::Completed,
                 error: None,
@@ -586,7 +588,7 @@ async fn live_app_server_turn_started_sets_feedback_turn_id() {
             thread_id: "thread-1".to_string(),
             turn: AppServerTurn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: AppServerTurnStatus::InProgress,
                 error: None,
@@ -946,7 +948,7 @@ async fn live_app_server_failed_turn_does_not_duplicate_error_history() {
             thread_id: "thread-1".to_string(),
             turn: AppServerTurn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: AppServerTurnStatus::InProgress,
                 error: None,
@@ -962,7 +964,7 @@ async fn live_app_server_failed_turn_does_not_duplicate_error_history() {
         ServerNotification::Error(ErrorNotification {
             error: AppServerTurnError {
                 message: "permission denied".to_string(),
-                codex_error_info: None,
+                motyga_error_info: None,
                 additional_details: None,
             },
             will_retry: false,
@@ -981,12 +983,12 @@ async fn live_app_server_failed_turn_does_not_duplicate_error_history() {
             thread_id: "thread-1".to_string(),
             turn: AppServerTurn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: AppServerTurnStatus::Failed,
                 error: Some(AppServerTurnError {
                     message: "permission denied".to_string(),
-                    codex_error_info: None,
+                    motyga_error_info: None,
                     additional_details: None,
                 }),
                 started_at: None,
@@ -1015,7 +1017,7 @@ async fn live_app_server_failed_turn_consolidates_streamed_answer() {
     handle_error(
         &mut chat,
         "stream disconnected before completion",
-        /*codex_error_info*/ None,
+        /*motyga_error_info*/ None,
     );
 
     let mut saw_consolidate = false;
@@ -1044,7 +1046,7 @@ async fn live_app_server_stream_recovery_restores_previous_status_header() {
             thread_id: "thread-1".to_string(),
             turn: AppServerTurn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: AppServerTurnStatus::InProgress,
                 error: None,
@@ -1061,7 +1063,7 @@ async fn live_app_server_stream_recovery_restores_previous_status_header() {
         ServerNotification::Error(ErrorNotification {
             error: AppServerTurnError {
                 message: "Reconnecting... 1/5".to_string(),
-                codex_error_info: Some(CodexErrorInfo::Other),
+                motyga_error_info: Some(MotygaErrorInfo::Other),
                 additional_details: None,
             },
             will_retry: true,
@@ -1074,7 +1076,7 @@ async fn live_app_server_stream_recovery_restores_previous_status_header() {
 
     chat.handle_server_notification(
         ServerNotification::AgentMessageDelta(
-            codex_app_server_protocol::AgentMessageDeltaNotification {
+            motyga_app_server_protocol::AgentMessageDeltaNotification {
                 thread_id: "thread-1".to_string(),
                 turn_id: "turn-1".to_string(),
                 item_id: "item-1".to_string(),
@@ -1102,7 +1104,7 @@ async fn live_app_server_server_overloaded_error_renders_warning() {
             thread_id: "thread-1".to_string(),
             turn: AppServerTurn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: AppServerTurnStatus::InProgress,
                 error: None,
@@ -1119,7 +1121,7 @@ async fn live_app_server_server_overloaded_error_renders_warning() {
         ServerNotification::Error(ErrorNotification {
             error: AppServerTurnError {
                 message: "server overloaded".to_string(),
-                codex_error_info: Some(CodexErrorInfo::ServerOverloaded),
+                motyga_error_info: Some(MotygaErrorInfo::ServerOverloaded),
                 additional_details: None,
             },
             will_retry: false,
@@ -1144,7 +1146,7 @@ async fn live_app_server_cyber_policy_error_renders_dedicated_notice() {
             thread_id: "thread-1".to_string(),
             turn: AppServerTurn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: AppServerTurnStatus::InProgress,
                 error: None,
@@ -1161,7 +1163,7 @@ async fn live_app_server_cyber_policy_error_renders_dedicated_notice() {
         ServerNotification::Error(ErrorNotification {
             error: AppServerTurnError {
                 message: "server fallback message".to_string(),
-                codex_error_info: Some(CodexErrorInfo::CyberPolicy),
+                motyga_error_info: Some(MotygaErrorInfo::CyberPolicy),
                 additional_details: None,
             },
             will_retry: false,
@@ -1188,7 +1190,7 @@ async fn app_server_safety_access_errors_render_dedicated_notice() {
         json!({ "error": { "message": message } }).to_string(),
     ] {
         let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
-        chat.handle_non_retry_error(message, /*codex_error_info*/ None);
+        chat.handle_non_retry_error(message, /*motyga_error_info*/ None);
 
         let cells = drain_insert_history(&mut rx);
         assert_eq!(cells.len(), 1);
@@ -1217,8 +1219,10 @@ async fn live_app_server_model_verification_renders_warning() {
     let rendered = lines_to_single_string(&cells[0]);
     assert!(rendered.contains("multiple flags for possible cybersecurity risk"));
     assert!(rendered.contains("extra safety checks are on"));
-    assert!(rendered.contains("Trusted Access for Cyber"));
-    assert!(rendered.contains("https://chatgpt.com/cyber"));
+    // Matches TRUSTED_ACCESS_FOR_CYBER_VERIFICATION_WARNING, whose wording was
+    // rewritten during the rebrand; the old "Trusted Access for Cyber" phrasing is gone.
+    assert!(rendered.contains("authorized security work"));
+    assert!(rendered.contains("https://motyga.com/docs"));
 }
 
 #[tokio::test]
@@ -1230,7 +1234,7 @@ async fn live_app_server_invalid_thread_name_update_is_ignored() {
 
     chat.handle_server_notification(
         ServerNotification::ThreadNameUpdated(
-            codex_app_server_protocol::ThreadNameUpdatedNotification {
+            motyga_app_server_protocol::ThreadNameUpdatedNotification {
                 thread_id: "not-a-thread-id".to_string(),
                 thread_name: Some("bad update".to_string()),
             },
@@ -1251,7 +1255,7 @@ async fn live_app_server_thread_name_update_shows_resume_hint() {
 
     chat.handle_server_notification(
         ServerNotification::ThreadNameUpdated(
-            codex_app_server_protocol::ThreadNameUpdatedNotification {
+            motyga_app_server_protocol::ThreadNameUpdatedNotification {
                 thread_id: thread_id.to_string(),
                 thread_name: Some("review-fix".to_string()),
             },

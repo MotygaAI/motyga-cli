@@ -7,24 +7,24 @@ use app_test_support::TestAppServer;
 use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::to_response;
 use app_test_support::write_mock_responses_config_toml;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnEnvironmentParams;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_exec_server::REMOTE_ENVIRONMENT_ID;
-use codex_exec_server::CODEX_EXEC_SERVER_URL_ENV_VAR;
-use codex_features::Feature;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExecCommandStatus;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_protocol::protocol::TurnEnvironmentSelections;
-use codex_protocol::user_input::UserInput;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnEnvironmentParams;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_exec_server::REMOTE_ENVIRONMENT_ID;
+use motyga_exec_server::MOTYGA_EXEC_SERVER_URL_ENV_VAR;
+use motyga_features::Feature;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExecCommandStatus;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::protocol::TurnEnvironmentSelections;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_function_call;
@@ -32,12 +32,12 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
-use codex_utils_path_uri::LegacyAppPathString;
-use codex_utils_path_uri::PathConvention;
-use codex_utils_path_uri::PathUri;
+use motyga_utils_path_uri::LegacyAppPathString;
+use motyga_utils_path_uri::PathConvention;
+use motyga_utils_path_uri::PathUri;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serde_json::json;
@@ -54,9 +54,9 @@ async fn windows_exec_server_runs_with_native_shell_and_cwd() -> Result<()> {
     const CALL_ID: &str = "wine-cmd-smoke";
     const PATCH_CALL_ID: &str = "wine-apply-patch";
     const VERIFY_CALL_ID: &str = "wine-verify-patch";
-    const PATCH_FILE: &str = "codex-apply-patch-smoke.txt";
+    const PATCH_FILE: &str = "motyga-apply-patch-smoke.txt";
     const COMMAND: &str = r#"if ((Get-Location).Path -ne 'C:\windows') { exit 1 }"#;
-    const VERIFY_COMMAND: &str = r#"$path = Join-Path (Get-Location) 'codex-apply-patch-smoke.txt'; if (-not (Test-Path $path)) { exit 1 }; if ([IO.File]::ReadAllText($path) -ne "patched through unified exec`n") { exit 2 }; Remove-Item $path; Write-Output 'PATCH_VERIFIED'"#;
+    const VERIFY_COMMAND: &str = r#"$path = Join-Path (Get-Location) 'motyga-apply-patch-smoke.txt'; if (-not (Test-Path $path)) { exit 1 }; if ([IO.File]::ReadAllText($path) -ne "patched through unified exec`n") { exit 2 }; Remove-Item $path; Write-Output 'PATCH_VERIFIED'"#;
 
     WineExecServer
         .scope(|exec_server_url, _wine_prefix| async move {
@@ -112,7 +112,7 @@ async fn windows_exec_server_runs_with_native_shell_and_cwd() -> Result<()> {
             )
             .await;
 
-            let mut builder = test_codex()
+            let mut builder = test_motyga()
                 .with_model("gpt-5.2")
                 .with_exec_server_url(exec_server_url)
                 .with_config(|config| {
@@ -129,11 +129,11 @@ async fn windows_exec_server_runs_with_native_shell_and_cwd() -> Result<()> {
                 test.config.cwd.clone(),
                 vec![TurnEnvironmentSelection {
                     environment_id: REMOTE_ENVIRONMENT_ID.to_string(),
-                    cwd: PathUri::parse("file:///C:/codex-home")?,
+                    cwd: PathUri::parse("file:///C:/motyga-home")?,
                 }],
             );
 
-            test.codex
+            test.motyga
                 .submit(Op::UserInput {
                     items: vec![UserInput::Text {
                         text: "run the Windows smoke command".to_string(),
@@ -142,14 +142,14 @@ async fn windows_exec_server_runs_with_native_shell_and_cwd() -> Result<()> {
                     final_output_json_schema: None,
                     responsesapi_client_metadata: None,
                     additional_context: Default::default(),
-                    thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+                    thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                         environments: Some(environments),
                         approval_policy: Some(AskForApproval::Never),
                         sandbox_policy: Some(sandbox_policy),
                         permission_profile,
-                        collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                            mode: codex_protocol::config_types::ModeKind::Default,
-                            settings: codex_protocol::config_types::Settings {
+                        collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                            mode: motyga_protocol::config_types::ModeKind::Default,
+                            settings: motyga_protocol::config_types::Settings {
                                 model: test.session_configured.model.clone(),
                                 reasoning_effort: None,
                                 developer_instructions: None,
@@ -165,7 +165,7 @@ async fn windows_exec_server_runs_with_native_shell_and_cwd() -> Result<()> {
             let mut patch_end = None;
             let mut turn_complete = false;
             loop {
-                match wait_for_event(&test.codex, |_| true).await {
+                match wait_for_event(&test.motyga, |_| true).await {
                     EventMsg::ExecCommandBegin(event) if event.call_id == CALL_ID => {
                         begin = Some(event)
                     }
@@ -208,7 +208,7 @@ async fn windows_exec_server_runs_with_native_shell_and_cwd() -> Result<()> {
                 patch_end
                     .changes
                     .contains_key(&std::path::PathBuf::from(format!(
-                        r"C:\codex-home\apply-patch-smoke\nested\{PATCH_FILE}"
+                        r"C:\motyga-home\apply-patch-smoke\nested\{PATCH_FILE}"
                     ))),
                 "apply_patch should retain the Windows cwd: {:?}",
                 patch_end.changes
@@ -258,10 +258,10 @@ async fn app_server_starts_thread_with_windows_environment_native_cwd() -> Resul
                 AGENTS_INSTRUCTIONS,
             )?;
 
-            let codex_home = TempDir::new()?;
+            let motyga_home = TempDir::new()?;
             let server = create_mock_responses_server_repeating_assistant("done").await;
             write_mock_responses_config_toml(
-                codex_home.path(),
+                motyga_home.path(),
                 &server.uri(),
                 &BTreeMap::new(),
                 100_000,
@@ -270,9 +270,9 @@ async fn app_server_starts_thread_with_windows_environment_native_cwd() -> Resul
                 "compact",
             )?;
             let mut app_server = TestAppServer::new_with_env(
-                codex_home.path(),
+                motyga_home.path(),
                 &[(
-                    CODEX_EXEC_SERVER_URL_ENV_VAR,
+                    MOTYGA_EXEC_SERVER_URL_ENV_VAR,
                     Some(exec_server_url.as_str()),
                 )],
             )
@@ -295,7 +295,7 @@ async fn app_server_starts_thread_with_windows_environment_native_cwd() -> Resul
             .await??;
             let response: ThreadStartResponse = to_response(response)?;
             assert!(!response.thread.id.is_empty());
-            let host_cwd = codex_home.path().to_path_buf().abs();
+            let host_cwd = motyga_home.path().to_path_buf().abs();
             // TODO(anp): Return the selected environment's native cwd from thread/start.
             assert_eq!(response.cwd, host_cwd);
             // TODO(anp): Derive runtime workspace roots from the selected remote environment.
@@ -383,7 +383,7 @@ async fn app_server_starts_thread_with_windows_environment_native_cwd() -> Resul
             );
             let host_workspace_roots = format!(
                 "<workspace_roots><root>{}</root></workspace_roots>",
-                codex_home.path().display()
+                motyga_home.path().display()
             );
             // TODO(anp): Derive model-visible workspace roots from the selected remote environment
             // and render them using its native path convention.

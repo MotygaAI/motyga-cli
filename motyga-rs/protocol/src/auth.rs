@@ -7,23 +7,23 @@ use thiserror::Error;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthMode {
-    /// OpenAI API key provided by the caller and stored by Codex.
+    /// OpenAI API key provided by the caller and stored by Motyga.
     ApiKey,
-    /// ChatGPT OAuth managed by Codex (tokens persisted and refreshed by Codex).
+    /// ChatGPT OAuth managed by Motyga (tokens persisted and refreshed by Motyga).
     Chatgpt,
     /// ChatGPT auth tokens supplied by an external host application.
     #[serde(rename = "chatgptAuthTokens")]
     #[strum(serialize = "chatgptAuthTokens")]
     ChatgptAuthTokens,
-    /// Programmatic Codex auth backed by a registered Agent Identity.
+    /// Programmatic Motyga auth backed by a registered Agent Identity.
     #[serde(rename = "agentIdentity")]
     #[strum(serialize = "agentIdentity")]
     AgentIdentity,
-    /// Programmatic Codex auth backed by a personal access token.
+    /// Programmatic Motyga auth backed by a personal access token.
     #[serde(rename = "personalAccessToken")]
     #[strum(serialize = "personalAccessToken")]
     PersonalAccessToken,
-    /// Amazon Bedrock bearer token managed by Codex.
+    /// Amazon Bedrock bearer token managed by Motyga.
     #[serde(rename = "bedrockApiKey")]
     #[strum(serialize = "bedrockApiKey")]
     BedrockApiKey,
@@ -38,8 +38,8 @@ impl AuthMode {
         }
     }
 
-    /// Returns whether this mode is backed by Codex services rather than a direct model API.
-    pub fn uses_codex_backend(self) -> bool {
+    /// Returns whether this mode is backed by Motyga services rather than a direct model API.
+    pub fn uses_motyga_backend(self) -> bool {
         match self {
             Self::Chatgpt
             | Self::ChatgptAuthTokens

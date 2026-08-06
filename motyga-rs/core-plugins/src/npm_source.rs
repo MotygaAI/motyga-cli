@@ -1,5 +1,5 @@
 use crate::plugin_bundle_archive::unpack_plugin_bundle_tar_gz;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use serde::Deserialize;
 use std::ffi::OsStr;
 use std::fs;
@@ -14,13 +14,13 @@ const NPM_PLUGIN_SOURCE_MAX_EXTRACTED_BYTES: u64 = 250 * 1024 * 1024;
 const NPM_PACKAGE_ARCHIVE_ROOT: &str = "package";
 
 pub(crate) fn materialize_npm_plugin_source(
-    codex_home: &Path,
+    motyga_home: &Path,
     package: &str,
     version: Option<&str>,
     registry: Option<&str>,
 ) -> Result<(AbsolutePathBuf, TempDir), String> {
     materialize_npm_plugin_source_with_command(
-        codex_home,
+        motyga_home,
         package,
         version,
         registry,
@@ -29,13 +29,13 @@ pub(crate) fn materialize_npm_plugin_source(
 }
 
 fn materialize_npm_plugin_source_with_command(
-    codex_home: &Path,
+    motyga_home: &Path,
     package: &str,
     version: Option<&str>,
     registry: Option<&str>,
     npm_command: &OsStr,
 ) -> Result<(AbsolutePathBuf, TempDir), String> {
-    let staging_root = codex_home.join(NPM_PLUGIN_SOURCE_STAGING_DIR);
+    let staging_root = motyga_home.join(NPM_PLUGIN_SOURCE_STAGING_DIR);
     fs::create_dir_all(&staging_root).map_err(|err| {
         format!(
             "failed to create marketplace plugin source staging directory {}: {err}",

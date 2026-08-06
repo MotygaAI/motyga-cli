@@ -4,11 +4,11 @@ use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_file_system::ExecutorFileSystem;
-use codex_file_system::FindUpErrorPolicy;
-use codex_file_system::find_nearest_native_ancestor_with_markers;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_file_system::ExecutorFileSystem;
+use motyga_file_system::FindUpErrorPolicy;
+use motyga_file_system::find_nearest_native_ancestor_with_markers;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use futures::future::join_all;
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -30,7 +30,7 @@ use crate::GitSha;
 ///
 /// Note that this does **not** detect *work‑trees* created with
 /// `git worktree add` where the checkout lives outside the main repository
-/// directory. If you need Codex to work from such a checkout simply pass the
+/// directory. If you need Motyga to work from such a checkout simply pass the
 /// `--allow-no-git-exec` CLI flag that disables the repo requirement.
 pub fn get_git_repo_root(base_dir: &Path) -> Option<PathBuf> {
     let base = if base_dir.is_dir() {

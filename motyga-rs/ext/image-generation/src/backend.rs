@@ -1,18 +1,18 @@
-use codex_api::ImageEditRequest;
-use codex_api::ImageGenerationRequest;
-use codex_api::ImageResponse;
-use codex_api::ImagesClient;
-use codex_api::ReqwestTransport;
-use codex_login::default_client::build_reqwest_client;
-use codex_model_provider::SharedModelProvider;
+use motyga_api::ImageEditRequest;
+use motyga_api::ImageGenerationRequest;
+use motyga_api::ImageResponse;
+use motyga_api::ImagesClient;
+use motyga_api::ReqwestTransport;
+use motyga_login::default_client::build_reqwest_client;
+use motyga_model_provider::SharedModelProvider;
 use http::HeaderMap;
 
 #[derive(Clone)]
-pub(crate) struct CodexImagesBackend {
+pub(crate) struct MotygaImagesBackend {
     provider: SharedModelProvider,
 }
 
-impl CodexImagesBackend {
+impl MotygaImagesBackend {
     /// Creates a backend that sends image requests through the active model provider.
     pub(crate) fn new(provider: SharedModelProvider) -> Self {
         Self { provider }

@@ -2,12 +2,12 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use codex_context_fragments::ContextualUserFragment;
-use codex_protocol::items::TurnItem;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::TokenUsageInfo;
-use codex_tools::ToolCall;
-use codex_tools::ToolExecutor;
+use motyga_context_fragments::ContextualUserFragment;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::TokenUsageInfo;
+use motyga_tools::ToolCall;
+use motyga_tools::ToolExecutor;
 
 use crate::ExtensionData;
 

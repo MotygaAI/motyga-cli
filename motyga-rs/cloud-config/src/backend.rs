@@ -1,12 +1,12 @@
-use codex_backend_client::Client as BackendClient;
-use codex_backend_client::ConfigBundleResponse;
-use codex_backend_client::DeliveredTomlFragment;
-use codex_config::CloudConfigBundle;
-use codex_config::CloudConfigFragment;
-use codex_config::CloudConfigTomlBundle;
-use codex_config::CloudRequirementsFragment;
-use codex_config::CloudRequirementsTomlBundle;
-use codex_login::CodexAuth;
+use motyga_backend_client::Client as BackendClient;
+use motyga_backend_client::ConfigBundleResponse;
+use motyga_backend_client::DeliveredTomlFragment;
+use motyga_config::CloudConfigBundle;
+use motyga_config::CloudConfigFragment;
+use motyga_config::CloudConfigTomlBundle;
+use motyga_config::CloudRequirementsFragment;
+use motyga_config::CloudRequirementsTomlBundle;
+use motyga_login::MotygaAuth;
 use std::future::Future;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -40,7 +40,7 @@ pub(crate) enum BundleRequestError {
 pub(crate) trait BundleClient: Send + Sync {
     fn get_bundle(
         &self,
-        auth: &CodexAuth,
+        auth: &MotygaAuth,
     ) -> impl Future<Output = Result<CloudConfigBundle, BundleRequestError>> + Send;
 }
 
@@ -55,7 +55,7 @@ impl BackendBundleClient {
 }
 
 impl BundleClient for BackendBundleClient {
-    async fn get_bundle(&self, auth: &CodexAuth) -> Result<CloudConfigBundle, BundleRequestError> {
+    async fn get_bundle(&self, auth: &MotygaAuth) -> Result<CloudConfigBundle, BundleRequestError> {
         let client = BackendClient::from_auth(self.base_url.clone(), auth)
             .inspect_err(|err| {
                 tracing::warn!(

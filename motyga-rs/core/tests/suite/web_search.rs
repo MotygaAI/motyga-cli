@@ -1,12 +1,12 @@
 #![allow(clippy::unwrap_used)]
 
-use codex_features::Feature;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::models::PermissionProfile;
+use motyga_features::Feature;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::models::PermissionProfile;
 use core_test_support::responses;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serde_json::json;
@@ -32,7 +32,7 @@ async fn web_search_mode_cached_sets_external_web_access_false() {
     ]);
     let resp_mock = responses::mount_sse_once(&server, sse).await;
 
-    let mut builder = test_codex().with_model("gpt-5.4").with_config(|config| {
+    let mut builder = test_motyga().with_model("gpt-5.4").with_config(|config| {
         config
             .web_search_mode
             .set(WebSearchMode::Cached)
@@ -41,7 +41,7 @@ async fn web_search_mode_cached_sets_external_web_access_false() {
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Motyga conversation");
 
     test.submit_turn_with_permission_profile(
         "hello cached web search",
@@ -70,7 +70,7 @@ async fn web_search_mode_takes_precedence_over_legacy_flags() {
     ]);
     let resp_mock = responses::mount_sse_once(&server, sse).await;
 
-    let mut builder = test_codex().with_model("gpt-5.4").with_config(|config| {
+    let mut builder = test_motyga().with_model("gpt-5.4").with_config(|config| {
         config
             .features
             .enable(Feature::WebSearchRequest)
@@ -83,7 +83,7 @@ async fn web_search_mode_takes_precedence_over_legacy_flags() {
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Motyga conversation");
 
     test.submit_turn_with_permission_profile(
         "hello cached+live flags",
@@ -112,7 +112,7 @@ async fn web_search_mode_defaults_to_cached_when_features_disabled() {
     ]);
     let resp_mock = responses::mount_sse_once(&server, sse).await;
 
-    let mut builder = test_codex().with_model("gpt-5.4").with_config(|config| {
+    let mut builder = test_motyga().with_model("gpt-5.4").with_config(|config| {
         config
             .web_search_mode
             .set(WebSearchMode::Cached)
@@ -129,7 +129,7 @@ async fn web_search_mode_defaults_to_cached_when_features_disabled() {
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Motyga conversation");
 
     test.submit_turn_with_permission_profile(
         "hello default cached web search",
@@ -167,7 +167,7 @@ async fn web_search_mode_updates_between_turns_with_permission_profile() {
     )
     .await;
 
-    let mut builder = test_codex().with_model("gpt-5.4").with_config(|config| {
+    let mut builder = test_motyga().with_model("gpt-5.4").with_config(|config| {
         config
             .web_search_mode
             .set(WebSearchMode::Cached)
@@ -184,7 +184,7 @@ async fn web_search_mode_updates_between_turns_with_permission_profile() {
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Motyga conversation");
 
     test.submit_turn_with_permission_profile("hello cached", PermissionProfile::read_only())
         .await
@@ -228,7 +228,7 @@ async fn web_search_tool_config_from_config_toml_is_forwarded_to_request() {
     ]);
     let resp_mock = responses::mount_sse_once(&server, sse).await;
 
-    let home = Arc::new(tempfile::TempDir::new().expect("create codex home"));
+    let home = Arc::new(tempfile::TempDir::new().expect("create motyga home"));
     std::fs::write(
         home.path().join("config.toml"),
         r#"web_search = "live"
@@ -241,11 +241,11 @@ location = { country = "US", city = "New York", timezone = "America/New_York" }
     )
     .expect("write config.toml");
 
-    let mut builder = test_codex().with_model("gpt-5.3-codex").with_home(home);
+    let mut builder = test_motyga().with_model("gpt-5.3-codex").with_home(home);
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Motyga conversation");
 
     test.submit_turn_with_permission_profile(
         "hello configured web search",
@@ -286,15 +286,15 @@ async fn indexed_web_search_mode_sets_index_gate() {
     ]);
     let resp_mock = responses::mount_sse_once(&server, sse).await;
 
-    let home = Arc::new(tempfile::TempDir::new().expect("create codex home"));
+    let home = Arc::new(tempfile::TempDir::new().expect("create motyga home"));
     std::fs::write(home.path().join("config.toml"), r#"web_search = "indexed""#)
         .expect("write config.toml");
 
-    let mut builder = test_codex().with_model("gpt-5.3-codex").with_home(home);
+    let mut builder = test_motyga().with_model("gpt-5.3-codex").with_home(home);
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Motyga conversation");
 
     test.submit_turn_with_permission_profile(
         "hello indexed web search",

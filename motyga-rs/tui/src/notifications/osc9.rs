@@ -2,8 +2,8 @@ use std::fmt;
 use std::io;
 use std::io::stdout;
 
-use codex_terminal_detection::Multiplexer;
-use codex_terminal_detection::terminal_info;
+use motyga_terminal_detection::Multiplexer;
+use motyga_terminal_detection::terminal_info;
 use crossterm::Command;
 use ratatui::crossterm::execute;
 

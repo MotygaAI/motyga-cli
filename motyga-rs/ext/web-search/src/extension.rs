@@ -1,26 +1,26 @@
 use std::sync::Arc;
 
-use codex_api::AllowedCaller;
-use codex_api::ApproximateLocation;
-use codex_api::ExternalWebAccess;
-use codex_api::ExternalWebAccessMode;
-use codex_api::LocationType;
-use codex_api::SearchContextSize;
-use codex_api::SearchFilters;
-use codex_api::SearchSettings;
-use codex_core::config::Config;
-use codex_extension_api::ConfigContributor;
-use codex_extension_api::ExtensionData;
-use codex_extension_api::ExtensionFuture;
-use codex_extension_api::ExtensionRegistryBuilder;
-use codex_extension_api::ThreadLifecycleContributor;
-use codex_extension_api::ThreadStartInput;
-use codex_extension_api::ToolContributor;
-use codex_login::AuthManager;
-use codex_model_provider::create_model_provider;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_protocol::config_types::WebSearchContextSize;
-use codex_protocol::config_types::WebSearchMode;
+use motyga_api::AllowedCaller;
+use motyga_api::ApproximateLocation;
+use motyga_api::ExternalWebAccess;
+use motyga_api::ExternalWebAccessMode;
+use motyga_api::LocationType;
+use motyga_api::SearchContextSize;
+use motyga_api::SearchFilters;
+use motyga_api::SearchSettings;
+use motyga_core::config::Config;
+use motyga_extension_api::ConfigContributor;
+use motyga_extension_api::ExtensionData;
+use motyga_extension_api::ExtensionFuture;
+use motyga_extension_api::ExtensionRegistryBuilder;
+use motyga_extension_api::ThreadLifecycleContributor;
+use motyga_extension_api::ThreadStartInput;
+use motyga_extension_api::ToolContributor;
+use motyga_login::AuthManager;
+use motyga_model_provider::create_model_provider;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_protocol::config_types::WebSearchContextSize;
+use motyga_protocol::config_types::WebSearchMode;
 
 use crate::tool::WebSearchTool;
 
@@ -119,7 +119,7 @@ impl ToolContributor for WebSearchExtension {
         &self,
         session_store: &ExtensionData,
         thread_store: &ExtensionData,
-    ) -> Vec<Arc<dyn codex_extension_api::ToolExecutor<codex_extension_api::ToolCall>>> {
+    ) -> Vec<Arc<dyn motyga_extension_api::ToolExecutor<motyga_extension_api::ToolCall>>> {
         let Some(config) = thread_store.get::<WebSearchExtensionConfig>() else {
             return Vec::new();
         };
@@ -147,11 +147,11 @@ pub fn install(registry: &mut ExtensionRegistryBuilder<Config>, auth_manager: Ar
 
 #[cfg(test)]
 mod tests {
-    use codex_extension_api::ExtensionData;
-    use codex_extension_api::ExtensionRegistryBuilder;
-    use codex_extension_api::ToolName;
-    use codex_login::CodexAuth;
-    use codex_model_provider_info::ModelProviderInfo;
+    use motyga_extension_api::ExtensionData;
+    use motyga_extension_api::ExtensionRegistryBuilder;
+    use motyga_extension_api::ToolName;
+    use motyga_login::MotygaAuth;
+    use motyga_model_provider_info::ModelProviderInfo;
     use pretty_assertions::assert_eq;
 
     use super::AuthManager;
@@ -161,9 +161,9 @@ mod tests {
     use super::install;
     use crate::tool::RUN_TOOL_NAME;
     use crate::tool::WEB_NAMESPACE;
-    use codex_api::ExternalWebAccess;
-    use codex_api::ExternalWebAccessMode;
-    use codex_protocol::config_types::WebSearchMode;
+    use motyga_api::ExternalWebAccess;
+    use motyga_api::ExternalWebAccessMode;
+    use motyga_protocol::config_types::WebSearchMode;
 
     #[test]
     fn external_web_access_preserves_legacy_values_until_indexed() {
@@ -189,7 +189,7 @@ mod tests {
         let mut builder = ExtensionRegistryBuilder::<Config>::new();
         install(
             &mut builder,
-            AuthManager::from_auth_for_testing(CodexAuth::from_api_key("dummy")),
+            AuthManager::from_auth_for_testing(MotygaAuth::from_api_key("dummy")),
         );
         let registry = builder.build();
         let session_store = ExtensionData::new("session");

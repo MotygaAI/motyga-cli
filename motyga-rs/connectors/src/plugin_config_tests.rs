@@ -1,5 +1,5 @@
-use codex_plugin::AppConnectorId;
-use codex_plugin::AppDeclaration;
+use motyga_plugin::AppConnectorId;
+use motyga_plugin::AppDeclaration;
 use pretty_assertions::assert_eq;
 
 use super::parse_plugin_app_config;

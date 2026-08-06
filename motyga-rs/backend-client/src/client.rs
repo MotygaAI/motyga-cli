@@ -1,6 +1,6 @@
 use crate::types::AccountsCheckResponse;
 use crate::types::CodeTaskDetailsResponse;
-use crate::types::CodexWorkspaceMessagesResponse;
+use crate::types::MotygaWorkspaceMessagesResponse;
 use crate::types::ConfigBundleResponse;
 use crate::types::PaginatedListTaskListItem;
 use crate::types::RateLimitReachedKind as BackendRateLimitReachedKind;
@@ -8,17 +8,17 @@ use crate::types::RateLimitStatusPayload;
 use crate::types::TokenUsageProfile;
 use crate::types::TurnAttemptsSiblingTurnsResponse;
 use anyhow::Result;
-use codex_api::SharedAuthProvider;
-use codex_client::build_reqwest_client_with_custom_ca;
-use codex_client::with_chatgpt_cloudflare_cookie_store;
-use codex_login::CodexAuth;
-use codex_login::default_client::get_codex_user_agent;
-use codex_protocol::account::PlanType as AccountPlanType;
-use codex_protocol::protocol::CreditsSnapshot;
-use codex_protocol::protocol::RateLimitReachedType;
-use codex_protocol::protocol::RateLimitSnapshot;
-use codex_protocol::protocol::RateLimitWindow;
-use codex_protocol::protocol::SpendControlLimitSnapshot;
+use motyga_api::SharedAuthProvider;
+use motyga_client::build_reqwest_client_with_custom_ca;
+use motyga_client::with_chatgpt_cloudflare_cookie_store;
+use motyga_login::MotygaAuth;
+use motyga_login::default_client::get_motyga_user_agent;
+use motyga_protocol::account::PlanType as AccountPlanType;
+use motyga_protocol::protocol::CreditsSnapshot;
+use motyga_protocol::protocol::RateLimitReachedType;
+use motyga_protocol::protocol::RateLimitSnapshot;
+use motyga_protocol::protocol::RateLimitWindow;
+use motyga_protocol::protocol::SpendControlLimitSnapshot;
 use reqwest::StatusCode;
 use reqwest::header::CACHE_CONTROL;
 use reqwest::header::CONTENT_TYPE;
@@ -104,8 +104,8 @@ struct SendAddCreditsNudgeEmailRequest {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PathStyle {
-    /// /api/codex/…
-    CodexApi,
+    /// /api/motyga/…
+    MotygaApi,
     /// /wham/…
     ChatGptApi,
 }
@@ -115,7 +115,7 @@ impl PathStyle {
         if base_url.contains("/backend-api") {
             PathStyle::ChatGptApi
         } else {
-            PathStyle::CodexApi
+            PathStyle::MotygaApi
         }
     }
 }
@@ -160,17 +160,17 @@ impl Client {
         Ok(Self {
             base_url,
             http,
-            auth_provider: codex_model_provider::unauthenticated_auth_provider(),
+            auth_provider: motyga_model_provider::unauthenticated_auth_provider(),
             user_agent: None,
             chatgpt_account_id: None,
             path_style,
         })
     }
 
-    pub fn from_auth(base_url: impl Into<String>, auth: &CodexAuth) -> Result<Self> {
+    pub fn from_auth(base_url: impl Into<String>, auth: &MotygaAuth) -> Result<Self> {
         Ok(Self::new(base_url)?
-            .with_user_agent(get_codex_user_agent())
-            .with_auth_provider(codex_model_provider::auth_provider_from_auth(auth)))
+            .with_user_agent(get_motyga_user_agent())
+            .with_auth_provider(motyga_model_provider::auth_provider_from_auth(auth)))
     }
 
     pub fn with_auth_provider(mut self, auth: SharedAuthProvider) -> Self {
@@ -200,7 +200,7 @@ impl Client {
         if let Some(ua) = &self.user_agent {
             h.insert(USER_AGENT, ua.clone());
         } else {
-            h.insert(USER_AGENT, HeaderValue::from_static("codex-cli"));
+            h.insert(USER_AGENT, HeaderValue::from_static("motyga-cli"));
         }
         self.auth_provider.add_auth_headers(&mut h);
         if let Some(acc) = &self.chatgpt_account_id
@@ -273,7 +273,7 @@ impl Client {
         let snapshots = self.get_rate_limits_many().await?;
         let preferred = snapshots
             .iter()
-            .find(|snapshot| snapshot.limit_id.as_deref() == Some("codex"))
+            .find(|snapshot| snapshot.limit_id.as_deref() == Some("motyga"))
             .cloned();
         Ok(preferred.unwrap_or_else(|| snapshots[0].clone()))
     }
@@ -284,7 +284,7 @@ impl Client {
 
     pub async fn get_accounts_check(&self) -> Result<AccountsCheckResponse> {
         let url = match self.path_style {
-            PathStyle::CodexApi => format!("{}/api/codex/accounts/check", self.base_url),
+            PathStyle::MotygaApi => format!("{}/api/motyga/accounts/check", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/accounts/check", self.base_url),
         };
         let req = self.http.get(&url).headers(self.headers());
@@ -301,7 +301,7 @@ impl Client {
 
     fn token_usage_profile_url(&self) -> String {
         match self.path_style {
-            PathStyle::CodexApi => format!("{}/api/codex/profiles/me", self.base_url),
+            PathStyle::MotygaApi => format!("{}/api/motyga/profiles/me", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/profiles/me", self.base_url),
         }
     }
@@ -329,7 +329,7 @@ impl Client {
         cursor: Option<&str>,
     ) -> Result<PaginatedListTaskListItem> {
         let url = match self.path_style {
-            PathStyle::CodexApi => format!("{}/api/codex/tasks/list", self.base_url),
+            PathStyle::MotygaApi => format!("{}/api/motyga/tasks/list", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/tasks/list", self.base_url),
         };
         let req = self.http.get(&url).headers(self.headers());
@@ -367,7 +367,7 @@ impl Client {
         task_id: &str,
     ) -> Result<(CodeTaskDetailsResponse, String, String)> {
         let url = match self.path_style {
-            PathStyle::CodexApi => format!("{}/api/codex/tasks/{}", self.base_url, task_id),
+            PathStyle::MotygaApi => format!("{}/api/motyga/tasks/{}", self.base_url, task_id),
             PathStyle::ChatGptApi => format!("{}/wham/tasks/{}", self.base_url, task_id),
         };
         let req = self.http.get(&url).headers(self.headers());
@@ -382,8 +382,8 @@ impl Client {
         turn_id: &str,
     ) -> Result<TurnAttemptsSiblingTurnsResponse> {
         let url = match self.path_style {
-            PathStyle::CodexApi => format!(
-                "{}/api/codex/tasks/{}/turns/{}/sibling_turns",
+            PathStyle::MotygaApi => format!(
+                "{}/api/motyga/tasks/{}/turns/{}/sibling_turns",
                 self.base_url, task_id, turn_id
             ),
             PathStyle::ChatGptApi => format!(
@@ -396,15 +396,15 @@ impl Client {
         self.decode_json::<TurnAttemptsSiblingTurnsResponse>(&url, &ct, &body)
     }
 
-    /// Fetch the selected cloud-managed config bundle from codex-backend.
+    /// Fetch the selected cloud-managed config bundle from motyga-backend.
     ///
-    /// `GET /api/codex/config/bundle` (Codex API style) or
+    /// `GET /api/motyga/config/bundle` (Motyga API style) or
     /// `GET /wham/config/bundle` (ChatGPT backend-api style).
     pub async fn get_config_bundle(
         &self,
     ) -> std::result::Result<ConfigBundleResponse, RequestError> {
         let url = match self.path_style {
-            PathStyle::CodexApi => format!("{}/api/codex/config/bundle", self.base_url),
+            PathStyle::MotygaApi => format!("{}/api/motyga/config/bundle", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/config/bundle", self.base_url),
         };
         let req = self.http.get(&url).headers(self.headers());
@@ -415,7 +415,7 @@ impl Client {
 
     pub async fn list_workspace_messages(
         &self,
-    ) -> std::result::Result<CodexWorkspaceMessagesResponse, RequestError> {
+    ) -> std::result::Result<MotygaWorkspaceMessagesResponse, RequestError> {
         let url = self.workspace_messages_url();
         let req = self
             .http
@@ -423,7 +423,7 @@ impl Client {
             .headers(self.headers())
             .header(CACHE_CONTROL, HeaderValue::from_static("no-store"));
         let (body, ct) = self.exec_request_detailed(req, "GET", &url).await?;
-        self.decode_json::<CodexWorkspaceMessagesResponse>(&url, &ct, &body)
+        self.decode_json::<MotygaWorkspaceMessagesResponse>(&url, &ct, &body)
             .map_err(RequestError::from)
     }
 
@@ -431,7 +431,7 @@ impl Client {
     /// based on `path_style`. Returns the created task id.
     pub async fn create_task(&self, request_body: serde_json::Value) -> Result<String> {
         let url = match self.path_style {
-            PathStyle::CodexApi => format!("{}/api/codex/tasks", self.base_url),
+            PathStyle::MotygaApi => format!("{}/api/motyga/tasks", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/tasks", self.base_url),
         };
         let req = self
@@ -477,7 +477,7 @@ impl Client {
             .and_then(|details| details.individual_limit.flatten())
             .map(|details| Self::map_individual_limit(*details));
         let mut snapshots = vec![Self::make_rate_limit_snapshot(
-            Some("codex".to_string()),
+            Some("motyga".to_string()),
             /*limit_name*/ None,
             payload.rate_limit.flatten().map(|details| *details),
             payload.credits.flatten().map(|details| *details),
@@ -557,8 +557,8 @@ impl Client {
 
     fn send_add_credits_nudge_email_url(&self) -> String {
         match self.path_style {
-            PathStyle::CodexApi => format!(
-                "{}/api/codex/accounts/send_add_credits_nudge_email",
+            PathStyle::MotygaApi => format!(
+                "{}/api/motyga/accounts/send_add_credits_nudge_email",
                 self.base_url
             ),
             PathStyle::ChatGptApi => {
@@ -572,7 +572,7 @@ impl Client {
 
     fn workspace_messages_url(&self) -> String {
         match self.path_style {
-            PathStyle::CodexApi => format!("{}/api/codex/workspace-messages", self.base_url),
+            PathStyle::MotygaApi => format!("{}/api/motyga/workspace-messages", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/workspace-messages", self.base_url),
         }
     }
@@ -651,9 +651,9 @@ impl Client {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_backend_openapi_models::models::AdditionalRateLimitDetails;
-    use codex_backend_openapi_models::models::RateLimitReachedKind;
-    use codex_backend_openapi_models::models::RateLimitReachedType as BackendRateLimitReachedType;
+    use motyga_backend_openapi_models::models::AdditionalRateLimitDetails;
+    use motyga_backend_openapi_models::models::RateLimitReachedKind;
+    use motyga_backend_openapi_models::models::RateLimitReachedType as BackendRateLimitReachedType;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -688,8 +688,8 @@ mod tests {
                 ..Default::default()
             }))),
             additional_rate_limits: Some(Some(vec![AdditionalRateLimitDetails {
-                limit_name: "codex_other".to_string(),
-                metered_feature: "codex_other".to_string(),
+                limit_name: "motyga_other".to_string(),
+                metered_feature: "motyga_other".to_string(),
                 rate_limit: Some(Some(Box::new(crate::types::RateLimitStatusDetails {
                     primary_window: Some(Some(Box::new(crate::types::RateLimitWindowSnapshot {
                         used_percent: 70,
@@ -708,7 +708,7 @@ mod tests {
                 ..Default::default()
             }))),
             spend_control: Some(Some(Box::new(
-                codex_backend_openapi_models::models::SpendControlStatusDetails {
+                motyga_backend_openapi_models::models::SpendControlStatusDetails {
                     reached: false,
                     individual_limit: Some(Some(Box::new(
                         crate::types::SpendControlLimitDetails {
@@ -732,7 +732,7 @@ mod tests {
         let snapshots = Client::rate_limit_snapshots_from_payload(payload);
         assert_eq!(snapshots.len(), 2);
 
-        assert_eq!(snapshots[0].limit_id.as_deref(), Some("codex"));
+        assert_eq!(snapshots[0].limit_id.as_deref(), Some("motyga"));
         assert_eq!(snapshots[0].limit_name, None);
         assert_eq!(
             snapshots[0].primary.as_ref().map(|w| w.used_percent),
@@ -765,8 +765,8 @@ mod tests {
             })
         );
 
-        assert_eq!(snapshots[1].limit_id.as_deref(), Some("codex_other"));
-        assert_eq!(snapshots[1].limit_name.as_deref(), Some("codex_other"));
+        assert_eq!(snapshots[1].limit_id.as_deref(), Some("motyga_other"));
+        assert_eq!(snapshots[1].limit_name.as_deref(), Some("motyga_other"));
         assert_eq!(
             snapshots[1].primary.as_ref().map(|w| w.used_percent),
             Some(70.0)
@@ -783,8 +783,8 @@ mod tests {
             plan_type: crate::types::PlanType::Plus,
             rate_limit: None,
             additional_rate_limits: Some(Some(vec![AdditionalRateLimitDetails {
-                limit_name: "codex_other".to_string(),
-                metered_feature: "codex_other".to_string(),
+                limit_name: "motyga_other".to_string(),
+                metered_feature: "motyga_other".to_string(),
                 rate_limit: None,
             }])),
             credits: None,
@@ -794,19 +794,19 @@ mod tests {
 
         let snapshots = Client::rate_limit_snapshots_from_payload(payload);
         assert_eq!(snapshots.len(), 2);
-        assert_eq!(snapshots[0].limit_id.as_deref(), Some("codex"));
+        assert_eq!(snapshots[0].limit_id.as_deref(), Some("motyga"));
         assert_eq!(snapshots[0].limit_name, None);
         assert_eq!(snapshots[0].primary, None);
-        assert_eq!(snapshots[1].limit_id.as_deref(), Some("codex_other"));
-        assert_eq!(snapshots[1].limit_name.as_deref(), Some("codex_other"));
+        assert_eq!(snapshots[1].limit_id.as_deref(), Some("motyga_other"));
+        assert_eq!(snapshots[1].limit_name.as_deref(), Some("motyga_other"));
     }
 
     #[test]
     fn preferred_snapshot_selection_matches_get_rate_limits_behavior() {
         let snapshots = [
             RateLimitSnapshot {
-                limit_id: Some("codex_other".to_string()),
-                limit_name: Some("codex_other".to_string()),
+                limit_id: Some("motyga_other".to_string()),
+                limit_name: Some("motyga_other".to_string()),
                 primary: Some(RateLimitWindow {
                     used_percent: 90.0,
                     window_minutes: Some(60),
@@ -819,8 +819,8 @@ mod tests {
                 rate_limit_reached_type: None,
             },
             RateLimitSnapshot {
-                limit_id: Some("codex".to_string()),
-                limit_name: Some("codex".to_string()),
+                limit_id: Some("motyga".to_string()),
+                limit_name: Some("motyga".to_string()),
                 primary: Some(RateLimitWindow {
                     used_percent: 10.0,
                     window_minutes: Some(60),
@@ -836,10 +836,10 @@ mod tests {
 
         let preferred = snapshots
             .iter()
-            .find(|snapshot| snapshot.limit_id.as_deref() == Some("codex"))
+            .find(|snapshot| snapshot.limit_id.as_deref() == Some("motyga"))
             .cloned()
             .unwrap_or_else(|| snapshots[0].clone());
-        assert_eq!(preferred.limit_id.as_deref(), Some("codex"));
+        assert_eq!(preferred.limit_id.as_deref(), Some("motyga"));
     }
 
     #[test]
@@ -904,10 +904,10 @@ mod tests {
 
     #[test]
     fn add_credits_nudge_email_uses_expected_paths_and_bodies() {
-        let codex_client = test_client("https://example.test", PathStyle::CodexApi);
+        let motyga_client = test_client("https://example.test", PathStyle::MotygaApi);
         assert_eq!(
-            codex_client.send_add_credits_nudge_email_url(),
-            "https://example.test/api/codex/accounts/send_add_credits_nudge_email"
+            motyga_client.send_add_credits_nudge_email_url(),
+            "https://example.test/api/motyga/accounts/send_add_credits_nudge_email"
         );
 
         let chatgpt_client =
@@ -935,10 +935,10 @@ mod tests {
 
     #[test]
     fn token_usage_profile_uses_expected_paths() {
-        let codex_client = test_client("https://example.test", PathStyle::CodexApi);
+        let motyga_client = test_client("https://example.test", PathStyle::MotygaApi);
         assert_eq!(
-            codex_client.token_usage_profile_url(),
-            "https://example.test/api/codex/profiles/me"
+            motyga_client.token_usage_profile_url(),
+            "https://example.test/api/motyga/profiles/me"
         );
 
         let chatgpt_client =
@@ -951,10 +951,10 @@ mod tests {
 
     #[test]
     fn workspace_messages_uses_expected_paths() {
-        let codex_client = test_client("https://example.test", PathStyle::CodexApi);
+        let motyga_client = test_client("https://example.test", PathStyle::MotygaApi);
         assert_eq!(
-            codex_client.workspace_messages_url(),
-            "https://example.test/api/codex/workspace-messages"
+            motyga_client.workspace_messages_url(),
+            "https://example.test/api/motyga/workspace-messages"
         );
 
         let chatgpt_client =
@@ -969,7 +969,7 @@ mod tests {
         Client {
             base_url: base_url.to_string(),
             http: reqwest::Client::new(),
-            auth_provider: codex_model_provider::unauthenticated_auth_provider(),
+            auth_provider: motyga_model_provider::unauthenticated_auth_provider(),
             user_agent: None,
             chatgpt_account_id: None,
             path_style,

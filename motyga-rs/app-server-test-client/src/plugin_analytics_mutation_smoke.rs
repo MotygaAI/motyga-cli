@@ -1,4 +1,4 @@
-use super::CodexClient;
+use super::MotygaClient;
 use super::plugin_analytics_capture::PluginEventIdentity;
 use super::plugin_analytics_capture::read_events_for_remote_plugin;
 use super::plugin_analytics_capture::validate_mutation_events;
@@ -10,15 +10,15 @@ use anyhow::Context;
 use anyhow::Result;
 use anyhow::anyhow;
 use anyhow::bail;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::PluginAvailability;
-use codex_app_server_protocol::PluginInstallParams;
-use codex_app_server_protocol::PluginInstallPolicy;
-use codex_app_server_protocol::PluginInstallResponse;
-use codex_app_server_protocol::PluginReadParams;
-use codex_app_server_protocol::PluginReadResponse;
-use codex_app_server_protocol::PluginUninstallParams;
-use codex_app_server_protocol::PluginUninstallResponse;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::PluginAvailability;
+use motyga_app_server_protocol::PluginInstallParams;
+use motyga_app_server_protocol::PluginInstallPolicy;
+use motyga_app_server_protocol::PluginInstallResponse;
+use motyga_app_server_protocol::PluginReadParams;
+use motyga_app_server_protocol::PluginReadResponse;
+use motyga_app_server_protocol::PluginUninstallParams;
+use motyga_app_server_protocol::PluginUninstallResponse;
 use serde_json::Value;
 use std::ffi::OsString;
 use std::path::Path;
@@ -34,7 +34,7 @@ const CAPTURE_TIMEOUT: Duration = Duration::from_secs(10);
 const POLL_INTERVAL: Duration = Duration::from_millis(100);
 
 pub(super) fn run(
-    codex_bin: &Path,
+    motyga_bin: &Path,
     config_overrides: &[String],
     remote_plugin_id: &str,
     confirmation: AccountMutationConfirmation,
@@ -43,12 +43,12 @@ pub(super) fn run(
     require_confirmation(confirmation)?;
     let capture_path = capture_file.unwrap_or_else(|| {
         std::env::temp_dir().join(format!(
-            "codex-plugin-analytics-mutation-{}.jsonl",
+            "motyga-plugin-analytics-mutation-{}.jsonl",
             process::id()
         ))
     });
     prepare_capture_file(&capture_path)?;
-    let mut client = spawn_client(codex_bin, config_overrides, &capture_path)?;
+    let mut client = spawn_client(motyga_bin, config_overrides, &capture_path)?;
     wait_until_capture_is_ready(&capture_path)?;
     client.initialize()?;
 
@@ -97,7 +97,7 @@ pub(super) fn run(
             if let Err(err) = sequence_result {
                 eprintln!("mutation smoke failed before cleanup: {err:#}");
             }
-            print_dirty_recovery(codex_bin, config_overrides, remote_plugin_id, &cleanup_err);
+            print_dirty_recovery(motyga_bin, config_overrides, remote_plugin_id, &cleanup_err);
             Err(cleanup_err)
         }
         (sequence_result, RestorationStatus::Unknown(cleanup_err)) => {
@@ -107,14 +107,14 @@ pub(super) fn run(
             eprintln!(
                 "FAIL-UNKNOWN: could not verify whether `{remote_plugin_id}` is installed: {cleanup_err:#}"
             );
-            print_recovery_command(codex_bin, config_overrides, remote_plugin_id);
+            print_recovery_command(motyga_bin, config_overrides, remote_plugin_id);
             Err(cleanup_err)
         }
     }
 }
 
 pub(super) fn run_cleanup(
-    codex_bin: &Path,
+    motyga_bin: &Path,
     config_overrides: &[String],
     remote_plugin_id: &str,
     confirmation: AccountMutationConfirmation,
@@ -125,7 +125,7 @@ pub(super) fn run_cleanup(
         "analytics.enabled=false".to_string(),
         "features.plugins=true".to_string(),
     ]);
-    let mut client = CodexClient::spawn_stdio(codex_bin, &overrides)?;
+    let mut client = MotygaClient::spawn_stdio(motyga_bin, &overrides)?;
     client.initialize()?;
 
     match restore_uninstalled_state(&mut client, remote_plugin_id) {
@@ -140,7 +140,7 @@ pub(super) fn run_cleanup(
             Err(err)
         }
         RestorationStatus::Dirty(err) => {
-            print_dirty_recovery(codex_bin, config_overrides, remote_plugin_id, &err);
+            print_dirty_recovery(motyga_bin, config_overrides, remote_plugin_id, &err);
             Err(err)
         }
         RestorationStatus::Unknown(err) => {
@@ -190,10 +190,10 @@ impl ExpectedInstalledState {
 }
 
 fn spawn_client(
-    codex_bin: &Path,
+    motyga_bin: &Path,
     config_overrides: &[String],
     capture_path: &Path,
-) -> Result<CodexClient> {
+) -> Result<MotygaClient> {
     let mut overrides = config_overrides.to_vec();
     overrides.extend([
         "analytics.enabled=true".to_string(),
@@ -203,7 +203,7 @@ fn spawn_client(
         OsString::from(ANALYTICS_CAPTURE_ENV_VAR),
         capture_path.as_os_str().to_os_string(),
     )];
-    CodexClient::spawn_stdio_with_env(codex_bin, &overrides, &environment)
+    MotygaClient::spawn_stdio_with_env(motyga_bin, &overrides, &environment)
 }
 
 #[derive(Clone, Debug)]
@@ -218,7 +218,7 @@ struct RemotePluginExpectation {
 }
 
 fn read_remote_plugin(
-    client: &mut CodexClient,
+    client: &mut MotygaClient,
     remote_plugin_id: &str,
 ) -> Result<RemotePluginExpectation> {
     let request_id = client.request_id();
@@ -278,7 +278,7 @@ struct MutationSequenceResult {
 }
 
 fn run_mutation_sequence(
-    client: &mut CodexClient,
+    client: &mut MotygaClient,
     capture_path: &Path,
     expected: &RemotePluginExpectation,
 ) -> MutationSequenceResult {
@@ -293,7 +293,7 @@ fn run_mutation_sequence(
         wait_for_remote_plugin_event(
             capture_path,
             &expected.remote_plugin_id,
-            "codex_plugin_installed",
+            "motyga_plugin_installed",
         )?;
 
         let uninstall_error = uninstall_remote_plugin(client, &expected.remote_plugin_id).err();
@@ -313,7 +313,7 @@ fn run_mutation_sequence(
         wait_for_remote_plugin_event(
             capture_path,
             &expected.remote_plugin_id,
-            "codex_plugin_uninstalled",
+            "motyga_plugin_uninstalled",
         )?;
 
         let captured_events =
@@ -341,7 +341,7 @@ fn run_mutation_sequence(
     }
 }
 
-fn install_remote_plugin(client: &mut CodexClient, plugin: &RemotePluginExpectation) -> Result<()> {
+fn install_remote_plugin(client: &mut MotygaClient, plugin: &RemotePluginExpectation) -> Result<()> {
     let request_id = client.request_id();
     let _: PluginInstallResponse = client.send_request(
         ClientRequest::PluginInstall {
@@ -358,7 +358,7 @@ fn install_remote_plugin(client: &mut CodexClient, plugin: &RemotePluginExpectat
     Ok(())
 }
 
-fn uninstall_remote_plugin(client: &mut CodexClient, remote_plugin_id: &str) -> Result<()> {
+fn uninstall_remote_plugin(client: &mut MotygaClient, remote_plugin_id: &str) -> Result<()> {
     let request_id = client.request_id();
     let _: PluginUninstallResponse = client.send_request(
         ClientRequest::PluginUninstall {
@@ -374,7 +374,7 @@ fn uninstall_remote_plugin(client: &mut CodexClient, remote_plugin_id: &str) -> 
 }
 
 fn wait_for_installed_state(
-    client: &mut CodexClient,
+    client: &mut MotygaClient,
     remote_plugin_id: &str,
     expected_state: ExpectedInstalledState,
 ) -> Result<RemotePluginExpectation> {
@@ -403,7 +403,7 @@ enum RestorationStatus {
 }
 
 fn restore_uninstalled_state(
-    client: &mut CodexClient,
+    client: &mut MotygaClient,
     remote_plugin_id: &str,
 ) -> RestorationStatus {
     let current = match read_remote_plugin(client, remote_plugin_id) {
@@ -455,7 +455,7 @@ fn wait_for_remote_plugin_event(
 }
 
 fn print_dirty_recovery(
-    codex_bin: &Path,
+    motyga_bin: &Path,
     config_overrides: &[String],
     remote_plugin_id: &str,
     err: &anyhow::Error,
@@ -463,17 +463,17 @@ fn print_dirty_recovery(
     eprintln!(
         "FAIL-DIRTY: remote plugin `{remote_plugin_id}` still appears installed after cleanup: {err:#}"
     );
-    print_recovery_command(codex_bin, config_overrides, remote_plugin_id);
+    print_recovery_command(motyga_bin, config_overrides, remote_plugin_id);
 }
 
-fn print_recovery_command(codex_bin: &Path, config_overrides: &[String], remote_plugin_id: &str) {
+fn print_recovery_command(motyga_bin: &Path, config_overrides: &[String], remote_plugin_id: &str) {
     let test_client = std::env::current_exe()
         .map(|path| path.display().to_string())
-        .unwrap_or_else(|_| "codex-app-server-test-client".to_string());
+        .unwrap_or_else(|_| "motyga-app-server-test-client".to_string());
     let mut command = format!(
-        "{} --codex-bin {}",
+        "{} --motyga-bin {}",
         shell_quote(&test_client),
-        shell_quote(&codex_bin.display().to_string())
+        shell_quote(&motyga_bin.display().to_string())
     );
     for override_kv in config_overrides {
         command.push_str(&format!(" --config {}", shell_quote(override_kv)));

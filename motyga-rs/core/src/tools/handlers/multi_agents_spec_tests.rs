@@ -1,10 +1,10 @@
 use super::*;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ModelServiceTier;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_tools::JsonSchemaPrimitiveType;
-use codex_tools::JsonSchemaType;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::openai_models::ModelServiceTier;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::openai_models::ReasoningEffortPreset;
+use motyga_tools::JsonSchemaPrimitiveType;
+use motyga_tools::JsonSchemaType;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 

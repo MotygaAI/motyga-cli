@@ -5,19 +5,19 @@ use app_test_support::TestAppServer;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
 use app_test_support::write_models_cache;
-use codex_app_server_protocol::AttestationGenerateResponse;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_config::types::AuthCredentialsStoreMode;
+use motyga_app_server_protocol::AttestationGenerateResponse;
+use motyga_app_server_protocol::ClientInfo;
+use motyga_app_server_protocol::InitializeCapabilities;
+use motyga_app_server_protocol::JSONRPCMessage;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::UserInput as V2UserInput;
+use motyga_config::types::AuthCredentialsStoreMode;
 use core_test_support::responses;
 use core_test_support::responses::WebSocketConnectionConfig;
 use core_test_support::responses::start_websocket_server_with_headers;
@@ -55,26 +55,26 @@ async fn attestation_generate_round_trip_adds_header_to_responses_websocket_hand
     }])
     .await;
 
-    let codex_home = TempDir::new()?;
-    write_models_cache(codex_home.path())?;
+    let motyga_home = TempDir::new()?;
+    write_models_cache(motyga_home.path())?;
     create_chatgpt_websocket_config(
-        codex_home.path(),
+        motyga_home.path(),
         &websocket_server.uri().replacen("ws://", "http://", 1),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("access-chatgpt").plan_type("pro"),
         AuthCredentialsStoreMode::File,
     )?;
 
     let mut mcp =
-        TestAppServer::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+        TestAppServer::new_with_env(motyga_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     let initialized = timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.initialize_with_capabilities(
             ClientInfo {
-                name: "codex_desktop".to_string(),
-                title: Some("Codex Desktop".to_string()),
+                name: "motyga_desktop".to_string(),
+                title: Some("Motyga Desktop".to_string()),
                 version: "0.1.0".to_string(),
             },
             Some(InitializeCapabilities {
@@ -163,9 +163,9 @@ async fn attestation_generate_round_trip_adds_header_to_responses_websocket_hand
     Ok(())
 }
 
-fn create_chatgpt_websocket_config(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
+fn create_chatgpt_websocket_config(motyga_home: &Path, server_uri: &str) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 model = "mock-model"

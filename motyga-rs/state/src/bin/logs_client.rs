@@ -5,21 +5,21 @@ use anyhow::Context;
 use chrono::DateTime;
 use clap::Parser;
 use clap::ValueEnum;
-use codex_state::LogQuery;
-use codex_state::LogRow;
-use codex_state::StateRuntime;
+use motyga_state::LogQuery;
+use motyga_state::LogRow;
+use motyga_state::StateRuntime;
 use dirs::home_dir;
 use owo_colors::OwoColorize;
 
 #[derive(Debug, Parser)]
-#[command(name = "codex-state-logs")]
+#[command(name = "motyga-state-logs")]
 #[command(about = "Tail Motyga logs from the dedicated logs SQLite DB with simple filters")]
 struct Args {
     /// Path to MOTYGA_HOME. Defaults to $MOTYGA_HOME or ~/.motyga.
     #[arg(long, env = "MOTYGA_HOME")]
-    codex_home: Option<PathBuf>,
+    motyga_home: Option<PathBuf>,
 
-    /// Direct path to the logs SQLite database. Overrides --codex-home.
+    /// Direct path to the logs SQLite database. Overrides --motyga-home.
     #[arg(long)]
     db: Option<PathBuf>,
 
@@ -107,11 +107,11 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let db_path = resolve_db_path(&args)?;
     let filter = build_filter(&args)?;
-    let codex_home = db_path
+    let motyga_home = db_path
         .parent()
         .map(ToOwned::to_owned)
         .unwrap_or_else(|| PathBuf::from("."));
-    let runtime = StateRuntime::init(codex_home, "logs-client".to_string()).await?;
+    let runtime = StateRuntime::init(motyga_home, "logs-client".to_string()).await?;
 
     let mut last_id =
         print_backfill(runtime.as_ref(), &filter, args.backfill, args.compact).await?;
@@ -135,11 +135,11 @@ fn resolve_db_path(args: &Args) -> anyhow::Result<PathBuf> {
         return Ok(db.clone());
     }
 
-    let codex_home = args.codex_home.clone().unwrap_or_else(default_codex_home);
-    Ok(codex_state::logs_db_path(codex_home.as_path()))
+    let motyga_home = args.motyga_home.clone().unwrap_or_else(default_motyga_home);
+    Ok(motyga_state::logs_db_path(motyga_home.as_path()))
 }
 
-fn default_codex_home() -> PathBuf {
+fn default_motyga_home() -> PathBuf {
     if let Some(home) = home_dir() {
         return home.join(".motyga");
     }
@@ -401,14 +401,14 @@ mod tests {
 
     #[test]
     fn log_level_rejects_aliases_and_unknown_values() {
-        assert!(Args::try_parse_from(["codex-state-logs", "--level", "warning"]).is_err());
-        assert!(Args::try_parse_from(["codex-state-logs", "--level", "err"]).is_err());
-        assert!(Args::try_parse_from(["codex-state-logs", "--level", "warn,error"]).is_err());
+        assert!(Args::try_parse_from(["motyga-state-logs", "--level", "warning"]).is_err());
+        assert!(Args::try_parse_from(["motyga-state-logs", "--level", "err"]).is_err());
+        assert!(Args::try_parse_from(["motyga-state-logs", "--level", "warn,error"]).is_err());
     }
 
     #[test]
     fn log_level_accepts_canonical_values_case_insensitively() {
-        let args = Args::try_parse_from(["codex-state-logs", "--level", "WARN"])
+        let args = Args::try_parse_from(["motyga-state-logs", "--level", "WARN"])
             .expect("parse uppercase log level");
 
         assert_eq!(args.level, Some(LogLevelThreshold::Warn));

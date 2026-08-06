@@ -1,6 +1,6 @@
 use crate::approvals::NetworkApprovalProtocol;
-use codex_network_proxy::NetworkDecisionSource;
-use codex_network_proxy::NetworkPolicyDecision;
+use motyga_network_proxy::NetworkDecisionSource;
+use motyga_network_proxy::NetworkPolicyDecision;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]

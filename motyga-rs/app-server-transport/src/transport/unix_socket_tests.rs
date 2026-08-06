@@ -4,11 +4,11 @@ use super::TransportEvent;
 use super::acquire_app_server_startup_lock;
 use super::app_server_control_socket_path;
 use super::start_control_socket_acceptor;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_core::config::find_codex_home;
-use codex_uds::UnixStream;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::JSONRPCMessage;
+use motyga_app_server_protocol::JSONRPCNotification;
+use motyga_core::config::find_motyga_home;
+use motyga_uds::UnixStream;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use futures::SinkExt;
 use futures::StreamExt;
 use pretty_assertions::assert_eq;
@@ -35,9 +35,9 @@ fn listen_unix_socket_parses_as_unix_socket_transport() {
 #[test]
 fn listen_unix_socket_accepts_absolute_custom_path() {
     assert_eq!(
-        AppServerTransport::from_listen_url("unix:///tmp/codex.sock"),
+        AppServerTransport::from_listen_url("unix:///tmp/motyga.sock"),
         Ok(AppServerTransport::UnixSocket {
-            socket_path: absolute_path("/tmp/codex.sock")
+            socket_path: absolute_path("/tmp/motyga.sock")
         })
     );
 }
@@ -45,9 +45,9 @@ fn listen_unix_socket_accepts_absolute_custom_path() {
 #[test]
 fn listen_unix_socket_accepts_relative_custom_path() {
     assert_eq!(
-        AppServerTransport::from_listen_url("unix://codex.sock"),
+        AppServerTransport::from_listen_url("unix://motyga.sock"),
         Ok(AppServerTransport::UnixSocket {
-            socket_path: AbsolutePathBuf::relative_to_current_dir("codex.sock")
+            socket_path: AbsolutePathBuf::relative_to_current_dir("motyga.sock")
                 .expect("relative path should resolve")
         })
     );
@@ -195,8 +195,8 @@ fn absolute_path(path: &str) -> AbsolutePathBuf {
 }
 
 fn default_control_socket_path() -> AbsolutePathBuf {
-    let codex_home = find_codex_home().expect("motyga home");
-    app_server_control_socket_path(&codex_home).expect("default control socket path")
+    let motyga_home = find_motyga_home().expect("motyga home");
+    app_server_control_socket_path(&motyga_home).expect("default control socket path")
 }
 
 fn test_socket_path(temp_dir: &Path) -> AbsolutePathBuf {

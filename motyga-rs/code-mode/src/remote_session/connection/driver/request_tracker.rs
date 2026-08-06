@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::collections::VecDeque;
 
-use codex_code_mode_protocol::host::RequestId;
-use codex_code_mode_protocol::host::SessionId;
-use codex_code_mode_protocol::host::WireCellId;
+use motyga_code_mode_protocol::host::RequestId;
+use motyga_code_mode_protocol::host::SessionId;
+use motyga_code_mode_protocol::host::WireCellId;
 use tokio::sync::mpsc;
 
 use super::types::DeferredWait;

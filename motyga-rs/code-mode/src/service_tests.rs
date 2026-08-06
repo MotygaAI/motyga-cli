@@ -17,7 +17,7 @@ use crate::ExecuteRequest;
 use crate::ExecuteToPendingOutcome;
 use crate::FunctionCallOutputContentItem;
 use crate::ToolDefinition;
-use codex_protocol::ToolName;
+use motyga_protocol::ToolName;
 use pretty_assertions::assert_eq;
 use serde_json::Value as JsonValue;
 use tokio::sync::Notify;
@@ -669,7 +669,7 @@ image({
   type: "image",
   data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==",
   mimeType: "image/png",
-  _meta: { "codex/imageDetail": "original" },
+  _meta: { "motyga/imageDetail": "original" },
 });
 "#
                 .to_string(),
@@ -779,7 +779,7 @@ image(
     type: "image",
     data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==",
     mimeType: "image/png",
-    _meta: { "codex/imageDetail": "original" },
+    _meta: { "motyga/imageDetail": "original" },
   },
   "high",
 );
@@ -917,7 +917,7 @@ image({
       type: "image",
       data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==",
       mimeType: "image/png",
-      _meta: { "codex/imageDetail": "original" },
+      _meta: { "motyga/imageDetail": "original" },
     },
   ],
   isError: false,

@@ -6,36 +6,36 @@ use app_test_support::create_fake_rollout_with_token_usage;
 use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::SessionSource;
-use codex_app_server_protocol::ThreadForkParams;
-use codex_app_server_protocol::ThreadForkResponse;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadListParams;
-use codex_app_server_protocol::ThreadListResponse;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadSource;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::ThreadStartedNotification;
-use codex_app_server_protocol::ThreadStatus;
-use codex_app_server_protocol::ThreadStatusChangedNotification;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::UserInput;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_login::REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::RolloutItem;
-use codex_rollout::append_rollout_item_to_path;
-use codex_rollout::append_thread_name;
-use codex_rollout::read_session_meta_line;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCMessage;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::SessionSource;
+use motyga_app_server_protocol::ThreadForkParams;
+use motyga_app_server_protocol::ThreadForkResponse;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadListParams;
+use motyga_app_server_protocol::ThreadListResponse;
+use motyga_app_server_protocol::ThreadResumeParams;
+use motyga_app_server_protocol::ThreadSource;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::ThreadStartedNotification;
+use motyga_app_server_protocol::ThreadStatus;
+use motyga_app_server_protocol::ThreadStatusChangedNotification;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_app_server_protocol::UserInput;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_login::REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_rollout::append_rollout_item_to_path;
+use motyga_rollout::append_thread_name;
+use motyga_rollout::read_session_meta_line;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serde_json::json;
@@ -86,12 +86,12 @@ async fn list_threads(mcp: &mut TestAppServer) -> Result<ThreadListResponse> {
 #[tokio::test]
 async fn thread_fork_creates_new_thread_and_emits_started() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let preview = "Saved user message";
     let conversation_id = create_fake_rollout(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         preview,
@@ -99,7 +99,7 @@ async fn thread_fork_creates_new_thread_and_emits_started() -> Result<()> {
         /*git_info*/ None,
     )?;
 
-    let original_path = codex_home
+    let original_path = motyga_home
         .path()
         .join("sessions")
         .join("2025")
@@ -118,7 +118,7 @@ async fn thread_fork_creates_new_thread_and_emits_started() -> Result<()> {
     append_rollout_item_to_path(&original_path, &RolloutItem::SessionMeta(session_meta)).await?;
     let original_contents = std::fs::read_to_string(&original_path)?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_id = mcp
@@ -254,10 +254,10 @@ async fn thread_fork_creates_new_thread_and_emits_started() -> Result<()> {
 #[tokio::test]
 async fn thread_fork_at_last_turn_id_keeps_only_terminal_prefix() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -367,11 +367,11 @@ async fn thread_fork_at_last_turn_id_keeps_only_terminal_prefix() -> Result<()> 
 #[tokio::test]
 async fn thread_fork_inherits_explicit_source_name_from_session_index() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let conversation_id = create_fake_rollout(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         "Saved user message",
@@ -380,9 +380,9 @@ async fn thread_fork_inherits_explicit_source_name_from_session_index() -> Resul
     )?;
     let source_thread_id = ThreadId::from_string(&conversation_id)?;
     let source_name = "Renamed parent thread";
-    append_thread_name(codex_home.path(), source_thread_id, source_name).await?;
+    append_thread_name(motyga_home.path(), source_thread_id, source_name).await?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_id = mcp
@@ -411,19 +411,19 @@ async fn thread_fork_inherits_explicit_source_name_from_session_index() -> Resul
 #[tokio::test]
 async fn thread_fork_can_load_source_by_path() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let preview = "Saved user message";
     let conversation_id = create_fake_rollout(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         preview,
         Some("mock_provider"),
         /*git_info*/ None,
     )?;
-    let original_path = codex_home
+    let original_path = motyga_home
         .path()
         .join("sessions")
         .join("2025")
@@ -433,7 +433,7 @@ async fn thread_fork_can_load_source_by_path() -> Result<()> {
             "rollout-2025-01-05T12-00-00-{conversation_id}.jsonl"
         ));
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_id = mcp
@@ -462,18 +462,18 @@ async fn thread_fork_can_load_source_by_path() -> Result<()> {
 #[tokio::test]
 async fn thread_fork_emits_restored_token_usage_before_next_turn() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let conversation_id = create_fake_rollout_with_token_usage(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         "Saved user message",
         Some("mock_provider"),
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_id = mcp
@@ -516,18 +516,18 @@ async fn thread_fork_emits_restored_token_usage_before_next_turn() -> Result<()>
 #[tokio::test]
 async fn thread_fork_can_exclude_turns_and_skip_restored_token_usage() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let conversation_id = create_fake_rollout_with_token_usage(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         "Saved user message",
         Some("mock_provider"),
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_id = mcp
@@ -565,12 +565,12 @@ async fn thread_fork_can_exclude_turns_and_skip_restored_token_usage() -> Result
 async fn thread_fork_tracks_thread_initialized_analytics() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml_with_chatgpt_base_url(codex_home.path(), &server.uri(), &server.uri())?;
-    mount_analytics_capture(&server, codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml_with_chatgpt_base_url(motyga_home.path(), &server.uri(), &server.uri())?;
+    mount_analytics_capture(&server, motyga_home.path()).await?;
 
     let conversation_id = create_fake_rollout(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         "Saved user message",
@@ -578,7 +578,7 @@ async fn thread_fork_tracks_thread_initialized_analytics() -> Result<()> {
         /*git_info*/ None,
     )?;
 
-    let mut mcp = TestAppServer::new_without_managed_config(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_without_managed_config(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_id = mcp
@@ -601,7 +601,7 @@ async fn thread_fork_tracks_thread_initialized_analytics() -> Result<()> {
         event,
         &thread.id,
         &thread.session_id,
-        "codex",
+        "motyga",
         "mock-model",
         "forked",
         "user",
@@ -619,10 +619,10 @@ async fn thread_fork_tracks_thread_initialized_analytics() -> Result<()> {
 #[tokio::test]
 async fn thread_fork_rejects_unmaterialized_thread() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
-    let mut mcp = TestAppServer::new_with_auto_env(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new_with_auto_env(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -664,11 +664,11 @@ async fn thread_fork_rejects_unmaterialized_thread() -> Result<()> {
 #[tokio::test]
 async fn thread_fork_with_empty_path_uses_thread_id() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let conversation_id = create_fake_rollout(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         "Saved user message",
@@ -676,7 +676,7 @@ async fn thread_fork_with_empty_path_uses_thread_id() -> Result<()> {
         /*git_info*/ None,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_id = mcp
@@ -721,16 +721,16 @@ async fn thread_fork_surfaces_cloud_config_bundle_load_errors() -> Result<()> {
         .mount(&server)
         .await;
 
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let model_server = create_mock_responses_server_repeating_assistant("Done").await;
     let chatgpt_base_url = format!("{}/backend-api", server.uri());
     create_config_toml_with_chatgpt_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         &model_server.uri(),
         &chatgpt_base_url,
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .refresh_token("stale-refresh-token")
             .plan_type("business")
@@ -741,7 +741,7 @@ async fn thread_fork_surfaces_cloud_config_bundle_load_errors() -> Result<()> {
     )?;
 
     let conversation_id = create_fake_rollout(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         "Saved user message",
@@ -751,7 +751,7 @@ async fn thread_fork_surfaces_cloud_config_bundle_load_errors() -> Result<()> {
 
     let refresh_token_url = format!("{}/oauth/token", server.uri());
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("OPENAI_API_KEY", None),
             (
@@ -800,12 +800,12 @@ async fn thread_fork_surfaces_cloud_config_bundle_load_errors() -> Result<()> {
 #[tokio::test]
 async fn thread_fork_ephemeral_remains_pathless_and_omits_listing() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let preview = "Saved user message";
     let conversation_id = create_fake_rollout(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         preview,
@@ -813,7 +813,7 @@ async fn thread_fork_ephemeral_remains_pathless_and_omits_listing() -> Result<()
         /*git_info*/ None,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_id = mcp
@@ -952,13 +952,13 @@ async fn thread_fork_ephemeral_remains_pathless_and_omits_listing() -> Result<()
 }
 
 #[tokio::test]
-async fn pathless_ephemeral_thread_rejects_codex_home_path_after_reload() -> Result<()> {
+async fn pathless_ephemeral_thread_rejects_motyga_home_path_after_reload() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let motyga_home = TempDir::new()?;
+    create_config_toml(motyga_home.path(), &server.uri())?;
 
     let parent_thread_id = create_fake_rollout(
-        codex_home.path(),
+        motyga_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         "Parent message",
@@ -967,7 +967,7 @@ async fn pathless_ephemeral_thread_rejects_codex_home_path_after_reload() -> Res
     )?;
 
     let side_thread_id = {
-        let mut app_server = TestAppServer::new(codex_home.path()).await?;
+        let mut app_server = TestAppServer::new(motyga_home.path()).await?;
         timeout(DEFAULT_READ_TIMEOUT, app_server.initialize()).await??;
 
         let fork_id = app_server
@@ -1012,14 +1012,14 @@ async fn pathless_ephemeral_thread_rejects_codex_home_path_after_reload() -> Res
         thread.id
     };
 
-    let mut app_server = TestAppServer::new(codex_home.path()).await?;
+    let mut app_server = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, app_server.initialize()).await??;
-    let codex_home_path = codex_home.path().to_path_buf();
+    let motyga_home_path = motyga_home.path().to_path_buf();
 
     let resume_id = app_server
         .send_thread_resume_request(ThreadResumeParams {
             thread_id: side_thread_id.clone(),
-            path: Some(codex_home_path.clone()),
+            path: Some(motyga_home_path.clone()),
             ..Default::default()
         })
         .await?;
@@ -1042,7 +1042,7 @@ async fn pathless_ephemeral_thread_rejects_codex_home_path_after_reload() -> Res
     let fork_id = app_server
         .send_thread_fork_request(ThreadForkParams {
             thread_id: side_thread_id,
-            path: Some(codex_home_path),
+            path: Some(motyga_home_path),
             ..Default::default()
         })
         .await?;
@@ -1066,8 +1066,8 @@ async fn pathless_ephemeral_thread_rejects_codex_home_path_after_reload() -> Res
 }
 
 // Helper to create a config.toml pointing at the mock model server.
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(motyga_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
@@ -1090,11 +1090,11 @@ stream_max_retries = 0
 }
 
 fn create_config_toml_with_chatgpt_base_url(
-    codex_home: &Path,
+    motyga_home: &Path,
     server_uri: &str,
     chatgpt_base_url: &str,
 ) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = motyga_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

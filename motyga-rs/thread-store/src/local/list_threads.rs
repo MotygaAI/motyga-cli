@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use codex_protocol::ThreadId;
-use codex_rollout::RolloutConfig;
-use codex_rollout::RolloutRecorder;
-use codex_rollout::find_thread_names_by_ids;
-use codex_rollout::parse_cursor;
+use motyga_protocol::ThreadId;
+use motyga_rollout::RolloutConfig;
+use motyga_rollout::RolloutRecorder;
+use motyga_rollout::find_thread_names_by_ids;
+use motyga_rollout::parse_cursor;
 
 use super::LocalThreadStore;
 use super::helpers::distinct_thread_metadata_title;
@@ -33,19 +33,19 @@ pub(super) async fn list_threads(
         })
         .transpose()?;
     let sort_key = match params.sort_key {
-        ThreadSortKey::CreatedAt => codex_rollout::ThreadSortKey::CreatedAt,
-        ThreadSortKey::UpdatedAt => codex_rollout::ThreadSortKey::UpdatedAt,
-        ThreadSortKey::RecencyAt => codex_rollout::ThreadSortKey::RecencyAt,
+        ThreadSortKey::CreatedAt => motyga_rollout::ThreadSortKey::CreatedAt,
+        ThreadSortKey::UpdatedAt => motyga_rollout::ThreadSortKey::UpdatedAt,
+        ThreadSortKey::RecencyAt => motyga_rollout::ThreadSortKey::RecencyAt,
     };
     let sort_direction = match params.sort_direction {
-        SortDirection::Asc => codex_rollout::SortDirection::Asc,
-        SortDirection::Desc => codex_rollout::SortDirection::Desc,
+        SortDirection::Asc => motyga_rollout::SortDirection::Asc,
+        SortDirection::Desc => motyga_rollout::SortDirection::Desc,
     };
     let state_db = store.state_db().await;
     let rollout_config = RolloutConfig {
-        codex_home: store.config.codex_home.clone(),
+        motyga_home: store.config.motyga_home.clone(),
         sqlite_home: store.config.sqlite_home.clone(),
-        cwd: store.config.codex_home.clone(),
+        cwd: store.config.motyga_home.clone(),
         model_provider_id: store.config.default_model_provider_id.clone(),
         generate_memories: false,
     };
@@ -94,7 +94,7 @@ pub(super) async fn list_threads(
     }
     if names.len() < thread_ids.len()
         && let Ok(legacy_names) =
-            find_thread_names_by_ids(store.config.codex_home.as_path(), &thread_ids).await
+            find_thread_names_by_ids(store.config.motyga_home.as_path(), &thread_ids).await
     {
         for (thread_id, title) in legacy_names {
             names.entry(thread_id).or_insert(title);
@@ -110,26 +110,26 @@ pub(super) async fn list_threads(
 }
 
 pub(super) async fn list_rollout_threads(
-    state_db: Option<codex_rollout::StateDbHandle>,
+    state_db: Option<motyga_rollout::StateDbHandle>,
     config: &RolloutConfig,
     default_model_provider_id: &str,
     params: &ListThreadsParams,
-    cursor: Option<&codex_rollout::Cursor>,
-    sort_key: codex_rollout::ThreadSortKey,
-    sort_direction: codex_rollout::SortDirection,
-) -> ThreadStoreResult<codex_rollout::ThreadsPage> {
+    cursor: Option<&motyga_rollout::Cursor>,
+    sort_key: motyga_rollout::ThreadSortKey,
+    sort_direction: motyga_rollout::SortDirection,
+) -> ThreadStoreResult<motyga_rollout::ThreadsPage> {
     if let Some(relation_filter) = params.relation_filter {
         let relation_filter = match relation_filter {
             ThreadRelationFilter::DirectChildrenOf(parent_thread_id) => {
-                codex_state::ThreadRelationFilter::DirectChildrenOf(parent_thread_id)
+                motyga_state::ThreadRelationFilter::DirectChildrenOf(parent_thread_id)
             }
             ThreadRelationFilter::DescendantsOf(ancestor_thread_id) => {
-                codex_state::ThreadRelationFilter::DescendantsOf(ancestor_thread_id)
+                motyga_state::ThreadRelationFilter::DescendantsOf(ancestor_thread_id)
             }
         };
-        let page = codex_rollout::state_db::list_threads_db(
+        let page = motyga_rollout::state_db::list_threads_db(
             state_db.as_deref(),
-            config.codex_home.as_path(),
+            config.motyga_home.as_path(),
             params.page_size,
             cursor,
             sort_key,
@@ -217,9 +217,9 @@ pub(super) async fn list_rollout_threads(
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
-    use codex_protocol::ThreadId;
-    use codex_protocol::protocol::SessionSource;
-    use codex_protocol::protocol::ThreadHistoryMode;
+    use motyga_protocol::ThreadId;
+    use motyga_protocol::protocol::SessionSource;
+    use motyga_protocol::protocol::ThreadHistoryMode;
     use pretty_assertions::assert_eq;
     use std::fs;
     use tempfile::TempDir;
@@ -278,7 +278,7 @@ mod tests {
         let rollout_path = home.path().join("rollout-title-search.jsonl");
         fs::write(&rollout_path, "").expect("placeholder rollout file");
 
-        let runtime = codex_state::StateRuntime::init(
+        let runtime = motyga_state::StateRuntime::init(
             home.path().to_path_buf(),
             config.default_model_provider_id.clone(),
         )
@@ -290,7 +290,7 @@ mod tests {
             .await
             .expect("backfill should be complete");
         let created_at = Utc::now();
-        let mut builder = codex_state::ThreadMetadataBuilder::new(
+        let mut builder = motyga_state::ThreadMetadataBuilder::new(
             thread_id,
             rollout_path,
             created_at,

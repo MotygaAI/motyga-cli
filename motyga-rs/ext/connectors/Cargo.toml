@@ -1,11 +1,11 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-connectors-extension"
+name = "motyga-connectors-extension"
 version.workspace = true
 
 [lib]
-name = "codex_connectors_extension"
+name = "motyga_connectors_extension"
 path = "src/lib.rs"
 doctest = false
 test = false
@@ -14,9 +14,9 @@ test = false
 workspace = true
 
 [dependencies]
-codex-connectors = { workspace = true }
-codex-core-plugins = { workspace = true }
-codex-plugin = { workspace = true }
-codex-utils-path-uri = { workspace = true }
+motyga-connectors = { workspace = true }
+motyga-core-plugins = { workspace = true }
+motyga-plugin = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

@@ -1,6 +1,6 @@
 # Windows remote-environment test
 
-This Bazel-only `test_codex` integration test runs a Windows exec-server fixture
+This Bazel-only `test_motyga` integration test runs a Windows exec-server fixture
 under pinned Wine and exercises the normal model tool-call and remote-execution
 path.
 

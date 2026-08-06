@@ -1,7 +1,7 @@
 use crate::SkillsService;
 use crate::agent::AgentControl;
 use crate::attestation::AttestationProvider;
-use crate::codex_thread::CodexThread;
+use crate::motyga_thread::MotygaThread;
 use crate::config::Config;
 use crate::config::ThreadStoreConfig;
 use crate::current_time::TimeProvider;
@@ -9,71 +9,71 @@ use crate::environment_selection::TurnEnvironmentSnapshot;
 use crate::environment_selection::default_thread_environment_selections;
 use crate::mcp::McpManager;
 use crate::rollout::truncation;
-use crate::session::Codex;
-use crate::session::CodexSpawnArgs;
-use crate::session::CodexSpawnOk;
+use crate::session::Motyga;
+use crate::session::MotygaSpawnArgs;
+use crate::session::MotygaSpawnOk;
 use crate::session::INITIAL_SUBMIT_ID;
 use crate::session::resolve_multi_agent_version;
 use crate::tasks::InterruptedTurnHistoryMarker;
 use crate::tasks::interrupted_turn_history_marker;
-use codex_agent_graph_store::AgentGraphStore;
-use codex_agent_graph_store::LocalAgentGraphStore;
-use codex_analytics::AnalyticsEventsClient;
-use codex_app_server_protocol::ThreadHistoryBuilder;
-use codex_app_server_protocol::TurnStatus;
-use codex_code_mode::CodeModeSessionProvider;
-use codex_code_mode::InProcessCodeModeSessionProvider;
-use codex_code_mode::ProcessOwnedCodeModeSessionProvider;
-use codex_core_plugins::PluginsManager;
-use codex_exec_server::EnvironmentManager;
-use codex_extension_api::ExtensionDataInit;
-use codex_extension_api::ExtensionRegistry;
-use codex_extension_api::LoadedUserInstructions;
-use codex_extension_api::UserInstructionsProvider;
-use codex_extension_api::empty_extension_registry;
-use codex_features::Feature;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::default_client::CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR;
-use codex_login::default_client::originator;
-use codex_model_provider::create_model_provider;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::OPENAI_PROVIDER_ID;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_models_manager::manager::SharedModelsManager;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ResumedHistory;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionConfiguredEvent;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::ThreadHistoryMode;
-use codex_protocol::protocol::ThreadSource;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::protocol::TurnAbortedEvent;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_protocol::protocol::W3cTraceContext;
-use codex_rollout::state_db::StateDbHandle;
-use codex_thread_store::InMemoryThreadStore;
-use codex_thread_store::LocalThreadStore;
-use codex_thread_store::LocalThreadStoreConfig;
-use codex_thread_store::ReadThreadByRolloutPathParams;
-use codex_thread_store::ReadThreadParams;
-use codex_thread_store::StoredThread;
-use codex_thread_store::ThreadMetadataPatch;
-use codex_thread_store::ThreadStore;
-use codex_thread_store::ThreadStoreError;
-use codex_thread_store::UpdateThreadMetadataParams;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_agent_graph_store::AgentGraphStore;
+use motyga_agent_graph_store::LocalAgentGraphStore;
+use motyga_analytics::AnalyticsEventsClient;
+use motyga_app_server_protocol::ThreadHistoryBuilder;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_code_mode::CodeModeSessionProvider;
+use motyga_code_mode::InProcessCodeModeSessionProvider;
+use motyga_code_mode::ProcessOwnedCodeModeSessionProvider;
+use motyga_core_plugins::PluginsManager;
+use motyga_exec_server::EnvironmentManager;
+use motyga_extension_api::ExtensionDataInit;
+use motyga_extension_api::ExtensionRegistry;
+use motyga_extension_api::LoadedUserInstructions;
+use motyga_extension_api::UserInstructionsProvider;
+use motyga_extension_api::empty_extension_registry;
+use motyga_features::Feature;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::default_client::MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR;
+use motyga_login::default_client::originator;
+use motyga_model_provider::create_model_provider;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::OPENAI_PROVIDER_ID;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_models_manager::manager::SharedModelsManager;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::CollaborationModeMask;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ResumedHistory;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::SessionConfiguredEvent;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::ThreadHistoryMode;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_protocol::protocol::TurnAbortedEvent;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::protocol::W3cTraceContext;
+use motyga_rollout::state_db::StateDbHandle;
+use motyga_thread_store::InMemoryThreadStore;
+use motyga_thread_store::LocalThreadStore;
+use motyga_thread_store::LocalThreadStoreConfig;
+use motyga_thread_store::ReadThreadByRolloutPathParams;
+use motyga_thread_store::ReadThreadParams;
+use motyga_thread_store::StoredThread;
+use motyga_thread_store::ThreadMetadataPatch;
+use motyga_thread_store::ThreadStore;
+use motyga_thread_store::ThreadStoreError;
+use motyga_thread_store::UpdateThreadMetadataParams;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use futures::StreamExt;
 use futures::stream::FuturesUnordered;
 use std::collections::HashMap;
@@ -107,21 +107,21 @@ fn should_use_test_thread_manager_behavior() -> bool {
     FORCE_TEST_THREAD_MANAGER_BEHAVIOR.load(Ordering::Relaxed)
 }
 
-struct TempCodexHomeGuard {
+struct TempMotygaHomeGuard {
     path: PathBuf,
 }
 
-impl Drop for TempCodexHomeGuard {
+impl Drop for TempMotygaHomeGuard {
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.path);
     }
 }
 
-/// Represents a newly created Codex thread (formerly called a conversation), including the first event
+/// Represents a newly created Motyga thread (formerly called a conversation), including the first event
 /// (which is [`EventMsg::SessionConfigured`]).
 pub struct NewThread {
     pub thread_id: ThreadId,
-    pub thread: Arc<CodexThread>,
+    pub thread: Arc<MotygaThread>,
     pub session_configured: SessionConfiguredEvent,
 }
 
@@ -181,7 +181,7 @@ enum ShutdownOutcome {
 /// them in memory.
 pub struct ThreadManager {
     state: Arc<ThreadManagerState>,
-    _test_codex_home_guard: Option<TempCodexHomeGuard>,
+    _test_motyga_home_guard: Option<TempMotygaHomeGuard>,
 }
 
 pub struct StartThreadOptions {
@@ -191,7 +191,7 @@ pub struct StartThreadOptions {
     pub history_mode: Option<ThreadHistoryMode>,
     pub session_source: Option<SessionSource>,
     pub thread_source: Option<ThreadSource>,
-    pub dynamic_tools: Vec<codex_protocol::dynamic_tools::DynamicToolSpec>,
+    pub dynamic_tools: Vec<motyga_protocol::dynamic_tools::DynamicToolSpec>,
     pub metrics_service_name: Option<String>,
     pub parent_trace: Option<W3cTraceContext>,
     pub environments: Vec<TurnEnvironmentSelection>,
@@ -201,7 +201,7 @@ pub struct StartThreadOptions {
 
 fn originator_from_service_name(service_name: Option<&str>) -> Option<String> {
     let service_name = service_name?.trim();
-    for originator in ["codex_work_desktop", "codex_work_web", "codex_work_mobile"] {
+    for originator in ["motyga_work_desktop", "motyga_work_web", "motyga_work_mobile"] {
         if service_name.eq_ignore_ascii_case(originator) {
             return Some(originator.to_string());
         }
@@ -237,7 +237,7 @@ pub(crate) struct ResumeThreadWithHistoryOptions {
 /// `Arc` reference that can be downgraded to by `AgentControl` while preventing every single
 /// function to require an `Arc<&Self>`.
 pub(crate) struct ThreadManagerState {
-    threads: Arc<RwLock<HashMap<ThreadId, Arc<CodexThread>>>>,
+    threads: Arc<RwLock<HashMap<ThreadId, Arc<MotygaThread>>>>,
     thread_created_tx: broadcast::Sender<ThreadId>,
     auth_manager: Arc<AuthManager>,
     models_manager: SharedModelsManager,
@@ -265,7 +265,7 @@ pub fn build_models_manager(
 ) -> SharedModelsManager {
     let provider = create_model_provider(config.model_provider.clone(), Some(auth_manager));
     provider.models_manager(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
         config.model_catalog.clone(),
     )
 }
@@ -280,7 +280,7 @@ pub fn thread_store_from_config(
                 .features
                 .enabled(Feature::LocalThreadStoreCompression)
             {
-                codex_rollout::spawn_rollout_compression_worker(config.codex_home.to_path_buf());
+                motyga_rollout::spawn_rollout_compression_worker(config.motyga_home.to_path_buf());
             }
             Arc::new(LocalThreadStore::new(
                 LocalThreadStoreConfig::from_config(config),
@@ -316,11 +316,11 @@ impl ThreadManager {
         attestation_provider: Option<Arc<dyn AttestationProvider>>,
         external_time_provider: Option<Arc<dyn TimeProvider>>,
     ) -> Self {
-        let codex_home = config.codex_home.clone();
+        let motyga_home = config.motyga_home.clone();
         let restriction_product = session_source.restriction_product();
         let (thread_created_tx, _) = broadcast::channel(THREAD_CREATED_CHANNEL_CAPACITY);
         let plugins_manager = Arc::new(PluginsManager::new_with_options(
-            codex_home.to_path_buf(),
+            motyga_home.to_path_buf(),
             restriction_product,
             auth_manager.get_api_auth_mode(),
         ));
@@ -329,7 +329,7 @@ impl ThreadManager {
             Arc::clone(&extensions),
         ));
         let skills_service = Arc::new(SkillsService::new_with_restriction_product(
-            codex_home,
+            motyga_home,
             config.bundled_skills_enabled(),
             restriction_product,
         ));
@@ -360,74 +360,74 @@ impl ThreadManager {
                 ops_log: should_use_test_thread_manager_behavior()
                     .then(|| Arc::new(std::sync::Mutex::new(Vec::new()))),
             }),
-            _test_codex_home_guard: None,
+            _test_motyga_home_guard: None,
         }
     }
 
-    /// Construct with a dummy AuthManager containing the provided CodexAuth.
+    /// Construct with a dummy AuthManager containing the provided MotygaAuth.
     /// Used for integration tests: should not be used by ordinary business logic.
     pub(crate) fn with_models_provider_for_tests(
-        auth: CodexAuth,
+        auth: MotygaAuth,
         provider: ModelProviderInfo,
     ) -> Self {
         set_thread_manager_test_mode_for_tests(/*enabled*/ true);
-        let codex_home = std::env::temp_dir().join(format!(
-            "codex-thread-manager-test-{}",
+        let motyga_home = std::env::temp_dir().join(format!(
+            "motyga-thread-manager-test-{}",
             uuid::Uuid::new_v4()
         ));
-        std::fs::create_dir_all(&codex_home)
+        std::fs::create_dir_all(&motyga_home)
             .unwrap_or_else(|err| panic!("temp motyga home dir create failed: {err}"));
         let mut manager = Self::with_models_provider_and_home_for_tests(
             auth,
             provider,
-            codex_home.clone(),
+            motyga_home.clone(),
             Arc::new(EnvironmentManager::default_for_tests()),
         );
-        manager._test_codex_home_guard = Some(TempCodexHomeGuard { path: codex_home });
+        manager._test_motyga_home_guard = Some(TempMotygaHomeGuard { path: motyga_home });
         manager
     }
 
-    /// Construct with a dummy AuthManager containing the provided CodexAuth and codex home.
+    /// Construct with a dummy AuthManager containing the provided MotygaAuth and motyga home.
     /// Used for integration tests: should not be used by ordinary business logic.
     pub(crate) fn with_models_provider_and_home_for_tests(
-        auth: CodexAuth,
+        auth: MotygaAuth,
         provider: ModelProviderInfo,
-        codex_home: PathBuf,
+        motyga_home: PathBuf,
         environment_manager: Arc<EnvironmentManager>,
     ) -> Self {
         Self::with_models_provider_home_and_state_for_tests(
             auth,
             provider,
-            codex_home,
+            motyga_home,
             environment_manager,
             /*state_db*/ None,
         )
     }
 
     pub(crate) fn with_models_provider_home_and_state_for_tests(
-        auth: CodexAuth,
+        auth: MotygaAuth,
         provider: ModelProviderInfo,
-        codex_home: PathBuf,
+        motyga_home: PathBuf,
         environment_manager: Arc<EnvironmentManager>,
         state_db: Option<StateDbHandle>,
     ) -> Self {
         set_thread_manager_test_mode_for_tests(/*enabled*/ true);
         let auth_manager = AuthManager::from_auth_for_testing(auth);
         let installation_id = uuid::Uuid::new_v4().to_string();
-        let skills_codex_home = match AbsolutePathBuf::from_absolute_path_checked(&codex_home) {
-            Ok(codex_home) => codex_home,
-            Err(err) => panic!("test codex_home should be absolute: {err}"),
+        let skills_motyga_home = match AbsolutePathBuf::from_absolute_path_checked(&motyga_home) {
+            Ok(motyga_home) => motyga_home,
+            Err(err) => panic!("test motyga_home should be absolute: {err}"),
         };
         let (thread_created_tx, _) = broadcast::channel(THREAD_CREATED_CHANNEL_CAPACITY);
         let restriction_product = SessionSource::Exec.restriction_product();
         let plugins_manager = Arc::new(PluginsManager::new_with_options(
-            codex_home.clone(),
+            motyga_home.clone(),
             restriction_product,
             auth_manager.get_api_auth_mode(),
         ));
         let mcp_manager = Arc::new(McpManager::new(Arc::clone(&plugins_manager)));
         let skills_service = Arc::new(SkillsService::new_with_restriction_product(
-            skills_codex_home,
+            skills_motyga_home,
             /*bundled_skills_enabled*/ true,
             restriction_product,
         ));
@@ -435,8 +435,8 @@ impl ThreadManager {
         // process store should construct ThreadManager::new with an explicit store.
         let thread_store: Arc<dyn ThreadStore> = Arc::new(LocalThreadStore::new(
             LocalThreadStoreConfig {
-                codex_home: codex_home.clone(),
-                sqlite_home: codex_home.clone(),
+                motyga_home: motyga_home.clone(),
+                sqlite_home: motyga_home.clone(),
                 default_model_provider_id: OPENAI_PROVIDER_ID.to_string(),
             },
             state_db.clone(),
@@ -447,7 +447,7 @@ impl ThreadManager {
                 threads: Arc::new(RwLock::new(HashMap::new())),
                 thread_created_tx,
                 models_manager: create_model_provider(provider, Some(auth_manager.clone()))
-                    .models_manager(codex_home, /*config_model_catalog*/ None),
+                    .models_manager(motyga_home, /*config_model_catalog*/ None),
                 environment_manager,
                 skills_service,
                 plugins_manager,
@@ -468,7 +468,7 @@ impl ThreadManager {
                 ops_log: should_use_test_thread_manager_behavior()
                     .then(|| Arc::new(std::sync::Mutex::new(Vec::new()))),
             }),
-            _test_codex_home_guard: None,
+            _test_motyga_home_guard: None,
         }
     }
 
@@ -506,11 +506,11 @@ impl ThreadManager {
     pub fn validate_environment_selections(
         &self,
         environments: &[TurnEnvironmentSelection],
-    ) -> CodexResult<()> {
+    ) -> MotygaResult<()> {
         let mut environment_ids = HashSet::with_capacity(environments.len());
         for environment in environments {
             if !environment_ids.insert(environment.environment_id.as_str()) {
-                return Err(CodexErr::InvalidRequest(format!(
+                return Err(MotygaErr::InvalidRequest(format!(
                     "duplicate turn environment id `{}`",
                     environment.environment_id
                 )));
@@ -519,7 +519,7 @@ impl ThreadManager {
                 .environment_manager
                 .get_environment(&environment.environment_id)
                 .ok_or_else(|| {
-                    CodexErr::InvalidRequest(format!(
+                    MotygaErr::InvalidRequest(format!(
                         "unknown turn environment id `{}`",
                         environment.environment_id
                     ))
@@ -551,13 +551,13 @@ impl ThreadManager {
         self.state.thread_created_tx.subscribe()
     }
 
-    pub async fn get_thread(&self, thread_id: ThreadId) -> CodexResult<Arc<CodexThread>> {
+    pub async fn get_thread(&self, thread_id: ThreadId) -> MotygaResult<Arc<MotygaThread>> {
         self.state.get_thread(thread_id).await
     }
 
     /// Updates metadata for loaded and cold threads through one entrypoint.
     ///
-    /// Loaded threads route through `CodexThread`/`LiveThread`, so metadata changes stay ordered
+    /// Loaded threads route through `MotygaThread`/`LiveThread`, so metadata changes stay ordered
     /// with live rollout writes. Cold threads go directly to the store, which owns unloaded JSONL
     /// compatibility and SQLite metadata updates.
     pub async fn update_thread_metadata(
@@ -565,10 +565,10 @@ impl ThreadManager {
         thread_id: ThreadId,
         patch: ThreadMetadataPatch,
         include_archived: bool,
-    ) -> CodexResult<StoredThread> {
+    ) -> MotygaResult<StoredThread> {
         if let Ok(thread) = self.get_thread(thread_id).await {
             if thread.config_snapshot().await.ephemeral {
-                return Err(CodexErr::InvalidRequest(format!(
+                return Err(MotygaErr::InvalidRequest(format!(
                     "ephemeral thread does not support metadata updates: {thread_id}"
                 )));
             }
@@ -587,7 +587,7 @@ impl ThreadManager {
             .await
             .map_err(|err| match err {
                 ThreadStoreError::ThreadNotFound { thread_id } => {
-                    CodexErr::ThreadNotFound(thread_id)
+                    MotygaErr::ThreadNotFound(thread_id)
                 }
                 err => thread_store_metadata_update_error(thread_id, err),
             })
@@ -597,7 +597,7 @@ impl ThreadManager {
     pub async fn list_agent_subtree_thread_ids(
         &self,
         thread_id: ThreadId,
-    ) -> CodexResult<Vec<ThreadId>> {
+    ) -> MotygaResult<Vec<ThreadId>> {
         let mut subtree_thread_ids = Vec::new();
         let mut seen_thread_ids = HashSet::new();
         subtree_thread_ids.push(thread_id);
@@ -608,7 +608,7 @@ impl ThreadManager {
                 .list_thread_spawn_descendants(thread_id, /*status_filter*/ None)
                 .await
                 .map_err(|err| {
-                    CodexErr::Fatal(format!("failed to load thread-spawn descendants: {err}"))
+                    MotygaErr::Fatal(format!("failed to load thread-spawn descendants: {err}"))
                 })?
             {
                 if seen_thread_ids.insert(descendant_id) {
@@ -630,7 +630,7 @@ impl ThreadManager {
         Ok(subtree_thread_ids)
     }
 
-    pub async fn start_thread(&self, config: Config) -> CodexResult<NewThread> {
+    pub async fn start_thread(&self, config: Config) -> MotygaResult<NewThread> {
         // Box delegated thread-spawn futures so these convenience wrappers do
         // not inline the full spawn path into every caller's async state.
         Box::pin(self.start_thread_with_tools(config, Vec::new())).await
@@ -639,8 +639,8 @@ impl ThreadManager {
     pub async fn start_thread_with_tools(
         &self,
         config: Config,
-        dynamic_tools: Vec<codex_protocol::dynamic_tools::DynamicToolSpec>,
-    ) -> CodexResult<NewThread> {
+        dynamic_tools: Vec<motyga_protocol::dynamic_tools::DynamicToolSpec>,
+    ) -> MotygaResult<NewThread> {
         let environments = default_thread_environment_selections(
             self.state.environment_manager.as_ref(),
             &config.cwd,
@@ -665,7 +665,7 @@ impl ThreadManager {
     pub async fn start_thread_with_options(
         &self,
         options: StartThreadOptions,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         self.start_thread_with_options_and_fork_source(options, /*forked_from_thread_id*/ None)
             .await
     }
@@ -674,7 +674,7 @@ impl ThreadManager {
         &self,
         options: StartThreadOptions,
         forked_from_thread_id: Option<ThreadId>,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let agent_control = self.agent_control_for_config(&options.config);
         let (resumed_session_source, resumed_thread_source) = options
             .initial_history
@@ -712,7 +712,7 @@ impl ThreadManager {
         &self,
         forked_from_thread_id: ThreadId,
         mut options: StartThreadOptions,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let fork_source = self.get_thread(forked_from_thread_id).await?;
         // Persist queued rollout updates before reading the fork snapshot.
         fork_source.ensure_rollout_materialized().await;
@@ -723,7 +723,7 @@ impl ThreadManager {
             )
             .await
             .map_err(|err| {
-                CodexErr::Fatal(format!(
+                MotygaErr::Fatal(format!(
                     "failed to read subagent fork source {forked_from_thread_id}: {err}"
                 ))
             })?;
@@ -750,7 +750,7 @@ impl ThreadManager {
         auth_manager: Arc<AuthManager>,
         parent_trace: Option<W3cTraceContext>,
         supports_openai_form_elicitation: bool,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let initial_history = self.initial_history_from_rollout_path(rollout_path).await?;
         Box::pin(self.resume_thread_with_history(
             config,
@@ -770,7 +770,7 @@ impl ThreadManager {
         auth_manager: Arc<AuthManager>,
         parent_trace: Option<W3cTraceContext>,
         supports_openai_form_elicitation: bool,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let agent_control = self.agent_control_for_config(&config);
         let environments = default_thread_environment_selections(
             self.state.environment_manager.as_ref(),
@@ -808,7 +808,7 @@ impl ThreadManager {
         config: Config,
         user_shell_override: crate::shell::Shell,
         supports_openai_form_elicitation: bool,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let agent_control = self.agent_control_for_config(&config);
         let environments = default_thread_environment_selections(
             self.state.environment_manager.as_ref(),
@@ -840,7 +840,7 @@ impl ThreadManager {
         auth_manager: Arc<AuthManager>,
         user_shell_override: crate::shell::Shell,
         supports_openai_form_elicitation: bool,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let agent_control = self.agent_control_for_config(&config);
         let initial_history = self.initial_history_from_rollout_path(rollout_path).await?;
         let environments = default_thread_environment_selections(
@@ -875,9 +875,9 @@ impl ThreadManager {
     }
 
     /// Removes the thread from the manager's internal map, though the thread is stored
-    /// as `Arc<CodexThread>`, it is possible that other references to it exist elsewhere.
+    /// as `Arc<MotygaThread>`, it is possible that other references to it exist elsewhere.
     /// Returns the thread if the thread was found and removed.
-    pub async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<CodexThread>> {
+    pub async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<MotygaThread>> {
         self.state.threads.write().await.remove(thread_id)
     }
 
@@ -943,7 +943,7 @@ impl ThreadManager {
         path: PathBuf,
         thread_source: Option<ThreadSource>,
         parent_trace: Option<W3cTraceContext>,
-    ) -> CodexResult<NewThread>
+    ) -> MotygaResult<NewThread>
     where
         S: Into<ForkSnapshot>,
     {
@@ -963,7 +963,7 @@ impl ThreadManager {
     async fn initial_history_from_rollout_path(
         &self,
         rollout_path: PathBuf,
-    ) -> CodexResult<InitialHistory> {
+    ) -> MotygaResult<InitialHistory> {
         let requested_rollout_path = rollout_path.clone();
         let stored_thread = self
             .state
@@ -987,7 +987,7 @@ impl ThreadManager {
         thread_source: Option<ThreadSource>,
         parent_trace: Option<W3cTraceContext>,
         supports_openai_form_elicitation: bool,
-    ) -> CodexResult<NewThread>
+    ) -> MotygaResult<NewThread>
     where
         S: Into<ForkSnapshot>,
     {
@@ -1010,7 +1010,7 @@ impl ThreadManager {
         thread_source: Option<ThreadSource>,
         parent_trace: Option<W3cTraceContext>,
         supports_openai_form_elicitation: bool,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         // `forked_from_id()` describes this history's existing lineage. When
         // forking a resumed thread, the child copies the resumed thread itself.
         let source_thread_id = match &history {
@@ -1111,41 +1111,41 @@ impl ThreadManagerState {
     }
 
     /// Fetch a thread by ID or return ThreadNotFound.
-    pub(crate) async fn get_thread(&self, thread_id: ThreadId) -> CodexResult<Arc<CodexThread>> {
+    pub(crate) async fn get_thread(&self, thread_id: ThreadId) -> MotygaResult<Arc<MotygaThread>> {
         let threads = self.threads.read().await;
         match threads.get(&thread_id) {
             Some(thread) if !thread.session_source.is_internal() => Ok(thread.clone()),
-            Some(_) | None => Err(CodexErr::ThreadNotFound(thread_id)),
+            Some(_) | None => Err(MotygaErr::ThreadNotFound(thread_id)),
         }
     }
 
     pub(crate) async fn read_stored_thread(
         &self,
         params: ReadThreadParams,
-    ) -> CodexResult<StoredThread> {
+    ) -> MotygaResult<StoredThread> {
         let thread_id = params.thread_id;
         self.thread_store
             .read_thread(params)
             .await
             .map_err(|err| match err {
                 ThreadStoreError::ThreadNotFound { thread_id } => {
-                    CodexErr::ThreadNotFound(thread_id)
+                    MotygaErr::ThreadNotFound(thread_id)
                 }
                 ThreadStoreError::InvalidRequest { message } => {
                     if message.starts_with("no rollout found for thread id ") {
-                        CodexErr::ThreadNotFound(thread_id)
+                        MotygaErr::ThreadNotFound(thread_id)
                     } else {
-                        CodexErr::Fatal(format!(
+                        MotygaErr::Fatal(format!(
                             "failed to read stored thread {thread_id}: invalid thread-store request: {message}"
                         ))
                     }
                 }
-                err => CodexErr::Fatal(format!("failed to read stored thread {thread_id}: {err}")),
+                err => MotygaErr::Fatal(format!("failed to read stored thread {thread_id}: {err}")),
             })
     }
 
     /// Send an operation to a thread by ID.
-    pub(crate) async fn send_op(&self, thread_id: ThreadId, op: Op) -> CodexResult<String> {
+    pub(crate) async fn send_op(&self, thread_id: ThreadId, op: Op) -> MotygaResult<String> {
         let thread = self.get_thread(thread_id).await?;
         if let Some(ops_log) = &self.ops_log
             && let Ok(mut log) = ops_log.lock()
@@ -1156,7 +1156,7 @@ impl ThreadManagerState {
     }
 
     /// Remove a thread from the manager by ID, returning it when present.
-    pub(crate) async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<CodexThread>> {
+    pub(crate) async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<MotygaThread>> {
         self.threads.write().await.remove(thread_id)
     }
 
@@ -1245,7 +1245,7 @@ impl ThreadManagerState {
             // The spawn path retains only thread IDs, so look up the live
             // runtime again here to inherit its user instructions.
             Some(thread_id) => match self.get_thread(thread_id).await {
-                Ok(thread) => thread.codex.session.user_instructions().await,
+                Ok(thread) => thread.motyga.session.user_instructions().await,
                 Err(_) => None,
             },
             None => None,
@@ -1302,7 +1302,7 @@ impl ThreadManagerState {
             InitialHistory::Resumed(_) | InitialHistory::Forked(_) => None,
         };
 
-        let env_originator = std::env::var(CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR)
+        let env_originator = std::env::var(MOTYGA_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR)
             .is_ok()
             .then(|| originator().value);
         effective_originator_value(
@@ -1319,7 +1319,7 @@ impl ThreadManagerState {
         &self,
         config: Config,
         agent_control: AgentControl,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         Box::pin(self.spawn_new_thread_with_source(
             config,
             agent_control,
@@ -1348,7 +1348,7 @@ impl ThreadManagerState {
         inherited_environments: Option<TurnEnvironmentSnapshot>,
         inherited_exec_policy: Option<Arc<crate::exec_policy::ExecPolicyManager>>,
         environments: Option<Vec<TurnEnvironmentSelection>>,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let environments = environments.unwrap_or_else(|| {
             default_thread_environment_selections(self.environment_manager.as_ref(), &config.cwd)
         });
@@ -1379,7 +1379,7 @@ impl ThreadManagerState {
     pub(crate) async fn resume_thread_with_history_with_source(
         &self,
         options: ResumeThreadWithHistoryOptions,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let ResumeThreadWithHistoryOptions {
             config,
             initial_history,
@@ -1430,7 +1430,7 @@ impl ThreadManagerState {
         inherited_exec_policy: Option<Arc<crate::exec_policy::ExecPolicyManager>>,
         environments: Option<Vec<TurnEnvironmentSelection>>,
         thread_extension_init: ExtensionDataInit,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let environments = environments.unwrap_or_else(|| {
             default_thread_environment_selections(self.environment_manager.as_ref(), &config.cwd)
         });
@@ -1469,14 +1469,14 @@ impl ThreadManagerState {
         parent_thread_id: Option<ThreadId>,
         forked_from_thread_id: Option<ThreadId>,
         thread_source: Option<ThreadSource>,
-        dynamic_tools: Vec<codex_protocol::dynamic_tools::DynamicToolSpec>,
+        dynamic_tools: Vec<motyga_protocol::dynamic_tools::DynamicToolSpec>,
         metrics_service_name: Option<String>,
         parent_trace: Option<W3cTraceContext>,
         environments: Vec<TurnEnvironmentSelection>,
         thread_extension_init: ExtensionDataInit,
         supports_openai_form_elicitation: bool,
         user_shell_override: Option<crate::shell::Shell>,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         Box::pin(self.spawn_thread_with_source(
             config,
             initial_history,
@@ -1514,7 +1514,7 @@ impl ThreadManagerState {
         parent_thread_id: Option<ThreadId>,
         forked_from_thread_id: Option<ThreadId>,
         thread_source: Option<ThreadSource>,
-        dynamic_tools: Vec<codex_protocol::dynamic_tools::DynamicToolSpec>,
+        dynamic_tools: Vec<motyga_protocol::dynamic_tools::DynamicToolSpec>,
         metrics_service_name: Option<String>,
         inherited_environments: Option<TurnEnvironmentSnapshot>,
         inherited_exec_policy: Option<Arc<crate::exec_policy::ExecPolicyManager>>,
@@ -1523,7 +1523,7 @@ impl ThreadManagerState {
         thread_extension_init: ExtensionDataInit,
         supports_openai_form_elicitation: bool,
         user_shell_override: Option<crate::shell::Shell>,
-    ) -> CodexResult<NewThread> {
+    ) -> MotygaResult<NewThread> {
         let is_resumed_thread = matches!(&initial_history, InitialHistory::Resumed(_));
         if let InitialHistory::Resumed(resumed) = &initial_history {
             let mut threads = self.threads.write().await;
@@ -1532,7 +1532,7 @@ impl ThreadManagerState {
                     if let Some(requested_rollout_path) = resumed.rollout_path.as_deref()
                         && thread.rollout_path().as_deref() != Some(requested_rollout_path)
                     {
-                        return Err(CodexErr::InvalidRequest(format!(
+                        return Err(MotygaErr::InvalidRequest(format!(
                             "thread {} is already running with a different rollout path",
                             resumed.conversation_id
                         )));
@@ -1570,9 +1570,9 @@ impl ThreadManagerState {
                 forked_from_thread_id,
             )
             .await;
-        let CodexSpawnOk {
-            codex, thread_id, ..
-        } = Box::pin(Codex::spawn(CodexSpawnArgs {
+        let MotygaSpawnOk {
+            motyga, thread_id, ..
+        } = Box::pin(Motyga::spawn(MotygaSpawnArgs {
             config,
             allow_provider_model_fallback,
             user_instructions,
@@ -1611,7 +1611,7 @@ impl ThreadManagerState {
         }))
         .await?;
         let new_thread = self
-            .finalize_thread_spawn(codex, thread_id, tracked_session_source)
+            .finalize_thread_spawn(motyga, thread_id, tracked_session_source)
             .await?;
         if is_resumed_thread {
             new_thread.thread.emit_thread_resume_lifecycle().await;
@@ -1621,26 +1621,26 @@ impl ThreadManagerState {
 
     async fn finalize_thread_spawn(
         &self,
-        codex: Codex,
+        motyga: Motyga,
         thread_id: ThreadId,
         session_source: SessionSource,
-    ) -> CodexResult<NewThread> {
-        let event = codex.next_event().await?;
+    ) -> MotygaResult<NewThread> {
+        let event = motyga.next_event().await?;
         let session_configured = match event {
             Event {
                 id,
                 msg: EventMsg::SessionConfigured(session_configured),
             } if id == INITIAL_SUBMIT_ID => session_configured,
             _ => {
-                return Err(CodexErr::SessionConfiguredNotFirstEvent);
+                return Err(MotygaErr::SessionConfiguredNotFirstEvent);
             }
         };
 
         {
             let mut threads = self.threads.write().await;
             if let std::collections::hash_map::Entry::Vacant(e) = threads.entry(thread_id) {
-                let thread = Arc::new(CodexThread::new(
-                    codex,
+                let thread = Arc::new(MotygaThread::new(
+                    motyga,
                     session_configured.clone(),
                     session_configured.rollout_path.clone(),
                     session_source,
@@ -1654,10 +1654,10 @@ impl ThreadManagerState {
             }
         }
 
-        if let Err(err) = codex.shutdown_and_wait().await {
+        if let Err(err) = motyga.shutdown_and_wait().await {
             warn!("failed to shut down duplicate thread {thread_id}: {err}");
         }
-        Err(CodexErr::InvalidRequest(format!(
+        Err(MotygaErr::InvalidRequest(format!(
             "thread {thread_id} is already running"
         )))
     }
@@ -1670,7 +1670,7 @@ impl ThreadManagerState {
         &self,
         session_source: &SessionSource,
         initial_history: &InitialHistory,
-    ) -> codex_rollout_trace::ThreadTraceContext {
+    ) -> motyga_rollout_trace::ThreadTraceContext {
         // A fresh v2 child belongs to the same rollout tree as its parent, so
         // session startup derives its child trace from the parent's thread
         // context. Resumed children already have a prior `ThreadStarted` event
@@ -1680,10 +1680,10 @@ impl ThreadManagerState {
             parent_thread_id, ..
         }) = session_source
         else {
-            return codex_rollout_trace::ThreadTraceContext::disabled();
+            return motyga_rollout_trace::ThreadTraceContext::disabled();
         };
         if matches!(initial_history, InitialHistory::Resumed(_)) {
-            return codex_rollout_trace::ThreadTraceContext::disabled();
+            return motyga_rollout_trace::ThreadTraceContext::disabled();
         }
         // Parent lookup can fail if the parent was closed or released between
         // spawn preparation and session construction. Tracing is diagnostic, so
@@ -1692,18 +1692,18 @@ impl ThreadManagerState {
         self.get_thread(*parent_thread_id)
             .await
             .ok()
-            .map(|thread| thread.codex.session.services.rollout_thread_trace.clone())
-            .unwrap_or_else(codex_rollout_trace::ThreadTraceContext::disabled)
+            .map(|thread| thread.motyga.session.services.rollout_thread_trace.clone())
+            .unwrap_or_else(motyga_rollout_trace::ThreadTraceContext::disabled)
     }
 }
 
 fn stored_thread_to_initial_history(
     stored_thread: StoredThread,
     rollout_path: Option<PathBuf>,
-) -> CodexResult<InitialHistory> {
+) -> MotygaResult<InitialHistory> {
     let thread_id = stored_thread.thread_id;
     let history = stored_thread.history.ok_or_else(|| {
-        CodexErr::Fatal(format!(
+        MotygaErr::Fatal(format!(
             "thread {thread_id} did not include persisted history"
         ))
     })?;
@@ -1714,22 +1714,22 @@ fn stored_thread_to_initial_history(
     }))
 }
 
-fn thread_store_rollout_read_error(err: ThreadStoreError) -> CodexErr {
+fn thread_store_rollout_read_error(err: ThreadStoreError) -> MotygaErr {
     match err {
-        ThreadStoreError::ThreadNotFound { thread_id } => CodexErr::ThreadNotFound(thread_id),
-        ThreadStoreError::InvalidRequest { message } => CodexErr::InvalidRequest(message),
-        err => CodexErr::Fatal(format!("failed to read thread by rollout path: {err}")),
+        ThreadStoreError::ThreadNotFound { thread_id } => MotygaErr::ThreadNotFound(thread_id),
+        ThreadStoreError::InvalidRequest { message } => MotygaErr::InvalidRequest(message),
+        err => MotygaErr::Fatal(format!("failed to read thread by rollout path: {err}")),
     }
 }
 
-fn thread_store_metadata_update_error(thread_id: ThreadId, err: ThreadStoreError) -> CodexErr {
+fn thread_store_metadata_update_error(thread_id: ThreadId, err: ThreadStoreError) -> MotygaErr {
     match err {
-        ThreadStoreError::ThreadNotFound { thread_id } => CodexErr::ThreadNotFound(thread_id),
-        ThreadStoreError::InvalidRequest { message } => CodexErr::InvalidRequest(message),
-        ThreadStoreError::Unsupported { operation } => CodexErr::UnsupportedOperation(format!(
+        ThreadStoreError::ThreadNotFound { thread_id } => MotygaErr::ThreadNotFound(thread_id),
+        ThreadStoreError::InvalidRequest { message } => MotygaErr::InvalidRequest(message),
+        ThreadStoreError::Unsupported { operation } => MotygaErr::UnsupportedOperation(format!(
             "thread metadata update is not supported by this store: {operation}"
         )),
-        err => CodexErr::Fatal(format!(
+        err => MotygaErr::Fatal(format!(
             "failed to update thread metadata {thread_id}: {err}"
         )),
     }

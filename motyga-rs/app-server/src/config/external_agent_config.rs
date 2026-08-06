@@ -1,26 +1,26 @@
-use codex_config::types::PluginConfig;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core_plugins::PluginInstallRequest;
-use codex_core_plugins::PluginsManager;
-use codex_core_plugins::marketplace::MarketplacePluginInstallPolicy;
-use codex_core_plugins::marketplace::find_marketplace_manifest_path;
-use codex_core_plugins::marketplace_add::MarketplaceAddRequest;
-use codex_core_plugins::marketplace_add::add_marketplace;
-use codex_core_plugins::marketplace_add::is_local_marketplace_source;
-use codex_external_agent_migration::build_mcp_config_from_external;
-use codex_external_agent_migration::count_missing_commands;
-use codex_external_agent_migration::count_missing_subagents;
-use codex_external_agent_migration::hook_migration_event_names;
-use codex_external_agent_migration::import_commands;
-use codex_external_agent_migration::import_hooks;
-use codex_external_agent_migration::import_subagents;
-use codex_external_agent_migration::missing_command_names;
-use codex_external_agent_migration::missing_subagent_names;
-use codex_external_agent_sessions::ExternalAgentSessionMigration;
-use codex_external_agent_sessions::detect_recent_sessions;
-use codex_plugin::PluginId;
-use codex_protocol::protocol::Product;
+use motyga_config::types::PluginConfig;
+use motyga_core::config::Config;
+use motyga_core::config::ConfigBuilder;
+use motyga_core_plugins::PluginInstallRequest;
+use motyga_core_plugins::PluginsManager;
+use motyga_core_plugins::marketplace::MarketplacePluginInstallPolicy;
+use motyga_core_plugins::marketplace::find_marketplace_manifest_path;
+use motyga_core_plugins::marketplace_add::MarketplaceAddRequest;
+use motyga_core_plugins::marketplace_add::add_marketplace;
+use motyga_core_plugins::marketplace_add::is_local_marketplace_source;
+use motyga_external_agent_migration::build_mcp_config_from_external;
+use motyga_external_agent_migration::count_missing_commands;
+use motyga_external_agent_migration::count_missing_subagents;
+use motyga_external_agent_migration::hook_migration_event_names;
+use motyga_external_agent_migration::import_commands;
+use motyga_external_agent_migration::import_hooks;
+use motyga_external_agent_migration::import_subagents;
+use motyga_external_agent_migration::missing_command_names;
+use motyga_external_agent_migration::missing_subagent_names;
+use motyga_external_agent_sessions::ExternalAgentSessionMigration;
+use motyga_external_agent_sessions::detect_recent_sessions;
+use motyga_plugin::PluginId;
+use motyga_protocol::protocol::Product;
 use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -32,8 +32,8 @@ use std::path::Path;
 use std::path::PathBuf;
 use toml::Value as TomlValue;
 
-const EXTERNAL_AGENT_CONFIG_DETECT_METRIC: &str = "codex.external_agent_config.detect";
-const EXTERNAL_AGENT_CONFIG_IMPORT_METRIC: &str = "codex.external_agent_config.import";
+const EXTERNAL_AGENT_CONFIG_DETECT_METRIC: &str = "motyga.external_agent_config.detect";
+const EXTERNAL_AGENT_CONFIG_IMPORT_METRIC: &str = "motyga.external_agent_config.import";
 const EXTERNAL_AGENT_DIR: &str = ".claude";
 const EXTERNAL_AGENT_CONFIG_MD: &str = "CLAUDE.md";
 const EXTERNAL_OFFICIAL_MARKETPLACE_NAME: &str = "claude-plugins-official";
@@ -174,23 +174,23 @@ pub(crate) struct ExternalAgentConfigMigrationItem {
 
 #[derive(Clone)]
 pub(crate) struct ExternalAgentConfigService {
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     external_agent_home: PathBuf,
 }
 
 impl ExternalAgentConfigService {
-    pub(crate) fn new(codex_home: PathBuf) -> Self {
+    pub(crate) fn new(motyga_home: PathBuf) -> Self {
         let external_agent_home = default_external_agent_home();
         Self {
-            codex_home,
+            motyga_home,
             external_agent_home,
         }
     }
 
     #[cfg(test)]
-    fn new_for_test(codex_home: PathBuf, external_agent_home: PathBuf) -> Self {
+    fn new_for_test(motyga_home: PathBuf, external_agent_home: PathBuf) -> Self {
         Self {
-            codex_home,
+            motyga_home,
             external_agent_home,
         }
     }
@@ -450,7 +450,7 @@ impl ExternalAgentConfigService {
         );
         let settings = effective_external_settings(&source_settings)?;
         let target_config = repo_root.map_or_else(
-            || self.codex_home.join("config.toml"),
+            || self.motyga_home.join("config.toml"),
             |repo_root| repo_root.join(".motyga").join("config.toml"),
         );
         if let Some(settings) = settings.as_ref() {
@@ -537,7 +537,7 @@ impl ExternalAgentConfigService {
             |repo_root| repo_root.join(EXTERNAL_AGENT_DIR),
         );
         let target_hooks = repo_root.map_or_else(
-            || self.codex_home.join("hooks.json"),
+            || self.motyga_home.join("hooks.json"),
             |repo_root| repo_root.join(".motyga").join("hooks.json"),
         );
         let hook_event_names =
@@ -624,7 +624,7 @@ impl ExternalAgentConfigService {
 
         let source_subagents = source_external_agent_dir.join("agents");
         let target_subagents = repo_root.map_or_else(
-            || self.codex_home.join("agents"),
+            || self.motyga_home.join("agents"),
             |repo_root| repo_root.join(".motyga").join("agents"),
         );
         let subagents_count = count_missing_subagents(&source_subagents, &target_subagents)?;
@@ -657,7 +657,7 @@ impl ExternalAgentConfigService {
             is_non_empty_text_file(&path)?.then_some(path)
         };
         let target_agents_md = repo_root.map_or_else(
-            || self.codex_home.join("AGENTS.md"),
+            || self.motyga_home.join("AGENTS.md"),
             |repo_root| repo_root.join("AGENTS.md"),
         );
         if let Some(source_agents_md) = source_agents_md
@@ -682,8 +682,8 @@ impl ExternalAgentConfigService {
 
         if let Some(settings) = settings.as_ref() {
             match ConfigBuilder::default()
-                .codex_home(self.codex_home.clone())
-                .fallback_cwd(Some(self.codex_home.clone()))
+                .motyga_home(self.motyga_home.clone())
+                .fallback_cwd(Some(self.motyga_home.clone()))
                 .build()
                 .await
             {
@@ -705,7 +705,7 @@ impl ExternalAgentConfigService {
                         .unwrap_or_default();
                     let configured_marketplace_plugins = configured_marketplace_plugins(
                         &config,
-                        &PluginsManager::new(self.codex_home.clone()),
+                        &PluginsManager::new(self.motyga_home.clone()),
                     )?;
                     if let Some(item) = self.detect_plugin_migration(
                         source_settings.as_path(),
@@ -729,7 +729,7 @@ impl ExternalAgentConfigService {
         }
 
         if repo_root.is_none() {
-            let sessions = detect_recent_sessions(&self.external_agent_home, &self.codex_home)?;
+            let sessions = detect_recent_sessions(&self.external_agent_home, &self.motyga_home)?;
             if !sessions.is_empty() {
                 items.push(ExternalAgentConfigMigrationItem {
                     item_type: ExternalAgentConfigMigrationItemType::Sessions,
@@ -755,7 +755,7 @@ impl ExternalAgentConfigService {
     }
 
     fn home_target_skills_dir(&self) -> PathBuf {
-        self.codex_home
+        self.motyga_home
             .parent()
             .map(|parent| parent.join(".agents").join("skills"))
             .unwrap_or_else(|| PathBuf::from(".agents").join("skills"))
@@ -883,17 +883,17 @@ impl ExternalAgentConfigService {
             ));
         };
         let config = ConfigBuilder::default()
-            .codex_home(self.codex_home.clone())
+            .motyga_home(self.motyga_home.clone())
             .fallback_cwd(Some(
                 cwd.map(Path::to_path_buf)
-                    .unwrap_or_else(|| self.codex_home.clone()),
+                    .unwrap_or_else(|| self.motyga_home.clone()),
             ))
             .build()
             .await
             .map_err(|err| io::Error::other(format!("failed to load config: {err}")))?;
         let requirements = config.config_layer_stack.requirements().clone();
         let mut outcome = PluginImportOutcome::default();
-        let plugins_manager = PluginsManager::new(self.codex_home.clone());
+        let plugins_manager = PluginsManager::new(self.motyga_home.clone());
         for plugin_group in plugins {
             let marketplace_name = plugin_group.marketplace_name.clone();
             let plugin_names = plugin_group.plugin_names;
@@ -932,7 +932,7 @@ impl ExternalAgentConfigService {
                 sparse_paths: Vec::new(),
             };
             let add_marketplace_outcome =
-                add_marketplace(self.codex_home.clone(), requirements.clone(), request).await;
+                add_marketplace(self.motyga_home.clone(), requirements.clone(), request).await;
             let marketplace_path = match add_marketplace_outcome {
                 Ok(add_marketplace_outcome) => {
                     let Some(marketplace_path) = find_marketplace_manifest_path(
@@ -971,10 +971,10 @@ impl ExternalAgentConfigService {
                 }
             };
             let install_config = match ConfigBuilder::default()
-                .codex_home(self.codex_home.clone())
+                .motyga_home(self.motyga_home.clone())
                 .fallback_cwd(Some(
                     cwd.map(Path::to_path_buf)
-                        .unwrap_or_else(|| self.codex_home.clone()),
+                        .unwrap_or_else(|| self.motyga_home.clone()),
                 ))
                 .build()
                 .await
@@ -1035,7 +1035,7 @@ impl ExternalAgentConfigService {
         } else {
             (
                 self.external_agent_home.join("settings.json"),
-                self.codex_home.join("config.toml"),
+                self.motyga_home.join("config.toml"),
             )
         };
         let Some(settings) = effective_external_settings(&source_settings)? else {
@@ -1090,7 +1090,7 @@ impl ExternalAgentConfigService {
         } else {
             (
                 self.external_agent_home.join("settings.json"),
-                self.codex_home.join("config.toml"),
+                self.motyga_home.join("config.toml"),
             )
         };
         let settings = self.mcp_settings(
@@ -1141,7 +1141,7 @@ impl ExternalAgentConfigService {
         } else {
             (
                 self.external_agent_home.join("agents"),
-                self.codex_home.join("agents"),
+                self.motyga_home.join("agents"),
             )
         };
 
@@ -1160,7 +1160,7 @@ impl ExternalAgentConfigService {
             } else {
                 (
                     self.external_agent_home.clone(),
-                    self.codex_home.join("hooks.json"),
+                    self.motyga_home.join("hooks.json"),
                 )
             };
 
@@ -1241,7 +1241,7 @@ impl ExternalAgentConfigService {
         } else {
             (
                 self.external_agent_home.join(EXTERNAL_AGENT_CONFIG_MD),
-                self.codex_home.join("AGENTS.md"),
+                self.motyga_home.join("AGENTS.md"),
             )
         };
         if !is_non_empty_text_file(&source_agents_md)?
@@ -1434,7 +1434,7 @@ fn configured_marketplace_plugins(
                     .policy
                     .products
                     .as_deref()
-                    .is_none_or(|products| Product::Codex.matches_product_restriction(products))
+                    .is_none_or(|products| Product::Motyga.matches_product_restriction(products))
             })
             .map(|plugin| plugin.name)
             .collect::<HashSet<_>>();
@@ -1969,7 +1969,7 @@ fn emit_migration_metric(
     item_type: ExternalAgentConfigMigrationItemType,
     skills_count: Option<usize>,
 ) {
-    let Some(metrics) = codex_otel::global() else {
+    let Some(metrics) = motyga_otel::global() else {
         return;
     };
     let tags = migration_metric_tags(item_type, skills_count);

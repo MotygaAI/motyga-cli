@@ -52,111 +52,111 @@ use async_channel::Receiver;
 use async_channel::Sender;
 use chrono::Local;
 use chrono::Utc;
-use codex_analytics::AnalyticsEventsClient;
-use codex_analytics::SubAgentThreadStartedInput;
-use codex_analytics::TurnCodexErrorFact;
-use codex_config::types::AuthKeyringBackendKind;
-use codex_config::types::OAuthCredentialsStoreMode;
-use codex_exec_server::Environment;
-use codex_exec_server::EnvironmentManager;
-use codex_extension_api::ExtensionDataInit;
-use codex_extension_api::LoadedUserInstructions;
-use codex_extension_api::PromptFragment;
-use codex_extension_api::PromptSlot;
-use codex_extension_api::TurnContextContributionInput;
-use codex_features::FEATURES;
-use codex_features::Feature;
-use codex_features::unstable_features_warning_event;
-use codex_hooks::Hooks;
-use codex_hooks::HooksConfig;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::auth_env_telemetry::collect_auth_env_telemetry;
-use codex_mcp::McpConnectionManager;
-use codex_mcp::McpResourceClient;
-use codex_mcp::McpRuntimeContext;
-use codex_mcp::codex_apps_tools_cache_key;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_models_manager::manager::SharedModelsManager;
-use codex_network_proxy::NetworkProxy;
-use codex_network_proxy::NetworkProxyAuditMetadata;
-use codex_network_proxy::normalize_host;
-use codex_otel::current_span_trace_id;
-use codex_otel::current_span_w3c_trace_context;
-use codex_otel::set_parent_from_w3c_trace_context;
-use codex_protocol::SessionId;
-use codex_protocol::ThreadId;
-use codex_protocol::approvals::ElicitationRequest;
-use codex_protocol::approvals::ElicitationRequestEvent;
-use codex_protocol::approvals::ExecPolicyAmendment;
-use codex_protocol::approvals::NetworkPolicyAmendment;
-use codex_protocol::approvals::NetworkPolicyRuleAction;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::AutoCompactTokenLimitScope;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::MultiAgentMode;
-use codex_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
-use codex_protocol::config_types::Settings;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::dynamic_tools::DynamicToolResponse;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::items::TurnItem;
-use codex_protocol::items::UserMessageItem;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::AdditionalPermissionProfile;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::SandboxEnforcement;
-use codex_protocol::models::format_allow_prefixes;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AdditionalContextEntry;
-use codex_protocol::protocol::FileChange;
-use codex_protocol::protocol::HasLegacyEvent;
-use codex_protocol::protocol::InterAgentCommunication;
-use codex_protocol::protocol::ItemCompletedEvent;
-use codex_protocol::protocol::ItemStartedEvent;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::RawResponseItemEvent;
-use codex_protocol::protocol::ReviewRequest;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::ThreadHistoryMode;
-use codex_protocol::protocol::ThreadSource;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::protocol::TurnContextItem;
-use codex_protocol::protocol::TurnContextNetworkItem;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_protocol::protocol::TurnEnvironmentSelections;
-use codex_protocol::protocol::W3cTraceContext;
-use codex_protocol::protocol::WorldStateItem;
-use codex_protocol::request_permissions::PermissionGrantScope;
-use codex_protocol::request_permissions::RequestPermissionProfile;
-use codex_protocol::request_permissions::RequestPermissionsArgs;
-use codex_protocol::request_permissions::RequestPermissionsEvent;
-use codex_protocol::request_permissions::RequestPermissionsResponse;
-use codex_protocol::request_user_input::RequestUserInputArgs;
-use codex_protocol::request_user_input::RequestUserInputResponse;
-use codex_rmcp_client::ElicitationResponse;
-use codex_rollout::state_db;
-use codex_rollout_trace::AgentResultTracePayload;
-use codex_rollout_trace::ThreadStartedTraceMetadata;
-use codex_rollout_trace::ThreadTraceContext;
-use codex_sandboxing::policy_transforms::intersect_permission_profiles;
-use codex_shell_command::parse_command::parse_command;
-use codex_terminal_detection::user_agent;
-use codex_thread_store::CreateThreadParams;
-use codex_thread_store::LiveThread;
-use codex_thread_store::LiveThreadInitGuard;
-use codex_thread_store::LocalThreadStore;
-use codex_thread_store::ReadThreadParams;
-use codex_thread_store::ResumeThreadParams;
-use codex_thread_store::ThreadPersistenceMetadata;
-use codex_thread_store::ThreadStore;
-use codex_utils_path_uri::PathUri;
+use motyga_analytics::AnalyticsEventsClient;
+use motyga_analytics::SubAgentThreadStartedInput;
+use motyga_analytics::TurnMotygaErrorFact;
+use motyga_config::types::AuthKeyringBackendKind;
+use motyga_config::types::OAuthCredentialsStoreMode;
+use motyga_exec_server::Environment;
+use motyga_exec_server::EnvironmentManager;
+use motyga_extension_api::ExtensionDataInit;
+use motyga_extension_api::LoadedUserInstructions;
+use motyga_extension_api::PromptFragment;
+use motyga_extension_api::PromptSlot;
+use motyga_extension_api::TurnContextContributionInput;
+use motyga_features::FEATURES;
+use motyga_features::Feature;
+use motyga_features::unstable_features_warning_event;
+use motyga_hooks::Hooks;
+use motyga_hooks::HooksConfig;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::auth_env_telemetry::collect_auth_env_telemetry;
+use motyga_mcp::McpConnectionManager;
+use motyga_mcp::McpResourceClient;
+use motyga_mcp::McpRuntimeContext;
+use motyga_mcp::motyga_apps_tools_cache_key;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_models_manager::manager::SharedModelsManager;
+use motyga_network_proxy::NetworkProxy;
+use motyga_network_proxy::NetworkProxyAuditMetadata;
+use motyga_network_proxy::normalize_host;
+use motyga_otel::current_span_trace_id;
+use motyga_otel::current_span_w3c_trace_context;
+use motyga_otel::set_parent_from_w3c_trace_context;
+use motyga_protocol::SessionId;
+use motyga_protocol::ThreadId;
+use motyga_protocol::approvals::ElicitationRequest;
+use motyga_protocol::approvals::ElicitationRequestEvent;
+use motyga_protocol::approvals::ExecPolicyAmendment;
+use motyga_protocol::approvals::NetworkPolicyAmendment;
+use motyga_protocol::approvals::NetworkPolicyRuleAction;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::AutoCompactTokenLimitScope;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::MultiAgentMode;
+use motyga_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
+use motyga_protocol::config_types::Settings;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::dynamic_tools::DynamicToolResponse;
+use motyga_protocol::dynamic_tools::DynamicToolSpec;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::items::UserMessageItem;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::AdditionalPermissionProfile;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::SandboxEnforcement;
+use motyga_protocol::models::format_allow_prefixes;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AdditionalContextEntry;
+use motyga_protocol::protocol::FileChange;
+use motyga_protocol::protocol::HasLegacyEvent;
+use motyga_protocol::protocol::InterAgentCommunication;
+use motyga_protocol::protocol::ItemCompletedEvent;
+use motyga_protocol::protocol::ItemStartedEvent;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::RawResponseItemEvent;
+use motyga_protocol::protocol::ReviewRequest;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::ThreadHistoryMode;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_protocol::protocol::TurnContextItem;
+use motyga_protocol::protocol::TurnContextNetworkItem;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::protocol::TurnEnvironmentSelections;
+use motyga_protocol::protocol::W3cTraceContext;
+use motyga_protocol::protocol::WorldStateItem;
+use motyga_protocol::request_permissions::PermissionGrantScope;
+use motyga_protocol::request_permissions::RequestPermissionProfile;
+use motyga_protocol::request_permissions::RequestPermissionsArgs;
+use motyga_protocol::request_permissions::RequestPermissionsEvent;
+use motyga_protocol::request_permissions::RequestPermissionsResponse;
+use motyga_protocol::request_user_input::RequestUserInputArgs;
+use motyga_protocol::request_user_input::RequestUserInputResponse;
+use motyga_rmcp_client::ElicitationResponse;
+use motyga_rollout::state_db;
+use motyga_rollout_trace::AgentResultTracePayload;
+use motyga_rollout_trace::ThreadStartedTraceMetadata;
+use motyga_rollout_trace::ThreadTraceContext;
+use motyga_sandboxing::policy_transforms::intersect_permission_profiles;
+use motyga_shell_command::parse_command::parse_command;
+use motyga_terminal_detection::user_agent;
+use motyga_thread_store::CreateThreadParams;
+use motyga_thread_store::LiveThread;
+use motyga_thread_store::LiveThreadInitGuard;
+use motyga_thread_store::LocalThreadStore;
+use motyga_thread_store::ReadThreadParams;
+use motyga_thread_store::ResumeThreadParams;
+use motyga_thread_store::ThreadPersistenceMetadata;
+use motyga_thread_store::ThreadStore;
+use motyga_utils_path_uri::PathUri;
 use futures::future::BoxFuture;
 use futures::future::Shared;
 use futures::prelude::*;
@@ -179,7 +179,7 @@ use tracing::warn;
 use uuid::Uuid;
 
 use crate::client::ModelClient;
-use crate::codex_thread::ThreadConfigSnapshot;
+use crate::motyga_thread::ThreadConfigSnapshot;
 #[cfg(test)]
 use crate::compact::collect_user_messages;
 use crate::config::Config;
@@ -191,15 +191,15 @@ use crate::config::StartedNetworkProxy;
 use crate::config::resolve_web_search_mode_for_turn;
 use crate::context_manager::ContextManager;
 use crate::thread_rollout_truncation::initial_history_has_prior_user_turns;
-use codex_config::CONFIG_TOML_FILE;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::types::McpServerConfig;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
+use motyga_config::CONFIG_TOML_FILE;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::types::McpServerConfig;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
 #[cfg(test)]
-use codex_protocol::exec_output::StreamOutput;
+use motyga_protocol::exec_output::StreamOutput;
 
 mod code_mode_warning;
 mod config_lock;
@@ -259,11 +259,11 @@ impl SteerInputError {
         match self {
             Self::NoActiveTurn(_) => ErrorEvent {
                 message: "no active turn to steer".to_string(),
-                codex_error_info: Some(CodexErrorInfo::BadRequest),
+                motyga_error_info: Some(MotygaErrorInfo::BadRequest),
             },
             Self::ExpectedTurnMismatch { expected, actual } => ErrorEvent {
                 message: format!("expected active turn id `{expected}` but found `{actual}`"),
-                codex_error_info: Some(CodexErrorInfo::BadRequest),
+                motyga_error_info: Some(MotygaErrorInfo::BadRequest),
             },
             Self::ActiveTurnNotSteerable { turn_kind } => {
                 let turn_kind_label = match turn_kind {
@@ -272,14 +272,14 @@ impl SteerInputError {
                 };
                 ErrorEvent {
                     message: format!("cannot steer a {turn_kind_label} turn"),
-                    codex_error_info: Some(CodexErrorInfo::ActiveTurnNotSteerable {
+                    motyga_error_info: Some(MotygaErrorInfo::ActiveTurnNotSteerable {
                         turn_kind: *turn_kind,
                     }),
                 }
             }
             Self::EmptyInput => ErrorEvent {
                 message: "input must not be empty".to_string(),
-                codex_error_info: Some(CodexErrorInfo::BadRequest),
+                motyga_error_info: Some(MotygaErrorInfo::BadRequest),
             },
         }
     }
@@ -331,64 +331,64 @@ use crate::turn_timing::TurnTimingState;
 use crate::turn_timing::record_turn_ttfm_metric;
 use crate::unified_exec::UnifiedExecProcessManager;
 use crate::windows_sandbox::WindowsSandboxLevelExt;
-use codex_core_plugins::PluginsManager;
-use codex_core_plugins::RecommendedPluginCandidatesInput;
-use codex_git_utils::get_git_repo_root;
-use codex_mcp::McpConfig;
-use codex_mcp::compute_auth_statuses;
-use codex_mcp::effective_mcp_servers;
-use codex_otel::SessionTelemetry;
-use codex_otel::THREAD_STARTED_METRIC;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ReasoningSummary as ReasoningSummaryConfig;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::LocalImagePreparation;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
-use codex_protocol::protocol::ApplyPatchApprovalRequestEvent;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::CompactedItem;
-use codex_protocol::protocol::DeprecationNoticeEvent;
-use codex_protocol::protocol::ErrorEvent;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExecApprovalRequestEvent;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::McpServerRefreshConfig;
-use codex_protocol::protocol::ModelRerouteEvent;
-use codex_protocol::protocol::ModelRerouteReason;
-use codex_protocol::protocol::ModelVerification;
-use codex_protocol::protocol::ModelVerificationEvent;
-use codex_protocol::protocol::NetworkApprovalContext;
-use codex_protocol::protocol::NonSteerableTurnKind;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RateLimitSnapshot;
-use codex_protocol::protocol::RequestUserInputEvent;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::SessionConfiguredEvent;
-use codex_protocol::protocol::SessionNetworkProxyRuntime;
-use codex_protocol::protocol::StreamErrorEvent;
-use codex_protocol::protocol::Submission;
-use codex_protocol::protocol::ThreadMemoryMode;
-use codex_protocol::protocol::TokenCountEvent;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::protocol::TokenUsageInfo;
-use codex_protocol::protocol::TurnModerationMetadataEvent;
-use codex_protocol::protocol::WarningEvent;
-use codex_protocol::user_input::UserInput;
-use codex_tools::UnifiedExecShellMode;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_core_plugins::PluginsManager;
+use motyga_core_plugins::RecommendedPluginCandidatesInput;
+use motyga_git_utils::get_git_repo_root;
+use motyga_mcp::McpConfig;
+use motyga_mcp::compute_auth_statuses;
+use motyga_mcp::effective_mcp_servers;
+use motyga_otel::SessionTelemetry;
+use motyga_otel::THREAD_STARTED_METRIC;
+use motyga_otel::TelemetryAuthMode;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::Personality;
+use motyga_protocol::config_types::ReasoningSummary as ReasoningSummaryConfig;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::LocalImagePreparation;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use motyga_protocol::protocol::ApplyPatchApprovalRequestEvent;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::CompactedItem;
+use motyga_protocol::protocol::DeprecationNoticeEvent;
+use motyga_protocol::protocol::ErrorEvent;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExecApprovalRequestEvent;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::McpServerRefreshConfig;
+use motyga_protocol::protocol::ModelRerouteEvent;
+use motyga_protocol::protocol::ModelRerouteReason;
+use motyga_protocol::protocol::ModelVerification;
+use motyga_protocol::protocol::ModelVerificationEvent;
+use motyga_protocol::protocol::NetworkApprovalContext;
+use motyga_protocol::protocol::NonSteerableTurnKind;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RateLimitSnapshot;
+use motyga_protocol::protocol::RequestUserInputEvent;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::SessionConfiguredEvent;
+use motyga_protocol::protocol::SessionNetworkProxyRuntime;
+use motyga_protocol::protocol::StreamErrorEvent;
+use motyga_protocol::protocol::Submission;
+use motyga_protocol::protocol::ThreadMemoryMode;
+use motyga_protocol::protocol::TokenCountEvent;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_protocol::protocol::TokenUsageInfo;
+use motyga_protocol::protocol::TurnModerationMetadataEvent;
+use motyga_protocol::protocol::WarningEvent;
+use motyga_protocol::user_input::UserInput;
+use motyga_tools::UnifiedExecShellMode;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 #[cfg(test)]
-use codex_utils_stream_parser::ProposedPlanSegment;
+use motyga_utils_stream_parser::ProposedPlanSegment;
 
-/// The high-level interface to the Codex system.
+/// The high-level interface to the Motyga system.
 /// It operates as a queue pair where you send submissions and receive events.
-pub struct Codex {
+pub struct Motyga {
     pub(crate) tx_sub: Sender<Submission>,
     pub(crate) rx_event: Receiver<Event>,
     // Last known status of the agent.
@@ -401,14 +401,14 @@ pub struct Codex {
 
 pub(crate) type SessionLoopTermination = Shared<BoxFuture<'static, ()>>;
 
-/// Wrapper returned by [`Codex::spawn`] containing the spawned [`Codex`] and
+/// Wrapper returned by [`Motyga::spawn`] containing the spawned [`Motyga`] and
 /// the unique session id.
-pub struct CodexSpawnOk {
-    pub codex: Codex,
+pub struct MotygaSpawnOk {
+    pub motyga: Motyga,
     pub thread_id: ThreadId,
 }
 
-pub(crate) struct CodexSpawnArgs {
+pub(crate) struct MotygaSpawnArgs {
     pub(crate) config: Config,
     pub(crate) allow_provider_model_fallback: bool,
     pub(crate) user_instructions: LoadedUserInstructions,
@@ -419,8 +419,8 @@ pub(crate) struct CodexSpawnArgs {
     pub(crate) skills_service: Arc<SkillsService>,
     pub(crate) plugins_manager: Arc<PluginsManager>,
     pub(crate) mcp_manager: Arc<McpManager>,
-    pub(crate) code_mode_session_provider: Arc<dyn codex_code_mode::CodeModeSessionProvider>,
-    pub(crate) extensions: Arc<codex_extension_api::ExtensionRegistry<crate::config::Config>>,
+    pub(crate) code_mode_session_provider: Arc<dyn motyga_code_mode::CodeModeSessionProvider>,
+    pub(crate) extensions: Arc<motyga_extension_api::ExtensionRegistry<crate::config::Config>>,
     pub(crate) conversation_history: InitialHistory,
     pub(crate) requested_history_mode: Option<ThreadHistoryMode>,
     pub(crate) session_source: SessionSource,
@@ -473,12 +473,12 @@ pub(crate) const SUBMISSION_CHANNEL_CAPACITY: usize = 512;
 const CYBER_VERIFY_URL: &str = "https://motyga.com/docs";
 const CYBER_SAFETY_URL: &str = "https://motyga.com/docs";
 
-impl Codex {
-    /// Spawn a new [`Codex`] and initialize the session.
-    pub(crate) async fn spawn(args: CodexSpawnArgs) -> CodexResult<CodexSpawnOk> {
+impl Motyga {
+    /// Spawn a new [`Motyga`] and initialize the session.
+    pub(crate) async fn spawn(args: MotygaSpawnArgs) -> MotygaResult<MotygaSpawnOk> {
         let parent_trace = match args.parent_trace {
             Some(trace) => {
-                if codex_otel::context_from_w3c_trace_context(&trace).is_some() {
+                if motyga_otel::context_from_w3c_trace_context(&trace).is_some() {
                     Some(trace)
                 } else {
                     warn!("ignoring invalid thread spawn trace carrier");
@@ -491,7 +491,7 @@ impl Codex {
         if let Some(trace) = parent_trace.as_ref() {
             let _ = set_parent_from_w3c_trace_context(&thread_spawn_span, trace);
         }
-        Self::spawn_internal(CodexSpawnArgs {
+        Self::spawn_internal(MotygaSpawnArgs {
             parent_trace,
             ..args
         })
@@ -499,8 +499,8 @@ impl Codex {
         .await
     }
 
-    async fn spawn_internal(args: CodexSpawnArgs) -> CodexResult<CodexSpawnOk> {
-        let CodexSpawnArgs {
+    async fn spawn_internal(args: MotygaSpawnArgs) -> MotygaResult<MotygaSpawnOk> {
+        let MotygaSpawnArgs {
             mut config,
             allow_provider_model_fallback,
             user_instructions,
@@ -559,20 +559,20 @@ impl Codex {
             Arc::new(
                 ExecPolicyManager::load(&config.config_layer_stack)
                     .await
-                    .map_err(|err| CodexErr::Fatal(format!("failed to load rules: {err}")))?,
+                    .map_err(|err| MotygaErr::Fatal(format!("failed to load rules: {err}")))?,
             )
         };
 
         let config = Arc::new(config);
         let refresh_strategy = if session_source.is_non_root_agent() {
-            codex_models_manager::manager::RefreshStrategy::Offline
+            motyga_models_manager::manager::RefreshStrategy::Offline
         } else {
-            codex_models_manager::manager::RefreshStrategy::OnlineIfUncached
+            motyga_models_manager::manager::RefreshStrategy::OnlineIfUncached
         };
         if config.model.is_none()
             || !matches!(
                 refresh_strategy,
-                codex_models_manager::manager::RefreshStrategy::Offline
+                motyga_models_manager::manager::RefreshStrategy::Offline
             )
         {
             let _ = models_manager.list_models(refresh_strategy).await;
@@ -610,7 +610,7 @@ impl Codex {
         );
         config
             .validate_multi_agent_v2_config()
-            .map_err(|err| CodexErr::InvalidRequest(err.to_string()))?;
+            .map_err(|err| MotygaErr::InvalidRequest(err.to_string()))?;
         let base_instructions = config
             .base_instructions
             .clone()
@@ -656,7 +656,7 @@ impl Codex {
                 environment_selections,
             ),
             workspace_roots: config.workspace_roots.clone(),
-            codex_home: config.codex_home.clone(),
+            motyga_home: config.motyga_home.clone(),
             thread_name: None,
             original_config_do_not_use: Arc::clone(&config),
             metrics_service_name,
@@ -672,7 +672,7 @@ impl Codex {
             user_shell_override,
         };
 
-        // Generate a unique ID for the lifetime of this Codex session.
+        // Generate a unique ID for the lifetime of this Motyga session.
         let session_source_clone = session_configuration.session_source.clone();
         let (agent_status_tx, agent_status_rx) = watch::channel(AgentStatus::PendingInit);
 
@@ -708,7 +708,7 @@ impl Codex {
         .await
         .map_err(|e| {
             error!("Failed to create session: {e:#}");
-            map_session_init_error(&e, &config.codex_home)
+            map_session_init_error(&e, &config.motyga_home)
         })?;
         let thread_id = session.thread_id;
 
@@ -719,7 +719,7 @@ impl Codex {
                 .instrument(info_span!("session_loop", thread_id = %thread_id))
                 .await;
         });
-        let codex = Codex {
+        let motyga = Motyga {
             tx_sub,
             rx_event,
             agent_status: agent_status_rx,
@@ -727,11 +727,11 @@ impl Codex {
             session_loop_termination: session_loop_termination_from_handle(session_loop_handle),
         };
 
-        Ok(CodexSpawnOk { codex, thread_id })
+        Ok(MotygaSpawnOk { motyga, thread_id })
     }
 
     /// Submit the `op` wrapped in a `Submission` with a unique ID.
-    pub async fn submit(&self, op: Op) -> CodexResult<String> {
+    pub async fn submit(&self, op: Op) -> MotygaResult<String> {
         self.submit_with_trace(op, /*trace*/ None).await
     }
 
@@ -739,7 +739,7 @@ impl Codex {
         &self,
         op: Op,
         trace: Option<W3cTraceContext>,
-    ) -> CodexResult<String> {
+    ) -> MotygaResult<String> {
         let id = new_submission_id();
         let sub = Submission {
             id: id.clone(),
@@ -756,7 +756,7 @@ impl Codex {
         op: Op,
         trace: Option<W3cTraceContext>,
         client_user_message_id: Option<String>,
-    ) -> CodexResult<String> {
+    ) -> MotygaResult<String> {
         debug_assert!(matches!(op, Op::UserInput { .. }));
         let id = new_submission_id();
         let sub = Submission {
@@ -769,16 +769,16 @@ impl Codex {
         Ok(id)
     }
 
-    /// Use sparingly: prefer `submit()` so Codex is responsible for generating
+    /// Use sparingly: prefer `submit()` so Motyga is responsible for generating
     /// unique IDs for each submission.
-    pub async fn submit_with_id(&self, mut sub: Submission) -> CodexResult<()> {
+    pub async fn submit_with_id(&self, mut sub: Submission) -> MotygaResult<()> {
         if sub.trace.is_none() {
             sub.trace = current_span_w3c_trace_context();
         }
         self.tx_sub
             .send(sub)
             .await
-            .map_err(|_| CodexErr::InternalAgentDied)?;
+            .map_err(|_| MotygaErr::InternalAgentDied)?;
         Ok(())
     }
 
@@ -788,28 +788,28 @@ impl Codex {
     /// and does not involve the model.
     pub async fn set_thread_memory_mode(
         &self,
-        mode: codex_protocol::protocol::ThreadMemoryMode,
+        mode: motyga_protocol::protocol::ThreadMemoryMode,
     ) -> anyhow::Result<()> {
         handlers::persist_thread_memory_mode_update(&self.session, mode).await
     }
 
-    pub async fn shutdown_and_wait(&self) -> CodexResult<()> {
+    pub async fn shutdown_and_wait(&self) -> MotygaResult<()> {
         let session_loop_termination = self.session_loop_termination.clone();
         match self.submit(Op::Shutdown).await {
             Ok(_) => {}
-            Err(CodexErr::InternalAgentDied) => {}
+            Err(MotygaErr::InternalAgentDied) => {}
             Err(err) => return Err(err),
         }
         session_loop_termination.await;
         Ok(())
     }
 
-    pub async fn next_event(&self) -> CodexResult<Event> {
+    pub async fn next_event(&self) -> MotygaResult<Event> {
         let event = self
             .rx_event
             .recv()
             .await
-            .map_err(|_| CodexErr::InternalAgentDied)?;
+            .map_err(|_| MotygaErr::InternalAgentDied)?;
         Ok(event)
     }
 
@@ -914,7 +914,7 @@ fn get_service_tier(
 
 fn session_permission_profile_state_from_config(
     config: &Config,
-) -> CodexResult<PermissionProfileState> {
+) -> MotygaResult<PermissionProfileState> {
     Ok(config.permissions.permission_profile_state().clone())
 }
 
@@ -1029,10 +1029,10 @@ impl Session {
 
     async fn start_managed_network_proxy(
         spec: &crate::config::NetworkProxySpec,
-        exec_policy: &codex_execpolicy::Policy,
+        exec_policy: &motyga_execpolicy::Policy,
         permission_profile: &PermissionProfile,
-        network_policy_decider: Option<Arc<dyn codex_network_proxy::NetworkPolicyDecider>>,
-        blocked_request_observer: Option<Arc<dyn codex_network_proxy::BlockedRequestObserver>>,
+        network_policy_decider: Option<Arc<dyn motyga_network_proxy::NetworkPolicyDecider>>,
+        blocked_request_observer: Option<Arc<dyn motyga_network_proxy::BlockedRequestObserver>>,
         managed_network_requirements_enabled: bool,
         audit_metadata: NetworkProxyAuditMetadata,
     ) -> anyhow::Result<(StartedNetworkProxy, SessionNetworkProxyRuntime)> {
@@ -1138,9 +1138,9 @@ impl Session {
     }
 
     #[cfg(test)]
-    pub(crate) async fn codex_home(&self) -> AbsolutePathBuf {
+    pub(crate) async fn motyga_home(&self) -> AbsolutePathBuf {
         let state = self.state.lock().await;
-        state.session_configuration.codex_home().clone()
+        state.session_configuration.motyga_home().clone()
     }
 
     pub(crate) fn subscribe_out_of_band_elicitation_pause_state(&self) -> watch::Receiver<bool> {
@@ -1563,7 +1563,7 @@ impl Session {
             .clone()
     }
 
-    pub(crate) async fn user_instructions(&self) -> Option<codex_extension_api::UserInstructions> {
+    pub(crate) async fn user_instructions(&self) -> Option<motyga_extension_api::UserInstructions> {
         self.services.agents_md_manager.user_instructions()
     }
 
@@ -1662,7 +1662,7 @@ impl Session {
                 vec![
                     state
                         .session_configuration
-                        .codex_home
+                        .motyga_home
                         .join(CONFIG_TOML_FILE),
                 ]
             } else {
@@ -1729,11 +1729,11 @@ impl Session {
         )
     }
 
-    /// Record a terminal CodexErr before the app-server completion notification is reduced.
-    pub(crate) fn track_turn_codex_error(&self, turn_context: &TurnContext, error: &CodexErr) {
+    /// Record a terminal MotygaErr before the app-server completion notification is reduced.
+    pub(crate) fn track_turn_motyga_error(&self, turn_context: &TurnContext, error: &MotygaErr) {
         self.services
             .analytics_events_client
-            .track_turn_codex_error(TurnCodexErrorFact::from_codex_err(
+            .track_turn_motyga_error(TurnMotygaErrorFact::from_motyga_err(
                 self.thread_id.to_string(),
                 turn_context.sub_id.clone(),
                 error,
@@ -1745,9 +1745,9 @@ impl Session {
         let legacy_source = msg.clone();
         if let EventMsg::Error(error) = &legacy_source
             && error
-                .codex_error_info
+                .motyga_error_info
                 .as_ref()
-                .is_some_and(CodexErrorInfo::affects_turn_status)
+                .is_some_and(MotygaErrorInfo::affects_turn_status)
         {
             turn_context
                 .terminal_error
@@ -1757,7 +1757,7 @@ impl Session {
         }
         self.services
             .rollout_thread_trace
-            .record_codex_turn_event(&turn_context.sub_id, &legacy_source);
+            .record_motyga_turn_event(&turn_context.sub_id, &legacy_source);
         self.services
             .rollout_thread_trace
             .record_tool_call_event(turn_context.sub_id.clone(), &legacy_source);
@@ -1837,13 +1837,13 @@ impl Session {
         &self,
         turn_context: &TurnContext,
         parent_thread_id: ThreadId,
-        child_agent_path: &codex_protocol::AgentPath,
+        child_agent_path: &motyga_protocol::AgentPath,
         status: AgentStatus,
     ) {
         let Some(parent_agent_path) = child_agent_path
             .as_str()
             .rsplit_once('/')
-            .and_then(|(parent, _)| codex_protocol::AgentPath::try_from(parent).ok())
+            .and_then(|(parent, _)| motyga_protocol::AgentPath::try_from(parent).ok())
         else {
             return;
         };
@@ -1974,17 +1974,17 @@ impl Session {
         &self,
         amendment: &ExecPolicyAmendment,
     ) -> Result<(), ExecPolicyUpdateError> {
-        let codex_home = self
+        let motyga_home = self
             .state
             .lock()
             .await
             .session_configuration
-            .codex_home()
+            .motyga_home()
             .clone();
 
         self.services
             .exec_policy
-            .append_amendment_and_update(&codex_home, amendment)
+            .append_amendment_and_update(&motyga_home, amendment)
             .await?;
 
         Ok(())
@@ -2038,12 +2038,12 @@ impl Session {
             .map_err(|_| anyhow::anyhow!("managed network proxy refresh semaphore closed"))?;
         let host =
             Self::validated_network_policy_amendment_host(amendment, network_approval_context)?;
-        let codex_home = self
+        let motyga_home = self
             .state
             .lock()
             .await
             .session_configuration
-            .codex_home()
+            .motyga_home()
             .clone();
         let execpolicy_amendment =
             execpolicy_network_rule_amendment(amendment, network_approval_context, &host);
@@ -2065,7 +2065,7 @@ impl Session {
         self.services
             .exec_policy
             .append_network_rule_and_update(
-                &codex_home,
+                &motyga_home,
                 &host,
                 execpolicy_amendment.protocol,
                 execpolicy_amendment.decision,
@@ -2304,7 +2304,7 @@ impl Session {
                 review_id,
                 request,
                 /*retry_reason*/ None,
-                codex_analytics::GuardianApprovalRequestSource::MainTurn,
+                motyga_analytics::GuardianApprovalRequestSource::MainTurn,
                 cancellation_token.clone(),
             );
             let decision = tokio::select! {
@@ -3018,7 +3018,7 @@ impl Session {
         }
         {
             let mut state = self.state.lock().await;
-            state.queue_pending_session_start_source(codex_hooks::SessionStartSource::Compact);
+            state.queue_pending_session_start_source(motyga_hooks::SessionStartSource::Compact);
         }
     }
 
@@ -3643,7 +3643,7 @@ impl Session {
         &self,
         turn_context: &TurnContext,
         token_usage: Option<&TokenUsage>,
-    ) -> CodexResult<()> {
+    ) -> MotygaResult<()> {
         let result = self
             .record_token_usage_info(turn_context, token_usage)
             .await;
@@ -3655,7 +3655,7 @@ impl Session {
         &self,
         turn_context: &TurnContext,
         token_usage: Option<&TokenUsage>,
-    ) -> CodexResult<()> {
+    ) -> MotygaResult<()> {
         if let Some(token_usage) = token_usage {
             let token_info = {
                 let mut state = self.state.lock().await;
@@ -3816,15 +3816,15 @@ impl Session {
         &self,
         turn_context: &TurnContext,
         message: impl Into<String>,
-        codex_error: CodexErr,
+        motyga_error: MotygaErr,
     ) {
-        let additional_details = codex_error.to_string();
-        let codex_error_info = CodexErrorInfo::ResponseStreamDisconnected {
-            http_status_code: codex_error.http_status_code_value(),
+        let additional_details = motyga_error.to_string();
+        let motyga_error_info = MotygaErrorInfo::ResponseStreamDisconnected {
+            http_status_code: motyga_error.http_status_code_value(),
         };
         let event = EventMsg::StreamError(StreamErrorEvent {
             message: message.into(),
-            codex_error_info: Some(codex_error_info),
+            motyga_error_info: Some(motyga_error_info),
             additional_details: Some(additional_details),
         });
         self.send_event(turn_context, event).await;
@@ -3960,7 +3960,7 @@ impl Session {
 
     pub(crate) async fn take_pending_session_start_source(
         &self,
-    ) -> Option<codex_hooks::SessionStartSource> {
+    ) -> Option<motyga_hooks::SessionStartSource> {
         let mut state = self.state.lock().await;
         state.take_pending_session_start_source()
     }
@@ -4029,7 +4029,7 @@ async fn build_hooks_for_config(
     let plugin_hook_load_warnings = plugin_outcome.effective_plugin_hook_warnings();
     Hooks::new(HooksConfig {
         legacy_notify_argv: config.notify.clone(),
-        feature_enabled: config.features.enabled(Feature::CodexHooks),
+        feature_enabled: config.features.enabled(Feature::MotygaHooks),
         bypass_hook_trust: config.bypass_hook_trust,
         config_layer_stack: Some(config.config_layer_stack.clone()),
         plugin_hook_sources,

@@ -14,15 +14,15 @@ const SOURCE_EXTERNAL_AGENT_UPPER_PRODUCT_NAME: &str = "CLAUDE-CODE";
 fn fixture_paths() -> (TempDir, PathBuf, PathBuf) {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".motyga");
-    (root, external_agent_home, codex_home)
+    let motyga_home = root.path().join(".motyga");
+    (root, external_agent_home, motyga_home)
 }
 
 fn service_for_paths(
     external_agent_home: PathBuf,
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
 ) -> ExternalAgentConfigService {
-    ExternalAgentConfigService::new_for_test(codex_home, external_agent_home)
+    ExternalAgentConfigService::new_for_test(motyga_home, external_agent_home)
 }
 
 fn github_plugin_details() -> MigrationDetails {
@@ -69,8 +69,8 @@ fn import_success(
 
 #[tokio::test]
 async fn detect_home_lists_config_skills_and_agents_md() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
-    let agents_skills = codex_home
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
+    let agents_skills = motyga_home
         .parent()
         .map(|parent| parent.join(".agents").join("skills"))
         .unwrap_or_else(|| PathBuf::from(".agents").join("skills"));
@@ -86,7 +86,7 @@ async fn detect_home_lists_config_skills_and_agents_md() {
     )
     .expect("write settings");
 
-    let items = service_for_paths(external_agent_home.clone(), codex_home.clone())
+    let items = service_for_paths(external_agent_home.clone(), motyga_home.clone())
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -100,7 +100,7 @@ async fn detect_home_lists_config_skills_and_agents_md() {
             description: format!(
                 "Migrate {} into {}",
                 external_agent_home.join("settings.json").display(),
-                codex_home.join("config.toml").display()
+                motyga_home.join("config.toml").display()
             ),
             cwd: None,
             details: None,
@@ -123,7 +123,7 @@ async fn detect_home_lists_config_skills_and_agents_md() {
             description: format!(
                 "Migrate {} to {}",
                 external_agent_home.join(EXTERNAL_AGENT_CONFIG_MD).display(),
-                codex_home.join("AGENTS.md").display()
+                motyga_home.join("AGENTS.md").display()
             ),
             cwd: None,
             details: None,
@@ -135,7 +135,7 @@ async fn detect_home_lists_config_skills_and_agents_md() {
 
 #[tokio::test]
 async fn detect_home_lists_recent_sessions() {
-    let (root, external_agent_home, codex_home) = fixture_paths();
+    let (root, external_agent_home, motyga_home) = fixture_paths();
     let project_root = root.path().join("repo");
     let recent_timestamp = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
     let session_path = external_agent_home
@@ -156,7 +156,7 @@ async fn detect_home_lists_recent_sessions() {
     )
     .expect("write session");
 
-    let items = service_for_paths(external_agent_home.clone(), codex_home)
+    let items = service_for_paths(external_agent_home.clone(), motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -240,7 +240,7 @@ async fn detect_repo_lists_agents_md_for_each_cwd() {
 async fn detect_repo_still_reports_non_plugin_items_when_home_config_is_invalid() {
     let root = TempDir::new().expect("create tempdir");
     let repo_root = root.path().join("repo");
-    let codex_home = root.path().join(".motyga");
+    let motyga_home = root.path().join(".motyga");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(
         repo_root
@@ -249,9 +249,9 @@ async fn detect_repo_still_reports_non_plugin_items_when_home_config_is_invalid(
             .join("skill-a"),
     )
     .expect("create repo skills");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
-    fs::write(codex_home.join("config.toml"), "this is not valid = [toml")
-        .expect("write invalid codex config");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
+    fs::write(motyga_home.join("config.toml"), "this is not valid = [toml")
+        .expect("write invalid motyga config");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{"env":{"FOO":"bar"}}"#,
@@ -276,7 +276,7 @@ async fn detect_repo_still_reports_non_plugin_items_when_home_config_is_invalid(
     )
     .expect("write agents");
 
-    let items = service_for_paths(root.path().join(EXTERNAL_AGENT_DIR), codex_home)
+    let items = service_for_paths(root.path().join(EXTERNAL_AGENT_DIR), motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: false,
             cwds: Some(vec![repo_root.clone()]),
@@ -600,7 +600,7 @@ STATIC = "yes"
         .expect("mcp servers");
     let _supported_mcp_config: std::collections::HashMap<
         String,
-        codex_config::types::McpServerConfig,
+        motyga_config::types::McpServerConfig,
     > = mcp_servers
         .try_into()
         .expect("migrated MCP config should be supported");
@@ -609,7 +609,7 @@ STATIC = "yes"
         &fs::read_to_string(repo_root.join(".motyga").join("hooks.json")).expect("read hooks"),
     )
     .expect("parse hooks");
-    let _supported_hooks: codex_config::HooksFile =
+    let _supported_hooks: motyga_config::HooksFile =
         serde_json::from_value(hooks.clone()).expect("migrated hooks should be supported");
     assert_eq!(
         hooks,
@@ -697,7 +697,7 @@ async fn import_repo_mcp_preserves_existing_same_named_server() {
         }"#,
     )
     .expect("write mcp");
-    fs::create_dir_all(repo_root.join(".motyga")).expect("create codex dir");
+    fs::create_dir_all(repo_root.join(".motyga")).expect("create motyga dir");
     let existing_config = r#"[mcp_servers.mixedTransport]
 url = "https://example.com/mixed-transport"
 "#;
@@ -752,7 +752,7 @@ async fn detect_repo_mcp_lists_only_missing_servers() {
         }"#,
     )
     .expect("write mcp");
-    fs::create_dir_all(repo_root.join(".motyga")).expect("create codex dir");
+    fs::create_dir_all(repo_root.join(".motyga")).expect("create motyga dir");
     fs::write(
         repo_root.join(".motyga").join("config.toml"),
         r#"[mcp_servers.mixedTransport]
@@ -794,15 +794,15 @@ url = "https://example.com/mixed-transport"
 
 #[tokio::test]
 async fn import_home_migrates_supported_config_fields_skills_and_agents_md() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
-    let agents_skills = codex_home
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
+    let agents_skills = motyga_home
         .parent()
         .map(|parent| parent.join(".agents").join("skills"))
         .unwrap_or_else(|| PathBuf::from(".agents").join("skills"));
     fs::create_dir_all(external_agent_home.join("skills").join("skill-a")).expect("create skills");
     fs::write(
             external_agent_home.join("settings.json"),
-            format!(r#"{{"model":"{SOURCE_EXTERNAL_AGENT_NAME}","permissions":{{"ask":["git push"]}},"env":{{"FOO":"bar","CI":false,"MAX_RETRIES":3,"MY_TEAM":"codex","IGNORED":null,"LIST":["a","b"],"MAP":{{"x":1}}}},"sandbox":{{"enabled":true,"network":{{"allowLocalBinding":true}}}}}}"#),
+            format!(r#"{{"model":"{SOURCE_EXTERNAL_AGENT_NAME}","permissions":{{"ask":["git push"]}},"env":{{"FOO":"bar","CI":false,"MAX_RETRIES":3,"MY_TEAM":"motyga","IGNORED":null,"LIST":["a","b"],"MAP":{{"x":1}}}},"sandbox":{{"enabled":true,"network":{{"allowLocalBinding":true}}}}}}"#),
         )
         .expect("write settings");
     fs::write(
@@ -821,7 +821,7 @@ async fn import_home_migrates_supported_config_fields_skills_and_agents_md() {
     )
     .expect("write agents");
 
-    service_for_paths(external_agent_home, codex_home.clone())
+    service_for_paths(external_agent_home, motyga_home.clone())
         .import(vec![
             ExternalAgentConfigMigrationItem {
                 item_type: ExternalAgentConfigMigrationItemType::AgentsMd,
@@ -845,12 +845,12 @@ async fn import_home_migrates_supported_config_fields_skills_and_agents_md() {
         .await;
 
     assert_eq!(
-        fs::read_to_string(codex_home.join("AGENTS.md")).expect("read agents"),
+        fs::read_to_string(motyga_home.join("AGENTS.md")).expect("read agents"),
         "Motyga guidance"
     );
 
     let config: TomlValue =
-        toml::from_str(&fs::read_to_string(codex_home.join("config.toml")).expect("read config"))
+        toml::from_str(&fs::read_to_string(motyga_home.join("config.toml")).expect("read config"))
             .expect("parse config");
     let expected: TomlValue = toml::from_str(
         r#"
@@ -863,7 +863,7 @@ inherit = "core"
 CI = "false"
 FOO = "bar"
 MAX_RETRIES = "3"
-MY_TEAM = "codex"
+MY_TEAM = "motyga"
 "#,
     )
     .expect("parse expected config");
@@ -877,7 +877,7 @@ MY_TEAM = "codex"
 
 #[tokio::test]
 async fn import_home_config_uses_local_settings_over_project_settings() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -890,7 +890,7 @@ async fn import_home_config_uses_local_settings_over_project_settings() {
     )
     .expect("write local settings");
 
-    service_for_paths(external_agent_home, codex_home.clone())
+    service_for_paths(external_agent_home, motyga_home.clone())
         .import(vec![ExternalAgentConfigMigrationItem {
             item_type: ExternalAgentConfigMigrationItemType::Config,
             description: String::new(),
@@ -900,7 +900,7 @@ async fn import_home_config_uses_local_settings_over_project_settings() {
         .await;
 
     let config: TomlValue =
-        toml::from_str(&fs::read_to_string(codex_home.join("config.toml")).expect("read config"))
+        toml::from_str(&fs::read_to_string(motyga_home.join("config.toml")).expect("read config"))
             .expect("parse config");
     let expected: TomlValue = toml::from_str(
         r#"
@@ -921,7 +921,7 @@ PROJECT_ONLY = "yes"
 
 #[tokio::test]
 async fn import_home_config_ignores_invalid_local_settings() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -934,7 +934,7 @@ async fn import_home_config_ignores_invalid_local_settings() {
     )
     .expect("write local settings");
 
-    service_for_paths(external_agent_home, codex_home.clone())
+    service_for_paths(external_agent_home, motyga_home.clone())
         .import(vec![ExternalAgentConfigMigrationItem {
             item_type: ExternalAgentConfigMigrationItemType::Config,
             description: String::new(),
@@ -944,14 +944,14 @@ async fn import_home_config_ignores_invalid_local_settings() {
         .await;
 
     assert_eq!(
-        fs::read_to_string(codex_home.join("config.toml")).expect("read config"),
+        fs::read_to_string(motyga_home.join("config.toml")).expect("read config"),
         "[shell_environment_policy]\ninherit = \"core\"\n\n[shell_environment_policy.set]\nFOO = \"project\"\n"
     );
 }
 
 #[tokio::test]
 async fn import_home_skips_empty_config_migration() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -959,7 +959,7 @@ async fn import_home_skips_empty_config_migration() {
     )
     .expect("write settings");
 
-    let outcome = service_for_paths(external_agent_home, codex_home.clone())
+    let outcome = service_for_paths(external_agent_home, motyga_home.clone())
         .import(vec![ExternalAgentConfigMigrationItem {
             item_type: ExternalAgentConfigMigrationItemType::Config,
             description: String::new(),
@@ -980,18 +980,18 @@ async fn import_home_skips_empty_config_migration() {
             raw_errors: Vec::new(),
         }]
     );
-    assert!(!codex_home.join("config.toml").exists());
+    assert!(!motyga_home.join("config.toml").exists());
 }
 
 #[tokio::test]
 async fn import_local_plugins_returns_completed_status() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     let marketplace_root = external_agent_home.join("my-marketplace");
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -1030,7 +1030,7 @@ async fn import_local_plugins_returns_completed_status() {
     )
     .expect("write plugin manifest");
 
-    let outcome = service_for_paths(external_agent_home, codex_home.clone())
+    let outcome = service_for_paths(external_agent_home, motyga_home.clone())
         .import(vec![ExternalAgentConfigMigrationItem {
             item_type: ExternalAgentConfigMigrationItemType::Plugins,
             description: String::new(),
@@ -1066,14 +1066,14 @@ async fn import_local_plugins_returns_completed_status() {
             raw_errors: Vec::new(),
         }]
     );
-    let config = fs::read_to_string(codex_home.join("config.toml")).expect("read config");
+    let config = fs::read_to_string(motyga_home.join("config.toml")).expect("read config");
     assert!(config.contains(r#"[plugins."cloudflare@my-plugins"]"#));
     assert!(config.contains("enabled = true"));
 }
 
 #[tokio::test]
 async fn import_git_plugins_returns_pending_async_status() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -1090,7 +1090,7 @@ async fn import_git_plugins_returns_pending_async_status() {
     )
     .expect("write settings");
 
-    let outcome = service_for_paths(external_agent_home, codex_home.clone())
+    let outcome = service_for_paths(external_agent_home, motyga_home.clone())
         .import(vec![ExternalAgentConfigMigrationItem {
             item_type: ExternalAgentConfigMigrationItemType::Plugins,
             description: String::new(),
@@ -1131,21 +1131,21 @@ async fn import_git_plugins_returns_pending_async_status() {
             raw_errors: Vec::new(),
         }]
     );
-    assert!(!codex_home.join("config.toml").exists());
+    assert!(!motyga_home.join("config.toml").exists());
 }
 
 #[tokio::test]
 async fn detect_home_skips_config_when_target_already_has_supported_fields() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
     fs::write(
         external_agent_home.join("settings.json"),
         r#"{"env":{"FOO":"bar"},"sandbox":{"enabled":true}}"#,
     )
     .expect("write settings");
     fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         r#"
             sandbox_mode = "workspace-write"
 
@@ -1158,7 +1158,7 @@ async fn detect_home_skips_config_when_target_already_has_supported_fields() {
     )
     .expect("write config");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -1171,15 +1171,15 @@ async fn detect_home_skips_config_when_target_already_has_supported_fields() {
 
 #[tokio::test]
 async fn detect_home_skips_skills_when_all_skill_directories_exist() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
-    let agents_skills = codex_home
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
+    let agents_skills = motyga_home
         .parent()
         .map(|parent| parent.join(".agents").join("skills"))
         .unwrap_or_else(|| PathBuf::from(".agents").join("skills"));
     fs::create_dir_all(external_agent_home.join("skills").join("skill-a")).expect("create source");
     fs::create_dir_all(agents_skills.join("skill-a")).expect("create target");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -1372,12 +1372,12 @@ async fn detect_repo_prefers_non_empty_external_agent_agents_source() {
 }
 
 #[tokio::test]
-async fn import_repo_hooks_preserves_disabled_codex_hooks_feature() {
+async fn import_repo_hooks_preserves_disabled_motyga_hooks_feature() {
     let root = TempDir::new().expect("create tempdir");
     let repo_root = root.path().join("repo");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create external agent dir");
-    fs::create_dir_all(repo_root.join(".motyga")).expect("create codex dir");
+    fs::create_dir_all(repo_root.join(".motyga")).expect("create motyga dir");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{"hooks":{"Stop":[{"hooks":[{"command":"echo done"}]}]}}"#,
@@ -1385,7 +1385,7 @@ async fn import_repo_hooks_preserves_disabled_codex_hooks_feature() {
     .expect("write hooks");
     fs::write(
         repo_root.join(".motyga").join("config.toml"),
-        "[features]\ncodex_hooks = false\n",
+        "[features]\nmotyga_hooks = false\n",
     )
     .expect("write config");
 
@@ -1420,7 +1420,7 @@ async fn import_repo_hooks_preserves_disabled_codex_hooks_feature() {
     );
     assert_eq!(
         fs::read_to_string(repo_root.join(".motyga").join("config.toml")).expect("read config"),
-        "[features]\ncodex_hooks = false\n"
+        "[features]\nmotyga_hooks = false\n"
     );
     let hooks: JsonValue = serde_json::from_str(
         &fs::read_to_string(repo_root.join(".motyga").join("hooks.json")).expect("read hooks"),
@@ -1695,7 +1695,7 @@ fn migration_metric_tags_for_skills_include_skills_count() {
 
 #[tokio::test]
 async fn detect_home_lists_enabled_plugins_from_settings() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -1714,7 +1714,7 @@ async fn detect_home_lists_enabled_plugins_from_settings() {
     )
     .expect("write settings");
 
-    let items = service_for_paths(external_agent_home.clone(), codex_home)
+    let items = service_for_paths(external_agent_home.clone(), motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -1744,7 +1744,7 @@ async fn detect_home_lists_enabled_plugins_from_settings() {
 
 #[tokio::test]
 async fn detect_home_plugins_uses_local_settings_over_project_settings() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -1772,7 +1772,7 @@ async fn detect_home_plugins_uses_local_settings_over_project_settings() {
     )
     .expect("write local settings");
 
-    let items = service_for_paths(external_agent_home.clone(), codex_home)
+    let items = service_for_paths(external_agent_home.clone(), motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -1801,14 +1801,14 @@ async fn detect_home_plugins_uses_local_settings_over_project_settings() {
 }
 
 #[tokio::test]
-async fn detect_repo_skips_plugins_that_are_already_configured_in_codex() {
+async fn detect_repo_skips_plugins_that_are_already_configured_in_motyga() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".motyga");
+    let motyga_home = root.path().join(".motyga");
     let repo_root = root.path().join("repo");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{
@@ -1825,15 +1825,15 @@ async fn detect_repo_skips_plugins_that_are_already_configured_in_codex() {
     )
     .expect("write repo settings");
     fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         r#"
 [plugins."formatter@acme-tools"]
 enabled = true
 "#,
     )
-    .expect("write codex config");
+    .expect("write motyga config");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: false,
             cwds: Some(vec![repo_root.clone()]),
@@ -1865,14 +1865,14 @@ enabled = true
 }
 
 #[tokio::test]
-async fn detect_repo_skips_plugins_that_are_disabled_in_codex() {
+async fn detect_repo_skips_plugins_that_are_disabled_in_motyga() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".motyga");
+    let motyga_home = root.path().join(".motyga");
     let repo_root = root.path().join("repo");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{
@@ -1888,15 +1888,15 @@ async fn detect_repo_skips_plugins_that_are_disabled_in_codex() {
     )
     .expect("write repo settings");
     fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         r#"
 [plugins."formatter@acme-tools"]
 enabled = false
 "#,
     )
-    .expect("write codex config");
+    .expect("write motyga config");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: false,
             cwds: Some(vec![repo_root]),
@@ -1908,14 +1908,14 @@ enabled = false
 }
 
 #[tokio::test]
-async fn detect_repo_skips_plugins_without_explicit_enabled_in_codex() {
+async fn detect_repo_skips_plugins_without_explicit_enabled_in_motyga() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".motyga");
+    let motyga_home = root.path().join(".motyga");
     let repo_root = root.path().join("repo");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{
@@ -1931,14 +1931,14 @@ async fn detect_repo_skips_plugins_without_explicit_enabled_in_codex() {
     )
     .expect("write repo settings");
     fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         r#"
 [plugins."formatter@acme-tools"]
 "#,
     )
-    .expect("write codex config");
+    .expect("write motyga config");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: false,
             cwds: Some(vec![repo_root]),
@@ -1951,9 +1951,9 @@ async fn detect_repo_skips_plugins_without_explicit_enabled_in_codex() {
 
 #[tokio::test]
 async fn import_plugins_requires_details() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
 
-    let err = service_for_paths(external_agent_home, codex_home)
+    let err = service_for_paths(external_agent_home, motyga_home)
         .import_plugins(/*cwd*/ None, /*details*/ None)
         .await
         .expect_err("expected missing details error");
@@ -1963,15 +1963,15 @@ async fn import_plugins_requires_details() {
 }
 
 #[tokio::test]
-async fn detect_repo_does_not_skip_plugins_only_configured_in_project_codex() {
+async fn detect_repo_does_not_skip_plugins_only_configured_in_project_motyga() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".motyga");
+    let motyga_home = root.path().join(".motyga");
     let repo_root = root.path().join("repo");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
-    fs::create_dir_all(repo_root.join(".motyga")).expect("create repo codex dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(repo_root.join(".motyga")).expect("create repo motyga dir");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
         r#"{
@@ -1993,9 +1993,9 @@ async fn detect_repo_does_not_skip_plugins_only_configured_in_project_codex() {
 enabled = true
 "#,
     )
-    .expect("write project codex config");
+    .expect("write project motyga config");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: false,
             cwds: Some(vec![repo_root.clone()]),
@@ -2028,7 +2028,7 @@ enabled = true
 
 #[tokio::test]
 async fn detect_home_skips_plugins_without_marketplace_source() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2040,7 +2040,7 @@ async fn detect_home_skips_plugins_without_marketplace_source() {
     )
     .expect("write settings");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -2053,7 +2053,7 @@ async fn detect_home_skips_plugins_without_marketplace_source() {
 
 #[tokio::test]
 async fn detect_home_skips_plugins_with_invalid_marketplace_source() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2070,7 +2070,7 @@ async fn detect_home_skips_plugins_with_invalid_marketplace_source() {
     )
     .expect("write settings");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -2085,9 +2085,9 @@ async fn detect_home_skips_plugins_with_invalid_marketplace_source() {
 async fn detect_repo_filters_plugins_against_installed_marketplace() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".motyga");
+    let motyga_home = root.path().join(".motyga");
     let repo_root = root.path().join("repo");
-    let marketplace_root = codex_home.join(".tmp").join("marketplaces").join("debug");
+    let marketplace_root = motyga_home.join(".tmp").join("marketplaces").join("debug");
     fs::create_dir_all(repo_root.join(".git")).expect("create git dir");
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
     fs::create_dir_all(marketplace_root.join(".agents").join("plugins"))
@@ -2123,14 +2123,14 @@ async fn detect_repo_filters_plugins_against_installed_marketplace() {
     )
     .expect("write repo settings");
     fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         r#"
 [marketplaces.debug]
 source_type = "git"
 source = "owner/debug-marketplace"
 "#,
     )
-    .expect("write codex config");
+    .expect("write motyga config");
     fs::write(
         marketplace_root
             .join(".agents")
@@ -2179,7 +2179,7 @@ source = "owner/debug-marketplace"
     )
     .expect("write available plugin manifest");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: false,
             cwds: Some(vec![repo_root.clone()]),
@@ -2212,7 +2212,7 @@ source = "owner/debug-marketplace"
 
 #[tokio::test]
 async fn import_plugins_requires_source_marketplace_details() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2230,7 +2230,7 @@ async fn import_plugins_requires_source_marketplace_details() {
     )
     .expect("write settings");
 
-    let outcome = service_for_paths(external_agent_home, codex_home)
+    let outcome = service_for_paths(external_agent_home, motyga_home)
         .import_plugins(
             /*cwd*/ None,
             Some(MigrationDetails {
@@ -2260,7 +2260,7 @@ async fn import_plugins_requires_source_marketplace_details() {
 
 #[tokio::test]
 async fn import_plugins_defers_marketplace_source_validation_to_add_marketplace() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2278,7 +2278,7 @@ async fn import_plugins_defers_marketplace_source_validation_to_add_marketplace(
     )
     .expect("write settings");
 
-    let outcome = service_for_paths(external_agent_home, codex_home)
+    let outcome = service_for_paths(external_agent_home, motyga_home)
         .import_plugins(/*cwd*/ None, Some(github_plugin_details()))
         .await
         .expect("import plugins");
@@ -2295,13 +2295,13 @@ async fn import_plugins_defers_marketplace_source_validation_to_add_marketplace(
 
 #[tokio::test]
 async fn import_plugins_supports_external_agent_plugin_marketplace_layout() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     let marketplace_root = external_agent_home.join("my-marketplace");
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2340,7 +2340,7 @@ async fn import_plugins_supports_external_agent_plugin_marketplace_layout() {
     )
     .expect("write plugin manifest");
 
-    let outcome = service_for_paths(external_agent_home, codex_home.clone())
+    let outcome = service_for_paths(external_agent_home, motyga_home.clone())
         .import_plugins(
             /*cwd*/ None,
             Some(MigrationDetails {
@@ -2364,20 +2364,20 @@ async fn import_plugins_supports_external_agent_plugin_marketplace_layout() {
             raw_errors: Vec::new(),
         }
     );
-    let config = fs::read_to_string(codex_home.join("config.toml")).expect("read config");
+    let config = fs::read_to_string(motyga_home.join("config.toml")).expect("read config");
     assert!(config.contains(r#"[plugins."cloudflare@my-plugins"]"#));
     assert!(config.contains("enabled = true"));
 }
 
 #[tokio::test]
 async fn detect_home_supports_relative_external_agent_plugin_marketplace_path() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     let marketplace_root = external_agent_home.join("my-marketplace");
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2415,7 +2415,7 @@ async fn detect_home_supports_relative_external_agent_plugin_marketplace_path() 
     )
     .expect("write plugin manifest");
 
-    let items = service_for_paths(external_agent_home.clone(), codex_home)
+    let items = service_for_paths(external_agent_home.clone(), motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -2445,9 +2445,9 @@ async fn detect_home_supports_relative_external_agent_plugin_marketplace_path() 
 
 #[tokio::test]
 async fn detect_home_infers_external_official_marketplace_when_missing_from_settings() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2461,7 +2461,7 @@ async fn detect_home_infers_external_official_marketplace_when_missing_from_sett
     )
     .expect("write settings");
 
-    let items = service_for_paths(external_agent_home.clone(), codex_home)
+    let items = service_for_paths(external_agent_home.clone(), motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: true,
             cwds: None,
@@ -2491,13 +2491,13 @@ async fn detect_home_infers_external_official_marketplace_when_missing_from_sett
 
 #[tokio::test]
 async fn import_plugins_supports_relative_external_agent_plugin_marketplace_path() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     let marketplace_root = external_agent_home.join("my-marketplace");
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2535,7 +2535,7 @@ async fn import_plugins_supports_relative_external_agent_plugin_marketplace_path
     )
     .expect("write plugin manifest");
 
-    let outcome = service_for_paths(external_agent_home, codex_home.clone())
+    let outcome = service_for_paths(external_agent_home, motyga_home.clone())
         .import_plugins(
             /*cwd*/ None,
             Some(MigrationDetails {
@@ -2559,16 +2559,16 @@ async fn import_plugins_supports_relative_external_agent_plugin_marketplace_path
             raw_errors: Vec::new(),
         }
     );
-    let config = fs::read_to_string(codex_home.join("config.toml")).expect("read config");
+    let config = fs::read_to_string(motyga_home.join("config.toml")).expect("read config");
     assert!(config.contains(r#"[plugins."cloudflare@my-plugins"]"#));
     assert!(config.contains("enabled = true"));
 }
 
 #[tokio::test]
 async fn import_plugins_infers_external_official_marketplace_when_missing_from_settings() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
     fs::create_dir_all(&external_agent_home).expect("create external agent home");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
 
     fs::write(
         external_agent_home.join("settings.json"),
@@ -2582,7 +2582,7 @@ async fn import_plugins_infers_external_official_marketplace_when_missing_from_s
     )
     .expect("write settings");
 
-    let outcome = service_for_paths(external_agent_home, codex_home)
+    let outcome = service_for_paths(external_agent_home, motyga_home)
         .import_plugins(
             /*cwd*/ None,
             Some(MigrationDetails {
@@ -2617,7 +2617,7 @@ async fn import_plugins_infers_external_official_marketplace_when_missing_from_s
 async fn detect_repo_supports_project_relative_external_agent_plugin_marketplace_path() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".motyga");
+    let motyga_home = root.path().join(".motyga");
     let repo_root = root.path().join("repo");
     let marketplace_root = repo_root.join("my-marketplace");
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
@@ -2626,7 +2626,7 @@ async fn detect_repo_supports_project_relative_external_agent_plugin_marketplace
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
 
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
@@ -2664,7 +2664,7 @@ async fn detect_repo_supports_project_relative_external_agent_plugin_marketplace
     )
     .expect("write plugin manifest");
 
-    let items = service_for_paths(external_agent_home, codex_home)
+    let items = service_for_paths(external_agent_home, motyga_home)
         .detect(ExternalAgentConfigDetectOptions {
             include_home: false,
             cwds: Some(vec![repo_root.clone()]),
@@ -2699,7 +2699,7 @@ async fn detect_repo_supports_project_relative_external_agent_plugin_marketplace
 async fn import_plugins_supports_project_relative_external_agent_plugin_marketplace_path() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".motyga");
+    let motyga_home = root.path().join(".motyga");
     let repo_root = root.path().join("repo");
     let marketplace_root = repo_root.join("my-marketplace");
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
@@ -2708,7 +2708,7 @@ async fn import_plugins_supports_project_relative_external_agent_plugin_marketpl
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
     fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
-    fs::create_dir_all(&codex_home).expect("create motyga home");
+    fs::create_dir_all(&motyga_home).expect("create motyga home");
 
     fs::write(
         repo_root.join(EXTERNAL_AGENT_DIR).join("settings.json"),
@@ -2746,7 +2746,7 @@ async fn import_plugins_supports_project_relative_external_agent_plugin_marketpl
     )
     .expect("write plugin manifest");
 
-    let outcome = service_for_paths(external_agent_home, codex_home.clone())
+    let outcome = service_for_paths(external_agent_home, motyga_home.clone())
         .import_plugins(
             Some(repo_root.as_path()),
             Some(MigrationDetails {
@@ -2770,15 +2770,15 @@ async fn import_plugins_supports_project_relative_external_agent_plugin_marketpl
             raw_errors: Vec::new(),
         }
     );
-    let config = fs::read_to_string(codex_home.join("config.toml")).expect("read config");
+    let config = fs::read_to_string(motyga_home.join("config.toml")).expect("read config");
     assert!(config.contains(r#"[plugins."cloudflare@my-plugins"]"#));
     assert!(config.contains("enabled = true"));
 }
 
 #[test]
 fn import_skills_returns_only_new_skill_directory_names() {
-    let (_root, external_agent_home, codex_home) = fixture_paths();
-    let agents_skills = codex_home
+    let (_root, external_agent_home, motyga_home) = fixture_paths();
+    let agents_skills = motyga_home
         .parent()
         .map(|parent| parent.join(".agents").join("skills"))
         .unwrap_or_else(|| PathBuf::from(".agents").join("skills"));
@@ -2788,7 +2788,7 @@ fn import_skills_returns_only_new_skill_directory_names() {
         .expect("create source b");
     fs::create_dir_all(agents_skills.join("skill-a")).expect("create existing target");
 
-    let copied_names = service_for_paths(external_agent_home, codex_home)
+    let copied_names = service_for_paths(external_agent_home, motyga_home)
         .import_skills(/*cwd*/ None)
         .expect("import skills");
 

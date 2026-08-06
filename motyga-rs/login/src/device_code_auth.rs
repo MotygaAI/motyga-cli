@@ -165,7 +165,7 @@ pub async fn request_device_code(opts: &ServerOptions) -> std::io::Result<Device
     let uc = request_user_code(&client, &api_base_url, &opts.client_id).await?;
 
     Ok(DeviceCode {
-        verification_url: format!("{base_url}/codex/device"),
+        verification_url: format!("{base_url}/motyga/device"),
         user_code: uc.user_code,
         device_auth_id: uc.device_auth_id,
         interval: uc.interval,
@@ -214,7 +214,7 @@ pub async fn complete_device_code_login(
     }
 
     crate::server::persist_tokens_async(
-        &opts.codex_home,
+        &opts.motyga_home,
         /*api_key*/ None,
         tokens.id_token,
         tokens.access_token,

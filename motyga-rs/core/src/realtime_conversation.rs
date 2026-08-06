@@ -11,45 +11,45 @@ use async_channel::Sender;
 use async_channel::TrySendError;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
-use codex_api::ApiError;
-use codex_api::Provider as ApiProvider;
-use codex_api::RealtimeAudioFrame;
-use codex_api::RealtimeEvent;
-use codex_api::RealtimeEventParser;
-use codex_api::RealtimeSessionConfig;
-use codex_api::RealtimeSessionMode;
-use codex_api::RealtimeWebsocketClient;
-use codex_api::RealtimeWebsocketEvents;
-use codex_api::RealtimeWebsocketWriter;
-use codex_api::map_api_error;
-use codex_config::config_toml::RealtimeWsMode;
-use codex_config::config_toml::RealtimeWsVersion;
-use codex_login::CodexAuth;
-use codex_login::default_client::default_headers;
-use codex_login::read_openai_api_key_from_env;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_protocol::auth::AuthMode;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::ConversationAudioParams;
-use codex_protocol::protocol::ConversationSpeechParams;
-use codex_protocol::protocol::ConversationStartParams;
-use codex_protocol::protocol::ConversationStartTransport;
-use codex_protocol::protocol::ConversationTextParams;
-use codex_protocol::protocol::ConversationTextRole;
-use codex_protocol::protocol::ErrorEvent;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RealtimeConversationClosedEvent;
-use codex_protocol::protocol::RealtimeConversationRealtimeEvent;
-use codex_protocol::protocol::RealtimeConversationSdpEvent;
-use codex_protocol::protocol::RealtimeConversationStartedEvent;
-use codex_protocol::protocol::RealtimeHandoffRequested;
-use codex_protocol::protocol::RealtimeOutputModality;
-use codex_protocol::protocol::RealtimeVoice;
-use codex_protocol::protocol::RealtimeVoicesList;
+use motyga_api::ApiError;
+use motyga_api::Provider as ApiProvider;
+use motyga_api::RealtimeAudioFrame;
+use motyga_api::RealtimeEvent;
+use motyga_api::RealtimeEventParser;
+use motyga_api::RealtimeSessionConfig;
+use motyga_api::RealtimeSessionMode;
+use motyga_api::RealtimeWebsocketClient;
+use motyga_api::RealtimeWebsocketEvents;
+use motyga_api::RealtimeWebsocketWriter;
+use motyga_api::map_api_error;
+use motyga_config::config_toml::RealtimeWsMode;
+use motyga_config::config_toml::RealtimeWsVersion;
+use motyga_login::MotygaAuth;
+use motyga_login::default_client::default_headers;
+use motyga_login::read_openai_api_key_from_env;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_protocol::auth::AuthMode;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::models::MessagePhase;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::ConversationAudioParams;
+use motyga_protocol::protocol::ConversationSpeechParams;
+use motyga_protocol::protocol::ConversationStartParams;
+use motyga_protocol::protocol::ConversationStartTransport;
+use motyga_protocol::protocol::ConversationTextParams;
+use motyga_protocol::protocol::ConversationTextRole;
+use motyga_protocol::protocol::ErrorEvent;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::RealtimeConversationClosedEvent;
+use motyga_protocol::protocol::RealtimeConversationRealtimeEvent;
+use motyga_protocol::protocol::RealtimeConversationSdpEvent;
+use motyga_protocol::protocol::RealtimeConversationStartedEvent;
+use motyga_protocol::protocol::RealtimeHandoffRequested;
+use motyga_protocol::protocol::RealtimeOutputModality;
+use motyga_protocol::protocol::RealtimeVoice;
+use motyga_protocol::protocol::RealtimeVoicesList;
 use http::HeaderMap;
 use http::HeaderValue;
 use http::header::AUTHORIZATION;
@@ -70,7 +70,7 @@ const HANDOFF_OUT_QUEUE_CAPACITY: usize = 64;
 const OUTPUT_EVENTS_QUEUE_CAPACITY: usize = 256;
 const REALTIME_STARTUP_CONTEXT_TOKEN_BUDGET: usize = 5_300;
 const REALTIME_ASSISTANT_OUTPUT_TOKEN_BUDGET: usize = 1_000;
-const STANDALONE_HANDOFF_ID: &str = "codex";
+const STANDALONE_HANDOFF_ID: &str = "motyga";
 const DEFAULT_REALTIME_MODEL: &str = "gpt-realtime-1.5";
 pub(crate) const REALTIME_USER_TEXT_PREFIX: &str = "[USER] ";
 pub(crate) const REALTIME_BACKEND_TEXT_PREFIX: &str = "[BACKEND] ";
@@ -109,9 +109,9 @@ struct RealtimeHandoffState {
     active_handoff: Arc<Mutex<Option<String>>>,
     last_output_text: Arc<Mutex<Option<String>>>,
     client_managed_handoffs: bool,
-    codex_responses_as_items: bool,
-    codex_response_item_prefix: Option<String>,
-    codex_response_handoff_prefix: Option<String>,
+    motyga_responses_as_items: bool,
+    motyga_response_item_prefix: Option<String>,
+    motyga_response_handoff_prefix: Option<String>,
     session_kind: RealtimeSessionKind,
 }
 
@@ -215,9 +215,9 @@ impl RealtimeHandoffState {
     fn new(
         output_tx: Sender<RealtimeOutbound>,
         client_managed_handoffs: bool,
-        codex_responses_as_items: bool,
-        codex_response_item_prefix: Option<String>,
-        codex_response_handoff_prefix: Option<String>,
+        motyga_responses_as_items: bool,
+        motyga_response_item_prefix: Option<String>,
+        motyga_response_handoff_prefix: Option<String>,
         session_kind: RealtimeSessionKind,
     ) -> Self {
         Self {
@@ -225,9 +225,9 @@ impl RealtimeHandoffState {
             active_handoff: Arc::new(Mutex::new(None)),
             last_output_text: Arc::new(Mutex::new(None)),
             client_managed_handoffs,
-            codex_responses_as_items,
-            codex_response_item_prefix,
-            codex_response_handoff_prefix,
+            motyga_responses_as_items,
+            motyga_response_item_prefix,
+            motyga_response_handoff_prefix,
             session_kind,
         }
     }
@@ -248,9 +248,9 @@ struct RealtimeStart {
     api_provider: ApiProvider,
     extra_headers: Option<HeaderMap>,
     client_managed_handoffs: bool,
-    codex_responses_as_items: bool,
-    codex_response_item_prefix: Option<String>,
-    codex_response_handoff_prefix: Option<String>,
+    motyga_responses_as_items: bool,
+    motyga_response_item_prefix: Option<String>,
+    motyga_response_handoff_prefix: Option<String>,
     realtime_call_api_provider: Option<ApiProvider>,
     session_config: RealtimeSessionConfig,
     model_client: ModelClient,
@@ -288,7 +288,7 @@ impl RealtimeConversationManager {
         )
     }
 
-    async fn start(&self, start: RealtimeStart) -> CodexResult<RealtimeStartOutput> {
+    async fn start(&self, start: RealtimeStart) -> MotygaResult<RealtimeStartOutput> {
         let previous_state = {
             let mut guard = self.state.lock().await;
             guard.take()
@@ -300,14 +300,14 @@ impl RealtimeConversationManager {
         self.start_inner(start).await
     }
 
-    async fn start_inner(&self, start: RealtimeStart) -> CodexResult<RealtimeStartOutput> {
+    async fn start_inner(&self, start: RealtimeStart) -> MotygaResult<RealtimeStartOutput> {
         let RealtimeStart {
             api_provider,
             extra_headers,
             client_managed_handoffs,
-            codex_responses_as_items,
-            codex_response_item_prefix,
-            codex_response_handoff_prefix,
+            motyga_responses_as_items,
+            motyga_response_item_prefix,
+            motyga_response_handoff_prefix,
             realtime_call_api_provider,
             session_config,
             model_client,
@@ -332,9 +332,9 @@ impl RealtimeConversationManager {
         let handoff = RealtimeHandoffState::new(
             handoff_output_tx,
             client_managed_handoffs,
-            codex_responses_as_items,
-            codex_response_item_prefix,
-            codex_response_handoff_prefix,
+            motyga_responses_as_items,
+            motyga_response_item_prefix,
+            motyga_response_handoff_prefix,
             session_kind,
         );
         let input_channels = RealtimeInputChannels {
@@ -441,14 +441,14 @@ impl RealtimeConversationManager {
         }
     }
 
-    pub(crate) async fn audio_in(&self, frame: RealtimeAudioFrame) -> CodexResult<()> {
+    pub(crate) async fn audio_in(&self, frame: RealtimeAudioFrame) -> MotygaResult<()> {
         let sender = {
             let guard = self.state.lock().await;
             guard.as_ref().map(|state| state.audio_tx.clone())
         };
 
         let Some(sender) = sender else {
-            return Err(CodexErr::InvalidRequest(
+            return Err(MotygaErr::InvalidRequest(
                 "conversation is not running".to_string(),
             ));
         };
@@ -459,13 +459,13 @@ impl RealtimeConversationManager {
                 warn!("dropping input audio frame due to full queue");
                 Ok(())
             }
-            Err(TrySendError::Closed(_)) => Err(CodexErr::InvalidRequest(
+            Err(TrySendError::Closed(_)) => Err(MotygaErr::InvalidRequest(
                 "conversation is not running".to_string(),
             )),
         }
     }
 
-    pub(crate) async fn text_in(&self, mut params: ConversationTextParams) -> CodexResult<()> {
+    pub(crate) async fn text_in(&self, mut params: ConversationTextParams) -> MotygaResult<()> {
         let sender = {
             let guard = self.state.lock().await;
             guard
@@ -474,7 +474,7 @@ impl RealtimeConversationManager {
         };
 
         let Some((sender, session_kind)) = sender else {
-            return Err(CodexErr::InvalidRequest(
+            return Err(MotygaErr::InvalidRequest(
                 "conversation is not running".to_string(),
             ));
         };
@@ -486,7 +486,7 @@ impl RealtimeConversationManager {
         sender
             .send(params)
             .await
-            .map_err(|_| CodexErr::InvalidRequest("conversation is not running".to_string()))?;
+            .map_err(|_| MotygaErr::InvalidRequest("conversation is not running".to_string()))?;
         Ok(())
     }
 
@@ -494,11 +494,11 @@ impl RealtimeConversationManager {
         &self,
         output_text: String,
         phase: Option<MessagePhase>,
-    ) -> CodexResult<()> {
+    ) -> MotygaResult<()> {
         let handoff = {
             let guard = self.state.lock().await;
             let Some(state) = guard.as_ref() else {
-                return Err(CodexErr::InvalidRequest(
+                return Err(MotygaErr::InvalidRequest(
                     "conversation is not running".to_string(),
                 ));
             };
@@ -509,7 +509,7 @@ impl RealtimeConversationManager {
             return Ok(());
         }
         let response_handoff_prefix = match phase {
-            Some(MessagePhase::Commentary) => handoff.codex_response_handoff_prefix.clone(),
+            Some(MessagePhase::Commentary) => handoff.motyga_response_handoff_prefix.clone(),
             Some(MessagePhase::FinalAnswer) | None => None,
         };
         let active_handoff = handoff.active_handoff.lock().await.clone();
@@ -517,15 +517,15 @@ impl RealtimeConversationManager {
             Some(handoff_id) => {
                 let output_text = realtime_backend_output(output_text, handoff.session_kind);
                 *handoff.last_output_text.lock().await = Some(output_text.clone());
-                if handoff.codex_responses_as_items {
+                if handoff.motyga_responses_as_items {
                     RealtimeOutbound::ConversationItem {
                         text: realtime_backend_item(
                             output_text,
-                            handoff.codex_response_item_prefix.as_deref(),
+                            handoff.motyga_response_item_prefix.as_deref(),
                         ),
                     }
                 } else if handoff.session_kind == RealtimeSessionKind::V1
-                    && handoff.codex_response_handoff_prefix.is_some()
+                    && handoff.motyga_response_handoff_prefix.is_some()
                 {
                     RealtimeOutbound::HandoffAppend {
                         handoff_id,
@@ -544,11 +544,11 @@ impl RealtimeConversationManager {
             None if output_text.trim().is_empty() => return Ok(()),
             None => {
                 let output_text = realtime_backend_output(output_text, handoff.session_kind);
-                if handoff.codex_responses_as_items {
+                if handoff.motyga_responses_as_items {
                     RealtimeOutbound::ConversationItem {
                         text: realtime_backend_item(
                             output_text,
-                            handoff.codex_response_item_prefix.as_deref(),
+                            handoff.motyga_response_item_prefix.as_deref(),
                         ),
                     }
                 } else {
@@ -566,11 +566,11 @@ impl RealtimeConversationManager {
             .output_tx
             .send(output)
             .await
-            .map_err(|_| CodexErr::InvalidRequest("conversation is not running".to_string()))?;
+            .map_err(|_| MotygaErr::InvalidRequest("conversation is not running".to_string()))?;
         Ok(())
     }
 
-    pub(crate) async fn append_speech(&self, text: String) -> CodexResult<()> {
+    pub(crate) async fn append_speech(&self, text: String) -> MotygaResult<()> {
         if text.trim().is_empty() {
             return Ok(());
         }
@@ -578,7 +578,7 @@ impl RealtimeConversationManager {
         let handoff = {
             let guard = self.state.lock().await;
             let Some(state) = guard.as_ref() else {
-                return Err(CodexErr::InvalidRequest(
+                return Err(MotygaErr::InvalidRequest(
                     "conversation is not running".to_string(),
                 ));
             };
@@ -591,11 +591,11 @@ impl RealtimeConversationManager {
                 text: realtime_backend_output(text, handoff.session_kind),
             })
             .await
-            .map_err(|_| CodexErr::InvalidRequest("conversation is not running".to_string()))?;
+            .map_err(|_| MotygaErr::InvalidRequest("conversation is not running".to_string()))?;
         Ok(())
     }
 
-    pub(crate) async fn handoff_complete(&self) -> CodexResult<()> {
+    pub(crate) async fn handoff_complete(&self) -> MotygaResult<()> {
         let handoff = {
             let guard = self.state.lock().await;
             guard.as_ref().map(|state| state.handoff.clone())
@@ -618,7 +618,7 @@ impl RealtimeConversationManager {
             return Ok(());
         };
 
-        let output = if handoff.codex_responses_as_items {
+        let output = if handoff.motyga_responses_as_items {
             RealtimeOutbound::HandoffCompleteAck { handoff_id }
         } else {
             RealtimeOutbound::CompletedHandoff {
@@ -631,7 +631,7 @@ impl RealtimeConversationManager {
             .output_tx
             .send(output)
             .await
-            .map_err(|_| CodexErr::InvalidRequest("conversation is not running".to_string()))
+            .map_err(|_| MotygaErr::InvalidRequest("conversation is not running".to_string()))
     }
 
     pub(crate) async fn clear_active_handoff(&self) {
@@ -645,7 +645,7 @@ impl RealtimeConversationManager {
         }
     }
 
-    pub(crate) async fn shutdown(&self) -> CodexResult<()> {
+    pub(crate) async fn shutdown(&self) -> MotygaResult<()> {
         let state = {
             let mut guard = self.state.lock().await;
             guard.take()
@@ -681,7 +681,7 @@ pub(crate) async fn handle_start(
     sess: &Arc<Session>,
     sub_id: String,
     params: ConversationStartParams,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let prepared_start = match prepare_realtime_start(sess, params).await {
         Ok(prepared_start) => prepared_start,
         Err(err) => {
@@ -716,9 +716,9 @@ struct PreparedRealtimeConversationStart {
     api_provider: ApiProvider,
     extra_headers: Option<HeaderMap>,
     client_managed_handoffs: bool,
-    codex_responses_as_items: bool,
-    codex_response_item_prefix: Option<String>,
-    codex_response_handoff_prefix: Option<String>,
+    motyga_responses_as_items: bool,
+    motyga_response_item_prefix: Option<String>,
+    motyga_response_handoff_prefix: Option<String>,
     realtime_call_api_provider: Option<ApiProvider>,
     requested_realtime_session_id: Option<String>,
     version: RealtimeWsVersion,
@@ -735,7 +735,7 @@ pub(crate) enum ConfiguredRealtimeVoice {
 async fn prepare_realtime_start(
     sess: &Arc<Session>,
     params: ConversationStartParams,
-) -> CodexResult<PreparedRealtimeConversationStart> {
+) -> MotygaResult<PreparedRealtimeConversationStart> {
     let provider = sess.provider().await;
     let auth_manager = sess
         .services
@@ -800,9 +800,9 @@ async fn prepare_realtime_start(
         api_provider,
         extra_headers,
         client_managed_handoffs: params.client_managed_handoffs,
-        codex_responses_as_items: params.codex_responses_as_items,
-        codex_response_item_prefix: params.codex_response_item_prefix,
-        codex_response_handoff_prefix: params.codex_response_handoff_prefix,
+        motyga_responses_as_items: params.motyga_responses_as_items,
+        motyga_response_item_prefix: params.motyga_response_item_prefix,
+        motyga_response_handoff_prefix: params.motyga_response_handoff_prefix,
         realtime_call_api_provider,
         requested_realtime_session_id,
         version,
@@ -814,14 +814,14 @@ async fn prepare_realtime_start(
 fn validate_avas_webrtc_start(
     version: RealtimeWsVersion,
     session_type: RealtimeWsMode,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     if version != RealtimeWsVersion::V1 {
-        return Err(CodexErr::InvalidRequest(
+        return Err(MotygaErr::InvalidRequest(
             "AVAS realtime calls require realtime v1".to_string(),
         ));
     }
     if session_type != RealtimeWsMode::Conversational {
-        return Err(CodexErr::InvalidRequest(
+        return Err(MotygaErr::InvalidRequest(
             "AVAS realtime calls require conversational realtime".to_string(),
         ));
     }
@@ -833,7 +833,7 @@ pub(crate) async fn build_realtime_session_config(
     params: &ConversationStartParams,
     version: RealtimeWsVersion,
     configured_voice: ConfiguredRealtimeVoice,
-) -> CodexResult<RealtimeSessionConfig> {
+) -> MotygaResult<RealtimeSessionConfig> {
     let config = sess.get_config().await;
     let prompt = prepare_realtime_backend_prompt(
         params.prompt.clone(),
@@ -871,7 +871,7 @@ pub(crate) async fn build_realtime_session_config(
     if version == RealtimeWsVersion::V1
         && matches!(params.output_modality, RealtimeOutputModality::Text)
     {
-        return Err(CodexErr::InvalidRequest(
+        return Err(MotygaErr::InvalidRequest(
             "text realtime output modality requires realtime v2".to_string(),
         ));
     }
@@ -932,7 +932,7 @@ fn realtime_backend_item(text: String, prefix: Option<&str>) -> String {
     truncate_realtime_text_to_token_budget(&text, REALTIME_ASSISTANT_OUTPUT_TOKEN_BUDGET)
 }
 
-fn validate_realtime_voice(version: RealtimeWsVersion, voice: RealtimeVoice) -> CodexResult<()> {
+fn validate_realtime_voice(version: RealtimeWsVersion, voice: RealtimeVoice) -> MotygaResult<()> {
     let voices = RealtimeVoicesList::builtin();
     let allowed = match version {
         RealtimeWsVersion::V1 => &voices.v1,
@@ -951,7 +951,7 @@ fn validate_realtime_voice(version: RealtimeWsVersion, voice: RealtimeVoice) -> 
         .map(|voice| voice.wire_name())
         .collect::<Vec<_>>()
         .join(", ");
-    Err(CodexErr::InvalidRequest(format!(
+    Err(MotygaErr::InvalidRequest(format!(
         "realtime voice `{}` is not supported for {version}; supported voices: {allowed}",
         voice.wire_name()
     )))
@@ -961,14 +961,14 @@ async fn handle_start_inner(
     sess: &Arc<Session>,
     sub_id: &str,
     prepared_start: PreparedRealtimeConversationStart,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let PreparedRealtimeConversationStart {
         api_provider,
         extra_headers,
         client_managed_handoffs,
-        codex_responses_as_items,
-        codex_response_item_prefix,
-        codex_response_handoff_prefix,
+        motyga_responses_as_items,
+        motyga_response_item_prefix,
+        motyga_response_handoff_prefix,
         realtime_call_api_provider,
         requested_realtime_session_id,
         version,
@@ -984,9 +984,9 @@ async fn handle_start_inner(
         api_provider,
         extra_headers,
         client_managed_handoffs,
-        codex_responses_as_items,
-        codex_response_item_prefix,
-        codex_response_handoff_prefix,
+        motyga_responses_as_items,
+        motyga_response_item_prefix,
+        motyga_response_handoff_prefix,
         realtime_call_api_provider,
         session_config,
         model_client: sess.services.model_client.clone(),
@@ -1096,7 +1096,7 @@ pub(crate) async fn handle_audio(
         if sess.conversation.running_state().await.is_some() {
             warn!("realtime audio input failed while the session was already ending");
         } else {
-            send_conversation_error(sess, sub_id, err.to_string(), CodexErrorInfo::BadRequest)
+            send_conversation_error(sess, sub_id, err.to_string(), MotygaErrorInfo::BadRequest)
                 .await;
         }
     }
@@ -1145,7 +1145,7 @@ fn escape_xml_text(input: &str) -> String {
         .replace('>', "&gt;")
 }
 
-fn realtime_api_key(auth: Option<&CodexAuth>, provider: &ModelProviderInfo) -> CodexResult<String> {
+fn realtime_api_key(auth: Option<&MotygaAuth>, provider: &ModelProviderInfo) -> MotygaResult<String> {
     if let Some(api_key) = provider.api_key()? {
         return Ok(api_key);
     }
@@ -1154,7 +1154,7 @@ fn realtime_api_key(auth: Option<&CodexAuth>, provider: &ModelProviderInfo) -> C
         return Ok(token);
     }
 
-    if let Some(api_key) = auth.and_then(CodexAuth::api_key) {
+    if let Some(api_key) = auth.and_then(MotygaAuth::api_key) {
         return Ok(api_key.to_string());
     }
 
@@ -1166,7 +1166,7 @@ fn realtime_api_key(auth: Option<&CodexAuth>, provider: &ModelProviderInfo) -> C
         return Ok(api_key);
     }
 
-    Err(CodexErr::InvalidRequest(
+    Err(MotygaErr::InvalidRequest(
         "realtime conversation requires API key auth".to_string(),
     ))
 }
@@ -1176,7 +1176,7 @@ fn realtime_request_headers(
     api_key: Option<&str>,
     version: RealtimeWsVersion,
     originator: &str,
-) -> CodexResult<Option<HeaderMap>> {
+) -> MotygaResult<Option<HeaderMap>> {
     let mut headers = HeaderMap::new();
 
     if version == RealtimeWsVersion::V1 {
@@ -1191,7 +1191,7 @@ fn realtime_request_headers(
 
     if let Some(api_key) = api_key {
         let auth_value = HeaderValue::from_str(&format!("Bearer {api_key}")).map_err(|err| {
-            CodexErr::InvalidRequest(format!("invalid realtime api key header: {err}"))
+            MotygaErr::InvalidRequest(format!("invalid realtime api key header: {err}"))
         })?;
         headers.insert(AUTHORIZATION, auth_value);
     }
@@ -1212,7 +1212,7 @@ pub(crate) async fn handle_text(
         if sess.conversation.running_state().await.is_some() {
             warn!("realtime text input failed while the session was already ending");
         } else {
-            send_conversation_error(sess, sub_id, err.to_string(), CodexErrorInfo::BadRequest)
+            send_conversation_error(sess, sub_id, err.to_string(), MotygaErrorInfo::BadRequest)
                 .await;
         }
     }
@@ -1229,7 +1229,7 @@ pub(crate) async fn handle_speech(
         if sess.conversation.running_state().await.is_some() {
             warn!("realtime speech append failed while the session was already ending");
         } else {
-            send_conversation_error(sess, sub_id, err.to_string(), CodexErrorInfo::BadRequest)
+            send_conversation_error(sess, sub_id, err.to_string(), MotygaErrorInfo::BadRequest)
                 .await;
         }
     }
@@ -1752,13 +1752,13 @@ async fn send_conversation_error(
     sess: &Arc<Session>,
     sub_id: String,
     message: String,
-    codex_error_info: CodexErrorInfo,
+    motyga_error_info: MotygaErrorInfo,
 ) {
     sess.send_event_raw(Event {
         id: sub_id,
         msg: EventMsg::Error(ErrorEvent {
             message,
-            codex_error_info: Some(codex_error_info),
+            motyga_error_info: Some(motyga_error_info),
         }),
     })
     .await;

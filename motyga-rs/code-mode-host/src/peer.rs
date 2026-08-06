@@ -6,16 +6,16 @@ use std::sync::PoisonError;
 use std::sync::atomic::AtomicI64;
 use std::sync::atomic::Ordering;
 
-use codex_code_mode_protocol::CellId;
-use codex_code_mode_protocol::StartedCell;
-use codex_code_mode_protocol::host::DelegateRequest;
-use codex_code_mode_protocol::host::DelegateRequestId;
-use codex_code_mode_protocol::host::DelegateResponse;
-use codex_code_mode_protocol::host::EncodedFrame;
-use codex_code_mode_protocol::host::HostToClient;
-use codex_code_mode_protocol::host::RequestId;
-use codex_code_mode_protocol::host::SessionId;
-use codex_code_mode_protocol::host::WireResult;
+use motyga_code_mode_protocol::CellId;
+use motyga_code_mode_protocol::StartedCell;
+use motyga_code_mode_protocol::host::DelegateRequest;
+use motyga_code_mode_protocol::host::DelegateRequestId;
+use motyga_code_mode_protocol::host::DelegateResponse;
+use motyga_code_mode_protocol::host::EncodedFrame;
+use motyga_code_mode_protocol::host::HostToClient;
+use motyga_code_mode_protocol::host::RequestId;
+use motyga_code_mode_protocol::host::SessionId;
+use motyga_code_mode_protocol::host::WireResult;
 use tokio::sync::Mutex;
 use tokio::sync::Notify;
 use tokio::sync::OwnedSemaphorePermit;
@@ -81,7 +81,7 @@ impl HostPeer {
     pub(super) fn respond(
         &self,
         id: RequestId,
-        result: Result<codex_code_mode_protocol::host::HostResponse, String>,
+        result: Result<motyga_code_mode_protocol::host::HostResponse, String>,
     ) {
         let message = HostToClient::Response {
             id,
@@ -100,7 +100,7 @@ impl HostPeer {
     fn initial_response(
         &self,
         id: RequestId,
-        result: Result<codex_code_mode_protocol::host::WireRuntimeResponse, String>,
+        result: Result<motyga_code_mode_protocol::host::WireRuntimeResponse, String>,
     ) {
         let message = HostToClient::InitialResponse {
             id,

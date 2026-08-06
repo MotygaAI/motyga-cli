@@ -26,7 +26,7 @@ if (Test-Path "D:\") {
     $Drive = "D:"
 } else {
     try {
-        $VhdPath = Join-Path $env:RUNNER_TEMP "codex-dev-drive.vhdx"
+        $VhdPath = Join-Path $env:RUNNER_TEMP "motyga-dev-drive.vhdx"
         $SizeBytes = 64GB
 
         if (Test-Path $VhdPath) {
@@ -38,7 +38,7 @@ if (Test-Path "D:\") {
         $Disk = $Mounted | Get-Disk -ErrorAction Stop
         $Disk | Initialize-Disk -PartitionStyle GPT -ErrorAction Stop
         $Partition = $Disk | New-Partition -AssignDriveLetter -UseMaximumSize -ErrorAction Stop
-        $Volume = $Partition | Format-Volume -FileSystem ReFS -NewFileSystemLabel "CodexDevDrive" -DevDrive -Confirm:$false -Force -ErrorAction Stop
+        $Volume = $Partition | Format-Volume -FileSystem ReFS -NewFileSystemLabel "MotygaDevDrive" -DevDrive -Confirm:$false -Force -ErrorAction Stop
 
         $Drive = "$($Volume.DriveLetter):"
 
@@ -52,7 +52,7 @@ if (Test-Path "D:\") {
     }
 }
 
-$Tmp = "$Drive\codex-tmp"
+$Tmp = "$Drive\motyga-tmp"
 New-Item -Path $Tmp -ItemType Directory -Force | Out-Null
 
 @(

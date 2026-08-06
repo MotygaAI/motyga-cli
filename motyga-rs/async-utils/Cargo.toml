@@ -1,5 +1,5 @@
 [package]
-name = "codex-async-utils"
+name = "motyga-async-utils"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

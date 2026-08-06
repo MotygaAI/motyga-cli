@@ -11,7 +11,7 @@ const ACCOUNT_WORKSPACE_MESSAGES_FETCH_TIMEOUT: Duration =
     Duration::from_millis(/*millis*/ 1000);
 // The override is intentionally available only in debug builds, matching the login path below.
 #[cfg(debug_assertions)]
-const LOGIN_ISSUER_OVERRIDE_ENV_VAR: &str = "CODEX_APP_SERVER_LOGIN_ISSUER";
+const LOGIN_ISSUER_OVERRIDE_ENV_VAR: &str = "MOTYGA_APP_SERVER_LOGIN_ISSUER";
 
 enum ActiveLogin {
     Browser {
@@ -182,20 +182,20 @@ impl AccountRequestProcessor {
         AccountUpdatedNotification {
             auth_mode: auth
                 .as_ref()
-                .map(CodexAuth::api_auth_mode)
+                .map(MotygaAuth::api_auth_mode)
                 .map(auth_mode_to_api),
-            plan_type: auth.as_ref().and_then(CodexAuth::account_plan_type),
+            plan_type: auth.as_ref().and_then(MotygaAuth::account_plan_type),
         }
     }
 
     async fn maybe_refresh_plugin_caches_for_current_config(
         config_manager: &ConfigManager,
         thread_manager: &Arc<ThreadManager>,
-        auth: Option<CodexAuth>,
+        auth: Option<MotygaAuth>,
     ) {
         thread_manager
             .plugins_manager()
-            .set_auth_mode(auth.as_ref().map(CodexAuth::api_auth_mode));
+            .set_auth_mode(auth.as_ref().map(MotygaAuth::api_auth_mode));
         thread_manager
             .plugins_manager()
             .clear_recommended_plugins_cache();
@@ -253,9 +253,9 @@ impl AccountRequestProcessor {
                     .await;
             }
             LoginAccountParams::Chatgpt {
-                codex_streamlined_login,
+                motyga_streamlined_login,
             } => {
-                self.login_chatgpt_v2(request_id, codex_streamlined_login)
+                self.login_chatgpt_v2(request_id, motyga_streamlined_login)
                     .await;
             }
             LoginAccountParams::ChatgptDeviceCode => {
@@ -310,7 +310,7 @@ impl AccountRequestProcessor {
         }
 
         match login_with_api_key(
-            &self.config.codex_home,
+            &self.config.motyga_home,
             &params.api_key,
             self.config.cli_auth_credentials_store_mode,
             self.config.auth_keyring_backend_kind(),
@@ -340,7 +340,7 @@ impl AccountRequestProcessor {
     // Build options for a ChatGPT login attempt; performs validation.
     async fn login_chatgpt_common(
         &self,
-        codex_streamlined_login: bool,
+        motyga_streamlined_login: bool,
     ) -> std::result::Result<LoginServerOptions, JSONRPCErrorError> {
         let config = self.config.as_ref();
 
@@ -356,9 +356,9 @@ impl AccountRequestProcessor {
 
         let opts = LoginServerOptions {
             open_browser: false,
-            codex_streamlined_login,
+            motyga_streamlined_login,
             ..LoginServerOptions::new(
-                config.codex_home.to_path_buf(),
+                config.motyga_home.to_path_buf(),
                 oauth_client_id(),
                 config.forced_chatgpt_workspace_id.clone(),
                 config.cli_auth_credentials_store_mode,
@@ -392,17 +392,17 @@ impl AccountRequestProcessor {
     async fn login_chatgpt_v2(
         &self,
         request_id: ConnectionRequestId,
-        codex_streamlined_login: bool,
+        motyga_streamlined_login: bool,
     ) {
-        let result = self.login_chatgpt_response(codex_streamlined_login).await;
+        let result = self.login_chatgpt_response(motyga_streamlined_login).await;
         self.outgoing.send_result(request_id, result).await;
     }
 
     async fn login_chatgpt_response(
         &self,
-        codex_streamlined_login: bool,
+        motyga_streamlined_login: bool,
     ) -> Result<LoginAccountResponse, JSONRPCErrorError> {
-        let opts = self.login_chatgpt_common(codex_streamlined_login).await?;
+        let opts = self.login_chatgpt_common(motyga_streamlined_login).await?;
         let server = run_login_server(opts)
             .map_err(|err| internal_error(format!("failed to start login server: {err}")))?;
         let login_id = Uuid::new_v4();
@@ -474,7 +474,7 @@ impl AccountRequestProcessor {
         &self,
     ) -> Result<LoginAccountResponse, JSONRPCErrorError> {
         let opts = self
-            .login_chatgpt_common(/*codex_streamlined_login*/ false)
+            .login_chatgpt_common(/*motyga_streamlined_login*/ false)
             .await?;
         let device_code = request_device_code(&opts)
             .await
@@ -618,7 +618,7 @@ impl AccountRequestProcessor {
         }
 
         login_with_chatgpt_auth_tokens(
-            &self.config.codex_home,
+            &self.config.motyga_home,
             &access_token,
             &chatgpt_account_id,
             chatgpt_plan_type.as_deref(),
@@ -699,9 +699,9 @@ impl AccountRequestProcessor {
             let payload_v2 = AccountUpdatedNotification {
                 auth_mode: auth
                     .as_ref()
-                    .map(CodexAuth::api_auth_mode)
+                    .map(MotygaAuth::api_auth_mode)
                     .map(auth_mode_to_api),
-                plan_type: auth.as_ref().and_then(CodexAuth::account_plan_type),
+                plan_type: auth.as_ref().and_then(MotygaAuth::account_plan_type),
             };
             outgoing
                 .send_server_notification(ServerNotification::AccountUpdated(payload_v2))
@@ -737,7 +737,7 @@ impl AccountRequestProcessor {
             .auth_manager
             .auth_cached()
             .as_ref()
-            .map(CodexAuth::api_auth_mode)
+            .map(MotygaAuth::api_auth_mode)
             .map(auth_mode_to_api))
     }
 
@@ -812,7 +812,7 @@ impl AccountRequestProcessor {
                     let auth_mode = auth_mode_to_api(auth.api_auth_mode());
                     let (reported_auth_method, token_opt) = if matches!(
                         auth,
-                        CodexAuth::AgentIdentity(_) | CodexAuth::PersonalAccessToken(_)
+                        MotygaAuth::AgentIdentity(_) | MotygaAuth::PersonalAccessToken(_)
                     ) || include_token
                         && permanent_refresh_failure
                     {
@@ -878,11 +878,11 @@ impl AccountRequestProcessor {
     ) -> Result<GetAccountRateLimitsResponse, JSONRPCErrorError> {
         let Some(auth) = self.auth_manager.auth().await else {
             return Err(invalid_request(
-                "codex account authentication required to read rate limits",
+                "motyga account authentication required to read rate limits",
             ));
         };
 
-        if !auth.uses_codex_backend() {
+        if !auth.uses_motyga_backend() {
             return Err(invalid_request(
                 "chatgpt authentication required to read rate limits",
             ));
@@ -894,10 +894,10 @@ impl AccountRequestProcessor {
         let response = client
             .get_rate_limits_with_reset_credits()
             .await
-            .map_err(|err| internal_error(format!("failed to fetch codex rate limits: {err}")))?;
+            .map_err(|err| internal_error(format!("failed to fetch motyga rate limits: {err}")))?;
         if response.rate_limits.is_empty() {
             return Err(internal_error(
-                "failed to fetch codex rate limits: no snapshots returned",
+                "failed to fetch motyga rate limits: no snapshots returned",
             ));
         }
 
@@ -909,14 +909,14 @@ impl AccountRequestProcessor {
                 let limit_id = snapshot
                     .limit_id
                     .clone()
-                    .unwrap_or_else(|| "codex".to_string());
+                    .unwrap_or_else(|| "motyga".to_string());
                 (limit_id, snapshot)
             })
             .collect();
         let rate_limits = response
             .rate_limits
             .iter()
-            .find(|snapshot| snapshot.limit_id.as_deref() == Some("codex"))
+            .find(|snapshot| snapshot.limit_id.as_deref() == Some("motyga"))
             .cloned()
             .unwrap_or_else(|| response.rate_limits[0].clone());
 
@@ -941,11 +941,11 @@ impl AccountRequestProcessor {
     ) -> Result<GetAccountTokenUsageResponse, JSONRPCErrorError> {
         let Some(auth) = self.auth_manager.auth().await else {
             return Err(invalid_request(
-                "codex account authentication required to read token usage",
+                "motyga account authentication required to read token usage",
             ));
         };
 
-        if !auth.uses_codex_backend() {
+        if !auth.uses_motyga_backend() {
             return Err(invalid_request(
                 "chatgpt authentication required to read token usage",
             ));
@@ -968,11 +968,11 @@ impl AccountRequestProcessor {
     ) -> Result<GetWorkspaceMessagesResponse, JSONRPCErrorError> {
         let Some(auth) = self.auth_manager.auth().await else {
             return Err(invalid_request(
-                "codex account authentication required to read workspace messages",
+                "motyga account authentication required to read workspace messages",
             ));
         };
 
-        if !auth.uses_codex_backend() {
+        if !auth.uses_motyga_backend() {
             return Err(invalid_request(
                 "chatgpt authentication required to read workspace messages",
             ));
@@ -1056,11 +1056,11 @@ impl AccountRequestProcessor {
     ) -> Result<AddCreditsNudgeEmailStatus, JSONRPCErrorError> {
         let Some(auth) = self.auth_manager.auth().await else {
             return Err(invalid_request(
-                "codex account authentication required to notify workspace owner",
+                "motyga account authentication required to notify workspace owner",
             ));
         };
 
-        if !auth.uses_codex_backend() {
+        if !auth.uses_motyga_backend() {
             return Err(invalid_request(
                 "chatgpt authentication required to notify workspace owner",
             ));
@@ -1136,8 +1136,8 @@ fn workspace_messages_feature_disabled(err: &BackendRequestError) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_backend_client::TokenUsageProfileDailyBucket;
-    use codex_backend_client::TokenUsageProfileStats;
+    use motyga_backend_client::TokenUsageProfileDailyBucket;
+    use motyga_backend_client::TokenUsageProfileStats;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -1216,7 +1216,7 @@ mod tests {
         for (status, expected) in cases {
             let err = BackendRequestError::UnexpectedStatus {
                 method: "GET".to_string(),
-                url: "https://example.test/api/codex/workspace-messages".to_string(),
+                url: "https://example.test/api/motyga/workspace-messages".to_string(),
                 status,
                 content_type: "application/json".to_string(),
                 body: "{}".to_string(),

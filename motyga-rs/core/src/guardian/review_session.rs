@@ -5,28 +5,28 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::anyhow;
-use codex_analytics::GuardianReviewAnalyticsResult;
-use codex_analytics::GuardianReviewSessionAnalyticsParams;
-use codex_analytics::GuardianReviewSessionKind;
-use codex_extension_api::UserInstructions;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::AutoCompactTokenLimitScope;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ReasoningSummary as ReasoningSummaryConfig;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::ErrorEvent;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::TokenUsage;
+use motyga_analytics::GuardianReviewAnalyticsResult;
+use motyga_analytics::GuardianReviewSessionAnalyticsParams;
+use motyga_analytics::GuardianReviewSessionKind;
+use motyga_extension_api::UserInstructions;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::AutoCompactTokenLimitScope;
+use motyga_protocol::config_types::Personality;
+use motyga_protocol::config_types::ReasoningSummary as ReasoningSummaryConfig;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::ErrorEvent;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::TokenUsage;
 use futures::future::BoxFuture;
 use serde_json::Value;
 use tokio::sync::Mutex;
@@ -34,7 +34,7 @@ use tokio::sync::Semaphore;
 use tokio_util::sync::CancellationToken;
 use tracing::warn;
 
-use crate::codex_delegate::run_codex_thread_interactive;
+use crate::motyga_delegate::run_motyga_thread_interactive;
 use crate::config::Config;
 use crate::config::Constrained;
 use crate::config::ManagedFeatures;
@@ -42,13 +42,13 @@ use crate::config::NetworkProxySpec;
 use crate::config::Permissions;
 use crate::context::ContextualUserFragment;
 use crate::context::GuardianFollowupReviewReminder;
-use crate::session::Codex;
+use crate::session::Motyga;
 use crate::session::session::Session;
 use crate::session::turn_context::TurnContext;
-use codex_config::types::McpServerConfig;
-use codex_features::Feature;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_config::types::McpServerConfig;
+use motyga_features::Feature;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 use super::GUARDIAN_REVIEWER_NAME;
 use super::GuardianApprovalRequest;
@@ -66,7 +66,7 @@ pub(crate) enum GuardianReviewSessionOutcome {
     PromptBuildFailed(anyhow::Error),
     SessionFailed {
         error: anyhow::Error,
-        error_info: Option<CodexErrorInfo>,
+        error_info: Option<MotygaErrorInfo>,
     },
     TimedOut,
     Aborted,
@@ -104,7 +104,7 @@ struct GuardianReviewSessionState {
 }
 
 struct GuardianReviewSession {
-    codex: Codex,
+    motyga: Motyga,
     cancel_token: CancellationToken,
     reuse_key: GuardianReviewSessionReuseKey,
     review_lock: Semaphore,
@@ -164,7 +164,7 @@ struct GuardianReviewSessionReuseKey {
     compact_prompt: Option<String>,
     cwd: AbsolutePathBuf,
     mcp_servers: Constrained<HashMap<String, McpServerConfig>>,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    motyga_linux_sandbox_exe: Option<PathBuf>,
     main_execve_wrapper_exe: Option<PathBuf>,
     zsh_path: Option<PathBuf>,
     features: ManagedFeatures,
@@ -192,7 +192,7 @@ impl GuardianReviewSessionReuseKey {
             compact_prompt: spawn_config.compact_prompt.clone(),
             cwd: spawn_config.cwd.clone(),
             mcp_servers: spawn_config.mcp_servers.clone(),
-            codex_linux_sandbox_exe: spawn_config.codex_linux_sandbox_exe.clone(),
+            motyga_linux_sandbox_exe: spawn_config.motyga_linux_sandbox_exe.clone(),
             main_execve_wrapper_exe: spawn_config.main_execve_wrapper_exe.clone(),
             zsh_path: spawn_config.zsh_path.clone(),
             features: spawn_config.features.clone(),
@@ -218,7 +218,7 @@ pub(crate) fn prompt_cache_key_override_for_review_session(
 impl GuardianReviewSession {
     async fn shutdown(&self) {
         self.cancel_token.cancel();
-        let _ = self.codex.shutdown_and_wait().await;
+        let _ = self.motyga.shutdown_and_wait().await;
     }
 
     fn shutdown_in_background(self: &Arc<Self>) {
@@ -233,7 +233,7 @@ impl GuardianReviewSession {
     }
 
     async fn refresh_last_committed_fork_snapshot(&self) {
-        match load_rollout_items_for_fork(&self.codex.session).await {
+        match load_rollout_items_for_fork(&self.motyga.session).await {
             Ok(Some(items)) if !items.is_empty() => {
                 let mut state = self.state.lock().await;
                 let prior_review_count = state.prior_review_count;
@@ -330,8 +330,8 @@ impl GuardianReviewSessionManager {
 
     pub(crate) async fn trunk_rollout_path(&self) -> Option<PathBuf> {
         let trunk = self.state.lock().await.trunk.clone()?;
-        trunk.codex.session.ensure_rollout_materialized().await;
-        match trunk.codex.session.current_rollout_path().await {
+        trunk.motyga.session.ensure_rollout_materialized().await;
+        match trunk.motyga.session.current_rollout_path().await {
             Ok(path) => path,
             Err(err) => {
                 warn!("failed to resolve guardian trunk rollout path: {err}");
@@ -490,14 +490,14 @@ impl GuardianReviewSessionManager {
     }
 
     #[cfg(test)]
-    pub(crate) async fn cache_for_test(&self, codex: Codex) {
+    pub(crate) async fn cache_for_test(&self, motyga: Motyga) {
         let reuse_key = GuardianReviewSessionReuseKey::from_spawn_config(
-            codex.session.get_config().await.as_ref(),
-            codex.session.user_instructions().await,
+            motyga.session.get_config().await.as_ref(),
+            motyga.session.user_instructions().await,
         );
         self.state.lock().await.trunk = Some(Arc::new(GuardianReviewSession {
             reuse_key,
-            codex,
+            motyga,
             cancel_token: CancellationToken::new(),
             review_lock: Semaphore::new(/*permits*/ 1),
             state: Mutex::new(GuardianReviewState {
@@ -509,10 +509,10 @@ impl GuardianReviewSessionManager {
     }
 
     #[cfg(test)]
-    pub(crate) async fn register_ephemeral_for_test(&self, codex: Codex) {
+    pub(crate) async fn register_ephemeral_for_test(&self, motyga: Motyga) {
         let reuse_key = GuardianReviewSessionReuseKey::from_spawn_config(
-            codex.session.get_config().await.as_ref(),
-            codex.session.user_instructions().await,
+            motyga.session.get_config().await.as_ref(),
+            motyga.session.user_instructions().await,
         );
         self.state
             .lock()
@@ -520,7 +520,7 @@ impl GuardianReviewSessionManager {
             .ephemeral_reviews
             .push(Arc::new(GuardianReviewSession {
                 reuse_key,
-                codex,
+                motyga,
                 cancel_token: CancellationToken::new(),
                 review_lock: Semaphore::new(/*permits*/ 1),
                 state: Mutex::new(GuardianReviewState {
@@ -551,7 +551,7 @@ impl GuardianReviewSessionManager {
             .trunk
             .clone()
             .expect("guardian trunk should exist");
-        trunk.codex.session.send_event_raw(event).await;
+        trunk.motyga.session.send_event_raw(event).await;
     }
 
     async fn remove_trunk_if_current(
@@ -662,7 +662,7 @@ async fn spawn_guardian_review_session(
         ),
         None => (None, 0, None),
     };
-    let codex = Box::pin(run_codex_thread_interactive(
+    let motyga = Box::pin(run_motyga_thread_interactive(
         spawn_config,
         parent_session.services.auth_manager.clone(),
         parent_session.services.models_manager.clone(),
@@ -675,7 +675,7 @@ async fn spawn_guardian_review_session(
     .await?;
 
     Ok(GuardianReviewSession {
-        codex,
+        motyga,
         cancel_token,
         reuse_key,
         review_lock: Semaphore::new(/*permits*/ 1),
@@ -730,7 +730,7 @@ async fn run_review_on_session(
     };
     let mut analytics_result =
         GuardianReviewAnalyticsResult::from_session(GuardianReviewSessionAnalyticsParams {
-            guardian_thread_id: review_session.codex.session.thread_id.to_string(),
+            guardian_thread_id: review_session.motyga.session.thread_id.to_string(),
             guardian_session_kind,
             guardian_model: params.model.clone(),
             guardian_reasoning_effort: guardian_reasoning_effort.map(|effort| effort.to_string()),
@@ -754,7 +754,7 @@ async fn run_review_on_session(
                 .services
                 .network_approval
                 .sync_session_approved_hosts_to(
-                    &review_session.codex.session.services.network_approval,
+                    &review_session.motyga.session.services.network_approval,
                 )
                 .await;
 
@@ -786,7 +786,7 @@ async fn run_review_on_session(
     let reviewed_action_truncated = prompt_items.reviewed_action_truncated;
     let transcript_cursor = prompt_items.transcript_cursor;
     let token_usage_at_review_start = review_session
-        .codex
+        .motyga
         .session
         .total_token_usage()
         .await
@@ -805,13 +805,13 @@ async fn run_review_on_session(
     let submit_result = run_before_review_deadline(
         deadline,
         params.external_cancel.as_ref(),
-        Box::pin(review_session.codex.submit(Op::UserInput {
+        Box::pin(review_session.motyga.submit(Op::UserInput {
             items: prompt_items.items,
             final_output_json_schema: Some(params.schema.clone()),
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
-                environments: Some(codex_protocol::protocol::TurnEnvironmentSelections::new(
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
+                environments: Some(motyga_protocol::protocol::TurnEnvironmentSelections::new(
                     parent_turn_legacy_fallback_cwd,
                     parent_turn_environments,
                 )),
@@ -820,9 +820,9 @@ async fn run_review_on_session(
                 permission_profile: Some(guardian_permission_profile),
                 summary: Some(params.reasoning_summary),
                 personality: params.personality,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: params.model.clone(),
                         reasoning_effort: params.reasoning_effort.clone(),
                         developer_instructions: None,
@@ -859,7 +859,7 @@ async fn run_review_on_session(
     .await;
     if matches!(outcome.0, GuardianReviewSessionOutcome::Completed(_)) {
         if outcome.2
-            && let Some(total_token_usage) = review_session.codex.session.total_token_usage().await
+            && let Some(total_token_usage) = review_session.motyga.session.total_token_usage().await
         {
             analytics_result.token_usage = Some(token_usage_delta(
                 &token_usage_at_review_start,
@@ -876,7 +876,7 @@ async fn run_review_on_session(
 async fn append_guardian_followup_reminder(review_session: &GuardianReviewSession) {
     let reminder: ResponseItem = ContextualUserFragment::into(GuardianFollowupReviewReminder);
     review_session
-        .codex
+        .motyga
         .session
         .inject_no_new_turn(vec![reminder], /*current_turn_context*/ None)
         .await;
@@ -907,7 +907,7 @@ async fn wait_for_guardian_review(
         tokio::select! {
             _ = &mut timeout => {
                 let keep_review_session = interrupt_and_drain_turn(
-                    &review_session.codex,
+                    &review_session.motyga,
                     expected_turn_id,
                 )
                 .await
@@ -922,14 +922,14 @@ async fn wait_for_guardian_review(
                 }
             } => {
                 let keep_review_session = interrupt_and_drain_turn(
-                    &review_session.codex,
+                    &review_session.motyga,
                     expected_turn_id,
                 )
                 .await
                 .is_ok();
                 return (GuardianReviewSessionOutcome::Aborted, keep_review_session, false);
             }
-            event = review_session.codex.next_event() => {
+            event = review_session.motyga.next_event() => {
                 match event {
                     Ok(event) if !event_matches_turn(&event, expected_turn_id) => {}
                     Ok(event) => match event.msg {
@@ -943,7 +943,7 @@ async fn wait_for_guardian_review(
                                 return (
                                     GuardianReviewSessionOutcome::SessionFailed {
                                         error: anyhow!(error.message),
-                                        error_info: error.codex_error_info,
+                                        error_info: error.motyga_error_info,
                                     },
                                     true,
                                     true,
@@ -992,9 +992,9 @@ fn event_matches_turn(event: &Event, expected_turn_id: &str) -> bool {
 
 pub(crate) fn build_guardian_review_session_config(
     parent_config: &Config,
-    live_network_config: Option<codex_network_proxy::NetworkProxyConfig>,
+    live_network_config: Option<motyga_network_proxy::NetworkProxyConfig>,
     active_model: &str,
-    reasoning_effort: Option<codex_protocol::openai_models::ReasoningEffort>,
+    reasoning_effort: Option<motyga_protocol::openai_models::ReasoningEffort>,
 ) -> anyhow::Result<Config> {
     let mut guardian_config = parent_config.clone();
     guardian_config.model = Some(active_model.to_string());
@@ -1046,7 +1046,7 @@ pub(crate) fn build_guardian_review_session_config(
         Feature::SpawnCsv,
         Feature::Collab,
         Feature::MultiAgentV2,
-        Feature::CodexHooks,
+        Feature::MotygaHooks,
         Feature::Apps,
         Feature::Plugins,
         Feature::WebSearchRequest,
@@ -1099,12 +1099,12 @@ async fn run_before_review_deadline_with_cancel<T>(
     result
 }
 
-async fn interrupt_and_drain_turn(codex: &Codex, expected_turn_id: &str) -> anyhow::Result<()> {
-    let _ = codex.submit(Op::Interrupt).await;
+async fn interrupt_and_drain_turn(motyga: &Motyga, expected_turn_id: &str) -> anyhow::Result<()> {
+    let _ = motyga.submit(Op::Interrupt).await;
 
     tokio::time::timeout(GUARDIAN_INTERRUPT_DRAIN_TIMEOUT, async {
         loop {
-            let event = codex.next_event().await?;
+            let event = motyga.next_event().await?;
             if event_matches_turn(&event, expected_turn_id)
                 && matches!(
                     event.msg,
@@ -1124,12 +1124,12 @@ async fn interrupt_and_drain_turn(codex: &Codex, expected_turn_id: &str) -> anyh
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::protocol::AgentStatus;
-    use codex_protocol::protocol::ErrorEvent;
-    use codex_protocol::protocol::Submission;
-    use codex_protocol::protocol::TurnAbortReason;
-    use codex_protocol::protocol::TurnAbortedEvent;
-    use codex_protocol::protocol::TurnCompleteEvent;
+    use motyga_protocol::protocol::AgentStatus;
+    use motyga_protocol::protocol::ErrorEvent;
+    use motyga_protocol::protocol::Submission;
+    use motyga_protocol::protocol::TurnAbortReason;
+    use motyga_protocol::protocol::TurnAbortedEvent;
+    use motyga_protocol::protocol::TurnCompleteEvent;
 
     async fn test_review_session() -> (
         GuardianReviewSession,
@@ -1148,7 +1148,7 @@ mod tests {
 
         (
             GuardianReviewSession {
-                codex: Codex {
+                motyga: Motyga {
                     tx_sub,
                     rx_event,
                     agent_status,
@@ -1230,7 +1230,7 @@ mod tests {
             schema: super::super::prompt::guardian_output_schema(),
             model,
             reasoning_effort,
-            guardian_default_review_model_id: "codex-auto-review".to_string(),
+            guardian_default_review_model_id: "motyga-auto-review".to_string(),
             guardian_catalog_contains_auto_review: true,
             guardian_review_model_overridden: false,
             guardian_review_model_override: None,
@@ -1359,7 +1359,7 @@ mod tests {
         let mut parent_config = crate::config::test_config().await;
         parent_config
             .features
-            .enable(Feature::CodexHooks)
+            .enable(Feature::MotygaHooks)
             .expect("enable hooks on parent config");
 
         let guardian_config = build_guardian_review_session_config(
@@ -1370,7 +1370,7 @@ mod tests {
         )
         .expect("guardian config");
 
-        assert!(!guardian_config.features.enabled(Feature::CodexHooks));
+        assert!(!guardian_config.features.enabled(Feature::MotygaHooks));
     }
 
     #[tokio::test]
@@ -1641,7 +1641,7 @@ mod tests {
                 id: "prior-turn".to_string(),
                 msg: EventMsg::Error(ErrorEvent {
                     message: "stale guardian error".to_string(),
-                    codex_error_info: None,
+                    motyga_error_info: None,
                 }),
             })
             .await
@@ -1682,7 +1682,7 @@ mod tests {
                 id: "current-turn".to_string(),
                 msg: EventMsg::Error(ErrorEvent {
                     message: "temporary failure".to_string(),
-                    codex_error_info: Some(CodexErrorInfo::ServerOverloaded),
+                    motyga_error_info: Some(MotygaErrorInfo::ServerOverloaded),
                 }),
             })
             .await
@@ -1710,7 +1710,7 @@ mod tests {
             panic!("expected structured session failure");
         };
         assert_eq!(error.to_string(), "temporary failure");
-        assert_eq!(error_info, Some(CodexErrorInfo::ServerOverloaded));
+        assert_eq!(error_info, Some(MotygaErrorInfo::ServerOverloaded));
         assert!(keep_review_session);
         assert!(capture_token_usage);
     }
@@ -1830,10 +1830,10 @@ mod tests {
             .await
             .expect("queue current turn abort");
 
-        interrupt_and_drain_turn(&review_session.codex, "current-turn")
+        interrupt_and_drain_turn(&review_session.motyga, "current-turn")
             .await
             .expect("drain current turn");
 
-        assert!(review_session.codex.rx_event.try_recv().is_err());
+        assert!(review_session.motyga.rx_event.try_recv().is_err());
     }
 }

@@ -19,8 +19,8 @@ mod review_session;
 
 use std::time::Duration;
 
-use codex_protocol::protocol::GuardianAssessmentDecisionSource;
-use codex_protocol::protocol::GuardianAssessmentOutcome;
+use motyga_protocol::protocol::GuardianAssessmentDecisionSource;
+use motyga_protocol::protocol::GuardianAssessmentOutcome;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -62,8 +62,8 @@ const TRUNCATION_TAG: &str = "truncated";
 /// Structured output contract that the guardian reviewer must satisfy.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub(crate) struct GuardianAssessment {
-    pub(crate) risk_level: codex_protocol::protocol::GuardianRiskLevel,
-    pub(crate) user_authorization: codex_protocol::protocol::GuardianUserAuthorization,
+    pub(crate) risk_level: motyga_protocol::protocol::GuardianRiskLevel,
+    pub(crate) user_authorization: motyga_protocol::protocol::GuardianUserAuthorization,
     pub(crate) outcome: GuardianAssessmentOutcome,
     pub(crate) rationale: String,
 }

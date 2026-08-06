@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
 #[cfg(target_os = "macos")]
-use codex_network_proxy::ManagedNetworkSandboxContext;
+use motyga_network_proxy::ManagedNetworkSandboxContext;
 #[cfg(unix)]
-use codex_protocol::models::PermissionProfile;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_protocol::models::PermissionProfile;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use pretty_assertions::assert_eq;
 
 use super::prepare_exec_request;
@@ -58,7 +58,7 @@ fn sandbox_request_wraps_native_argv_on_executor() {
     {
         assert_eq!(
             prepared.command.first(),
-            Some(&runtime_paths.codex_self_exe.to_string_lossy().into_owned())
+            Some(&runtime_paths.motyga_self_exe.to_string_lossy().into_owned())
         );
         let permission_profile_json = prepared
             .command

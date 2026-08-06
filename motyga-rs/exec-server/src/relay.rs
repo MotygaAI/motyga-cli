@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use codex_exec_server_protocol::JSONRPCMessage;
+use motyga_exec_server_protocol::JSONRPCMessage;
 use futures::Sink;
 use futures::SinkExt;
 use futures::Stream;
@@ -929,8 +929,8 @@ mod tests {
     use std::task::Poll;
     use std::time::Duration;
 
-    use codex_exec_server_protocol::JSONRPCRequest;
-    use codex_exec_server_protocol::RequestId;
+    use motyga_exec_server_protocol::JSONRPCRequest;
+    use motyga_exec_server_protocol::RequestId;
     use futures::Sink;
     use futures::Stream;
     use futures::channel::mpsc as futures_mpsc;
@@ -981,7 +981,7 @@ mod tests {
         let (client_websocket, mut server_websocket) = websocket_pair().await?;
         let runtime_paths = crate::ExecServerRuntimePaths::new(
             std::env::current_exe()?,
-            /*codex_linux_sandbox_exe*/ None,
+            /*motyga_linux_sandbox_exe*/ None,
         )
         .map_err(anyhow::Error::from)?;
         let environment_task = tokio::spawn(run_multiplexed_environment(

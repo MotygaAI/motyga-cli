@@ -118,7 +118,7 @@ fn resolve_bin_from_env(key: &str, value: OsString) -> Result<PathBuf, CargoBinE
 /// compile-time environment variables that need to be captured at the call
 /// site.)
 ///
-/// This is expected to be used exclusively in test code because Codex CLI is a
+/// This is expected to be used exclusively in test code because Motyga CLI is a
 /// standalone binary with no packaged resources.
 #[macro_export]
 macro_rules! find_resource {
@@ -174,12 +174,12 @@ pub fn repo_root() -> io::Result<PathBuf> {
     let marker = if runfiles_available() {
         let runfiles = runfiles::Runfiles::create()
             .map_err(|err| io::Error::other(format!("failed to create runfiles: {err}")))?;
-        let marker_path = option_env!("CODEX_REPO_ROOT_MARKER")
+        let marker_path = option_env!("MOTYGA_REPO_ROOT_MARKER")
             .map(PathBuf::from)
             .ok_or_else(|| {
                 io::Error::new(
                     io::ErrorKind::NotFound,
-                    "CODEX_REPO_ROOT_MARKER was not set at compile time",
+                    "MOTYGA_REPO_ROOT_MARKER was not set at compile time",
                 )
             })?;
         runfiles::rlocation!(runfiles, &marker_path).ok_or_else(|| {

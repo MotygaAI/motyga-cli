@@ -1,8 +1,8 @@
 //! Resolve plugin namespace from skill file paths by walking ancestors for `plugin.json`.
 
-use codex_exec_server::ExecutorFileSystem;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -54,7 +54,7 @@ pub async fn plugin_namespace_for_root_uri(
 }
 
 /// Returns the plugin manifest `name` for the nearest ancestor of `path` that contains a valid
-/// plugin manifest (same `name` rules as full manifest loading in codex-core).
+/// plugin manifest (same `name` rules as full manifest loading in motyga-core).
 pub async fn plugin_namespace_for_skill_path(
     fs: &dyn ExecutorFileSystem,
     path: &AbsolutePathBuf,
@@ -81,8 +81,8 @@ pub async fn plugin_namespace_for_skill_uri(
 mod tests {
     use super::find_plugin_manifest_path;
     use super::plugin_namespace_for_skill_path;
-    use codex_exec_server::LOCAL_FS;
-    use codex_utils_absolute_path::test_support::PathBufExt;
+    use motyga_exec_server::LOCAL_FS;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
     use std::fs;
     use tempfile::tempdir;
 

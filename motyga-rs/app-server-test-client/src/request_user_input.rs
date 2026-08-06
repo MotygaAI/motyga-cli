@@ -7,9 +7,9 @@ use std::io::Write;
 use anyhow::Context;
 use anyhow::Result;
 use anyhow::bail;
-use codex_app_server_protocol::ToolRequestUserInputAnswer;
-use codex_app_server_protocol::ToolRequestUserInputParams;
-use codex_app_server_protocol::ToolRequestUserInputResponse;
+use motyga_app_server_protocol::ToolRequestUserInputAnswer;
+use motyga_app_server_protocol::ToolRequestUserInputParams;
+use motyga_app_server_protocol::ToolRequestUserInputResponse;
 
 pub(super) fn prompt_for_answers(
     params: &ToolRequestUserInputParams,

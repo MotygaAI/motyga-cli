@@ -2,27 +2,27 @@ use std::fmt;
 use std::sync::Arc;
 
 use anyhow::Result;
-use codex_exec_server::Environment;
-use codex_exec_server::ExecServerRuntimePaths;
-use codex_exec_server::ExecutorFileSystem;
-use codex_exec_server::FileSystemSandboxContext;
-use codex_exec_server::LocalFileSystem;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_exec_server::Environment;
+use motyga_exec_server::ExecServerRuntimePaths;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_exec_server::FileSystemSandboxContext;
+use motyga_exec_server::LocalFileSystem;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 
 use crate::common::exec_server::ExecServerHarness;
-use crate::common::exec_server::TestCodexHelperPaths;
+use crate::common::exec_server::TestMotygaHelperPaths;
 use crate::common::exec_server::exec_server;
-use crate::common::exec_server::test_codex_helper_paths;
+use crate::common::exec_server::test_motyga_helper_paths;
 
 pub(crate) struct FileSystemContext {
     pub(crate) file_system: Arc<dyn ExecutorFileSystem>,
-    _helper_paths: Option<TestCodexHelperPaths>,
+    _helper_paths: Option<TestMotygaHelperPaths>,
     _server: Option<ExecServerHarness>,
 }
 
@@ -46,10 +46,10 @@ pub(crate) async fn create_file_system_context(
 ) -> Result<FileSystemContext> {
     match implementation {
         FileSystemImplementation::Local => {
-            let helper_paths = test_codex_helper_paths()?;
+            let helper_paths = test_motyga_helper_paths()?;
             let runtime_paths = ExecServerRuntimePaths::new(
-                helper_paths.codex_exe.clone(),
-                helper_paths.codex_linux_sandbox_exe.clone(),
+                helper_paths.motyga_exe.clone(),
+                helper_paths.motyga_linux_sandbox_exe.clone(),
             )?;
             Ok(FileSystemContext {
                 file_system: Arc::new(LocalFileSystem::with_runtime_paths(runtime_paths)),

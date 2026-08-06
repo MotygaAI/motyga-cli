@@ -1,5 +1,5 @@
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_protocol::auth::AuthMode;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_protocol::auth::AuthMode;
 use pretty_assertions::assert_eq;
 use serial_test::serial;
 use tempfile::tempdir;
@@ -7,7 +7,7 @@ use tempfile::tempdir;
 use super::*;
 use crate::auth::AuthKeyringBackendKind;
 use crate::auth::AuthManager;
-use crate::auth::CodexAuth;
+use crate::auth::MotygaAuth;
 use crate::auth::storage::AuthStorageBackend;
 use crate::auth::storage::FileAuthStorage;
 
@@ -43,13 +43,13 @@ fn bedrock_auth() -> BedrockApiKeyAuth {
 }
 
 #[tokio::test]
-#[serial(codex_auth_env)]
+#[serial(motyga_auth_env)]
 async fn login_with_bedrock_api_key_replaces_openai_auth() -> anyhow::Result<()> {
-    let codex_home = tempdir()?;
-    let storage = FileAuthStorage::new(codex_home.path().to_path_buf());
+    let motyga_home = tempdir()?;
+    let storage = FileAuthStorage::new(motyga_home.path().to_path_buf());
     storage.save(&api_key_auth())?;
     login_with_bedrock_api_key(
-        codex_home.path(),
+        motyga_home.path(),
         "bedrock-api-key-test",
         "us-east-1",
         AuthCredentialsStoreMode::File,
@@ -57,8 +57,8 @@ async fn login_with_bedrock_api_key_replaces_openai_auth() -> anyhow::Result<()>
     )?;
 
     let auth_manager = AuthManager::new(
-        codex_home.path().to_path_buf(),
-        /*enable_codex_api_key_env*/ false,
+        motyga_home.path().to_path_buf(),
+        /*enable_motyga_api_key_env*/ false,
         AuthCredentialsStoreMode::File,
         /*forced_chatgpt_workspace_id*/ None,
         /*chatgpt_base_url*/ None,
@@ -81,12 +81,12 @@ async fn login_with_bedrock_api_key_replaces_openai_auth() -> anyhow::Result<()>
     assert_eq!(auth_manager.auth_mode(), Some(AuthMode::BedrockApiKey));
     assert_eq!(
         auth_manager.auth_cached().and_then(|auth| match auth {
-            CodexAuth::BedrockApiKey(auth) => Some(auth),
-            CodexAuth::ApiKey(_)
-            | CodexAuth::Chatgpt(_)
-            | CodexAuth::ChatgptAuthTokens(_)
-            | CodexAuth::AgentIdentity(_)
-            | CodexAuth::PersonalAccessToken(_) => None,
+            MotygaAuth::BedrockApiKey(auth) => Some(auth),
+            MotygaAuth::ApiKey(_)
+            | MotygaAuth::Chatgpt(_)
+            | MotygaAuth::ChatgptAuthTokens(_)
+            | MotygaAuth::AgentIdentity(_)
+            | MotygaAuth::PersonalAccessToken(_) => None,
         }),
         Some(bedrock_auth())
     );
@@ -94,20 +94,20 @@ async fn login_with_bedrock_api_key_replaces_openai_auth() -> anyhow::Result<()>
 }
 
 #[tokio::test]
-#[serial(codex_auth_env)]
+#[serial(motyga_auth_env)]
 async fn logout_removes_bedrock_auth() -> anyhow::Result<()> {
-    let codex_home = tempdir()?;
-    let storage = FileAuthStorage::new(codex_home.path().to_path_buf());
+    let motyga_home = tempdir()?;
+    let storage = FileAuthStorage::new(motyga_home.path().to_path_buf());
     login_with_bedrock_api_key(
-        codex_home.path(),
+        motyga_home.path(),
         "bedrock-api-key-test",
         "us-east-1",
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),
     )?;
     let auth_manager = AuthManager::new(
-        codex_home.path().to_path_buf(),
-        /*enable_codex_api_key_env*/ false,
+        motyga_home.path().to_path_buf(),
+        /*enable_motyga_api_key_env*/ false,
         AuthCredentialsStoreMode::File,
         /*forced_chatgpt_workspace_id*/ None,
         /*chatgpt_base_url*/ None,
@@ -124,15 +124,15 @@ async fn logout_removes_bedrock_auth() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-#[serial(codex_auth_env)]
+#[serial(motyga_auth_env)]
 async fn bedrock_only_auth_storage_creates_primary_auth() -> anyhow::Result<()> {
-    let codex_home = tempdir()?;
-    let storage = FileAuthStorage::new(codex_home.path().to_path_buf());
+    let motyga_home = tempdir()?;
+    let storage = FileAuthStorage::new(motyga_home.path().to_path_buf());
     storage.save(&bedrock_only_auth())?;
 
     let auth_manager = AuthManager::new(
-        codex_home.path().to_path_buf(),
-        /*enable_codex_api_key_env*/ false,
+        motyga_home.path().to_path_buf(),
+        /*enable_motyga_api_key_env*/ false,
         AuthCredentialsStoreMode::File,
         /*forced_chatgpt_workspace_id*/ None,
         /*chatgpt_base_url*/ None,
@@ -144,12 +144,12 @@ async fn bedrock_only_auth_storage_creates_primary_auth() -> anyhow::Result<()> 
     assert_eq!(auth_manager.auth_mode(), Some(AuthMode::BedrockApiKey));
     assert_eq!(
         auth_manager.auth_cached().and_then(|auth| match auth {
-            CodexAuth::BedrockApiKey(auth) => Some(auth),
-            CodexAuth::ApiKey(_)
-            | CodexAuth::Chatgpt(_)
-            | CodexAuth::ChatgptAuthTokens(_)
-            | CodexAuth::AgentIdentity(_)
-            | CodexAuth::PersonalAccessToken(_) => None,
+            MotygaAuth::BedrockApiKey(auth) => Some(auth),
+            MotygaAuth::ApiKey(_)
+            | MotygaAuth::Chatgpt(_)
+            | MotygaAuth::ChatgptAuthTokens(_)
+            | MotygaAuth::AgentIdentity(_)
+            | MotygaAuth::PersonalAccessToken(_) => None,
         }),
         Some(bedrock_auth())
     );
@@ -158,10 +158,10 @@ async fn bedrock_only_auth_storage_creates_primary_auth() -> anyhow::Result<()> 
 
 #[tokio::test]
 async fn login_with_api_key_clears_bedrock_api_key() -> anyhow::Result<()> {
-    let codex_home = tempdir()?;
-    let storage = FileAuthStorage::new(codex_home.path().to_path_buf());
+    let motyga_home = tempdir()?;
+    let storage = FileAuthStorage::new(motyga_home.path().to_path_buf());
     login_with_bedrock_api_key(
-        codex_home.path(),
+        motyga_home.path(),
         "bedrock-api-key-test",
         "us-east-1",
         AuthCredentialsStoreMode::File,
@@ -169,7 +169,7 @@ async fn login_with_api_key_clears_bedrock_api_key() -> anyhow::Result<()> {
     )?;
 
     crate::auth::login_with_api_key(
-        codex_home.path(),
+        motyga_home.path(),
         "sk-test-key",
         AuthCredentialsStoreMode::File,
         AuthKeyringBackendKind::default(),

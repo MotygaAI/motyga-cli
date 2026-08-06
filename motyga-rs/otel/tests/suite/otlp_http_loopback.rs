@@ -1,13 +1,13 @@
-use codex_otel::MetricsClient;
-use codex_otel::MetricsConfig;
-use codex_otel::OtelExporter;
-use codex_otel::OtelHttpProtocol;
-use codex_otel::OtelProvider;
-use codex_otel::OtelSettings;
-use codex_otel::Result;
-use codex_otel::current_span_w3c_trace_context;
-use codex_otel::set_parent_from_w3c_trace_context;
-use codex_protocol::protocol::W3cTraceContext;
+use motyga_otel::MetricsClient;
+use motyga_otel::MetricsConfig;
+use motyga_otel::OtelExporter;
+use motyga_otel::OtelHttpProtocol;
+use motyga_otel::OtelProvider;
+use motyga_otel::OtelSettings;
+use motyga_otel::Result;
+use motyga_otel::current_span_w3c_trace_context;
+use motyga_otel::set_parent_from_w3c_trace_context;
+use motyga_protocol::protocol::W3cTraceContext;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::io::Read as _;
@@ -175,7 +175,7 @@ fn otlp_http_exporter_sends_metrics_to_collector() -> Result<()> {
 
     let metrics = MetricsClient::new(MetricsConfig::otlp(
         "test",
-        "codex-cli",
+        "motyga-cli",
         env!("CARGO_PKG_VERSION"),
         OtelExporter::OtlpHttp {
             endpoint: format!("http://{addr}/v1/metrics"),
@@ -185,10 +185,10 @@ fn otlp_http_exporter_sends_metrics_to_collector() -> Result<()> {
         },
     ))?;
 
-    metrics.counter("codex.turns", /*inc*/ 1, &[("source", "test")])?;
+    metrics.counter("motyga.turns", /*inc*/ 1, &[("source", "test")])?;
     metrics.gauge_with_description(
-        "codex.active",
-        "Number of active Codex operations.",
+        "motyga.active",
+        "Number of active Motyga operations.",
         /*value*/ 1,
         &[("component", "test")],
     )?;
@@ -212,12 +212,12 @@ fn otlp_http_exporter_sends_metrics_to_collector() -> Result<()> {
 
     let body = String::from_utf8_lossy(&request.body);
     assert!(
-        body.contains("codex.turns"),
+        body.contains("motyga.turns"),
         "expected metric name not found; body prefix: {}",
         &body.chars().take(2000).collect::<String>()
     );
     assert!(
-        body.contains("codex.active"),
+        body.contains("motyga.active"),
         "expected gauge not found; body prefix: {}",
         &body.chars().take(2000).collect::<String>()
     );
@@ -267,9 +267,9 @@ fn otlp_http_exporter_sends_logs_to_collector()
 
     let otel = OtelProvider::from(&OtelSettings {
         environment: "test".to_string(),
-        service_name: "codex-cli".to_string(),
+        service_name: "motyga-cli".to_string(),
         service_version: env!("CARGO_PKG_VERSION").to_string(),
-        codex_home: PathBuf::from("."),
+        motyga_home: PathBuf::from("."),
         exporter: OtelExporter::OtlpHttp {
             endpoint: format!("http://{addr}/v1/logs"),
             headers: HashMap::new(),
@@ -289,9 +289,9 @@ fn otlp_http_exporter_sends_logs_to_collector()
     tracing::subscriber::with_default(subscriber, || {
         tracing::callsite::rebuild_interest_cache();
         tracing::event!(
-            target: "codex_otel.log_only",
+            target: "motyga_otel.log_only",
             tracing::Level::INFO,
-            event.name = "codex.test.log_exported",
+            event.name = "motyga.test.log_exported",
             "test OTEL log export"
         );
     });
@@ -315,7 +315,7 @@ fn otlp_http_exporter_sends_logs_to_collector()
 
     let body = String::from_utf8_lossy(&request.body);
     assert!(
-        body.contains("codex.test.log_exported"),
+        body.contains("motyga.test.log_exported"),
         "expected exported log event not found; body prefix: {}",
         &body.chars().take(2000).collect::<String>()
     );
@@ -326,9 +326,9 @@ fn otlp_http_exporter_sends_logs_to_collector()
 fn otel_provider_rejects_header_unsafe_configured_tracestate() {
     let result = OtelProvider::from(&OtelSettings {
         environment: "test".to_string(),
-        service_name: "codex-cli".to_string(),
+        service_name: "motyga-cli".to_string(),
         service_version: env!("CARGO_PKG_VERSION").to_string(),
-        codex_home: PathBuf::from("."),
+        motyga_home: PathBuf::from("."),
         exporter: OtelExporter::None,
         trace_exporter: OtelExporter::OtlpHttp {
             endpoint: "http://127.0.0.1:1/v1/traces".to_string(),
@@ -391,9 +391,9 @@ fn otlp_http_exporter_sends_traces_to_collector()
 
     let otel = OtelProvider::from(&OtelSettings {
         environment: "test".to_string(),
-        service_name: "codex-cli".to_string(),
+        service_name: "motyga-cli".to_string(),
         service_version: env!("CARGO_PKG_VERSION").to_string(),
-        codex_home: PathBuf::from("."),
+        motyga_home: PathBuf::from("."),
         exporter: OtelExporter::None,
         trace_exporter: OtelExporter::OtlpHttp {
             endpoint: format!("http://{addr}/v1/traces"),
@@ -440,9 +440,9 @@ fn otlp_http_exporter_sends_traces_to_collector()
         let propagated_trace =
             current_span_w3c_trace_context().expect("current span should have trace context");
         tracing::event!(
-            target: "codex_otel.trace_safe",
+            target: "motyga_otel.trace_safe",
             tracing::Level::INFO,
-            event.name = "codex.test.trace_event",
+            event.name = "motyga.test.trace_event",
             "test OTEL trace event"
         );
         tracing::info!("trace loopback event");
@@ -478,7 +478,7 @@ fn otlp_http_exporter_sends_traces_to_collector()
         &body.chars().take(2000).collect::<String>()
     );
     assert!(
-        body.contains("codex-cli"),
+        body.contains("motyga-cli"),
         "expected service name not found; body prefix: {}",
         &body.chars().take(2000).collect::<String>()
     );
@@ -488,7 +488,7 @@ fn otlp_http_exporter_sends_traces_to_collector()
         &body.chars().take(2000).collect::<String>()
     );
     assert!(
-        body.contains("codex.test.trace_event"),
+        body.contains("motyga.test.trace_event"),
         "expected trace event not found; body prefix: {}",
         &body.chars().take(2000).collect::<String>()
     );
@@ -536,9 +536,9 @@ async fn otlp_http_exporter_sends_traces_to_collector_in_tokio_runtime()
 
     let otel = OtelProvider::from(&OtelSettings {
         environment: "test".to_string(),
-        service_name: "codex-cli".to_string(),
+        service_name: "motyga-cli".to_string(),
         service_version: env!("CARGO_PKG_VERSION").to_string(),
-        codex_home: PathBuf::from("."),
+        motyga_home: PathBuf::from("."),
         exporter: OtelExporter::None,
         trace_exporter: OtelExporter::OtlpHttp {
             endpoint: format!("http://{addr}/v1/traces"),
@@ -591,7 +591,7 @@ async fn otlp_http_exporter_sends_traces_to_collector_in_tokio_runtime()
         &body.chars().take(2000).collect::<String>()
     );
     assert!(
-        body.contains("codex-cli"),
+        body.contains("motyga-cli"),
         "expected service name not found; body prefix: {}",
         &body.chars().take(2000).collect::<String>()
     );
@@ -647,9 +647,9 @@ fn otlp_http_exporter_sends_traces_to_collector_in_current_thread_tokio_runtime(
         let result = runtime.block_on(async move {
             let otel = OtelProvider::from(&OtelSettings {
                 environment: "test".to_string(),
-                service_name: "codex-cli".to_string(),
+                service_name: "motyga-cli".to_string(),
                 service_version: env!("CARGO_PKG_VERSION").to_string(),
-                codex_home: PathBuf::from("."),
+                motyga_home: PathBuf::from("."),
                 exporter: OtelExporter::None,
                 trace_exporter: OtelExporter::OtlpHttp {
                     endpoint: format!("http://{addr}/v1/traces"),
@@ -713,7 +713,7 @@ fn otlp_http_exporter_sends_traces_to_collector_in_current_thread_tokio_runtime(
         &body.chars().take(2000).collect::<String>()
     );
     assert!(
-        body.contains("codex-cli"),
+        body.contains("motyga-cli"),
         "expected service name not found; body prefix: {}",
         &body.chars().take(2000).collect::<String>()
     );

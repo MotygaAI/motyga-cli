@@ -1,7 +1,7 @@
-use codex_config::AppsRequirementsToml;
-use codex_config::ConfigLayerStack;
-use codex_config::types::AppToolApproval;
-use codex_config::types::AppsConfigToml;
+use motyga_config::AppsRequirementsToml;
+use motyga_config::ConfigLayerStack;
+use motyga_config::types::AppToolApproval;
+use motyga_config::types::AppsConfigToml;
 use serde::Deserialize;
 
 /// The effective enablement and approval policy for one app tool.

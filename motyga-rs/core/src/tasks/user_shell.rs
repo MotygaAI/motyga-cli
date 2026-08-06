@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use codex_async_utils::CancelErr;
-use codex_async_utils::OrCancelExt;
-use codex_network_proxy::PROXY_ACTIVE_ENV_KEY;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_async_utils::CancelErr;
+use motyga_async_utils::OrCancelExt;
+use motyga_network_proxy::PROXY_ACTIVE_ENV_KEY;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use tokio_util::sync::CancellationToken;
 use tracing::error;
 use uuid::Uuid;
@@ -27,23 +27,23 @@ use crate::tools::runtimes::maybe_wrap_shell_lc_with_snapshot;
 use crate::tools::runtimes::strip_managed_proxy_env;
 use crate::turn_timing::now_unix_timestamp_ms;
 use crate::user_shell_command::user_shell_command_record_item;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::exec_output::StreamOutput;
-use codex_protocol::protocol::ErrorEvent;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExecCommandBeginEvent;
-use codex_protocol::protocol::ExecCommandEndEvent;
-use codex_protocol::protocol::ExecCommandSource;
-use codex_protocol::protocol::ExecCommandStatus;
-use codex_protocol::protocol::TurnStartedEvent;
-use codex_sandboxing::SandboxType;
-use codex_shell_command::parse_command::parse_command;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::exec_output::StreamOutput;
+use motyga_protocol::protocol::ErrorEvent;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::ExecCommandBeginEvent;
+use motyga_protocol::protocol::ExecCommandEndEvent;
+use motyga_protocol::protocol::ExecCommandSource;
+use motyga_protocol::protocol::ExecCommandStatus;
+use motyga_protocol::protocol::TurnStartedEvent;
+use motyga_sandboxing::SandboxType;
+use motyga_shell_command::parse_command::parse_command;
 
 use super::SessionTask;
 use super::SessionTaskContext;
 use super::SessionTaskResult;
 use crate::session::session::Session;
-use codex_protocol::models::PermissionProfile;
+use motyga_protocol::models::PermissionProfile;
 
 const USER_SHELL_TIMEOUT_MS: u64 = 60 * 60 * 1000; // 1 hour
 
@@ -106,7 +106,7 @@ pub(crate) async fn execute_user_shell_command(
     session
         .services
         .session_telemetry
-        .counter("codex.task.user_shell", /*inc*/ 1, &[]);
+        .counter("motyga.task.user_shell", /*inc*/ 1, &[]);
 
     if mode == UserShellCommandMode::StandaloneTurn {
         // Auxiliary mode runs within an existing active turn. That turn already
@@ -146,7 +146,7 @@ pub(crate) async fn execute_user_shell_command(
     let use_login_shell = true;
     let display_command = environment_shell.derive_exec_args(&command, use_login_shell);
     // TODO(anp): Migrate user-shell events and execution plumbing to PathUri so this local-only
-    // feature does not need to project the selected environment cwd onto the Codex host.
+    // feature does not need to project the selected environment cwd onto the Motyga host.
     let Ok(cwd) = turn_environment.cwd().to_abs_path() else {
         send_user_shell_error(
             &session,
@@ -372,7 +372,7 @@ async fn send_user_shell_error(session: &Session, turn_context: &TurnContext, me
             turn_context,
             EventMsg::Error(ErrorEvent {
                 message: message.to_string(),
-                codex_error_info: None,
+                motyga_error_info: None,
             }),
         )
         .await;

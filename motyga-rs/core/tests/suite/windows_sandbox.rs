@@ -1,18 +1,18 @@
 use anyhow::Context;
-use codex_core::exec::ExecCapturePolicy;
-use codex_core::exec::ExecParams;
-use codex_core::exec::process_exec_tool_call;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_core::windows_sandbox::sandbox_setup_is_complete;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::exec_output::ExecToolCallOutput;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::permissions::NetworkSandboxPolicy;
+use motyga_core::exec::ExecCapturePolicy;
+use motyga_core::exec::ExecParams;
+use motyga_core::exec::process_exec_tool_call;
+use motyga_core::sandboxing::SandboxPermissions;
+use motyga_core::windows_sandbox::sandbox_setup_is_complete;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::exec_output::ExecToolCallOutput;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
 use core_test_support::PathExt;
 use pretty_assertions::assert_eq;
 use serial_test::serial;
@@ -48,12 +48,12 @@ impl Drop for EnvVarGuard {
     }
 }
 
-enum TestCodexHome {
+enum TestMotygaHome {
     Persistent(PathBuf),
     Temporary(TempDir),
 }
 
-impl TestCodexHome {
+impl TestMotygaHome {
     fn path(&self) -> &Path {
         match self {
             Self::Persistent(path) => path.as_path(),
@@ -62,18 +62,18 @@ impl TestCodexHome {
     }
 }
 
-fn codex_home_for_windows_sandbox_test(name: &str) -> anyhow::Result<TestCodexHome> {
+fn motyga_home_for_windows_sandbox_test(name: &str) -> anyhow::Result<TestMotygaHome> {
     if let Some(test_tmpdir) = std::env::var_os("TEST_TMPDIR") {
         // The elevated backend provisions machine-local sandbox users. Bazel
         // retries run in the same Windows VM, so keep MOTYGA_HOME stable within
         // the test temp root and let setup reconcile its persisted ACL state.
-        let codex_home = PathBuf::from(test_tmpdir).join(name);
-        std::fs::create_dir_all(&codex_home)
-            .with_context(|| format!("create stable test MOTYGA_HOME {}", codex_home.display()))?;
-        return Ok(TestCodexHome::Persistent(codex_home));
+        let motyga_home = PathBuf::from(test_tmpdir).join(name);
+        std::fs::create_dir_all(&motyga_home)
+            .with_context(|| format!("create stable test MOTYGA_HOME {}", motyga_home.display()))?;
+        return Ok(TestMotygaHome::Persistent(motyga_home));
     }
 
-    Ok(TestCodexHome::Temporary(TempDir::new()?))
+    Ok(TestMotygaHome::Temporary(TempDir::new()?))
 }
 
 fn stage_windows_sandbox_helpers() -> anyhow::Result<()> {
@@ -81,7 +81,7 @@ fn stage_windows_sandbox_helpers() -> anyhow::Result<()> {
     let test_exe_dir = test_exe
         .parent()
         .context("Windows test executable should have a parent directory")?;
-    let resources_dir = test_exe_dir.join("codex-resources");
+    let resources_dir = test_exe_dir.join("motyga-resources");
     match std::fs::create_dir_all(&resources_dir) {
         Ok(()) => {}
         Err(err)
@@ -91,8 +91,8 @@ fn stage_windows_sandbox_helpers() -> anyhow::Result<()> {
                 .with_context(|| format!("create resources dir {}", resources_dir.display()));
         }
     }
-    for helper_name in ["codex-windows-sandbox-setup", "codex-command-runner"] {
-        let helper = codex_utils_cargo_bin::cargo_bin(helper_name)?;
+    for helper_name in ["motyga-windows-sandbox-setup", "motyga-command-runner"] {
+        let helper = motyga_utils_cargo_bin::cargo_bin(helper_name)?;
         let file_name = Path::new(helper_name).with_extension("exe");
         let destination = resources_dir.join(file_name);
         if let Err(err) = std::fs::copy(&helper, &destination) {
@@ -115,11 +115,11 @@ fn stage_windows_sandbox_helpers() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-#[serial(codex_home)]
+#[serial(motyga_home)]
 async fn windows_restricted_token_rejects_exact_and_glob_deny_read_policy() -> anyhow::Result<()> {
-    let codex_home =
-        codex_home_for_windows_sandbox_test("windows-restricted-token-deny-read-codex-home")?;
-    let _codex_home_guard = EnvVarGuard::set("MOTYGA_HOME", codex_home.path().as_os_str());
+    let motyga_home =
+        motyga_home_for_windows_sandbox_test("windows-restricted-token-deny-read-motyga-home")?;
+    let _motyga_home_guard = EnvVarGuard::set("MOTYGA_HOME", motyga_home.path().as_os_str());
     let workspace = TempDir::new()?;
     let cwd = dunce::canonicalize(workspace.path())?.abs();
     let secret = cwd.join("secret.env");
@@ -198,17 +198,17 @@ async fn windows_restricted_token_rejects_exact_and_glob_deny_read_policy() -> a
 }
 
 #[tokio::test]
-#[serial(codex_home)]
+#[serial(motyga_home)]
 async fn windows_elevated_enforces_deny_read_and_protects_setup_marker() -> anyhow::Result<()> {
-    let codex_home = codex_home_for_windows_sandbox_test("windows-elevated-deny-read-codex-home")?;
-    let _codex_home_guard = EnvVarGuard::set("MOTYGA_HOME", codex_home.path().as_os_str());
+    let motyga_home = motyga_home_for_windows_sandbox_test("windows-elevated-deny-read-motyga-home")?;
+    let _motyga_home_guard = EnvVarGuard::set("MOTYGA_HOME", motyga_home.path().as_os_str());
     stage_windows_sandbox_helpers()?;
     let workspace = TempDir::new()?;
     let cwd = dunce::canonicalize(workspace.path())?.abs();
     let glob_secret = cwd.join("secret.env");
     let exact_secret = cwd.join("exact-secret.txt");
     let public = cwd.join("public.txt");
-    let setup_marker = codex_home.path().join(".sandbox").join("setup_marker.json");
+    let setup_marker = motyga_home.path().join(".sandbox").join("setup_marker.json");
     std::fs::write(&glob_secret, "glob secret\n")?;
     std::fs::write(&exact_secret, "exact secret\n")?;
     std::fs::write(&public, "public ok\n")?;
@@ -317,7 +317,7 @@ async fn windows_elevated_enforces_deny_read_and_protects_setup_marker() -> anyh
         "sandboxed command must not modify setup readiness: {stdout:?}"
     );
     assert!(
-        sandbox_setup_is_complete(codex_home.path()),
+        sandbox_setup_is_complete(motyga_home.path()),
         "setup should remain ready after the tamper attempt"
     );
     Ok(())

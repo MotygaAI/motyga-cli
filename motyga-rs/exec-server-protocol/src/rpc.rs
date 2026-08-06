@@ -1,11 +1,11 @@
 //! JSON-RPC wire envelopes used by exec-server.
 //!
-//! Exec-server uses the Codex JSON-RPC dialect, which omits the
+//! Exec-server uses the Motyga JSON-RPC dialect, which omits the
 //! `"jsonrpc": "2.0"` field on the wire.
 
 use std::fmt;
 
-use codex_protocol::protocol::W3cTraceContext;
+use motyga_protocol::protocol::W3cTraceContext;
 use serde::Deserialize;
 use serde::Serialize;
 

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_config::types::McpServerEnvVar;
+use motyga_config::types::McpServerEnvVar;
 use reqwest::ClientBuilder;
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderName;
@@ -143,7 +143,7 @@ pub(crate) const DEFAULT_ENV_VARS: &[&str] = &[
 
 #[cfg(windows)]
 pub(crate) const DEFAULT_ENV_VARS: &[&str] =
-    codex_protocol::shell_environment::WINDOWS_CORE_ENV_VARS;
+    motyga_protocol::shell_environment::WINDOWS_CORE_ENV_VARS;
 
 #[cfg(test)]
 mod tests {
@@ -296,7 +296,7 @@ mod tests {
     fn create_env_preserves_path_when_it_is_not_utf8() {
         use std::os::unix::ffi::OsStrExt;
 
-        let raw_path = std::ffi::OsStr::from_bytes(b"/tmp/codex-\xFF/bin");
+        let raw_path = std::ffi::OsStr::from_bytes(b"/tmp/motyga-\xFF/bin");
         let expected = raw_path.to_os_string();
         let _guard = EnvVarGuard::set("PATH", raw_path);
 

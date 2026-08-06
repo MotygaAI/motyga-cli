@@ -2,40 +2,40 @@ use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
-use codex_analytics::CompactionTrigger;
-use codex_analytics::HookRunFact;
-use codex_analytics::build_track_events_context;
-use codex_hooks::PermissionRequestDecision;
-use codex_hooks::PermissionRequestOutcome;
-use codex_hooks::PermissionRequestRequest;
-use codex_hooks::PostToolUseOutcome;
-use codex_hooks::PostToolUseRequest;
-use codex_hooks::PreToolUseOutcome;
-use codex_hooks::PreToolUseRequest;
-use codex_hooks::SessionStartOutcome;
-use codex_hooks::StartHookTarget;
-use codex_hooks::StopHookTarget;
-use codex_hooks::StopOutcome;
-use codex_hooks::SubagentHookContext;
-use codex_hooks::UserPromptSubmitOutcome;
-use codex_hooks::UserPromptSubmitRequest;
-use codex_otel::HOOK_RUN_DURATION_METRIC;
-use codex_otel::HOOK_RUN_METRIC;
-use codex_protocol::items::TurnItem;
-use codex_protocol::items::UserMessageItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::HookCompletedEvent;
-use codex_protocol::protocol::HookEventName;
-use codex_protocol::protocol::HookRunStatus;
-use codex_protocol::protocol::HookRunSummary;
-use codex_protocol::protocol::HookSource;
-use codex_protocol::protocol::HookStartedEvent;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_thread_store::ReadThreadParams;
+use motyga_analytics::CompactionTrigger;
+use motyga_analytics::HookRunFact;
+use motyga_analytics::build_track_events_context;
+use motyga_hooks::PermissionRequestDecision;
+use motyga_hooks::PermissionRequestOutcome;
+use motyga_hooks::PermissionRequestRequest;
+use motyga_hooks::PostToolUseOutcome;
+use motyga_hooks::PostToolUseRequest;
+use motyga_hooks::PreToolUseOutcome;
+use motyga_hooks::PreToolUseRequest;
+use motyga_hooks::SessionStartOutcome;
+use motyga_hooks::StartHookTarget;
+use motyga_hooks::StopHookTarget;
+use motyga_hooks::StopOutcome;
+use motyga_hooks::SubagentHookContext;
+use motyga_hooks::UserPromptSubmitOutcome;
+use motyga_hooks::UserPromptSubmitRequest;
+use motyga_otel::HOOK_RUN_DURATION_METRIC;
+use motyga_otel::HOOK_RUN_METRIC;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::items::UserMessageItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::HookCompletedEvent;
+use motyga_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::HookRunStatus;
+use motyga_protocol::protocol::HookRunSummary;
+use motyga_protocol::protocol::HookSource;
+use motyga_protocol::protocol::HookStartedEvent;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_thread_store::ReadThreadParams;
 use serde_json::Value;
 use tracing::instrument;
 
@@ -112,7 +112,7 @@ pub(crate) async fn run_pending_session_start_hooks(
             SessionSource::SubAgent(SubAgentSource::ThreadSpawn { agent_role, .. })
                 if matches!(
                     session_start_source,
-                    codex_hooks::SessionStartSource::Startup
+                    motyga_hooks::SessionStartSource::Startup
                 ) =>
             {
                 let context = subagent_hook_context(sess, agent_role);
@@ -127,7 +127,7 @@ pub(crate) async fn run_pending_session_start_hooks(
                 source: session_start_source,
             },
         };
-        let request = codex_hooks::SessionStartRequest {
+        let request = motyga_hooks::SessionStartRequest {
             session_id: sess.session_id().into(),
             #[allow(deprecated)]
             cwd: turn_context.cwd.clone(),
@@ -345,7 +345,7 @@ pub(crate) async fn run_turn_stop_hooks(
         SessionSource::SubAgent(_) => return StopOutcome::default(),
         _ => (StopHookTarget::Stop, sess.hook_transcript_path().await),
     };
-    let request = codex_hooks::StopRequest {
+    let request = motyga_hooks::StopRequest {
         session_id: sess.session_id().into(),
         turn_id: turn_context.sub_id.clone(),
         #[allow(deprecated)]
@@ -370,7 +370,7 @@ pub(crate) async fn run_pre_compact_hooks(
     turn_context: &Arc<TurnContext>,
     trigger: CompactionTrigger,
 ) -> PreCompactHookOutcome {
-    let request = codex_hooks::PreCompactRequest {
+    let request = motyga_hooks::PreCompactRequest {
         session_id: sess.session_id().into(),
         turn_id: turn_context.sub_id.clone(),
         subagent: thread_spawn_subagent_hook_context(sess, turn_context),
@@ -407,7 +407,7 @@ pub(crate) async fn run_post_compact_hooks(
     turn_context: &Arc<TurnContext>,
     trigger: CompactionTrigger,
 ) -> PostCompactHookOutcome {
-    let request = codex_hooks::PostCompactRequest {
+    let request = motyga_hooks::PostCompactRequest {
         session_id: sess.session_id().into(),
         turn_id: turn_context.sub_id.clone(),
         subagent: thread_spawn_subagent_hook_context(sess, turn_context),
@@ -446,14 +446,14 @@ pub(crate) async fn run_legacy_after_agent_hook(
         .collect();
     let hooks = sess.hooks();
     for hook_outcome in hooks
-        .dispatch(codex_hooks::HookPayload {
+        .dispatch(motyga_hooks::HookPayload {
             session_id: sess.session_id().into(),
             #[allow(deprecated)]
             cwd: turn_context.cwd.clone(),
             client: turn_context.app_server_client_name.clone(),
             triggered_at: chrono::Utc::now(),
-            hook_event: codex_hooks::HookEvent::AfterAgent {
-                event: codex_hooks::HookEventAfterAgent {
+            hook_event: motyga_hooks::HookEvent::AfterAgent {
+                event: motyga_hooks::HookEventAfterAgent {
                     thread_id: sess.thread_id,
                     turn_id: turn_context.sub_id.clone(),
                     input_messages,
@@ -465,9 +465,9 @@ pub(crate) async fn run_legacy_after_agent_hook(
     {
         let hook_name = hook_outcome.hook_name;
         let (error, should_abort) = match hook_outcome.result {
-            codex_hooks::HookResult::Success => continue,
-            codex_hooks::HookResult::FailedContinue(error) => (error, false),
-            codex_hooks::HookResult::FailedAbort(error) => (error, true),
+            motyga_hooks::HookResult::Success => continue,
+            motyga_hooks::HookResult::FailedContinue(error) => (error, false),
+            motyga_hooks::HookResult::FailedAbort(error) => (error, true),
         };
         let action = if should_abort {
             "aborting operation"
@@ -489,9 +489,9 @@ pub(crate) async fn run_legacy_after_agent_hook(
     let Some(message) = abort_message else {
         return false;
     };
-    let event = EventMsg::Error(codex_protocol::protocol::ErrorEvent {
+    let event = EventMsg::Error(motyga_protocol::protocol::ErrorEvent {
         message,
-        codex_error_info: Some(CodexErrorInfo::Other),
+        motyga_error_info: Some(MotygaErrorInfo::Other),
     });
     sess.send_event(turn_context, event).await;
     true
@@ -676,7 +676,7 @@ fn hook_run_analytics_payload(
     thread_id: String,
     turn_context: &TurnContext,
     completed: &HookCompletedEvent,
-) -> (codex_analytics::TrackEventsContext, HookRunFact) {
+) -> (motyga_analytics::TrackEventsContext, HookRunFact) {
     (
         build_track_events_context(
             turn_context.model_info.slug.clone(),
@@ -776,23 +776,23 @@ fn compaction_trigger_label(value: CompactionTrigger) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use codex_protocol::models::ContentItem;
-    use codex_protocol::protocol::HookEventName;
-    use codex_protocol::protocol::HookExecutionMode;
-    use codex_protocol::protocol::HookHandlerType;
-    use codex_protocol::protocol::HookRunStatus;
-    use codex_protocol::protocol::HookScope;
-    use codex_protocol::protocol::HookSource;
+    use motyga_protocol::models::ContentItem;
+    use motyga_protocol::protocol::HookEventName;
+    use motyga_protocol::protocol::HookExecutionMode;
+    use motyga_protocol::protocol::HookHandlerType;
+    use motyga_protocol::protocol::HookRunStatus;
+    use motyga_protocol::protocol::HookScope;
+    use motyga_protocol::protocol::HookSource;
     use pretty_assertions::assert_eq;
 
     use super::additional_context_messages;
     use super::hook_run_analytics_payload;
     use super::hook_run_metric_tags;
     use crate::session::tests::make_session_and_context;
-    use codex_protocol::protocol::HookCompletedEvent;
-    use codex_protocol::protocol::HookRunSummary;
-    use codex_utils_absolute_path::test_support::PathBufExt;
-    use codex_utils_absolute_path::test_support::test_path_buf;
+    use motyga_protocol::protocol::HookCompletedEvent;
+    use motyga_protocol::protocol::HookRunSummary;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
+    use motyga_utils_absolute_path::test_support::test_path_buf;
 
     #[test]
     fn additional_context_messages_stay_separate_and_ordered() {
@@ -806,7 +806,7 @@ mod tests {
             messages
                 .iter()
                 .map(|message| match message {
-                    codex_protocol::models::ResponseItem::Message { role, content, .. } => {
+                    motyga_protocol::models::ResponseItem::Message { role, content, .. } => {
                         let text = content
                             .iter()
                             .map(|item| match item {

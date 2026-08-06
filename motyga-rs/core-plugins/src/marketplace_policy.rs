@@ -11,17 +11,17 @@ use crate::marketplace_add::MarketplaceSource;
 use crate::marketplace_add::parse_marketplace_source;
 use crate::startup_sync::curated_plugins_api_marketplace_path;
 use crate::startup_sync::curated_plugins_repo_path;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigRequirements;
-use codex_config::MarketplaceAllowedSourceKind;
-use codex_config::MarketplaceAllowedSourceToml;
-use codex_config::RequirementSource;
-use codex_config::types::MarketplaceConfig;
-use codex_config::types::MarketplaceSourceType;
-use codex_config::types::PluginConfig;
-use codex_plugin::PluginId;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path::paths_match_after_normalization;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigRequirements;
+use motyga_config::MarketplaceAllowedSourceKind;
+use motyga_config::MarketplaceAllowedSourceToml;
+use motyga_config::RequirementSource;
+use motyga_config::types::MarketplaceConfig;
+use motyga_config::types::MarketplaceSourceType;
+use motyga_config::types::PluginConfig;
+use motyga_plugin::PluginId;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path::paths_match_after_normalization;
 use regex::Regex;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -103,7 +103,7 @@ impl MarketplacePolicy {
     pub(crate) fn validate_install(
         &self,
         config_layer_stack: &ConfigLayerStack,
-        codex_home: &Path,
+        motyga_home: &Path,
         marketplace_path: &AbsolutePathBuf,
         marketplace_name: &str,
     ) -> Result<(), String> {
@@ -112,7 +112,7 @@ impl MarketplacePolicy {
         }
 
         let root = marketplace_root_dir(marketplace_path).map_err(|err| err.to_string())?;
-        if let Some(expected_name) = managed_marketplace_name(codex_home, marketplace_path, &root) {
+        if let Some(expected_name) = managed_marketplace_name(motyga_home, marketplace_path, &root) {
             return validate_expected_marketplace_name(expected_name, marketplace_name);
         }
 
@@ -135,7 +135,7 @@ impl MarketplacePolicy {
         let configured_root = resolve_configured_marketplace_root(
             marketplace_name,
             marketplace,
-            &marketplace_install_root(codex_home),
+            &marketplace_install_root(motyga_home),
         )
         .ok_or_else(|| {
             format!("configured marketplace `{marketplace_name}` does not have a usable root")
@@ -204,7 +204,7 @@ impl AllowedMarketplaceSource {
 
 pub(crate) fn project_effective_user_config(
     config_layer_stack: &ConfigLayerStack,
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> Option<toml::Value> {
     let mut user_config = config_layer_stack.effective_user_config()?;
     let policy = MarketplacePolicy::from_requirements(config_layer_stack.requirements());
@@ -212,7 +212,7 @@ pub(crate) fn project_effective_user_config(
         return Some(user_config);
     }
     let allowed_marketplace_names =
-        allowed_configured_marketplace_names_with_policy(&user_config, &policy, codex_home);
+        allowed_configured_marketplace_names_with_policy(&user_config, &policy, motyga_home);
     let configured_marketplace_names = user_config
         .get("marketplaces")
         .and_then(toml::Value::as_table)
@@ -244,19 +244,19 @@ pub(crate) fn project_effective_user_config(
 
 pub fn allowed_configured_marketplace_names(
     config_layer_stack: &ConfigLayerStack,
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> HashSet<String> {
     let Some(user_config) = config_layer_stack.effective_user_config() else {
         return HashSet::new();
     };
     let policy = MarketplacePolicy::from_requirements(config_layer_stack.requirements());
-    allowed_configured_marketplace_names_with_policy(&user_config, &policy, codex_home)
+    allowed_configured_marketplace_names_with_policy(&user_config, &policy, motyga_home)
 }
 
 fn allowed_configured_marketplace_names_with_policy(
     user_config: &toml::Value,
     policy: &MarketplacePolicy,
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> HashSet<String> {
     let Some(marketplaces) = user_config
         .get("marketplaces")
@@ -270,7 +270,7 @@ fn allowed_configured_marketplace_names_with_policy(
     marketplaces
         .iter()
         .filter_map(|(marketplace_name, marketplace)| {
-            let allowed = match managed_marketplace_config_name(codex_home, marketplace) {
+            let allowed = match managed_marketplace_config_name(motyga_home, marketplace) {
                 Some(expected_name) => expected_name == marketplace_name,
                 None => policy
                     .validate_configured_marketplace(marketplace_name, marketplace)
@@ -283,9 +283,9 @@ fn allowed_configured_marketplace_names_with_policy(
 
 pub(crate) fn configured_plugins_from_stack(
     config_layer_stack: &ConfigLayerStack,
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> HashMap<String, PluginConfig> {
-    let Some(user_config) = project_effective_user_config(config_layer_stack, codex_home) else {
+    let Some(user_config) = project_effective_user_config(config_layer_stack, motyga_home) else {
         return HashMap::new();
     };
     let Some(plugins_value) = user_config.get("plugins") else {
@@ -301,7 +301,7 @@ pub(crate) fn configured_plugins_from_stack(
 }
 
 pub(crate) fn validate_marketplace_source_for_add(
-    codex_home: &Path,
+    motyga_home: &Path,
     requirements: &ConfigRequirements,
     source: &MarketplaceSource,
 ) -> Result<Option<&'static str>, String> {
@@ -310,7 +310,7 @@ pub(crate) fn validate_marketplace_source_for_add(
         return Ok(None);
     }
     if let MarketplaceSource::Local { path } = source
-        && let Some(expected_name) = managed_local_marketplace_name(codex_home, path)
+        && let Some(expected_name) = managed_local_marketplace_name(motyga_home, path)
     {
         return Ok(Some(expected_name));
     }
@@ -444,24 +444,24 @@ fn validate_expected_marketplace_name(
 }
 
 fn managed_marketplace_name(
-    codex_home: &Path,
+    motyga_home: &Path,
     marketplace_path: &AbsolutePathBuf,
     root: &AbsolutePathBuf,
 ) -> Option<&'static str> {
     if paths_match_after_normalization(
         marketplace_path.as_path(),
-        curated_plugins_api_marketplace_path(codex_home),
+        curated_plugins_api_marketplace_path(motyga_home),
     ) {
         return Some(OPENAI_API_CURATED_MARKETPLACE_NAME);
     }
-    if paths_match_after_normalization(root.as_path(), curated_plugins_repo_path(codex_home)) {
+    if paths_match_after_normalization(root.as_path(), curated_plugins_repo_path(motyga_home)) {
         return Some(OPENAI_CURATED_MARKETPLACE_NAME);
     }
-    managed_local_marketplace_name(codex_home, root.as_path())
+    managed_local_marketplace_name(motyga_home, root.as_path())
 }
 
 fn managed_marketplace_config_name(
-    codex_home: &Path,
+    motyga_home: &Path,
     marketplace: &toml::Value,
 ) -> Option<&'static str> {
     if marketplace.get("source_type").and_then(toml::Value::as_str) != Some("local") {
@@ -472,15 +472,15 @@ fn managed_marketplace_config_name(
         .and_then(toml::Value::as_str)
         .map(Path::new)
         .filter(|path| path.is_absolute())?;
-    managed_local_marketplace_name(codex_home, path)
+    managed_local_marketplace_name(motyga_home, path)
 }
 
-fn managed_local_marketplace_name(codex_home: &Path, root: &Path) -> Option<&'static str> {
+fn managed_local_marketplace_name(motyga_home: &Path, root: &Path) -> Option<&'static str> {
     for marketplace_name in [
         OPENAI_BUNDLED_MARKETPLACE_NAME,
         OPENAI_BUNDLED_ALPHA_MARKETPLACE_NAME,
     ] {
-        let expected_root = codex_home
+        let expected_root = motyga_home
             .join(".tmp/bundled-marketplaces")
             .join(marketplace_name);
         if paths_match_after_normalization(root, &expected_root) {
@@ -489,7 +489,7 @@ fn managed_local_marketplace_name(codex_home: &Path, root: &Path) -> Option<&'st
     }
 
     let runtime_root = dirs::cache_dir()?
-        .join("codex-runtimes/codex-primary-runtime/plugins")
+        .join("motyga-runtimes/motyga-primary-runtime/plugins")
         .join(OPENAI_PRIMARY_RUNTIME_MARKETPLACE_NAME);
     paths_match_after_normalization(root, &runtime_root)
         .then_some(OPENAI_PRIMARY_RUNTIME_MARKETPLACE_NAME)

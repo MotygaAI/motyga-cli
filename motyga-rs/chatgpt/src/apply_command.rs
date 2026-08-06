@@ -1,17 +1,17 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use codex_core::config::Config;
-use codex_git_utils::ApplyGitRequest;
-use codex_git_utils::apply_git_patch;
-use codex_utils_cli::CliConfigOverrides;
+use motyga_core::config::Config;
+use motyga_git_utils::ApplyGitRequest;
+use motyga_git_utils::apply_git_patch;
+use motyga_utils_cli::CliConfigOverrides;
 
 use crate::get_task::GetTaskResponse;
 use crate::get_task::OutputItem;
 use crate::get_task::PrOutputItem;
 use crate::get_task::get_task;
 
-/// Applies the latest diff from a Codex agent task.
+/// Applies the latest diff from a Motyga agent task.
 #[derive(Debug, Parser)]
 pub struct ApplyCommand {
     pub task_id: String,

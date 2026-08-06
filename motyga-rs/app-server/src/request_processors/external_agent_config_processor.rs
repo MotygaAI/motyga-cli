@@ -15,37 +15,37 @@ use crate::config_manager::ConfigManager;
 use crate::error_code::internal_error;
 use crate::outgoing_message::ConnectionRequestId;
 use crate::outgoing_message::OutgoingMessageSender;
-use codex_analytics::AnalyticsEventsClient;
-use codex_analytics::ExternalAgentConfigImportCompletedInput;
-use codex_analytics::ExternalAgentConfigImportFailureInput;
-use codex_app_server_protocol::CommandMigration;
-use codex_app_server_protocol::ExternalAgentConfigDetectParams;
-use codex_app_server_protocol::ExternalAgentConfigDetectResponse;
-use codex_app_server_protocol::ExternalAgentConfigImportCompletedNotification;
-use codex_app_server_protocol::ExternalAgentConfigImportHistoriesReadResponse;
-use codex_app_server_protocol::ExternalAgentConfigImportHistory;
-use codex_app_server_protocol::ExternalAgentConfigImportItemTypeFailure as ProtocolImportFailure;
-use codex_app_server_protocol::ExternalAgentConfigImportItemTypeSuccess as ProtocolImportSuccess;
-use codex_app_server_protocol::ExternalAgentConfigImportParams;
-use codex_app_server_protocol::ExternalAgentConfigImportProgressNotification;
-use codex_app_server_protocol::ExternalAgentConfigImportResponse;
-use codex_app_server_protocol::ExternalAgentConfigImportTypeResult as ProtocolImportTypeResult;
-use codex_app_server_protocol::ExternalAgentConfigMigrationItem;
-use codex_app_server_protocol::ExternalAgentConfigMigrationItemType;
-use codex_app_server_protocol::HookMigration;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::McpServerMigration;
-use codex_app_server_protocol::MigrationDetails;
-use codex_app_server_protocol::PluginsMigration;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::SkillMigration;
-use codex_arg0::Arg0DispatchPaths;
-use codex_core::ThreadManager;
-use codex_external_agent_sessions::ExternalAgentSessionMigration as CoreSessionMigration;
-use codex_rollout::StateDbHandle;
-use codex_state::ExternalAgentConfigImportFailureRecord;
-use codex_state::ExternalAgentConfigImportSuccessRecord;
-use codex_thread_store::ThreadStore;
+use motyga_analytics::AnalyticsEventsClient;
+use motyga_analytics::ExternalAgentConfigImportCompletedInput;
+use motyga_analytics::ExternalAgentConfigImportFailureInput;
+use motyga_app_server_protocol::CommandMigration;
+use motyga_app_server_protocol::ExternalAgentConfigDetectParams;
+use motyga_app_server_protocol::ExternalAgentConfigDetectResponse;
+use motyga_app_server_protocol::ExternalAgentConfigImportCompletedNotification;
+use motyga_app_server_protocol::ExternalAgentConfigImportHistoriesReadResponse;
+use motyga_app_server_protocol::ExternalAgentConfigImportHistory;
+use motyga_app_server_protocol::ExternalAgentConfigImportItemTypeFailure as ProtocolImportFailure;
+use motyga_app_server_protocol::ExternalAgentConfigImportItemTypeSuccess as ProtocolImportSuccess;
+use motyga_app_server_protocol::ExternalAgentConfigImportParams;
+use motyga_app_server_protocol::ExternalAgentConfigImportProgressNotification;
+use motyga_app_server_protocol::ExternalAgentConfigImportResponse;
+use motyga_app_server_protocol::ExternalAgentConfigImportTypeResult as ProtocolImportTypeResult;
+use motyga_app_server_protocol::ExternalAgentConfigMigrationItem;
+use motyga_app_server_protocol::ExternalAgentConfigMigrationItemType;
+use motyga_app_server_protocol::HookMigration;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::McpServerMigration;
+use motyga_app_server_protocol::MigrationDetails;
+use motyga_app_server_protocol::PluginsMigration;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::SkillMigration;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_core::ThreadManager;
+use motyga_external_agent_sessions::ExternalAgentSessionMigration as CoreSessionMigration;
+use motyga_rollout::StateDbHandle;
+use motyga_state::ExternalAgentConfigImportFailureRecord;
+use motyga_state::ExternalAgentConfigImportSuccessRecord;
+use motyga_thread_store::ThreadStore;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -73,7 +73,7 @@ pub(crate) struct ExternalAgentConfigRequestProcessorArgs {
     pub(crate) state_db: Option<StateDbHandle>,
     pub(crate) analytics_events_client: AnalyticsEventsClient,
     pub(crate) arg0_paths: Arg0DispatchPaths,
-    pub(crate) codex_home: PathBuf,
+    pub(crate) motyga_home: PathBuf,
 }
 
 impl ExternalAgentConfigRequestProcessor {
@@ -87,10 +87,10 @@ impl ExternalAgentConfigRequestProcessor {
             state_db,
             analytics_events_client,
             arg0_paths,
-            codex_home,
+            motyga_home,
         } = args;
         let session_importer = ExternalAgentSessionImporter::new(
-            codex_home.clone(),
+            motyga_home.clone(),
             Arc::clone(&thread_manager),
             thread_store,
             config_manager,
@@ -98,7 +98,7 @@ impl ExternalAgentConfigRequestProcessor {
         );
         Self {
             outgoing,
-            migration_service: ExternalAgentConfigService::new(codex_home),
+            migration_service: ExternalAgentConfigService::new(motyga_home),
             session_importer,
             thread_manager,
             config_processor,
@@ -170,7 +170,7 @@ impl ExternalAgentConfigRequestProcessor {
                         sessions: details
                             .sessions
                             .into_iter()
-                            .map(|session| codex_app_server_protocol::SessionMigration {
+                            .map(|session| motyga_app_server_protocol::SessionMigration {
                                 path: session.path,
                                 cwd: session.cwd,
                                 title: session.title,
@@ -191,7 +191,7 @@ impl ExternalAgentConfigRequestProcessor {
                         subagents: details
                             .subagents
                             .into_iter()
-                            .map(|subagent| codex_app_server_protocol::SubagentMigration {
+                            .map(|subagent| motyga_app_server_protocol::SubagentMigration {
                                 name: subagent.name,
                             })
                             .collect(),
@@ -709,7 +709,7 @@ async fn record_completed_import_notification(
 }
 
 fn protocol_import_history(
-    record: codex_state::ExternalAgentConfigImportHistoryRecord,
+    record: motyga_state::ExternalAgentConfigImportHistoryRecord,
 ) -> Result<ExternalAgentConfigImportHistory, JSONRPCErrorError> {
     let successes = record
         .successes

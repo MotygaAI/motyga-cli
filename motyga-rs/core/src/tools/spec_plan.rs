@@ -60,35 +60,35 @@ use crate::tools::registry::ToolRegistry;
 use crate::tools::registry::override_tool_exposure;
 use crate::tools::router::ToolRouter;
 use crate::tools::router::ToolRouterParams;
-use codex_features::Feature;
-use codex_login::AuthManager;
-use codex_mcp::ToolInfo;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::dynamic_tools::DynamicToolNamespaceTool;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::ToolMode;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_tools::ResponsesApiNamespace;
-use codex_tools::ResponsesApiNamespaceTool;
-use codex_tools::TOOL_SEARCH_TOOL_NAME;
-use codex_tools::ToolCall as ExtensionToolCall;
-use codex_tools::ToolEnvironmentMode;
-use codex_tools::ToolExecutor;
-use codex_tools::ToolName;
-use codex_tools::ToolSearchInfo;
-use codex_tools::ToolSpec;
-use codex_tools::UnifiedExecShellMode;
-use codex_tools::can_request_original_image_detail;
-use codex_tools::collect_code_mode_exec_prompt_tool_definitions;
-use codex_tools::collect_request_plugin_install_entries;
-use codex_tools::default_namespace_description;
-use codex_tools::request_user_input_available_modes;
-use codex_tools::shell_command_backend_for_features;
-use codex_tools::shell_type_for_model_and_features;
+use motyga_features::Feature;
+use motyga_login::AuthManager;
+use motyga_mcp::ToolInfo;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::dynamic_tools::DynamicToolNamespaceTool;
+use motyga_protocol::dynamic_tools::DynamicToolSpec;
+use motyga_protocol::openai_models::ConfigShellToolType;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::openai_models::ToolMode;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_tools::ResponsesApiNamespace;
+use motyga_tools::ResponsesApiNamespaceTool;
+use motyga_tools::TOOL_SEARCH_TOOL_NAME;
+use motyga_tools::ToolCall as ExtensionToolCall;
+use motyga_tools::ToolEnvironmentMode;
+use motyga_tools::ToolExecutor;
+use motyga_tools::ToolName;
+use motyga_tools::ToolSearchInfo;
+use motyga_tools::ToolSpec;
+use motyga_tools::UnifiedExecShellMode;
+use motyga_tools::can_request_original_image_detail;
+use motyga_tools::collect_code_mode_exec_prompt_tool_definitions;
+use motyga_tools::collect_request_plugin_install_entries;
+use motyga_tools::default_namespace_description;
+use motyga_tools::request_user_input_available_modes;
+use motyga_tools::shell_command_backend_for_features;
+use motyga_tools::shell_type_for_model_and_features;
 use std::collections::BTreeMap;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -282,9 +282,9 @@ fn spec_for_model_request(
     if matches!(tool_mode, ToolMode::CodeMode | ToolMode::CodeModeOnly)
         && exposure != ToolExposure::DirectModelOnly
         && !is_excluded_from_code_mode(turn_context, tool_name)
-        && codex_code_mode::is_code_mode_nested_tool(spec.name())
+        && motyga_code_mode::is_code_mode_nested_tool(spec.name())
     {
-        codex_tools::augment_tool_spec_for_code_mode(spec)
+        motyga_tools::augment_tool_spec_for_code_mode(spec)
     } else {
         spec
     }
@@ -394,7 +394,7 @@ fn image_generation_runtime_enabled(turn_context: &TurnContext) -> bool {
             && turn_context
                 .auth_manager
                 .as_deref()
-                .is_some_and(AuthManager::current_auth_uses_codex_backend)))
+                .is_some_and(AuthManager::current_auth_uses_motyga_backend)))
         && turn_context.provider.capabilities().image_generation
         && turn_context
             .model_info
@@ -465,7 +465,7 @@ fn is_hidden_by_code_mode_only(
     let tool_mode = effective_tool_mode(turn_context);
     tool_mode == ToolMode::CodeModeOnly
         && exposure != ToolExposure::DirectModelOnly
-        && codex_code_mode::is_code_mode_nested_tool(&codex_tools::code_mode_name_for_tool_name(
+        && motyga_code_mode::is_code_mode_nested_tool(&motyga_tools::code_mode_name_for_tool_name(
             tool_name,
         ))
 }
@@ -589,7 +589,7 @@ fn merge_into_namespaces(specs: Vec<ToolSpec>) -> Vec<ToolSpec> {
 
 fn code_mode_namespace_descriptions(
     specs: &[ToolSpec],
-) -> BTreeMap<String, codex_code_mode::ToolNamespaceDescription> {
+) -> BTreeMap<String, motyga_code_mode::ToolNamespaceDescription> {
     let mut namespace_descriptions = BTreeMap::new();
     for spec in specs {
         let ToolSpec::Namespace(namespace) = spec else {
@@ -598,7 +598,7 @@ fn code_mode_namespace_descriptions(
 
         let entry = namespace_descriptions
             .entry(namespace.name.clone())
-            .or_insert_with(|| codex_code_mode::ToolNamespaceDescription {
+            .or_insert_with(|| motyga_code_mode::ToolNamespaceDescription {
                 name: namespace.name.clone(),
                 description: namespace.description.clone(),
             });
@@ -1009,8 +1009,8 @@ fn append_extension_tool_executors(
         .collect::<HashSet<_>>();
     let tool_mode = effective_tool_mode(turn_context);
     if matches!(tool_mode, ToolMode::CodeMode | ToolMode::CodeModeOnly) {
-        reserved_tool_names.insert(ToolName::plain(codex_code_mode::PUBLIC_TOOL_NAME));
-        reserved_tool_names.insert(ToolName::plain(codex_code_mode::WAIT_TOOL_NAME));
+        reserved_tool_names.insert(ToolName::plain(motyga_code_mode::PUBLIC_TOOL_NAME));
+        reserved_tool_names.insert(ToolName::plain(motyga_code_mode::WAIT_TOOL_NAME));
     }
     if search_tool_enabled(turn_context)
         && planned_tools
@@ -1090,7 +1090,7 @@ impl ToolExecutor<ToolInvocation> for MultiAgentV2NamespaceOverride {
         self.handler.search_info()
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         self.handler.handle(invocation)
     }
 }
@@ -1108,9 +1108,9 @@ impl CoreToolRuntime for MultiAgentV2NamespaceOverride {
 }
 
 fn compare_code_mode_tools(
-    left: &codex_code_mode::ToolDefinition,
-    right: &codex_code_mode::ToolDefinition,
-    namespace_descriptions: &BTreeMap<String, codex_code_mode::ToolNamespaceDescription>,
+    left: &motyga_code_mode::ToolDefinition,
+    right: &motyga_code_mode::ToolDefinition,
+    namespace_descriptions: &BTreeMap<String, motyga_code_mode::ToolNamespaceDescription>,
 ) -> std::cmp::Ordering {
     let left_namespace = code_mode_namespace_name(left, namespace_descriptions);
     let right_namespace = code_mode_namespace_name(right, namespace_descriptions);
@@ -1122,8 +1122,8 @@ fn compare_code_mode_tools(
 }
 
 fn code_mode_namespace_name<'a>(
-    tool: &codex_code_mode::ToolDefinition,
-    namespace_descriptions: &'a BTreeMap<String, codex_code_mode::ToolNamespaceDescription>,
+    tool: &motyga_code_mode::ToolDefinition,
+    namespace_descriptions: &'a BTreeMap<String, motyga_code_mode::ToolNamespaceDescription>,
 ) -> Option<&'a str> {
     tool.tool_name
         .namespace

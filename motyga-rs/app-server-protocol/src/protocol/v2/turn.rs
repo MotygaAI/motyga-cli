@@ -2,20 +2,20 @@ use super::ApprovalsReviewer;
 use super::AskForApproval;
 use super::SandboxPolicy;
 use super::Turn;
-use codex_experimental_api_macros::ExperimentalApi;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::MultiAgentMode;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::models::ImageDetail;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::plan_tool::PlanItemArg as CorePlanItemArg;
-use codex_protocol::plan_tool::StepStatus as CorePlanStepStatus;
-use codex_protocol::user_input::ByteRange as CoreByteRange;
-use codex_protocol::user_input::TextElement as CoreTextElement;
-use codex_protocol::user_input::UserInput as CoreUserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::LegacyAppPathString;
+use motyga_experimental_api_macros::ExperimentalApi;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::MultiAgentMode;
+use motyga_protocol::config_types::Personality;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::models::ImageDetail;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::plan_tool::PlanItemArg as CorePlanItemArg;
+use motyga_protocol::plan_tool::StepStatus as CorePlanStepStatus;
+use motyga_protocol::user_input::ByteRange as CoreByteRange;
+use motyga_protocol::user_input::TextElement as CoreTextElement;
+use motyga_protocol::user_input::UserInput as CoreUserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::LegacyAppPathString;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -70,7 +70,7 @@ pub struct TurnStartParams {
     #[ts(optional = nullable)]
     pub client_user_message_id: Option<String>,
     pub input: Vec<UserInput>,
-    /// Optional metadata to enrich Codex's ResponsesAPI turn metadata.
+    /// Optional metadata to enrich Motyga's ResponsesAPI turn metadata.
     ///
     /// Entries are flattened into the JSON string sent as
     /// `client_metadata["x-codex-turn-metadata"]` on ResponsesAPI HTTP and websocket requests.
@@ -174,7 +174,7 @@ pub struct TurnSteerParams {
     #[ts(optional = nullable)]
     pub client_user_message_id: Option<String>,
     pub input: Vec<UserInput>,
-    /// Optional metadata to enrich Codex's ResponsesAPI turn metadata.
+    /// Optional metadata to enrich Motyga's ResponsesAPI turn metadata.
     ///
     /// Entries are flattened into the JSON string sent as
     /// `client_metadata["x-codex-turn-metadata"]` on ResponsesAPI HTTP and websocket requests.

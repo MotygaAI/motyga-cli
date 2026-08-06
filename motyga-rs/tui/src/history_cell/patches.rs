@@ -1,7 +1,7 @@
 //! Patch summaries and image-tool transcript helpers.
 
 use super::*;
-use codex_utils_path_uri::LegacyAppPathString;
+use motyga_utils_path_uri::LegacyAppPathString;
 
 #[derive(Debug)]
 pub(crate) struct PatchHistoryCell {

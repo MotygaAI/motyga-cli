@@ -1,18 +1,18 @@
 use std::sync::Arc;
 
-use codex_api::AuthError;
-use codex_api::AuthProvider;
-use codex_api::SharedAuthProvider;
-use codex_aws_auth::AwsAuthContext;
-use codex_aws_auth::AwsAuthError;
-use codex_aws_auth::AwsRequestToSign;
-use codex_client::Request;
-use codex_client::RequestBody;
-use codex_client::RequestCompression;
-use codex_login::auth::BedrockApiKeyAuth;
-use codex_model_provider_info::ModelProviderAwsAuthInfo;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result;
+use motyga_api::AuthError;
+use motyga_api::AuthProvider;
+use motyga_api::SharedAuthProvider;
+use motyga_aws_auth::AwsAuthContext;
+use motyga_aws_auth::AwsAuthError;
+use motyga_aws_auth::AwsRequestToSign;
+use motyga_client::Request;
+use motyga_client::RequestBody;
+use motyga_client::RequestCompression;
+use motyga_login::auth::BedrockApiKeyAuth;
+use motyga_model_provider_info::ModelProviderAwsAuthInfo;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result;
 use http::HeaderMap;
 
 use crate::BearerAuthProvider;
@@ -49,7 +49,7 @@ pub(super) async fn resolve_auth_method(
     let config = aws_auth_config(aws);
     let context = AwsAuthContext::load(config)
         .await
-        .map_err(aws_auth_error_to_codex_error)?;
+        .map_err(aws_auth_error_to_motyga_error)?;
     Ok(BedrockAuthMethod::AwsSdkAuth { context })
 }
 
@@ -88,7 +88,7 @@ fn bearer_token_region(
         .or_else(|| non_empty_env_var_from(AWS_REGION_ENV_VAR, env_var))
         .or_else(|| non_empty_env_var_from(AWS_DEFAULT_REGION_ENV_VAR, env_var))
         .ok_or_else(|| {
-            CodexErr::Fatal(
+            MotygaErr::Fatal(
                 "Amazon Bedrock bearer token auth requires \
 `model_providers.amazon-bedrock.aws.region`, `AWS_REGION`, or `AWS_DEFAULT_REGION`"
                     .to_string(),
@@ -96,8 +96,8 @@ fn bearer_token_region(
         })
 }
 
-fn aws_auth_error_to_codex_error(error: AwsAuthError) -> CodexErr {
-    CodexErr::Fatal(format!("failed to resolve Amazon Bedrock auth: {error}"))
+fn aws_auth_error_to_motyga_error(error: AwsAuthError) -> MotygaErr {
+    MotygaErr::Fatal(format!("failed to resolve Amazon Bedrock auth: {error}"))
 }
 
 fn aws_auth_error_to_auth_error(error: AwsAuthError) -> AuthError {
@@ -112,7 +112,7 @@ fn remove_headers_not_preserved_by_bedrock_mantle(headers: &mut HeaderMap) {
     // The Bedrock Mantle front door does not preserve legacy OpenAI
     // compatibility headers that use snake_case, such as `session_id` and
     // `thread_id`, before SigV4 verification. Signing that header class makes
-    // richer Codex agent requests fail even though raw Responses requests work.
+    // richer Motyga agent requests fail even though raw Responses requests work.
     let headers_to_remove = headers
         .keys()
         .filter(|name| name.as_str().contains('_'))
@@ -160,14 +160,14 @@ impl BedrockMantleSigV4AuthProvider {
 impl AuthProvider for BedrockMantleSigV4AuthProvider {
     fn add_auth_headers(&self, _headers: &mut HeaderMap) {}
 
-    fn apply_auth(&self, request: Request) -> codex_api::AuthProviderFuture<'_> {
+    fn apply_auth(&self, request: Request) -> motyga_api::AuthProviderFuture<'_> {
         Box::pin(BedrockMantleSigV4AuthProvider::apply_auth(self, request))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use codex_api::AuthProvider;
+    use motyga_api::AuthProvider;
     use http::HeaderValue;
     use pretty_assertions::assert_eq;
 

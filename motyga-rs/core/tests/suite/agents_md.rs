@@ -1,21 +1,21 @@
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_core::ForkSnapshot;
-use codex_core::StartThreadOptions;
-use codex_exec_server::CreateDirectoryOptions;
-use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-use codex_exec_server::REMOTE_ENVIRONMENT_ID;
-use codex_features::Feature;
-use codex_home::CodexHomeUserInstructionsProvider;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::TurnEnvironmentSelection;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_core::ForkSnapshot;
+use motyga_core::StartThreadOptions;
+use motyga_exec_server::CreateDirectoryOptions;
+use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+use motyga_exec_server::REMOTE_ENVIRONMENT_ID;
+use motyga_features::Feature;
+use motyga_home::MotygaHomeUserInstructionsProvider;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::InitialHistory;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::protocol::TurnEnvironmentSelection;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::PathBufExt;
 use core_test_support::create_directory_symlink;
 use core_test_support::load_default_config_for_test;
@@ -27,9 +27,9 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_no_remote_env;
-use core_test_support::test_codex::RecordingUserInstructionsProvider;
-use core_test_support::test_codex::TestCodexBuilder;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::RecordingUserInstructionsProvider;
+use core_test_support::test_motyga::TestMotygaBuilder;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::json;
@@ -52,7 +52,7 @@ const SPAWN_FRESH_PARENT_PROMPT: &str = "spawn a child with fresh context";
 const SPAWN_PARENT_PROMPT: &str = "spawn a child with the parent context";
 const SPAWN_SEED_PROMPT: &str = "seed parent history";
 
-async fn agents_instructions(mut builder: TestCodexBuilder) -> Result<String> {
+async fn agents_instructions(mut builder: TestMotygaBuilder) -> Result<String> {
     let server = start_mock_server().await;
     let resp_mock = mount_sse_once(
         &server,
@@ -148,7 +148,7 @@ fn assert_single_instruction_fragment(request: &responses::ResponsesRequest, exp
     assert_eq!(instruction_fragments(request), vec![expected.to_string()]);
 }
 
-async fn submit_thread_turn(thread: &Arc<codex_core::CodexThread>, prompt: &str) -> Result<()> {
+async fn submit_thread_turn(thread: &Arc<motyga_core::MotygaThread>, prompt: &str) -> Result<()> {
     thread
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
@@ -187,7 +187,7 @@ fn request_body_contains(request: &wiremock::Request, text: &str) -> bool {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn agents_override_is_preferred_over_agents_md() -> Result<()> {
     let instructions =
-        agents_instructions(test_codex().with_workspace_setup(|cwd, fs| async move {
+        agents_instructions(test_motyga().with_workspace_setup(|cwd, fs| async move {
             let agents_md = cwd.join("AGENTS.md");
             let override_md = cwd.join("AGENTS.override.md");
             let agents_md_uri = PathUri::from_host_native_path(&agents_md)?;
@@ -219,7 +219,7 @@ async fn agents_override_is_preferred_over_agents_md() -> Result<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn configured_fallback_is_used_when_agents_candidate_is_directory() -> Result<()> {
     let instructions = agents_instructions(
-        test_codex()
+        test_motyga()
             .with_config(|config| {
                 config.project_doc_fallback_filenames = vec!["WORKFLOW.md".to_string()];
             })
@@ -256,7 +256,7 @@ async fn configured_fallback_is_used_when_agents_candidate_is_directory() -> Res
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn agents_docs_are_concatenated_from_project_root_to_cwd() -> Result<()> {
     let instructions = agents_instructions(
-        test_codex()
+        test_motyga()
             .with_config(|config| {
                 config.cwd = config.cwd.join("nested/workspace");
             })
@@ -326,7 +326,7 @@ async fn symlinked_cwd_uses_logical_parent_for_agents_discovery() -> Result<()> 
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_config(|config| {
             config.cwd = config.cwd.join("logical-repo/workspace");
         })
@@ -376,7 +376,7 @@ async fn symlinked_cwd_uses_logical_parent_for_agents_discovery() -> Result<()> 
         .expect("symlink should have a parent");
 
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![
             PathUri::from_abs_path(&logical_root.join("AGENTS.md")),
             PathUri::from_abs_path(&test.config.cwd.join("AGENTS.md"))
@@ -409,7 +409,7 @@ async fn selected_environment_sources_match_model_visible_instructions() -> Resu
     let global_agents = home.path().join("AGENTS.md");
     std::fs::write(&global_agents, "global doc")?;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(home)
         .with_workspace_setup(|cwd, fs| async move {
             let agents_md_uri = PathUri::from_host_native_path(cwd.join("AGENTS.md"))?;
@@ -426,7 +426,7 @@ async fn selected_environment_sources_match_model_visible_instructions() -> Resu
     let global_agents = global_agents.abs();
 
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![
             PathUri::from_abs_path(&global_agents),
             PathUri::from_abs_path(&project_agents),
@@ -460,12 +460,12 @@ async fn loads_user_instructions_without_a_primary_environment() -> Result<()> {
     let global_source =
         write_global_file(home.as_ref(), GLOBAL_AGENTS_FILENAME, GLOBAL_INSTRUCTIONS)?;
     let provider = Arc::new(RecordingUserInstructionsProvider::new(Arc::new(
-        CodexHomeUserInstructionsProvider::new(AbsolutePathBuf::try_from(
+        MotygaHomeUserInstructionsProvider::new(AbsolutePathBuf::try_from(
             home.path().to_path_buf(),
         )?),
     )));
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(Arc::clone(&home))
         .with_user_instructions_provider(provider.clone())
         .with_workspace_setup(|cwd, fs| async move {
@@ -553,7 +553,7 @@ async fn fresh_thread_composes_global_before_project_and_reports_sources() -> Re
     let global_source =
         write_global_file(home.as_ref(), GLOBAL_AGENTS_FILENAME, GLOBAL_INSTRUCTIONS)?;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(Arc::clone(&home))
         .with_workspace_setup(|cwd, fs| async move {
             let agents_md_uri = PathUri::from_host_native_path(cwd.join("AGENTS.md"))?;
@@ -573,7 +573,7 @@ async fn fresh_thread_composes_global_before_project_and_reports_sources() -> Re
     ];
 
     // Confirm the thread records both creation-time sources in composition order.
-    assert_eq!(test.codex.instruction_sources().await, creation_sources);
+    assert_eq!(test.motyga.instruction_sources().await, creation_sources);
 
     // Materialize the initial snapshot, then rewrite both selected files in place before another
     // ordinary turn.
@@ -629,7 +629,7 @@ async fn fresh_thread_composes_global_before_project_and_reports_sources() -> Re
         "expected rendered instructions to contain {PROJECT_SEPARATOR:?}; observed: {rendered}"
     );
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         creation_sources,
         "ordinary turns retain the creation-time source list"
     );
@@ -668,14 +668,14 @@ async fn multi_environment_thread_loads_every_project_and_keeps_creation_snapsho
     let global_source =
         write_global_file(home.as_ref(), GLOBAL_AGENTS_FILENAME, GLOBAL_INSTRUCTIONS)?;
     let provider = Arc::new(RecordingUserInstructionsProvider::new(Arc::new(
-        CodexHomeUserInstructionsProvider::new(AbsolutePathBuf::try_from(
+        MotygaHomeUserInstructionsProvider::new(AbsolutePathBuf::try_from(
             home.path().to_path_buf(),
         )?),
     )));
     let local_root = TempDir::new()?;
     let local_source = local_root.path().join(GLOBAL_AGENTS_FILENAME);
     std::fs::write(&local_source, "local project instructions")?;
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(Arc::clone(&home))
         .with_user_instructions_provider(provider.clone())
         .with_workspace_setup(|cwd, fs| async move {
@@ -787,13 +787,13 @@ async fn invalid_utf8_global_instructions_are_lossy() -> Result<()> {
         b"global\xFFinstructions",
     )?;
 
-    let mut builder = test_codex().with_home(home);
+    let mut builder = test_motyga().with_home(home);
     let test = builder.build(&server).await?;
     test.submit_turn("inspect lossy global instructions")
         .await?;
 
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)]
     );
     let expected_fragment =
@@ -833,12 +833,12 @@ async fn cold_resume_invalidates_deleted_legacy_agents_md_once() -> Result<()> {
     )?;
 
     // Create the initial thread and persist its creation-time instruction snapshot.
-    let mut initial_builder = test_codex().with_home(Arc::clone(&home));
+    let mut initial_builder = test_motyga().with_home(Arc::clone(&home));
     let initial = initial_builder.build(&server).await?;
 
     // Assert the pre-resume thread reports the source used to create its snapshot.
     assert_eq!(
-        initial.codex.instruction_sources().await,
+        initial.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&old_source)],
         "initial thread reports the creation-time global source"
     );
@@ -848,8 +848,8 @@ async fn cold_resume_invalidates_deleted_legacy_agents_md_once() -> Result<()> {
         .rollout_path
         .clone()
         .expect("rollout path");
-    initial.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&initial.codex, |event| {
+    initial.motyga.submit(Op::Shutdown).await?;
+    wait_for_event(&initial.motyga, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -858,14 +858,14 @@ async fn cold_resume_invalidates_deleted_legacy_agents_md_once() -> Result<()> {
     remove_agents_md_world_state_section(&rollout_path)?;
 
     std::fs::remove_file(old_source.as_path())?;
-    let mut resume_builder = test_codex().with_home(Arc::clone(&home));
+    let mut resume_builder = test_motyga().with_home(Arc::clone(&home));
     let resumed = resume_builder
         .resume(&server, Arc::clone(&home), rollout_path)
         .await?;
 
     // Model history still contains the old fragment, but the source no longer exists.
     assert_eq!(
-        resumed.codex.instruction_sources().await,
+        resumed.motyga.instruction_sources().await,
         Vec::<PathUri>::new(),
         "resume reports no deleted instruction source"
     );
@@ -926,19 +926,19 @@ async fn fork_injects_changed_agents_md_once() -> Result<()> {
     )?;
 
     // Create the parent and persist its creation-time instruction snapshot.
-    let mut builder = test_codex().with_home(Arc::clone(&home));
+    let mut builder = test_motyga().with_home(Arc::clone(&home));
     let parent = builder.build(&server).await?;
 
     // Assert the parent reports the source used to create its snapshot.
     assert_eq!(
-        parent.codex.instruction_sources().await,
+        parent.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "parent reports the creation-time global source"
     );
     parent.submit_turn("persist instructions").await?;
-    parent.codex.ensure_rollout_materialized().await;
-    parent.codex.flush_rollout().await?;
-    let rollout_path = parent.codex.rollout_path().expect("rollout path");
+    parent.motyga.ensure_rollout_materialized().await;
+    parent.motyga.flush_rollout().await?;
+    let rollout_path = parent.motyga.rollout_path().expect("rollout path");
 
     // Add a preferred override source, then fork with freshly loaded configuration.
     let new_source = write_global_file(
@@ -952,7 +952,7 @@ async fn fork_injects_changed_agents_md_once() -> Result<()> {
     fork_config.model = parent.config.model.clone();
     fork_config.model_provider = parent.config.model_provider.clone();
     fork_config.model_catalog = parent.config.model_catalog.clone();
-    fork_config.codex_self_exe = parent.config.codex_self_exe.clone();
+    fork_config.motyga_self_exe = parent.config.motyga_self_exe.clone();
     let forked = parent
         .thread_manager
         .fork_thread(
@@ -1073,7 +1073,7 @@ async fn run_subagent_global_instruction_case(fork_context: bool) -> Result<()> 
         GLOBAL_AGENTS_FILENAME,
         OLD_GLOBAL_INSTRUCTIONS,
     )?;
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(Arc::clone(&home))
         .with_config(|config| {
             let _ = config.features.enable(Feature::Collab);
@@ -1083,7 +1083,7 @@ async fn run_subagent_global_instruction_case(fork_context: bool) -> Result<()> 
 
     // Assert the parent reports the creation-time source before spawning.
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "parent reports the creation-time global source before spawning"
     );
@@ -1126,7 +1126,7 @@ async fn run_subagent_global_instruction_case(fork_context: bool) -> Result<()> 
     assert_single_instruction_fragment(&spawn_request, &expected_fragment);
     assert_single_instruction_fragment(&child_request, &expected_fragment);
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.motyga.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "running parent retains the creation-time global source after spawning"
     );

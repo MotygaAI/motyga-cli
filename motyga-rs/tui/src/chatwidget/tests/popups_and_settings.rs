@@ -1,24 +1,24 @@
 use super::*;
 use crate::app_event::ConnectorsSnapshot;
 use crate::chatwidget::connectors::ConnectorsCacheState;
-use codex_app_server_protocol::HookErrorInfo;
-use codex_app_server_protocol::HooksListEntry;
-use codex_app_server_protocol::HooksListResponse;
-use codex_app_server_protocol::MarketplaceLoadErrorInfo;
-use codex_app_server_protocol::MarketplaceRemoveResponse;
-use codex_app_server_protocol::PluginAvailability;
-use codex_app_server_protocol::PluginShareContext;
-use codex_app_server_protocol::PluginShareDiscoverability;
-use codex_app_server_protocol::PluginSource;
-use codex_connectors::AppInfo;
-use codex_features::Stage;
+use motyga_app_server_protocol::HookErrorInfo;
+use motyga_app_server_protocol::HooksListEntry;
+use motyga_app_server_protocol::HooksListResponse;
+use motyga_app_server_protocol::MarketplaceLoadErrorInfo;
+use motyga_app_server_protocol::MarketplaceRemoveResponse;
+use motyga_app_server_protocol::PluginAvailability;
+use motyga_app_server_protocol::PluginShareContext;
+use motyga_app_server_protocol::PluginShareDiscoverability;
+use motyga_app_server_protocol::PluginSource;
+use motyga_connectors::AppInfo;
+use motyga_features::Stage;
 use pretty_assertions::assert_eq;
 
 #[tokio::test]
 async fn experimental_mode_plan_is_ignored_on_startup() {
-    let codex_home = tempdir().expect("tempdir");
+    let motyga_home = tempdir().expect("tempdir");
     let cfg = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .motyga_home(motyga_home.path().to_path_buf())
         .cli_overrides(vec![
             (
                 "features.collaboration_modes".to_string(),
@@ -42,9 +42,9 @@ async fn experimental_mode_plan_is_ignored_on_startup() {
         initial_user_message: None,
         enhanced_keys_supported: false,
         has_chatgpt_account: false,
-        has_codex_backend_auth: false,
+        has_motyga_backend_auth: false,
         model_catalog: test_model_catalog(&cfg),
-        feedback: codex_feedback::CodexFeedback::new(),
+        feedback: motyga_feedback::MotygaFeedback::new(),
         is_first_run: true,
         status_account_display: None,
         runtime_model_provider_base_url: None,
@@ -276,7 +276,7 @@ async fn plugins_popup_truncates_long_descriptions_in_list_rows() {
         .expect("expected verbose plugin row in popup");
     insta::assert_snapshot!(
         verbose_row,
-        @"  [-] Verbose Plugin  Available · OpenAI Curated · This description…"
+        @"  [-] Verbose Plugin  Available · Motyga Curated · This description…"
     );
     assert!(
         !popup
@@ -647,8 +647,8 @@ async fn plugin_detail_popup_snapshot_labels_personal_marketplace_as_local() {
         Some("Turn Figma files into implementation context."),
         &["design-review", "extract-copy"],
         &[
-            (codex_app_server_protocol::HookEventName::PreToolUse, 1),
-            (codex_app_server_protocol::HookEventName::Stop, 2),
+            (motyga_app_server_protocol::HookEventName::PreToolUse, 1),
+            (motyga_app_server_protocol::HookEventName::Stop, 2),
         ],
         &["Figma", "Slack"],
         &["figma-mcp", "docs-mcp"],
@@ -694,8 +694,8 @@ async fn plugin_detail_popup_snapshot_shows_npm_source() {
         Some("Turn Figma files into implementation context."),
         &["design-review", "extract-copy"],
         &[
-            (codex_app_server_protocol::HookEventName::PreToolUse, 1),
-            (codex_app_server_protocol::HookEventName::Stop, 2),
+            (motyga_app_server_protocol::HookEventName::PreToolUse, 1),
+            (motyga_app_server_protocol::HookEventName::Stop, 2),
         ],
         &["Figma", "Slack"],
         &["figma-mcp", "docs-mcp"],
@@ -733,8 +733,8 @@ async fn plugin_detail_popup_distinguishes_admin_installed_from_enabled() {
         Some("Turn Figma files into implementation context."),
         &["design-review", "extract-copy"],
         &[
-            (codex_app_server_protocol::HookEventName::PreToolUse, 1),
-            (codex_app_server_protocol::HookEventName::Stop, 2),
+            (motyga_app_server_protocol::HookEventName::PreToolUse, 1),
+            (motyga_app_server_protocol::HookEventName::Stop, 2),
         ],
         &["Figma", "Slack"],
         &["figma-mcp", "docs-mcp"],
@@ -1276,7 +1276,7 @@ async fn plugins_popup_remote_section_fallback_states_when_remote_plugin_disable
         ])),
     );
     let remote_curated_empty_popup =
-        select_tab_containing(&mut remote_chat, "No OpenAI Curated plugins available");
+        select_tab_containing(&mut remote_chat, "No Motyga Curated plugins available");
 
     insta::assert_snapshot!(
         [
@@ -1288,8 +1288,8 @@ async fn plugins_popup_remote_section_fallback_states_when_remote_plugin_disable
         ]
         .join("\n\n"),
         @r###"
-        OpenAI Curated marketplace.
-        Loading OpenAI Curated plugins...  This updates when OpenAI Curated plugins finish loading.
+        Motyga Curated marketplace.
+        Loading Motyga Curated plugins...  This updates when Motyga Curated plugins finish loading.
 
         Loading Workspace plugins.
         Loading Workspace plugins...  This updates when workspace plugins finish loading.
@@ -1300,8 +1300,8 @@ async fn plugins_popup_remote_section_fallback_states_when_remote_plugin_disable
         Workspace unavailable.
         Workspace unavailable  Sign in to ChatGPT to load workspace plugins.
 
-        OpenAI Curated marketplace.
-        No OpenAI Curated plugins available  No OpenAI Curated plugins available.
+        Motyga Curated marketplace.
+        No Motyga Curated plugins available  No Motyga Curated plugins available.
         "###
     );
 }
@@ -1939,12 +1939,12 @@ async fn plugins_popup_openai_curated_tab_omits_marketplace_in_rows() {
 
     let popup = render_bottom_popup(&chat, /*width*/ 100);
     assert!(
-        popup.contains("OpenAI Curated marketplace."),
-        "expected OpenAI Curated tab header, got:\n{popup}"
+        popup.contains("Motyga Curated marketplace."),
+        "expected Motyga Curated tab header, got:\n{popup}"
     );
     assert!(
         popup.contains("Calendar") && !popup.contains("Repo Plugin"),
-        "expected OpenAI Curated tab to show only official marketplace plugins, got:\n{popup}"
+        "expected Motyga Curated tab to show only official marketplace plugins, got:\n{popup}"
     );
     assert!(
         !popup.contains("ChatGPT Marketplace ·"),
@@ -3158,7 +3158,7 @@ async fn server_overloaded_error_does_not_switch_models() {
     handle_error(
         &mut chat,
         "server overloaded",
-        Some(CodexErrorInfo::ServerOverloaded),
+        Some(MotygaErrorInfo::ServerOverloaded),
     );
 
     while let Ok(event) = rx.try_recv() {
@@ -3446,7 +3446,7 @@ async fn feedback_upload_consent_popup_snapshot() {
         chat.current_rollout_path.clone(),
         Some("auto-review-rollout-thread-1.jsonl".to_string()),
         /*include_windows_sandbox_log*/ true,
-        &codex_feedback::FeedbackDiagnostics::new(vec![codex_feedback::FeedbackDiagnostic {
+        &motyga_feedback::FeedbackDiagnostics::new(vec![motyga_feedback::FeedbackDiagnostic {
             headline: "Proxy environment variables are set and may affect connectivity."
                 .to_string(),
             details: vec!["HTTPS_PROXY = hello".to_string()],
@@ -3467,7 +3467,7 @@ async fn feedback_good_result_consent_popup_includes_connectivity_diagnostics_fi
         chat.current_rollout_path.clone(),
         Some("auto-review-rollout-thread-1.jsonl".to_string()),
         /*include_windows_sandbox_log*/ false,
-        &codex_feedback::FeedbackDiagnostics::new(vec![codex_feedback::FeedbackDiagnostic {
+        &motyga_feedback::FeedbackDiagnostics::new(vec![motyga_feedback::FeedbackDiagnostic {
             headline: "Proxy environment variables are set and may affect connectivity."
                 .to_string(),
             details: vec!["HTTPS_PROXY = hello".to_string()],

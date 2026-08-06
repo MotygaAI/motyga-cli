@@ -3,10 +3,10 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
-use codex_code_mode_protocol::CellId;
-use codex_code_mode_protocol::CodeModeSessionDelegate;
-use codex_code_mode_protocol::host::EncodedFrame;
-use codex_code_mode_protocol::host::RequestId;
+use motyga_code_mode_protocol::CellId;
+use motyga_code_mode_protocol::CodeModeSessionDelegate;
+use motyga_code_mode_protocol::host::EncodedFrame;
+use motyga_code_mode_protocol::host::RequestId;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 

@@ -2,11 +2,11 @@ mod agents_md;
 mod environment;
 
 use crate::context::ContextualUserFragment;
-use codex_extension_api::PreviousWorldStateSection;
-use codex_extension_api::RenderedWorldStateFragment;
-use codex_extension_api::WorldStateSectionContribution;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
+use motyga_extension_api::PreviousWorldStateSection;
+use motyga_extension_api::RenderedWorldStateFragment;
+use motyga_extension_api::WorldStateSectionContribution;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseItem;
 use indexmap::IndexMap;
 use serde::Serialize;
 use serde::de::DeserializeOwned;

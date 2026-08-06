@@ -19,8 +19,8 @@ use crate::app_event::AppEvent;
 use crate::app_event_sender::AppEventSender;
 use crate::bottom_pane::MentionBinding;
 use crate::mention_codec::decode_history_mentions_with_at_mentions;
-use codex_protocol::ThreadId;
-use codex_protocol::user_input::TextElement;
+use motyga_protocol::ThreadId;
+use motyga_protocol::user_input::TextElement;
 
 /// A composer history entry that can rehydrate draft state.
 #[derive(Debug, Clone, PartialEq)]
@@ -1085,7 +1085,7 @@ mod tests {
 
         let mut history = ChatComposerHistory::new();
         history.record_local_submission(HistoryEntry::new("git status".to_string()));
-        history.record_local_submission(HistoryEntry::new("cargo test -p codex-tui".to_string()));
+        history.record_local_submission(HistoryEntry::new("cargo test -p motyga-tui".to_string()));
         history.record_local_submission(HistoryEntry::new("git diff".to_string()));
 
         assert_eq!(
@@ -1151,7 +1151,7 @@ mod tests {
 
         let mut history = ChatComposerHistory::new();
         history.record_local_submission(HistoryEntry::new("git status".to_string()));
-        history.record_local_submission(HistoryEntry::new("cargo test -p codex-tui".to_string()));
+        history.record_local_submission(HistoryEntry::new("cargo test -p motyga-tui".to_string()));
         history.record_local_submission(HistoryEntry::new("git status".to_string()));
         history.record_local_submission(HistoryEntry::new("git diff".to_string()));
 

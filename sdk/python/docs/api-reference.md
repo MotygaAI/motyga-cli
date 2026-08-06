@@ -1,6 +1,6 @@
-# OpenAI Codex Python SDK (Beta) - API Reference
+# Motyga Python SDK (Beta) - API Reference
 
-Public surface of `openai_codex` for Codex workflows.
+Public surface of `motyga_sdk` for Motyga workflows.
 
 This SDK is in beta. Public APIs may change before `1.0`. Turn streams are routed by turn ID so one client can consume multiple active turns concurrently.
 Thread starts default to `ApprovalMode.auto_review`; turn starts accept an optional `approval_mode` override.
@@ -8,10 +8,10 @@ Thread starts default to `ApprovalMode.auto_review`; turn starts accept an optio
 ## Package Entry
 
 ```python
-from openai_codex import (
-    Codex,
-    AsyncCodex,
-    CodexConfig,
+from motyga_sdk import (
+    Motyga,
+    AsyncMotyga,
+    MotygaConfig,
     ApprovalMode,
     Sandbox,
     ChatgptLoginHandle,
@@ -32,7 +32,7 @@ from openai_codex import (
     SkillInput,
     MentionInput,
 )
-from openai_codex.types import (
+from motyga_sdk.types import (
     Account,
     AccountLoginCompletedNotification,
     CancelLoginAccountResponse,
@@ -46,14 +46,14 @@ from openai_codex.types import (
 )
 ```
 
-- Version: `openai_codex.__version__`
+- Version: `motyga_sdk.__version__`
 - Requires Python >= 3.10
-- Public Codex protocol value and event types live in `openai_codex.types`
+- Public Motyga protocol value and event types live in `motyga_sdk.types`
 
-## Codex (sync)
+## Motyga (sync)
 
 ```python
-Codex(config: CodexConfig | None = None)
+Motyga(config: MotygaConfig | None = None)
 ```
 
 Properties/methods:
@@ -76,24 +76,24 @@ Properties/methods:
 Context manager:
 
 ```python
-with Codex() as codex:
+with Motyga() as motyga:
     ...
 ```
 
-## AsyncCodex (async parity)
+## AsyncMotyga (async parity)
 
 ```python
-AsyncCodex(config: CodexConfig | None = None)
+AsyncMotyga(config: MotygaConfig | None = None)
 ```
 
 Preferred usage:
 
 ```python
-async with AsyncCodex() as codex:
+async with AsyncMotyga() as motyga:
     ...
 ```
 
-`AsyncCodex` initializes lazily. Context entry is the standard path because it
+`AsyncMotyga` initializes lazily. Context entry is the standard path because it
 ensures startup and shutdown are paired explicitly.
 
 Properties/methods:
@@ -116,7 +116,7 @@ Properties/methods:
 Async context manager:
 
 ```python
-async with AsyncCodex() as codex:
+async with AsyncMotyga() as motyga:
     ...
 ```
 
@@ -189,10 +189,10 @@ Use `turn(...)` when you need low-level turn control (`stream()`, `steer()`,
 Use `sandbox=` consistently on thread lifecycle methods and turns:
 
 ```python
-from openai_codex import Codex, Sandbox
+from motyga_sdk import Motyga, Sandbox
 
-with Codex() as codex:
-    thread = codex.thread_start(sandbox=Sandbox.workspace_write)
+with Motyga() as motyga:
+    thread = motyga.thread_start(sandbox=Sandbox.workspace_write)
     result = thread.run("Review the diff only.", sandbox=Sandbox.read_only)
 ```
 
@@ -202,7 +202,7 @@ Presets:
 - `Sandbox.workspace_write`: the normal default for projects with a recorded trust decision; read files and write inside the workspace and configured writable roots.
 - `Sandbox.full_access`: run without filesystem access restrictions.
 
-When `sandbox=` is omitted, Codex uses its configured default. A sandbox
+When `sandbox=` is omitted, Motyga uses its configured default. A sandbox
 passed to `run(...)` or `turn(...)` applies to that turn and subsequent turns.
 
 ## TurnHandle / AsyncTurnHandle
@@ -217,7 +217,7 @@ passed to `run(...)` or `turn(...)` applies to that turn and subsequent turns.
 Behavior notes:
 
 - `stream()` and `run()` consume only notifications for their own turn ID
-- one `Codex` instance can stream multiple active turns concurrently
+- one `Motyga` instance can stream multiple active turns concurrently
 
 ### AsyncTurnHandle
 
@@ -229,7 +229,7 @@ Behavior notes:
 Behavior notes:
 
 - `stream()` and `run()` consume only notifications for their own turn ID
-- one `AsyncCodex` instance can stream multiple active turns concurrently
+- one `AsyncMotyga` instance can stream multiple active turns concurrently
 
 ## Inputs
 
@@ -253,10 +253,10 @@ Use a plain `str` as shorthand for `TextInput(...)` anywhere a turn input is acc
 
 ## Public Types
 
-The SDK wrappers return and accept public Codex protocol models wherever possible:
+The SDK wrappers return and accept public Motyga protocol models wherever possible:
 
 ```python
-from openai_codex.types import (
+from motyga_sdk.types import (
     Account,
     AccountLoginCompletedNotification,
     CancelLoginAccountResponse,
@@ -271,7 +271,7 @@ from openai_codex.types import (
 ## Retry + errors
 
 ```python
-from openai_codex import (
+from motyga_sdk import (
     retry_on_overload,
     JsonRpcError,
     MethodNotFoundError,
@@ -287,10 +287,10 @@ from openai_codex import (
 ## Example
 
 ```python
-from openai_codex import Codex
+from motyga_sdk import Motyga
 
-with Codex() as codex:
-    thread = codex.thread_start(model="gpt-5.4", config={"model_reasoning_effort": "high"})
+with Motyga() as motyga:
+    thread = motyga.thread_start(model="gpt-5.4", config={"model_reasoning_effort": "high"})
     result = thread.run("Say hello in one sentence.")
     print(result.final_response)
 ```

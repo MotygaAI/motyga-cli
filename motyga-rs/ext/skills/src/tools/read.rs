@@ -1,9 +1,9 @@
-use codex_extension_api::FunctionCallError;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolExecutor;
-use codex_extension_api::ToolExecutorFuture;
-use codex_extension_api::ToolName;
-use codex_extension_api::ToolSpec;
+use motyga_extension_api::FunctionCallError;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolExecutor;
+use motyga_extension_api::ToolExecutorFuture;
+use motyga_extension_api::ToolName;
+use motyga_extension_api::ToolSpec;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;

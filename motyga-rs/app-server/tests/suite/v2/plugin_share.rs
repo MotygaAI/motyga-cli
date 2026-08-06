@@ -7,29 +7,29 @@ use app_test_support::ChatGptAuthFixture;
 use app_test_support::TestAppServer;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::PluginAuthPolicy;
-use codex_app_server_protocol::PluginInstallPolicy;
-use codex_app_server_protocol::PluginInterface;
-use codex_app_server_protocol::PluginListParams;
-use codex_app_server_protocol::PluginListResponse;
-use codex_app_server_protocol::PluginShareCheckoutResponse;
-use codex_app_server_protocol::PluginShareContext;
-use codex_app_server_protocol::PluginShareDeleteResponse;
-use codex_app_server_protocol::PluginShareDiscoverability;
-use codex_app_server_protocol::PluginShareListItem;
-use codex_app_server_protocol::PluginShareListResponse;
-use codex_app_server_protocol::PluginSharePrincipal;
-use codex_app_server_protocol::PluginSharePrincipalRole;
-use codex_app_server_protocol::PluginSharePrincipalType;
-use codex_app_server_protocol::PluginShareSaveResponse;
-use codex_app_server_protocol::PluginShareUpdateTargetsResponse;
-use codex_app_server_protocol::PluginSource;
-use codex_app_server_protocol::PluginSummary;
-use codex_app_server_protocol::RequestId;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::PluginAuthPolicy;
+use motyga_app_server_protocol::PluginInstallPolicy;
+use motyga_app_server_protocol::PluginInterface;
+use motyga_app_server_protocol::PluginListParams;
+use motyga_app_server_protocol::PluginListResponse;
+use motyga_app_server_protocol::PluginShareCheckoutResponse;
+use motyga_app_server_protocol::PluginShareContext;
+use motyga_app_server_protocol::PluginShareDeleteResponse;
+use motyga_app_server_protocol::PluginShareDiscoverability;
+use motyga_app_server_protocol::PluginShareListItem;
+use motyga_app_server_protocol::PluginShareListResponse;
+use motyga_app_server_protocol::PluginSharePrincipal;
+use motyga_app_server_protocol::PluginSharePrincipalRole;
+use motyga_app_server_protocol::PluginSharePrincipalType;
+use motyga_app_server_protocol::PluginShareSaveResponse;
+use motyga_app_server_protocol::PluginShareUpdateTargetsResponse;
+use motyga_app_server_protocol::PluginSource;
+use motyga_app_server_protocol::PluginSummary;
+use motyga_app_server_protocol::RequestId;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use flate2::Compression;
 use flate2::write::GzEncoder;
 use pretty_assertions::assert_eq;
@@ -47,24 +47,24 @@ use wiremock::matchers::query_param;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 const TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS: &str =
-    "CODEX_TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS";
+    "MOTYGA_TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS";
 
 #[tokio::test]
 async fn plugin_share_save_uploads_local_plugin() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let plugin_root = TempDir::new()?;
     let plugin_path = write_test_plugin(plugin_root.path(), "demo-plugin")?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
             .chatgpt_account_id("account-123"),
         AuthCredentialsStoreMode::File,
     )?;
-    write_corrupt_plugin_share_local_path_mapping(codex_home.path())?;
+    write_corrupt_plugin_share_local_path_mapping(motyga_home.path())?;
 
     Mock::given(method("POST"))
         .and(path("/backend-api/public/plugins/workspace/upload-url"))
@@ -102,7 +102,7 @@ async fn plugin_share_save_uploads_local_plugin() -> Result<()> {
         .mount(&server)
         .await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let expected_plugin_path = AbsolutePathBuf::try_from(plugin_path.clone())?;
     let request_id = mcp
@@ -179,7 +179,7 @@ async fn plugin_share_save_uploads_local_plugin() -> Result<()> {
                     enabled: true,
                     install_policy: PluginInstallPolicy::Available,
                     auth_policy: PluginAuthPolicy::OnUse,
-                    availability: codex_app_server_protocol::PluginAvailability::Available,
+                    availability: motyga_app_server_protocol::PluginAvailability::Available,
                     interface: Some(expected_plugin_interface()),
                     keywords: Vec::new(),
                 },
@@ -192,13 +192,13 @@ async fn plugin_share_save_uploads_local_plugin() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_share_save_forwards_access_policy() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let plugin_root = TempDir::new()?;
     let plugin_path = write_test_plugin(plugin_root.path(), "demo-plugin")?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -251,7 +251,7 @@ async fn plugin_share_save_forwards_access_policy() -> Result<()> {
         .mount(&server)
         .await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let expected_plugin_path = AbsolutePathBuf::try_from(plugin_path)?;
     let request_id = mcp
@@ -290,13 +290,13 @@ async fn plugin_share_save_forwards_access_policy() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_share_save_rejects_listed_discoverability() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let plugin_root = TempDir::new()?;
     let plugin_path = write_test_plugin(plugin_root.path(), "demo-plugin")?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -304,7 +304,7 @@ async fn plugin_share_save_rejects_listed_discoverability() -> Result<()> {
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let request_id = mcp
         .send_raw_request(
@@ -332,12 +332,12 @@ async fn plugin_share_save_rejects_listed_discoverability() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_share_save_rejects_when_plugin_sharing_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let plugin_root = TempDir::new()?;
     let plugin_path = write_test_plugin(plugin_root.path(), "demo-plugin")?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{}/backend-api"
@@ -350,7 +350,7 @@ plugin_sharing = false
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -358,7 +358,7 @@ plugin_sharing = false
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let request_id = mcp
         .send_raw_request(
@@ -389,13 +389,13 @@ plugin_sharing = false
 
 #[tokio::test]
 async fn plugin_share_rejects_workspace_targets_from_client() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let plugin_root = TempDir::new()?;
     let plugin_path = write_test_plugin(plugin_root.path(), "demo-plugin")?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -403,7 +403,7 @@ async fn plugin_share_rejects_workspace_targets_from_client() -> Result<()> {
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let request_id = mcp
         .send_raw_request(
@@ -467,13 +467,13 @@ async fn plugin_share_rejects_workspace_targets_from_client() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_share_save_rejects_access_policy_for_existing_plugin() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let plugin_root = TempDir::new()?;
     let plugin_path = write_test_plugin(plugin_root.path(), "demo-plugin")?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -481,7 +481,7 @@ async fn plugin_share_save_rejects_access_policy_for_existing_plugin() -> Result
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let request_id = mcp
         .send_raw_request(
@@ -517,11 +517,11 @@ async fn plugin_share_save_rejects_access_policy_for_existing_plugin() -> Result
 
 #[tokio::test]
 async fn plugin_share_list_returns_created_workspace_plugins() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -554,7 +554,7 @@ async fn plugin_share_list_returns_created_workspace_plugins() -> Result<()> {
         .mount(&server)
         .await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let request_id = mcp
         .send_raw_request("plugin/share/list", Some(json!({})))
@@ -582,7 +582,7 @@ async fn plugin_share_list_returns_created_workspace_plugins() -> Result<()> {
                     enabled: true,
                     install_policy: PluginInstallPolicy::Available,
                     auth_policy: PluginAuthPolicy::OnUse,
-                    availability: codex_app_server_protocol::PluginAvailability::Available,
+                    availability: motyga_app_server_protocol::PluginAvailability::Available,
                     interface: Some(expected_plugin_interface()),
                     keywords: Vec::new(),
                 },
@@ -595,12 +595,12 @@ async fn plugin_share_list_returns_created_workspace_plugins() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_share_checkout_adds_personal_marketplace_entry() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let home = TempDir::new()?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -626,7 +626,7 @@ async fn plugin_share_checkout_adds_personal_marketplace_entry() -> Result<()> {
 
     let home_env = home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home_env.as_str())),
             ("USERPROFILE", Some(home_env.as_str())),
@@ -658,10 +658,10 @@ async fn plugin_share_checkout_adds_personal_marketplace_entry() -> Result<()> {
         response,
         PluginShareCheckoutResponse {
             remote_plugin_id: "plugins_123".to_string(),
-            plugin_id: "demo-plugin@codex-curated".to_string(),
+            plugin_id: "demo-plugin@motyga-curated".to_string(),
             plugin_name: "demo-plugin".to_string(),
             plugin_path: plugin_path.clone(),
-            marketplace_name: "codex-curated".to_string(),
+            marketplace_name: "motyga-curated".to_string(),
             marketplace_path: marketplace_path.clone(),
             remote_version: Some("1.2.3".to_string()),
         }
@@ -678,7 +678,7 @@ async fn plugin_share_checkout_adds_personal_marketplace_entry() -> Result<()> {
     assert_eq!(
         marketplace,
         json!({
-            "name": "codex-curated",
+            "name": "motyga-curated",
             "interface": {
                 "displayName": "Personal",
             },
@@ -699,7 +699,7 @@ async fn plugin_share_checkout_adds_personal_marketplace_entry() -> Result<()> {
     );
 
     let mapping: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(
-        codex_home
+        motyga_home
             .path()
             .join(".tmp/plugin-share-local-paths-v1.json"),
     )?)?;
@@ -716,7 +716,7 @@ async fn plugin_share_checkout_adds_personal_marketplace_entry() -> Result<()> {
         .send_plugin_list_request(PluginListParams {
             cwds: None,
             marketplace_kinds: Some(vec![
-                codex_app_server_protocol::PluginListMarketplaceKind::Local,
+                motyga_app_server_protocol::PluginListMarketplaceKind::Local,
             ]),
         })
         .await?;
@@ -727,7 +727,7 @@ async fn plugin_share_checkout_adds_personal_marketplace_entry() -> Result<()> {
     .await??;
     let response: PluginListResponse = to_response(response)?;
     assert_eq!(response.marketplaces.len(), 1);
-    assert_eq!(response.marketplaces[0].name, "codex-curated");
+    assert_eq!(response.marketplaces[0].name, "motyga-curated");
     assert_eq!(response.marketplaces[0].plugins[0].name, "demo-plugin");
     assert_eq!(
         response.marketplaces[0].plugins[0]
@@ -763,12 +763,12 @@ async fn plugin_share_checkout_adds_personal_marketplace_entry() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_share_checkout_rejects_non_share_remote_plugin() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let home = TempDir::new()?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -789,7 +789,7 @@ async fn plugin_share_checkout_rejects_non_share_remote_plugin() -> Result<()> {
 
     let home_env = home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home_env.as_str())),
             ("USERPROFILE", Some(home_env.as_str())),
@@ -827,12 +827,12 @@ async fn plugin_share_checkout_rejects_non_share_remote_plugin() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_share_checkout_cleans_up_path_when_marketplace_update_fails() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let home = TempDir::new()?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -849,7 +849,7 @@ async fn plugin_share_checkout_cleans_up_path_when_marketplace_update_fails() ->
     std::fs::write(
         &marketplace_path,
         serde_json::to_string_pretty(&json!({
-            "name": "codex-curated",
+            "name": "motyga-curated",
             "plugins": [
                 {
                     "name": "demo-plugin",
@@ -880,7 +880,7 @@ async fn plugin_share_checkout_cleans_up_path_when_marketplace_update_fails() ->
 
     let home_env = home.path().to_string_lossy().into_owned();
     let mut mcp = TestAppServer::new_with_env(
-        codex_home.path(),
+        motyga_home.path(),
         &[
             ("HOME", Some(home_env.as_str())),
             ("USERPROFILE", Some(home_env.as_str())),
@@ -913,7 +913,7 @@ async fn plugin_share_checkout_cleans_up_path_when_marketplace_update_fails() ->
     );
     assert!(!home.path().join("plugins/demo-plugin").exists());
     assert!(
-        !codex_home
+        !motyga_home
             .path()
             .join(".tmp/plugin-share-local-paths-v1.json")
             .exists()
@@ -924,11 +924,11 @@ async fn plugin_share_checkout_cleans_up_path_when_marketplace_update_fails() ->
 
 #[tokio::test]
 async fn plugin_share_update_targets_updates_share_targets() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -982,7 +982,7 @@ async fn plugin_share_update_targets_updates_share_targets() -> Result<()> {
         .mount(&server)
         .await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let request_id = mcp
         .send_raw_request(
@@ -1031,7 +1031,7 @@ async fn plugin_share_update_targets_updates_share_targets() -> Result<()> {
                     name: "Workspace".to_string(),
                 },
             ],
-            discoverability: codex_app_server_protocol::PluginShareDiscoverability::Unlisted,
+            discoverability: motyga_app_server_protocol::PluginShareDiscoverability::Unlisted,
         }
     );
     Ok(())
@@ -1039,10 +1039,10 @@ async fn plugin_share_update_targets_updates_share_targets() -> Result<()> {
 
 #[tokio::test]
 async fn plugin_share_update_targets_rejects_when_plugin_sharing_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
     std::fs::write(
-        codex_home.path().join("config.toml"),
+        motyga_home.path().join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{}/backend-api"
@@ -1055,7 +1055,7 @@ plugin_sharing = false
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -1063,7 +1063,7 @@ plugin_sharing = false
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let request_id = mcp
         .send_raw_request(
@@ -1089,19 +1089,19 @@ plugin_sharing = false
 
 #[tokio::test]
 async fn plugin_share_delete_removes_created_workspace_plugin() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     let server = MockServer::start().await;
-    write_remote_plugin_config(codex_home.path(), &format!("{}/backend-api", server.uri()))?;
+    write_remote_plugin_config(motyga_home.path(), &format!("{}/backend-api", server.uri()))?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
             .chatgpt_account_id("account-123"),
         AuthCredentialsStoreMode::File,
     )?;
-    let local_plugin_path = AbsolutePathBuf::try_from(codex_home.path().join("local-plugin"))?;
-    write_plugin_share_local_path_mapping(codex_home.path(), "plugins_123", &local_plugin_path)?;
+    let local_plugin_path = AbsolutePathBuf::try_from(motyga_home.path().join("local-plugin"))?;
+    write_plugin_share_local_path_mapping(motyga_home.path(), "plugins_123", &local_plugin_path)?;
 
     Mock::given(method("DELETE"))
         .and(path("/backend-api/public/plugins/workspace/plugins_123"))
@@ -1112,7 +1112,7 @@ async fn plugin_share_delete_removes_created_workspace_plugin() -> Result<()> {
         .mount(&server)
         .await;
 
-    let mut mcp = TestAppServer::new(codex_home.path()).await?;
+    let mut mcp = TestAppServer::new(motyga_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     let request_id = mcp
         .send_raw_request(
@@ -1182,7 +1182,7 @@ async fn plugin_share_delete_removes_created_workspace_plugin() -> Result<()> {
                     enabled: true,
                     install_policy: PluginInstallPolicy::Available,
                     auth_policy: PluginAuthPolicy::OnUse,
-                    availability: codex_app_server_protocol::PluginAvailability::Available,
+                    availability: motyga_app_server_protocol::PluginAvailability::Available,
                     interface: Some(expected_plugin_interface()),
                     keywords: Vec::new(),
                 },
@@ -1193,9 +1193,9 @@ async fn plugin_share_delete_removes_created_workspace_plugin() -> Result<()> {
     Ok(())
 }
 
-fn write_remote_plugin_config(codex_home: &Path, base_url: &str) -> std::io::Result<()> {
+fn write_remote_plugin_config(motyga_home: &Path, base_url: &str) -> std::io::Result<()> {
     std::fs::write(
-        codex_home.join("config.toml"),
+        motyga_home.join("config.toml"),
         format!(
             r#"
 chatgpt_base_url = "{base_url}"
@@ -1426,15 +1426,15 @@ fn remote_plugin_bundle_tar_gz_bytes(plugin_name: &str) -> Result<Vec<u8>> {
     Ok(tar.into_inner()?.finish()?)
 }
 
-fn write_corrupt_plugin_share_local_path_mapping(codex_home: &Path) -> std::io::Result<()> {
+fn write_corrupt_plugin_share_local_path_mapping(motyga_home: &Path) -> std::io::Result<()> {
     write_file(
-        &codex_home.join(".tmp/plugin-share-local-paths-v1.json"),
+        &motyga_home.join(".tmp/plugin-share-local-paths-v1.json"),
         "not-json",
     )
 }
 
 fn write_plugin_share_local_path_mapping(
-    codex_home: &Path,
+    motyga_home: &Path,
     remote_plugin_id: &str,
     plugin_path: &AbsolutePathBuf,
 ) -> std::io::Result<()> {
@@ -1448,7 +1448,7 @@ fn write_plugin_share_local_path_mapping(
     }))
     .map_err(std::io::Error::other)?;
     write_file(
-        &codex_home.join(".tmp/plugin-share-local-paths-v1.json"),
+        &motyga_home.join(".tmp/plugin-share-local-paths-v1.json"),
         &format!("{contents}\n"),
     )
 }

@@ -78,7 +78,7 @@ impl App {
     }
 
     pub(super) fn open_desktop_thread(&mut self, thread_id: ThreadId) {
-        let url = format!("codex://threads/{thread_id}");
+        let url = format!("motyga://threads/{thread_id}");
         if let Err(err) = open_desktop_thread_url(&url) {
             self.chat_widget
                 .add_error_message(desktop_thread_open_error_message(&err));
@@ -111,7 +111,7 @@ impl App {
     }
 
     pub(super) fn clear_ui_header_lines(&self, width: u16) -> Vec<Line<'static>> {
-        self.clear_ui_header_lines_with_version(width, CODEX_CLI_VERSION)
+        self.clear_ui_header_lines_with_version(width, MOTYGA_CLI_VERSION)
     }
 
     pub(super) fn queue_clear_ui_header(&mut self, tui: &mut tui::Tui) {
@@ -237,7 +237,7 @@ if ([string]::IsNullOrWhiteSpace($installLocation)) {{
 }}
 
 $appDir = Join-Path $installLocation 'app'
-$exe = Join-Path $appDir 'Codex.exe'
+$exe = Join-Path $appDir 'Motyga.exe'
 $app = Join-Path $appDir 'resources\app.asar'
 if (-not (Test-Path $exe)) {{
     Write-Error "Motyga Desktop executable not found at $exe"

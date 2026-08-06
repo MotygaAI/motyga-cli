@@ -5,10 +5,10 @@ mod common;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use codex_exec_server::EnvironmentManager;
-use codex_protocol::capabilities::CapabilityRootLocation;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::EnvironmentManager;
+use motyga_protocol::capabilities::CapabilityRootLocation;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_utils_path_uri::PathUri;
 use common::exec_server::exec_server;
 use pretty_assertions::assert_eq;
 

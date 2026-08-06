@@ -7,9 +7,9 @@ use super::emit_compact_metric;
 use crate::session::TurnInput;
 use crate::session::turn_context::TurnContext;
 use crate::state::TaskKind;
-use codex_features::Feature;
-use codex_protocol::error::CodexErr;
-use codex_protocol::user_input::UserInput;
+use motyga_features::Feature;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::user_input::UserInput;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Copy, Default)]
@@ -41,7 +41,7 @@ impl SessionTask for CompactTask {
             if ctx
                 .config
                 .features
-                .enabled(codex_features::Feature::RemoteCompactionV2)
+                .enabled(motyga_features::Feature::RemoteCompactionV2)
             {
                 emit_compact_metric(
                     &session.services.session_telemetry,
@@ -75,7 +75,7 @@ impl SessionTask for CompactTask {
             }];
             crate::compact::run_compact_task(session.clone(), ctx, input).await
         };
-        if let Err(err @ CodexErr::TurnAborted) = result {
+        if let Err(err @ MotygaErr::TurnAborted) = result {
             return Err(err);
         }
         Ok(None)

@@ -1,5 +1,5 @@
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::ThreadHistoryMode;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::ThreadHistoryMode;
 
 /// Result type returned by thread-store operations.
 pub type ThreadStoreResult<T> = Result<T, ThreadStoreError>;

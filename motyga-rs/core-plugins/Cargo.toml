@@ -1,12 +1,12 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-core-plugins"
+name = "motyga-core-plugins"
 version.workspace = true
 
 [lib]
 doctest = false
-name = "codex_core_plugins"
+name = "motyga_core_plugins"
 path = "src/lib.rs"
 
 [lints]
@@ -14,25 +14,25 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-codex-analytics = { workspace = true }
-codex-app-server-protocol = { workspace = true }
-codex-config = { workspace = true }
-codex-connectors = { workspace = true }
-codex-core-skills = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-git-utils = { workspace = true }
-codex-hooks = { workspace = true }
-codex-login = { workspace = true }
-codex-mcp = { workspace = true }
-codex-model-provider = { workspace = true }
-codex-otel = { workspace = true }
-codex-plugin = { workspace = true }
-codex-protocol = { workspace = true }
-codex-tools = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-path = { workspace = true }
-codex-utils-path-uri = { workspace = true }
-codex-utils-plugins = { workspace = true }
+motyga-analytics = { workspace = true }
+motyga-app-server-protocol = { workspace = true }
+motyga-config = { workspace = true }
+motyga-connectors = { workspace = true }
+motyga-core-skills = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-git-utils = { workspace = true }
+motyga-hooks = { workspace = true }
+motyga-login = { workspace = true }
+motyga-mcp = { workspace = true }
+motyga-model-provider = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-plugin = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-tools = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-path = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
+motyga-utils-plugins = { workspace = true }
 chrono = { workspace = true }
 dirs = { workspace = true }
 flate2 = { workspace = true }

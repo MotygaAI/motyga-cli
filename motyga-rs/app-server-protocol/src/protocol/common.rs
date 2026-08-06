@@ -8,7 +8,7 @@ use crate::export::GeneratedSchema;
 use crate::export::write_json_schema;
 use crate::protocol::v1;
 use crate::protocol::v2;
-use codex_experimental_api_macros::ExperimentalApi;
+use motyga_experimental_api_macros::ExperimentalApi;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -19,9 +19,9 @@ use ts_rs::TS;
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display, JsonSchema, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthMode {
-    /// OpenAI API key provided by the caller and stored by Codex.
+    /// OpenAI API key provided by the caller and stored by Motyga.
     ApiKey,
-    /// ChatGPT OAuth managed by Codex (tokens persisted and refreshed by Codex).
+    /// ChatGPT OAuth managed by Motyga (tokens persisted and refreshed by Motyga).
     Chatgpt,
     /// [UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE.
     ///
@@ -31,17 +31,17 @@ pub enum AuthMode {
     #[ts(rename = "chatgptAuthTokens")]
     #[strum(serialize = "chatgptAuthTokens")]
     ChatgptAuthTokens,
-    /// Programmatic Codex auth backed by a registered Agent Identity.
+    /// Programmatic Motyga auth backed by a registered Agent Identity.
     #[serde(rename = "agentIdentity")]
     #[ts(rename = "agentIdentity")]
     #[strum(serialize = "agentIdentity")]
     AgentIdentity,
-    /// Programmatic Codex auth backed by a personal access token.
+    /// Programmatic Motyga auth backed by a personal access token.
     #[serde(rename = "personalAccessToken")]
     #[ts(rename = "personalAccessToken")]
     #[strum(serialize = "personalAccessToken")]
     PersonalAccessToken,
-    /// Amazon Bedrock bearer token managed by Codex.
+    /// Amazon Bedrock bearer token managed by Motyga.
     #[serde(rename = "bedrockApiKey")]
     #[ts(rename = "bedrockApiKey")]
     #[strum(serialize = "bedrockApiKey")]
@@ -57,8 +57,8 @@ impl AuthMode {
         }
     }
 
-    /// Returns whether this mode is backed by Codex services rather than a direct model API.
-    pub fn uses_codex_backend(self) -> bool {
+    /// Returns whether this mode is backed by Motyga services rather than a direct model API.
+    pub fn uses_motyga_backend(self) -> bool {
         match self {
             Self::Chatgpt
             | Self::ChatgptAuthTokens
@@ -1073,7 +1073,7 @@ client_request_definitions! {
         response: v2::CommandExecResizeResponse,
     },
     #[experimental("process/spawn")]
-    /// Spawn a standalone process (argv vector) without a Codex sandbox.
+    /// Spawn a standalone process (argv vector) without a Motyga sandbox.
     ProcessSpawn => "process/spawn" {
         params: v2::ProcessSpawnParams,
         serialization: process_handle(params.process_handle),
@@ -1532,7 +1532,7 @@ pub struct FuzzyFileSearchParams {
     pub cancellation_token: Option<String>,
 }
 
-/// Superset of [`codex_file_search::FileMatch`]
+/// Superset of [`motyga_file_search::FileMatch`]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
 pub struct FuzzyFileSearchResult {
     pub root: String,
@@ -1630,7 +1630,7 @@ server_notification_definitions! {
     ItemGuardianApprovalReviewStarted => "item/autoApprovalReview/started" (v2::ItemGuardianApprovalReviewStartedNotification),
     ItemGuardianApprovalReviewCompleted => "item/autoApprovalReview/completed" (v2::ItemGuardianApprovalReviewCompletedNotification),
     ItemCompleted => "item/completed" (v2::ItemCompletedNotification),
-    /// This event is internal-only. Used by Codex Cloud.
+    /// This event is internal-only. Used by Motyga Cloud.
     RawResponseItemCompleted => "rawResponseItem/completed" (v2::RawResponseItemCompletedNotification),
     AgentMessageDelta => "item/agentMessage/delta" (v2::AgentMessageDeltaNotification),
     /// EXPERIMENTAL - proposed plan streaming deltas for plan items.
@@ -1711,18 +1711,18 @@ client_notification_definitions! {
 mod tests {
     use super::*;
     use anyhow::Result;
-    use codex_protocol::ThreadId;
-    use codex_protocol::account::AmazonBedrockCredentialSource;
-    use codex_protocol::account::PlanType;
-    use codex_protocol::config_types::MultiAgentMode;
-    use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
-    use codex_protocol::parse_command::ParsedCommand;
-    use codex_protocol::protocol::RealtimeConversationVersion;
-    use codex_protocol::protocol::RealtimeOutputModality;
-    use codex_protocol::protocol::RealtimeVoice;
-    use codex_utils_absolute_path::AbsolutePathBuf;
-    use codex_utils_absolute_path::test_support::PathBufExt;
-    use codex_utils_absolute_path::test_support::test_path_buf;
+    use motyga_protocol::ThreadId;
+    use motyga_protocol::account::AmazonBedrockCredentialSource;
+    use motyga_protocol::account::PlanType;
+    use motyga_protocol::config_types::MultiAgentMode;
+    use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
+    use motyga_protocol::parse_command::ParsedCommand;
+    use motyga_protocol::protocol::RealtimeConversationVersion;
+    use motyga_protocol::protocol::RealtimeOutputModality;
+    use motyga_protocol::protocol::RealtimeVoice;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
+    use motyga_utils_absolute_path::test_support::test_path_buf;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use std::path::PathBuf;
@@ -2195,8 +2195,8 @@ mod tests {
             request_id: RequestId::Integer(42),
             params: v1::InitializeParams {
                 client_info: v1::ClientInfo {
-                    name: "codex_vscode".to_string(),
-                    title: Some("Codex VS Code Extension".to_string()),
+                    name: "motyga_vscode".to_string(),
+                    title: Some("Motyga VS Code Extension".to_string()),
                     version: "0.1.0".to_string(),
                 },
                 capabilities: Some(v1::InitializeCapabilities {
@@ -2217,8 +2217,8 @@ mod tests {
                 "id": 42,
                 "params": {
                     "clientInfo": {
-                        "name": "codex_vscode",
-                        "title": "Codex VS Code Extension",
+                        "name": "motyga_vscode",
+                        "title": "Motyga VS Code Extension",
                         "version": "0.1.0"
                     },
                     "capabilities": {
@@ -2244,8 +2244,8 @@ mod tests {
             "id": 42,
             "params": {
                 "clientInfo": {
-                    "name": "codex_vscode",
-                    "title": "Codex VS Code Extension",
+                    "name": "motyga_vscode",
+                    "title": "Motyga VS Code Extension",
                     "version": "0.1.0"
                 },
                 "capabilities": {
@@ -2266,8 +2266,8 @@ mod tests {
                 request_id: RequestId::Integer(42),
                 params: v1::InitializeParams {
                     client_info: v1::ClientInfo {
-                        name: "codex_vscode".to_string(),
-                        title: Some("Codex VS Code Extension".to_string()),
+                        name: "motyga_vscode".to_string(),
+                        title: Some("Motyga VS Code Extension".to_string()),
                         version: "0.1.0".to_string(),
                     },
                     capabilities: Some(v1::InitializeCapabilities {
@@ -2476,7 +2476,7 @@ mod tests {
         let params = v2::McpServerElicitationRequestParams {
             thread_id: "thr_123".to_string(),
             turn_id: Some("turn_123".to_string()),
-            server_name: "codex_apps".to_string(),
+            server_name: "motyga_apps".to_string(),
             request: v2::McpServerElicitationRequest::Form {
                 meta: None,
                 message: "Allow this request?".to_string(),
@@ -2495,7 +2495,7 @@ mod tests {
                 "params": {
                     "threadId": "thr_123",
                     "turnId": "turn_123",
-                    "serverName": "codex_apps",
+                    "serverName": "motyga_apps",
                     "mode": "form",
                     "_meta": null,
                     "message": "Allow this request?",
@@ -2610,7 +2610,7 @@ mod tests {
                 cwd,
                 runtime_workspace_roots: Vec::new(),
                 instruction_sources: vec![
-                    codex_utils_path_uri::LegacyAppPathString::from_abs_path(&absolute_path(
+                    motyga_utils_path_uri::LegacyAppPathString::from_abs_path(&absolute_path(
                         "/tmp/AGENTS.md",
                     )),
                 ],
@@ -2721,7 +2721,7 @@ mod tests {
         let request = ClientRequest::LoginAccount {
             request_id: RequestId::Integer(3),
             params: v2::LoginAccountParams::Chatgpt {
-                codex_streamlined_login: false,
+                motyga_streamlined_login: false,
             },
         };
         assert_eq!(
@@ -2742,7 +2742,7 @@ mod tests {
         let request = ClientRequest::LoginAccount {
             request_id: RequestId::Integer(3),
             params: v2::LoginAccountParams::Chatgpt {
-                codex_streamlined_login: true,
+                motyga_streamlined_login: true,
             },
         };
         assert_eq!(
@@ -2751,7 +2751,7 @@ mod tests {
                 "id": 3,
                 "params": {
                     "type": "chatgpt",
-                    "codexStreamlinedLogin": true
+                    "motygaStreamlinedLogin": true
                 }
             }),
             serde_json::to_value(&request)?,
@@ -2891,15 +2891,15 @@ mod tests {
             serde_json::to_value(&chatgpt_without_email)?,
         );
 
-        let codex_managed_bedrock = v2::Account::AmazonBedrock {
-            credential_source: AmazonBedrockCredentialSource::CodexManaged,
+        let motyga_managed_bedrock = v2::Account::AmazonBedrock {
+            credential_source: AmazonBedrockCredentialSource::MotygaManaged,
         };
         assert_eq!(
             json!({
                 "type": "amazonBedrock",
-                "credentialSource": "codexManaged",
+                "credentialSource": "motygaManaged",
             }),
-            serde_json::to_value(&codex_managed_bedrock)?,
+            serde_json::to_value(&motyga_managed_bedrock)?,
         );
 
         let aws_managed_bedrock = v2::Account::AmazonBedrock {
@@ -3195,9 +3195,9 @@ mod tests {
             request_id: RequestId::Integer(9),
             params: v2::ThreadRealtimeStartParams {
                 client_managed_handoffs: Some(true),
-                codex_responses_as_items: None,
-                codex_response_item_prefix: None,
-                codex_response_handoff_prefix: Some("silent context".to_string()),
+                motyga_responses_as_items: None,
+                motyga_response_item_prefix: None,
+                motyga_response_handoff_prefix: Some("silent context".to_string()),
                 thread_id: "thr_123".to_string(),
                 model: Some("realtime-treatment-model".to_string()),
                 output_modality: RealtimeOutputModality::Audio,
@@ -3216,9 +3216,9 @@ mod tests {
                 "params": {
                     "threadId": "thr_123",
                     "clientManagedHandoffs": true,
-                    "codexResponsesAsItems": null,
-                    "codexResponseItemPrefix": null,
-                    "codexResponseHandoffPrefix": "silent context",
+                    "motygaResponsesAsItems": null,
+                    "motygaResponseItemPrefix": null,
+                    "motygaResponseHandoffPrefix": "silent context",
                     "model": "realtime-treatment-model",
                     "outputModality": "audio",
                     "includeStartupContext": false,
@@ -3240,9 +3240,9 @@ mod tests {
             request_id: RequestId::Integer(9),
             params: v2::ThreadRealtimeStartParams {
                 client_managed_handoffs: None,
-                codex_responses_as_items: None,
-                codex_response_item_prefix: None,
-                codex_response_handoff_prefix: None,
+                motyga_responses_as_items: None,
+                motyga_response_item_prefix: None,
+                motyga_response_handoff_prefix: None,
                 thread_id: "thr_123".to_string(),
                 model: None,
                 output_modality: RealtimeOutputModality::Audio,
@@ -3261,9 +3261,9 @@ mod tests {
                 "params": {
                     "threadId": "thr_123",
                     "clientManagedHandoffs": null,
-                    "codexResponsesAsItems": null,
-                    "codexResponseItemPrefix": null,
-                    "codexResponseHandoffPrefix": null,
+                    "motygaResponsesAsItems": null,
+                    "motygaResponseItemPrefix": null,
+                    "motygaResponseHandoffPrefix": null,
                     "model": null,
                     "outputModality": "audio",
                     "includeStartupContext": null,
@@ -3280,9 +3280,9 @@ mod tests {
             request_id: RequestId::Integer(9),
             params: v2::ThreadRealtimeStartParams {
                 client_managed_handoffs: None,
-                codex_responses_as_items: None,
-                codex_response_item_prefix: None,
-                codex_response_handoff_prefix: None,
+                motyga_responses_as_items: None,
+                motyga_response_item_prefix: None,
+                motyga_response_handoff_prefix: None,
                 thread_id: "thr_123".to_string(),
                 model: None,
                 output_modality: RealtimeOutputModality::Audio,
@@ -3301,9 +3301,9 @@ mod tests {
                 "params": {
                     "threadId": "thr_123",
                     "clientManagedHandoffs": null,
-                    "codexResponsesAsItems": null,
-                    "codexResponseItemPrefix": null,
-                    "codexResponseHandoffPrefix": null,
+                    "motygaResponsesAsItems": null,
+                    "motygaResponseItemPrefix": null,
+                    "motygaResponseHandoffPrefix": null,
                     "model": null,
                     "outputModality": "audio",
                     "includeStartupContext": null,
@@ -3518,9 +3518,9 @@ mod tests {
             request_id: RequestId::Integer(1),
             params: v2::ThreadRealtimeStartParams {
                 client_managed_handoffs: None,
-                codex_responses_as_items: None,
-                codex_response_item_prefix: None,
-                codex_response_handoff_prefix: None,
+                motyga_responses_as_items: None,
+                motyga_response_item_prefix: None,
+                motyga_response_handoff_prefix: None,
                 thread_id: "thr_123".to_string(),
                 model: None,
                 output_modality: RealtimeOutputModality::Audio,
@@ -3621,9 +3621,9 @@ mod tests {
                     service_tier: None,
                     effort: None,
                     summary: None,
-                    collaboration_mode: codex_protocol::config_types::CollaborationMode {
-                        mode: codex_protocol::config_types::ModeKind::Default,
-                        settings: codex_protocol::config_types::Settings {
+                    collaboration_mode: motyga_protocol::config_types::CollaborationMode {
+                        mode: motyga_protocol::config_types::ModeKind::Default,
+                        settings: motyga_protocol::config_types::Settings {
                             model: "gpt-5.4".to_string(),
                             reasoning_effort: None,
                             developer_instructions: None,

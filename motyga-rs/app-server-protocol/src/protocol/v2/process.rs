@@ -1,4 +1,4 @@
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -16,7 +16,7 @@ pub struct ProcessTerminalSize {
     pub cols: u16,
 }
 
-/// Spawn a standalone process (argv vector) without a Codex sandbox on the host
+/// Spawn a standalone process (argv vector) without a Motyga sandbox on the host
 /// where the app server is running.
 ///
 /// `process/spawn` returns after the process has started and the connection-scoped

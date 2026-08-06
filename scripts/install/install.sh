@@ -2,11 +2,11 @@
 
 set -eu
 
-RELEASE="${CODEX_RELEASE:-latest}"
-NON_INTERACTIVE="${CODEX_NON_INTERACTIVE:-false}"
+RELEASE="${MOTYGA_RELEASE:-latest}"
+NON_INTERACTIVE="${MOTYGA_NON_INTERACTIVE:-false}"
 
-BIN_DIR="${CODEX_INSTALL_DIR:-$HOME/.local/bin}"
-BIN_PATH="$BIN_DIR/codex"
+BIN_DIR="${MOTYGA_INSTALL_DIR:-$HOME/.local/bin}"
+BIN_PATH="$BIN_DIR/motyga"
 MOTYGA_HOME_DIR="${MOTYGA_HOME:-$HOME/.motyga}"
 STANDALONE_ROOT="$MOTYGA_HOME_DIR/packages/standalone"
 RELEASES_DIR="$STANDALONE_ROOT/releases"
@@ -55,7 +55,7 @@ validate_version() {
   fi
 
   if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)(\.[0-9]+)?)?$'; then
-    echo "Invalid Codex release version: $version. Expected latest or x.y.z[-alpha[.N]|-beta[.N]]." >&2
+    echo "Invalid Motyga release version: $version. Expected latest or x.y.z[-alpha[.N]|-beta[.N]]." >&2
     exit 1
   fi
 }
@@ -76,8 +76,8 @@ parse_args() {
 Usage: install.sh [--release VERSION]
 
 Environment:
-  CODEX_RELEASE          Version to install; overridden by --release.
-  CODEX_NON_INTERACTIVE  Set to 1, true, or yes to skip prompts.
+  MOTYGA_RELEASE          Version to install; overridden by --release.
+  MOTYGA_NON_INTERACTIVE  Set to 1, true, or yes to skip prompts.
 EOF
         exit 0
         ;;
@@ -104,7 +104,7 @@ download_file() {
     return
   fi
 
-  echo "curl or wget is required to install Codex." >&2
+  echo "curl or wget is required to install Motyga." >&2
   exit 1
 }
 
@@ -121,7 +121,7 @@ download_text() {
     return
   fi
 
-  echo "curl or wget is required to install Codex." >&2
+  echo "curl or wget is required to install Motyga." >&2
   exit 1
 }
 
@@ -129,13 +129,13 @@ release_url_for_asset() {
   asset="$1"
   resolved_version="$2"
 
-  printf 'https://github.com/openai/codex/releases/download/rust-v%s/%s\n' "$resolved_version" "$asset"
+  printf 'https://github.com/MotygaAI/motyga-cli/releases/download/rust-v%s/%s\n' "$resolved_version" "$asset"
 }
 
 release_metadata_url() {
   resolved_version="$1"
 
-  printf 'https://api.github.com/repos/openai/codex/releases/tags/rust-v%s\n' "$resolved_version"
+  printf 'https://api.github.com/repos/MotygaAI/motyga-cli/releases/tags/rust-v%s\n' "$resolved_version"
 }
 
 release_asset_digest_or_empty() {
@@ -226,7 +226,7 @@ package_archive_digest() {
   ' "$manifest_path" 2>/dev/null || true)"
 
   if [ -z "$digest" ]; then
-    echo "Could not find SHA-256 digest for $asset in codex-package_SHA256SUMS." >&2
+    echo "Could not find SHA-256 digest for $asset in motyga-package_SHA256SUMS." >&2
     exit 1
   fi
 
@@ -251,7 +251,7 @@ file_sha256() {
     return
   fi
 
-  echo "sha256sum, shasum, or openssl is required to verify the Codex download." >&2
+  echo "sha256sum, shasum, or openssl is required to verify the Motyga download." >&2
   exit 1
 }
 
@@ -261,7 +261,7 @@ verify_archive_digest() {
   actual_digest="$(file_sha256 "$archive_path")"
 
   if [ "$actual_digest" != "$expected_digest" ]; then
-    echo "Downloaded Codex archive checksum did not match expected digest." >&2
+    echo "Downloaded Motyga archive checksum did not match expected digest." >&2
     echo "expected: $expected_digest" >&2
     echo "actual:   $actual_digest" >&2
     exit 1
@@ -270,7 +270,7 @@ verify_archive_digest() {
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    echo "$1 is required to install Codex." >&2
+    echo "$1 is required to install Motyga." >&2
     exit 1
   fi
 }
@@ -284,11 +284,11 @@ resolve_version() {
     return
   fi
 
-  release_json="$(download_text "https://api.github.com/repos/openai/codex/releases/latest")"
+  release_json="$(download_text "https://api.github.com/repos/MotygaAI/motyga-cli/releases/latest")"
   resolved="$(printf '%s\n' "$release_json" | sed -n 's/.*"tag_name":[[:space:]]*"rust-v\([^"]*\)".*/\1/p' | head -n 1)"
 
   if [ -z "$resolved" ]; then
-    echo "Failed to resolve the latest Codex release version." >&2
+    echo "Failed to resolve the latest Motyga release version." >&2
     exit 1
   fi
 
@@ -332,8 +332,8 @@ add_to_path() {
 
   profile="$(pick_profile)"
   path_profile="$profile"
-  begin_marker="# >>> Codex installer >>>"
-  end_marker="# <<< Codex installer <<<"
+  begin_marker="# >>> Motyga installer >>>"
+  end_marker="# <<< Motyga installer <<<"
   path_line="export PATH=\"$BIN_DIR:\$PATH\""
 
   if [ -f "$profile" ] && grep -F "$begin_marker" "$profile" >/dev/null 2>&1; then
@@ -503,23 +503,23 @@ replace_path_with_symlink() {
 }
 
 version_from_binary() {
-  codex_path="$1"
+  motyga_path="$1"
 
-  if [ ! -x "$codex_path" ]; then
+  if [ ! -x "$motyga_path" ]; then
     return 1
   fi
 
-  "$codex_path" --version 2>/dev/null | sed -n 's/.* \([0-9][0-9A-Za-z.+-]*\)$/\1/p' | head -n 1
+  "$motyga_path" --version 2>/dev/null | sed -n 's/.* \([0-9][0-9A-Za-z.+-]*\)$/\1/p' | head -n 1
 }
 
 current_installed_version() {
-  version="$(version_from_binary "$CURRENT_LINK/bin/codex" || true)"
+  version="$(version_from_binary "$CURRENT_LINK/bin/motyga" || true)"
   if [ -n "$version" ]; then
     printf '%s\n' "$version"
     return 0
   fi
 
-  version="$(version_from_binary "$CURRENT_LINK/codex" || true)"
+  version="$(version_from_binary "$CURRENT_LINK/motyga" || true)"
   if [ -n "$version" ]; then
     printf '%s\n' "$version"
     return 0
@@ -528,11 +528,11 @@ current_installed_version() {
   return 0
 }
 
-resolve_existing_codex() {
-  command -v codex 2>/dev/null || true
+resolve_existing_motyga() {
+  command -v motyga 2>/dev/null || true
 }
 
-classify_existing_codex() {
+classify_existing_motyga() {
   existing_path="$1"
 
   if [ -z "$existing_path" ] || [ "$existing_path" = "$BIN_PATH" ]; then
@@ -599,37 +599,37 @@ prompt_yes_no() {
 print_launch_instructions() {
   case "$path_action" in
     added)
-      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && codex"
-      step "Future terminals: open a new terminal and run: codex"
+      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && motyga"
+      step "Future terminals: open a new terminal and run: motyga"
       step "PATH was added to $path_profile"
       ;;
     updated)
-      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && codex"
-      step "Future terminals: open a new terminal and run: codex"
+      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && motyga"
+      step "Future terminals: open a new terminal and run: motyga"
       step "PATH was updated in $path_profile"
       ;;
     configured)
-      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && codex"
-      step "Future terminals: open a new terminal and run: codex"
+      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && motyga"
+      step "Future terminals: open a new terminal and run: motyga"
       step "PATH is already configured in $path_profile"
       ;;
     *)
-      step "Current terminal: codex"
-      step "Future terminals: open a new terminal and run: codex"
+      step "Current terminal: motyga"
+      step "Future terminals: open a new terminal and run: motyga"
       ;;
   esac
 }
 
-maybe_launch_codex_now() {
-  if prompt_yes_no "Start Codex now?"; then
-    step "Launching Codex"
+maybe_launch_motyga_now() {
+  if prompt_yes_no "Start Motyga now?"; then
+    step "Launching Motyga"
     "$BIN_PATH"
   fi
 }
 
 detect_conflicting_install() {
-  existing_path="$(resolve_existing_codex)"
-  manager="$(classify_existing_codex "$existing_path" || true)"
+  existing_path="$(resolve_existing_motyga)"
+  manager="$(classify_existing_motyga "$existing_path" || true)"
 
   if [ -z "$manager" ]; then
     return
@@ -637,8 +637,8 @@ detect_conflicting_install() {
 
   conflict_manager="$manager"
   conflict_path="$existing_path"
-  step "Detected existing $manager-managed Codex at $existing_path"
-  warn "Multiple managed Codex installs can be ambiguous because PATH order decides which one runs."
+  step "Detected existing $manager-managed Motyga at $existing_path"
+  warn "Multiple managed Motyga installs can be ambiguous because PATH order decides which one runs."
 }
 
 handle_conflicting_install() {
@@ -648,23 +648,23 @@ handle_conflicting_install() {
 
   case "$conflict_manager" in
     brew)
-      uninstall_cmd="brew uninstall --cask codex"
+      uninstall_cmd="brew uninstall --cask motyga"
       ;;
     bun)
-      uninstall_cmd="bun remove -g @openai/codex"
+      uninstall_cmd="bun remove -g @motyga/cli"
       ;;
     *)
-      uninstall_cmd="npm uninstall -g @openai/codex"
+      uninstall_cmd="npm uninstall -g @motyga/cli"
       ;;
   esac
 
-  if prompt_yes_no "Uninstall the existing $conflict_manager-managed Codex now?"; then
+  if prompt_yes_no "Uninstall the existing $conflict_manager-managed Motyga now?"; then
     step "Running: $uninstall_cmd"
     if ! sh -c "$uninstall_cmd"; then
-      warn "Failed to uninstall the existing $conflict_manager-managed Codex. Continuing with the standalone install."
+      warn "Failed to uninstall the existing $conflict_manager-managed Motyga. Continuing with the standalone install."
     fi
   else
-    warn "Leaving the existing $conflict_manager-managed Codex installed. PATH order will determine which codex runs."
+    warn "Leaving the existing $conflict_manager-managed Motyga installed. PATH order will determine which motyga runs."
   fi
 }
 
@@ -677,11 +677,11 @@ install_package_release() {
   rm -rf "$stage_release"
   mkdir -p "$stage_release"
   tar -xzf "$archive_path" -C "$stage_release"
-  chmod 0755 "$stage_release/bin/codex" "$stage_release/codex-path/rg"
-  if [ -f "$stage_release/codex-resources/bwrap" ]; then
-    chmod 0755 "$stage_release/codex-resources/bwrap"
+  chmod 0755 "$stage_release/bin/motyga" "$stage_release/motyga-path/rg"
+  if [ -f "$stage_release/motyga-resources/bwrap" ]; then
+    chmod 0755 "$stage_release/motyga-resources/bwrap"
   fi
-  ln -sf "bin/codex" "$stage_release/codex"
+  ln -sf "bin/motyga" "$stage_release/motyga"
 
   if [ -e "$release_dir" ] || [ -L "$release_dir" ]; then
     rm -rf "$release_dir"
@@ -699,15 +699,15 @@ install_legacy_platform_npm_release() {
 
   mkdir -p "$RELEASES_DIR"
   rm -rf "$stage_release" "$extract_dir"
-  mkdir -p "$stage_release/codex-resources" "$extract_dir"
+  mkdir -p "$stage_release/motyga-resources" "$extract_dir"
   tar -xzf "$archive_path" -C "$extract_dir"
 
-  cp "$vendor_root/codex/codex" "$stage_release/codex"
-  cp "$vendor_root/path/rg" "$stage_release/codex-resources/rg"
-  chmod 0755 "$stage_release/codex" "$stage_release/codex-resources/rg"
-  if [ -f "$vendor_root/codex-resources/bwrap" ]; then
-    cp "$vendor_root/codex-resources/bwrap" "$stage_release/codex-resources/bwrap"
-    chmod 0755 "$stage_release/codex-resources/bwrap"
+  cp "$vendor_root/motyga/motyga" "$stage_release/motyga"
+  cp "$vendor_root/path/rg" "$stage_release/motyga-resources/rg"
+  chmod 0755 "$stage_release/motyga" "$stage_release/motyga-resources/rg"
+  if [ -f "$vendor_root/motyga-resources/bwrap" ]; then
+    cp "$vendor_root/motyga-resources/bwrap" "$stage_release/motyga-resources/bwrap"
+    chmod 0755 "$stage_release/motyga-resources/bwrap"
   fi
 
   if [ -e "$release_dir" ] || [ -L "$release_dir" ]; then
@@ -728,15 +728,15 @@ release_dir_is_complete() {
 
   case "$layout" in
     package)
-      [ -f "$release_dir/codex-package.json" ] &&
-        [ -x "$release_dir/bin/codex" ] &&
-        [ -x "$release_dir/codex" ] &&
-        [ -x "$release_dir/codex-path/rg" ] ||
+      [ -f "$release_dir/motyga-package.json" ] &&
+        [ -x "$release_dir/bin/motyga" ] &&
+        [ -x "$release_dir/motyga" ] &&
+        [ -x "$release_dir/motyga-path/rg" ] ||
         return 1
       ;;
     legacy-platform-npm)
-      [ -x "$release_dir/codex" ] &&
-        [ -x "$release_dir/codex-resources/rg" ] ||
+      [ -x "$release_dir/motyga" ] &&
+        [ -x "$release_dir/motyga-resources/rg" ] ||
         return 1
       ;;
     *)
@@ -745,7 +745,7 @@ release_dir_is_complete() {
   esac
 
   case "$layout:$expected_target" in
-    package:*linux* | legacy-platform-npm:*linux*) [ -x "$release_dir/codex-resources/bwrap" ] ;;
+    package:*linux* | legacy-platform-npm:*linux*) [ -x "$release_dir/motyga-resources/bwrap" ] ;;
     *) true ;;
   esac
 }
@@ -757,13 +757,13 @@ update_current_link() {
   replace_path_with_symlink "$CURRENT_LINK" "$release_dir" "$tmp_link"
 }
 
-release_codex_relative_path() {
+release_motyga_relative_path() {
   release_dir="$1"
 
-  if [ -x "$release_dir/bin/codex" ]; then
-    printf 'bin/codex\n'
+  if [ -x "$release_dir/bin/motyga" ]; then
+    printf 'bin/motyga\n'
   else
-    printf 'codex\n'
+    printf 'motyga\n'
   fi
 }
 
@@ -771,9 +771,9 @@ update_visible_command() {
   release_dir="$1"
   mkdir -p "$BIN_DIR"
   tmp_link="$BIN_DIR/.motyga.$$"
-  codex_relative_path="$(release_codex_relative_path "$release_dir")"
+  motyga_relative_path="$(release_motyga_relative_path "$release_dir")"
 
-  replace_path_with_symlink "$BIN_PATH" "$CURRENT_LINK/$codex_relative_path" "$tmp_link"
+  replace_path_with_symlink "$BIN_PATH" "$CURRENT_LINK/$motyga_relative_path" "$tmp_link"
 }
 
 verify_visible_command() {
@@ -830,27 +830,27 @@ if [ "$os" = "darwin" ]; then
 else
   if [ "$arch" = "aarch64" ]; then
     npm_tag="linux-arm64"
-    vendor_target="aarch64-unknown-linux-musl"
+    vendor_target="aarch64-unknown-linux-gnu"
     platform_label="Linux (ARM64)"
   else
     npm_tag="linux-x64"
-    vendor_target="x86_64-unknown-linux-musl"
+    vendor_target="x86_64-unknown-linux-gnu"
     platform_label="Linux (x64)"
   fi
 fi
 
 resolved_version="$(resolve_version)"
-package_asset="codex-package-$vendor_target.tar.gz"
-checksum_asset="codex-package_SHA256SUMS"
+package_asset="motyga-package-$vendor_target.tar.gz"
+checksum_asset="motyga-package_SHA256SUMS"
 if release_asset_exists "$package_asset" "$resolved_version" &&
   release_asset_exists "$checksum_asset" "$resolved_version"; then
   install_layout="package"
   asset="$package_asset"
-elif release_asset_exists "codex-npm-$npm_tag-$resolved_version.tgz" "$resolved_version"; then
+elif release_asset_exists "motyga-npm-$npm_tag-$resolved_version.tgz" "$resolved_version"; then
   install_layout="legacy-platform-npm"
-  asset="codex-npm-$npm_tag-$resolved_version.tgz"
+  asset="motyga-npm-$npm_tag-$resolved_version.tgz"
 else
-  echo "Could not find Codex package or platform npm release assets for Codex $resolved_version." >&2
+  echo "Could not find Motyga package or platform npm release assets for Motyga $resolved_version." >&2
   exit 1
 fi
 download_url="$(release_url_for_asset "$asset" "$resolved_version")"
@@ -860,11 +860,11 @@ release_dir="$RELEASES_DIR/$release_name"
 current_version="$(current_installed_version)"
 
 if [ -n "$current_version" ] && [ "$current_version" != "$resolved_version" ]; then
-  step "Updating Codex CLI from $current_version to $resolved_version"
+  step "Updating Motyga CLI from $current_version to $resolved_version"
 elif [ -n "$current_version" ]; then
-  step "Updating Codex CLI"
+  step "Updating Motyga CLI"
 else
-  step "Installing Codex CLI"
+  step "Installing Motyga CLI"
 fi
 step "Detected platform: $platform_label"
 step "Resolved version: $resolved_version"
@@ -891,7 +891,7 @@ if ! release_dir_is_complete "$release_dir" "$resolved_version" "$vendor_target"
   archive_path="$tmp_dir/$asset"
   checksum_path="$tmp_dir/$checksum_asset"
 
-  step "Downloading Codex CLI"
+  step "Downloading Motyga CLI"
   if [ "$install_layout" = "package" ]; then
     checksum_digest="$(release_asset_digest "$checksum_asset" "$resolved_version")"
     download_file "$checksum_url" "$checksum_path"
@@ -933,5 +933,5 @@ case "$path_action" in
     ;;
 esac
 
-printf 'Codex CLI %s installed successfully.\n' "$resolved_version"
-maybe_launch_codex_now
+printf 'Motyga CLI %s installed successfully.\n' "$resolved_version"
+maybe_launch_motyga_now

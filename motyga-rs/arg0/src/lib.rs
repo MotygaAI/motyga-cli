@@ -4,13 +4,13 @@ use std::future::Future;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_apply_patch::CODEX_CORE_APPLY_PATCH_ARG1;
-use codex_exec_server::CODEX_FS_HELPER_ARG1;
-use codex_install_context::InstallContext;
-use codex_sandboxing::landlock::CODEX_LINUX_SANDBOX_ARG0;
-use codex_utils_home_dir::find_codex_home;
+use motyga_apply_patch::MOTYGA_CORE_APPLY_PATCH_ARG1;
+use motyga_exec_server::MOTYGA_FS_HELPER_ARG1;
+use motyga_install_context::InstallContext;
+use motyga_sandboxing::landlock::MOTYGA_LINUX_SANDBOX_ARG0;
+use motyga_utils_home_dir::find_motyga_home;
 #[cfg(target_os = "windows")]
-use codex_windows_sandbox::CODEX_WINDOWS_SANDBOX_ARG1;
+use motyga_windows_sandbox::MOTYGA_WINDOWS_SANDBOX_ARG1;
 #[cfg(unix)]
 use std::os::unix::fs::symlink;
 use tempfile::TempDir;
@@ -18,19 +18,19 @@ use tempfile::TempDir;
 const APPLY_PATCH_ARG0: &str = "apply_patch";
 const MISSPELLED_APPLY_PATCH_ARG0: &str = "applypatch";
 #[cfg(unix)]
-const EXECVE_WRAPPER_ARG0: &str = "codex-execve-wrapper";
+const EXECVE_WRAPPER_ARG0: &str = "motyga-execve-wrapper";
 const LOCK_FILENAME: &str = ".lock";
 const TOKIO_WORKER_STACK_SIZE_BYTES: usize = 16 * 1024 * 1024;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Arg0DispatchPaths {
-    /// Stable path to the current Codex executable for child re-execs.
+    /// Stable path to the current Motyga executable for child re-execs.
     ///
     /// Prefer this over [`std::env::current_exe()`] in code that may run under
     /// a test harness, where `current_exe()` can point at the harness binary
-    /// instead of the real Codex CLI.
-    pub codex_self_exe: Option<PathBuf>,
-    pub codex_linux_sandbox_exe: Option<PathBuf>,
+    /// instead of the real Motyga CLI.
+    pub motyga_self_exe: Option<PathBuf>,
+    pub motyga_linux_sandbox_exe: Option<PathBuf>,
     pub main_execve_wrapper_exe: Option<PathBuf>,
 }
 
@@ -82,7 +82,7 @@ pub fn arg0_dispatch() -> Option<Arg0PathEntryGuard> {
             Err(_) => std::process::exit(1),
         };
         let exit_code = runtime.block_on(
-            codex_shell_escalation::run_shell_escalation_execve_wrapper(file, argv),
+            motyga_shell_escalation::run_shell_escalation_execve_wrapper(file, argv),
         );
         match exit_code {
             Ok(exit_code) => std::process::exit(exit_code),
@@ -90,28 +90,28 @@ pub fn arg0_dispatch() -> Option<Arg0PathEntryGuard> {
         }
     }
 
-    if exe_name == CODEX_LINUX_SANDBOX_ARG0 {
+    if exe_name == MOTYGA_LINUX_SANDBOX_ARG0 {
         // Safety: [`run_main`] never returns.
-        codex_linux_sandbox::run_main();
+        motyga_linux_sandbox::run_main();
     } else if exe_name == APPLY_PATCH_ARG0 || exe_name == MISSPELLED_APPLY_PATCH_ARG0 {
-        codex_apply_patch::main();
+        motyga_apply_patch::main();
     }
 
     let argv1 = args.next().unwrap_or_default();
-    if argv1 == CODEX_FS_HELPER_ARG1 {
-        codex_exec_server::run_fs_helper_main();
+    if argv1 == MOTYGA_FS_HELPER_ARG1 {
+        motyga_exec_server::run_fs_helper_main();
     }
     #[cfg(target_os = "windows")]
-    if argv1 == CODEX_WINDOWS_SANDBOX_ARG1 {
-        codex_windows_sandbox::run_windows_sandbox_wrapper_main();
+    if argv1 == MOTYGA_WINDOWS_SANDBOX_ARG1 {
+        motyga_windows_sandbox::run_windows_sandbox_wrapper_main();
     }
-    if argv1 == CODEX_CORE_APPLY_PATCH_ARG1 {
+    if argv1 == MOTYGA_CORE_APPLY_PATCH_ARG1 {
         let patch_arg = args.next().and_then(|s| s.to_str().map(str::to_owned));
         let exit_code = match patch_arg {
             Some(patch_arg) => {
                 let mut stdout = std::io::stdout();
                 let mut stderr = std::io::stderr();
-                let cwd = match codex_utils_absolute_path::AbsolutePathBuf::current_dir() {
+                let cwd = match motyga_utils_absolute_path::AbsolutePathBuf::current_dir() {
                     Ok(cwd) => cwd,
                     Err(_) => std::process::exit(1),
                 };
@@ -123,12 +123,12 @@ pub fn arg0_dispatch() -> Option<Arg0PathEntryGuard> {
                     Err(_) => std::process::exit(1),
                 };
                 let cwd = cwd.into();
-                match runtime.block_on(codex_apply_patch::apply_patch(
+                match runtime.block_on(motyga_apply_patch::apply_patch(
                     &patch_arg,
                     &cwd,
                     &mut stdout,
                     &mut stderr,
-                    codex_exec_server::LOCAL_FS.as_ref(),
+                    motyga_exec_server::LOCAL_FS.as_ref(),
                     /*sandbox*/ None,
                 )) {
                     Ok(_) => 0,
@@ -136,7 +136,7 @@ pub fn arg0_dispatch() -> Option<Arg0PathEntryGuard> {
                 }
             }
             None => {
-                eprintln!("Error: {CODEX_CORE_APPLY_PATCH_ARG1} requires a UTF-8 PATCH argument.");
+                eprintln!("Error: {MOTYGA_CORE_APPLY_PATCH_ARG1} requires a UTF-8 PATCH argument.");
                 1
             }
         };
@@ -150,7 +150,7 @@ pub fn arg0_dispatch() -> Option<Arg0PathEntryGuard> {
     let (path_entry_guard, updated_path_env_var) = prepare_path_env_var_with_aliases(
         InstallContext::current(),
         std::env::var_os("PATH"),
-        prepare_path_entry_for_codex_aliases,
+        prepare_path_entry_for_motyga_aliases,
     );
     if let Some(updated_path_env_var) = updated_path_env_var {
         // It is safe to call set_var() because our process is single-threaded at
@@ -173,7 +173,7 @@ fn prepare_path_env_var_with_aliases(
     match prepare_aliases(path_for_aliases) {
         Ok((path_entry, updated_path_env_var)) => (Some(path_entry), Some(updated_path_env_var)),
         Err(err) => {
-            // It is possible that Codex will proceed successfully even if
+            // It is possible that Motyga will proceed successfully even if
             // creating helper aliases fails, so warn the user and move on.
             eprintln!("WARNING: proceeding, even though we could not create PATH aliases: {err}");
             (None, package_path)
@@ -181,27 +181,27 @@ fn prepare_path_env_var_with_aliases(
     }
 }
 
-/// While we want to deploy the Codex CLI as a single executable for simplicity,
+/// While we want to deploy the Motyga CLI as a single executable for simplicity,
 /// we also want to expose some of its functionality as distinct CLIs, so we use
 /// the "arg0 trick" to determine which CLI to dispatch. This effectively allows
 /// us to simulate deploying multiple executables as a single binary on Mac and
 /// Linux (but not Windows).
 ///
 /// When the current executable is invoked through the hard-link or alias named
-/// `codex-linux-sandbox` we *directly* execute
-/// [`codex_linux_sandbox::run_main`] (which never returns). Otherwise we:
+/// `motyga-linux-sandbox` we *directly* execute
+/// [`motyga_linux_sandbox::run_main`] (which never returns). Otherwise we:
 ///
 /// 1.  Load `.env` values from `~/.motyga/.env` before creating any threads.
 /// 2.  Spawn a main runtime thread with a controlled stack size.
 /// 3.  Construct a Tokio multi-thread runtime.
 /// 4.  Capture the current executable path and derive the
-///     `codex-linux-sandbox` helper path (falling back to the current
+///     `motyga-linux-sandbox` helper path (falling back to the current
 ///     executable if needed) so children can re-invoke the sandbox when running
 ///     on Linux.
 /// 5.  Execute the provided async `main_fn` inside that runtime, forwarding any
 ///     error. Note that `main_fn` receives [`Arg0DispatchPaths`], which
 ///     contains the helper executable paths needed to construct
-///     [`codex_core::config::Config`].
+///     [`motyga_core::config::Config`].
 ///
 /// This function should be used to wrap any `main()` function in binary crates
 /// in this workspace that depends on these helper CLIs.
@@ -220,7 +220,7 @@ where
     // stack budget as Tokio workers; `Runtime::block_on` otherwise runs the
     // top-level future on the caller's OS stack.
     let handle = std::thread::Builder::new()
-        .name("codex-main".to_string())
+        .name("motyga-main".to_string())
         .stack_size(TOKIO_WORKER_STACK_SIZE_BYTES)
         .spawn(move || {
             let runtime = build_runtime()?;
@@ -246,8 +246,8 @@ where
     Fut: Future<Output = anyhow::Result<()>>,
 {
     let paths = Arg0DispatchPaths {
-        codex_self_exe: current_exe.clone(),
-        codex_linux_sandbox_exe: if cfg!(target_os = "linux") {
+        motyga_self_exe: current_exe.clone(),
+        motyga_linux_sandbox_exe: if cfg!(target_os = "linux") {
             linux_sandbox_exe_path(path_entry_guard.as_ref(), current_exe)
         } else {
             None
@@ -268,11 +268,11 @@ fn linux_sandbox_exe_path(
     path_entry_guard: Option<&Arg0PathEntryGuard>,
     current_exe: Option<PathBuf>,
 ) -> Option<PathBuf> {
-    // Prefer the `codex-linux-sandbox` alias when available so callers can
+    // Prefer the `motyga-linux-sandbox` alias when available so callers can
     // re-exec through a path whose basename still triggers arg0 dispatch on
     // bubblewrap builds that do not support `--argv0`.
     path_entry_guard
-        .and_then(|path_entry| path_entry.paths().codex_linux_sandbox_exe.clone())
+        .and_then(|path_entry| path_entry.paths().motyga_linux_sandbox_exe.clone())
         .or(current_exe)
 }
 
@@ -283,21 +283,21 @@ fn build_runtime() -> anyhow::Result<tokio::runtime::Runtime> {
     Ok(builder.build()?)
 }
 
-const ILLEGAL_ENV_VAR_PREFIX: &str = "CODEX_";
+const ILLEGAL_ENV_VAR_PREFIX: &str = "MOTYGA_";
 
 /// Load env vars from ~/.motyga/.env.
 ///
 /// Security: Do not allow `.env` files to create or modify any variables
-/// with names starting with `CODEX_`.
+/// with names starting with `MOTYGA_`.
 fn load_dotenv() {
-    if let Ok(codex_home) = find_codex_home()
-        && let Ok(iter) = dotenvy::from_path_iter(codex_home.join(".env"))
+    if let Ok(motyga_home) = find_motyga_home()
+        && let Ok(iter) = dotenvy::from_path_iter(motyga_home.join(".env"))
     {
         set_filtered(iter);
     }
 }
 
-/// Helper to set vars from a dotenvy iterator while filtering out `CODEX_` keys.
+/// Helper to set vars from a dotenvy iterator while filtering out `MOTYGA_` keys.
 fn set_filtered<I>(iter: I)
 where
     I: IntoIterator<Item = Result<(String, String), dotenvy::Error>>,
@@ -315,36 +315,36 @@ where
 ///
 /// - UNIX: `apply_patch` symlink to the current executable
 /// - WINDOWS: `apply_patch.bat` batch script to invoke the current executable
-///   with the hidden `--codex-run-as-apply-patch` flag.
+///   with the hidden `--motyga-run-as-apply-patch` flag.
 ///
 /// Returns the temporary directory guard and the PATH value that prepends the
 /// temporary directory so `apply_patch` can be on the PATH without requiring the
-/// user to install a separate executable, simplifying the deployment of Codex
+/// user to install a separate executable, simplifying the deployment of Motyga
 /// CLI.
 /// Note: In debug builds the temp-dir guard is disabled to ease local testing.
 ///
 /// IMPORTANT: Callers must update PATH before multiple threads are spawned.
-fn prepare_path_entry_for_codex_aliases(
+fn prepare_path_entry_for_motyga_aliases(
     existing_path: Option<OsString>,
 ) -> std::io::Result<(Arg0PathEntryGuard, OsString)> {
-    let codex_home = find_codex_home()?;
+    let motyga_home = find_motyga_home()?;
     #[cfg(not(debug_assertions))]
     {
         // Guard against placing helpers in system temp directories outside debug builds.
         let temp_root = std::env::temp_dir();
-        if codex_home.starts_with(&temp_root) {
+        if motyga_home.starts_with(&temp_root) {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 format!(
-                    "Refusing to create helper binaries under temporary dir {temp_root:?} (codex_home: {codex_home:?})"
+                    "Refusing to create helper binaries under temporary dir {temp_root:?} (motyga_home: {motyga_home:?})"
                 ),
             ));
         }
     }
 
-    std::fs::create_dir_all(&codex_home)?;
+    std::fs::create_dir_all(&motyga_home)?;
     // Use a MOTYGA_HOME-scoped temp root to avoid cluttering the top-level directory.
-    let temp_root = codex_home.join("tmp").join("arg0");
+    let temp_root = motyga_home.join("tmp").join("arg0");
     std::fs::create_dir_all(&temp_root)?;
     #[cfg(unix)]
     {
@@ -360,7 +360,7 @@ fn prepare_path_entry_for_codex_aliases(
     }
 
     let temp_dir = tempfile::Builder::new()
-        .prefix("codex-arg0")
+        .prefix("motyga-arg0")
         .tempdir_in(&temp_root)?;
     let path = temp_dir.path();
 
@@ -377,7 +377,7 @@ fn prepare_path_entry_for_codex_aliases(
         APPLY_PATCH_ARG0,
         MISSPELLED_APPLY_PATCH_ARG0,
         #[cfg(target_os = "linux")]
-        CODEX_LINUX_SANDBOX_ARG0,
+        MOTYGA_LINUX_SANDBOX_ARG0,
         #[cfg(unix)]
         EXECVE_WRAPPER_ARG0,
     ] {
@@ -397,7 +397,7 @@ fn prepare_path_entry_for_codex_aliases(
                 &batch_script,
                 format!(
                     r#"@echo off
-"{exe}" {CODEX_CORE_APPLY_PATCH_ARG1} %*
+"{exe}" {MOTYGA_CORE_APPLY_PATCH_ARG1} %*
 "#,
                 ),
             )?;
@@ -407,11 +407,11 @@ fn prepare_path_entry_for_codex_aliases(
     let updated_path_env_var = path_env_with_entry(path, existing_path);
 
     let paths = Arg0DispatchPaths {
-        codex_self_exe: std::env::current_exe().ok(),
-        codex_linux_sandbox_exe: {
+        motyga_self_exe: std::env::current_exe().ok(),
+        motyga_linux_sandbox_exe: {
             #[cfg(target_os = "linux")]
             {
-                Some(path.join(CODEX_LINUX_SANDBOX_ARG0))
+                Some(path.join(MOTYGA_LINUX_SANDBOX_ARG0))
             }
             #[cfg(not(target_os = "linux"))]
             {
@@ -522,10 +522,10 @@ mod tests {
     use super::run_main_with_arg0_guard;
     #[cfg(unix)]
     use anyhow::ensure;
-    use codex_install_context::CodexPackageLayout;
-    use codex_install_context::InstallContext;
-    use codex_install_context::InstallMethod;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_install_context::MotygaPackageLayout;
+    use motyga_install_context::InstallContext;
+    use motyga_install_context::InstallMethod;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
     use std::fs;
     use std::fs::File;
@@ -556,7 +556,7 @@ mod tests {
         let arg0_dir = temp_dir.path().join("arg0");
         let package_dir = temp_dir.path().join("package");
         let bin_dir = package_dir.join("bin");
-        let path_dir = package_dir.join("codex-path");
+        let path_dir = package_dir.join("motyga-path");
         let existing_dir = temp_dir.path().join("existing-bin");
         fs::create_dir_all(&arg0_dir)?;
         fs::create_dir_all(&bin_dir)?;
@@ -565,7 +565,7 @@ mod tests {
         let path_dir = AbsolutePathBuf::from_absolute_path(path_dir.canonicalize()?)?;
         let install_context = InstallContext {
             method: InstallMethod::Other,
-            package_layout: Some(CodexPackageLayout {
+            package_layout: Some(MotygaPackageLayout {
                 package_dir: AbsolutePathBuf::from_absolute_path(package_dir.canonicalize()?)?,
                 bin_dir: AbsolutePathBuf::from_absolute_path(bin_dir.canonicalize()?)?,
                 resources_dir: None,
@@ -583,22 +583,22 @@ mod tests {
     }
 
     #[test]
-    fn linux_sandbox_exe_path_prefers_codex_linux_sandbox_alias() -> std::io::Result<()> {
+    fn linux_sandbox_exe_path_prefers_motyga_linux_sandbox_alias() -> std::io::Result<()> {
         let temp_dir = TempDir::new()?;
         let lock_file = create_lock(temp_dir.path())?;
-        let alias_path = temp_dir.path().join("codex-linux-sandbox");
+        let alias_path = temp_dir.path().join("motyga-linux-sandbox");
         let path_entry = Arg0PathEntryGuard::new(
             temp_dir,
             lock_file,
             Arg0DispatchPaths {
-                codex_self_exe: Some(PathBuf::from("/usr/bin/codex")),
-                codex_linux_sandbox_exe: Some(alias_path.clone()),
+                motyga_self_exe: Some(PathBuf::from("/usr/bin/motyga")),
+                motyga_linux_sandbox_exe: Some(alias_path.clone()),
                 main_execve_wrapper_exe: None,
             },
         );
 
         assert_eq!(
-            linux_sandbox_exe_path(Some(&path_entry), Some(PathBuf::from("/usr/bin/codex"))),
+            linux_sandbox_exe_path(Some(&path_entry), Some(PathBuf::from("/usr/bin/motyga"))),
             Some(alias_path),
         );
         Ok(())
@@ -665,25 +665,25 @@ mod tests {
     #[test]
     fn run_main_with_arg0_guard_keeps_aliases_alive_until_main_returns() -> anyhow::Result<()> {
         let temp_dir = TempDir::new()?;
-        let alias_path = temp_dir.path().join("codex-helper-alias");
+        let alias_path = temp_dir.path().join("motyga-helper-alias");
         fs::write(&alias_path, b"")?;
         let lock_file = create_lock(temp_dir.path())?;
         let path_entry = Arg0PathEntryGuard::new(
             temp_dir,
             lock_file,
             Arg0DispatchPaths {
-                codex_self_exe: Some(PathBuf::from("/usr/bin/codex")),
-                codex_linux_sandbox_exe: Some(alias_path.clone()),
+                motyga_self_exe: Some(PathBuf::from("/usr/bin/motyga")),
+                motyga_linux_sandbox_exe: Some(alias_path.clone()),
                 main_execve_wrapper_exe: Some(alias_path),
             },
         );
 
         super::build_runtime()?.block_on(run_main_with_arg0_guard(
             /*path_entry_guard*/ Some(path_entry),
-            Some(PathBuf::from("/usr/bin/codex")),
+            Some(PathBuf::from("/usr/bin/motyga")),
             |paths| async move {
                 let alias_path = paths
-                    .codex_linux_sandbox_exe
+                    .motyga_linux_sandbox_exe
                     .or(paths.main_execve_wrapper_exe)
                     .expect("unix dispatch should create at least one alias path");
                 ensure!(

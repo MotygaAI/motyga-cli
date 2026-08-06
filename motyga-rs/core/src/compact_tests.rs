@@ -1,9 +1,9 @@
 use super::*;
 use crate::session::tests::build_world_state_from_turn_context;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::WireApi;
-use codex_protocol::models::DEFAULT_IMAGE_DETAIL;
-use codex_protocol::models::InternalChatMessageMetadataPassthrough;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::WireApi;
+use motyga_protocol::models::DEFAULT_IMAGE_DETAIL;
+use motyga_protocol::models::InternalChatMessageMetadataPassthrough;
 use pretty_assertions::assert_eq;
 use std::sync::Arc;
 

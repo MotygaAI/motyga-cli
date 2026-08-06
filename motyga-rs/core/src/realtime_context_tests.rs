@@ -10,15 +10,15 @@ use super::format_section;
 use super::format_startup_context_blob;
 use chrono::TimeZone;
 use chrono::Utc;
-use codex_git_utils::GitSha;
-use codex_protocol::ThreadId;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::GitInfo;
-use codex_protocol::protocol::SessionSource;
-use codex_thread_store::StoredThread;
+use motyga_git_utils::GitSha;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::GitInfo;
+use motyga_protocol::protocol::SessionSource;
+use motyga_thread_store::StoredThread;
 use core_test_support::PathBufExt;
 use core_test_support::PathExt;
 use pretty_assertions::assert_eq;
@@ -189,12 +189,12 @@ fn current_thread_section_keeps_latest_turns_when_history_exceeds_budget() {
 
 #[test]
 fn startup_context_blob_is_wrapped_in_tags_without_final_truncation() {
-    let body = "Startup context from Codex.\n## Current Thread\nhello";
+    let body = "Startup context from Motyga.\n## Current Thread\nhello";
     let wrapped = format_startup_context_blob(body);
 
     assert_eq!(
         wrapped,
-        "<startup_context>\nStartup context from Codex.\n## Current Thread\nhello\n</startup_context>"
+        "<startup_context>\nStartup context from Motyga.\n## Current Thread\nhello\n</startup_context>"
     );
 }
 

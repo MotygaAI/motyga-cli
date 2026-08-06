@@ -3,14 +3,14 @@ use std::time::Duration;
 use anyhow::Result;
 use app_test_support::TestAppServer;
 use app_test_support::to_response;
-use codex_app_server_protocol::EnvironmentAddResponse;
-use codex_app_server_protocol::EnvironmentInfoResponse;
-use codex_app_server_protocol::EnvironmentShellInfo;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_utils_path_uri::PathUri;
+use motyga_app_server_protocol::EnvironmentAddResponse;
+use motyga_app_server_protocol::EnvironmentInfoResponse;
+use motyga_app_server_protocol::EnvironmentShellInfo;
+use motyga_app_server_protocol::JSONRPCError;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::JSONRPCResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_utils_path_uri::PathUri;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 use tempfile::TempDir;
@@ -39,8 +39,8 @@ async fn environment_info_returns_remote_environment_info() -> Result<()> {
         Ok::<_, anyhow::Error>(())
     });
 
-    let codex_home = TempDir::new()?;
-    let mut app_server = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut app_server = TestAppServer::new(motyga_home.path()).await?;
     timeout(RPC_TIMEOUT, app_server.initialize()).await??;
     add_environment(
         &mut app_server,
@@ -87,8 +87,8 @@ async fn environment_info_accepts_missing_cwd() -> Result<()> {
         Ok::<_, anyhow::Error>(())
     });
 
-    let codex_home = TempDir::new()?;
-    let mut app_server = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut app_server = TestAppServer::new(motyga_home.path()).await?;
     timeout(RPC_TIMEOUT, app_server.initialize()).await??;
     add_environment(
         &mut app_server,
@@ -124,8 +124,8 @@ async fn environment_info_accepts_missing_cwd() -> Result<()> {
 
 #[tokio::test]
 async fn environment_info_rejects_unknown_environment() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut app_server = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut app_server = TestAppServer::new(motyga_home.path()).await?;
     timeout(RPC_TIMEOUT, app_server.initialize()).await??;
 
     let request_id = app_server
@@ -157,8 +157,8 @@ async fn environment_info_rejects_unknown_environment() -> Result<()> {
 async fn environment_info_reports_connection_failure() -> Result<()> {
     let listener = TcpListener::bind("127.0.0.1:0").await?;
     let exec_server_url = format!("ws://{}", listener.local_addr()?);
-    let codex_home = TempDir::new()?;
-    let mut app_server = TestAppServer::new(codex_home.path()).await?;
+    let motyga_home = TempDir::new()?;
+    let mut app_server = TestAppServer::new(motyga_home.path()).await?;
     timeout(RPC_TIMEOUT, app_server.initialize()).await??;
     add_environment(&mut app_server, &exec_server_url, Some(50)).await?;
 

@@ -1,12 +1,12 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-core-api"
+name = "motyga-core-api"
 version.workspace = true
 
 [lib]
 doctest = false
-name = "codex_core_api"
+name = "motyga_core_api"
 path = "src/lib.rs"
 test = false
 
@@ -14,17 +14,17 @@ test = false
 workspace = true
 
 [dependencies]
-codex-app-server-protocol = { workspace = true }
-codex-arg0 = { workspace = true }
-codex-analytics = { workspace = true }
-codex-config = { workspace = true }
-codex-core = { workspace = true }
-codex-extension-api = { workspace = true }
-codex-home = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-features = { workspace = true }
-codex-login = { workspace = true }
-codex-model-provider-info = { workspace = true }
-codex-models-manager = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
+motyga-app-server-protocol = { workspace = true }
+motyga-arg0 = { workspace = true }
+motyga-analytics = { workspace = true }
+motyga-config = { workspace = true }
+motyga-core = { workspace = true }
+motyga-extension-api = { workspace = true }
+motyga-home = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-features = { workspace = true }
+motyga-login = { workspace = true }
+motyga-model-provider-info = { workspace = true }
+motyga-models-manager = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }

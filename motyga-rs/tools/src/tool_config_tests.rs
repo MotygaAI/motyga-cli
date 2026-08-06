@@ -1,10 +1,10 @@
-use codex_features::Feature;
-use codex_features::Features;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::TruncationPolicyConfig;
+use motyga_features::Feature;
+use motyga_features::Features;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::openai_models::ConfigShellToolType;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelVisibility;
+use motyga_protocol::openai_models::TruncationPolicyConfig;
 use pretty_assertions::assert_eq;
 
 use super::*;
@@ -43,7 +43,7 @@ fn model_with_shell_type(shell_type: ConfigShellToolType) -> ModelInfo {
         comp_hash: None,
         effective_context_window_percent: 95,
         experimental_supported_tools: Vec::new(),
-        input_modalities: codex_protocol::openai_models::default_input_modalities(),
+        input_modalities: motyga_protocol::openai_models::default_input_modalities(),
         used_fallback_model_metadata: false,
         supports_search_tool: false,
         use_responses_lite: false,
@@ -72,7 +72,7 @@ fn shell_type_is_derived_from_model_and_feature_gates() {
     );
 
     features.enable(Feature::UnifiedExec);
-    let expected_unified_exec = if codex_utils_pty::conpty_supported() {
+    let expected_unified_exec = if motyga_utils_pty::conpty_supported() {
         ConfigShellToolType::UnifiedExec
     } else {
         ConfigShellToolType::ShellCommand

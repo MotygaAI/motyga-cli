@@ -9,8 +9,8 @@ use crate::hook_runtime::PostCompactHookOutcome;
 use crate::hook_runtime::PreCompactHookOutcome;
 use crate::hook_runtime::run_post_compact_hooks;
 use crate::hook_runtime::run_pre_compact_hooks;
-use crate::responses_metadata::CodexResponsesMetadata;
-use crate::responses_metadata::CodexResponsesRequestKind;
+use crate::responses_metadata::MotygaResponsesMetadata;
+use crate::responses_metadata::MotygaResponsesRequestKind;
 use crate::responses_metadata::CompactionTurnMetadata;
 #[cfg(test)]
 use crate::session::PreviousTurnSettings;
@@ -18,38 +18,38 @@ use crate::session::session::Session;
 use crate::session::turn::get_last_assistant_message_from_turn;
 use crate::session::turn_context::TurnContext;
 use crate::util::backoff;
-use codex_analytics::CodexCompactionEvent;
-use codex_analytics::CompactionImplementation;
-use codex_analytics::CompactionPhase;
-use codex_analytics::CompactionReason;
-use codex_analytics::CompactionStatus;
-use codex_analytics::CompactionStrategy;
-use codex_analytics::CompactionTrigger;
-use codex_analytics::now_unix_seconds;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CodexResult;
-use codex_protocol::items::ContextCompactionItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::InternalChatMessageMetadataPassthrough;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::CompactedItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::TurnStartedEvent;
-use codex_protocol::protocol::WarningEvent;
-use codex_protocol::user_input::UserInput;
-use codex_rollout_trace::InferenceTraceContext;
-use codex_utils_output_truncation::TruncationPolicy;
-use codex_utils_output_truncation::approx_token_count;
-use codex_utils_output_truncation::truncate_text;
+use motyga_analytics::MotygaCompactionEvent;
+use motyga_analytics::CompactionImplementation;
+use motyga_analytics::CompactionPhase;
+use motyga_analytics::CompactionReason;
+use motyga_analytics::CompactionStatus;
+use motyga_analytics::CompactionStrategy;
+use motyga_analytics::CompactionTrigger;
+use motyga_analytics::now_unix_seconds;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as MotygaResult;
+use motyga_protocol::items::ContextCompactionItem;
+use motyga_protocol::items::TurnItem;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::InternalChatMessageMetadataPassthrough;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::CompactedItem;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::TurnStartedEvent;
+use motyga_protocol::protocol::WarningEvent;
+use motyga_protocol::user_input::UserInput;
+use motyga_rollout_trace::InferenceTraceContext;
+use motyga_utils_output_truncation::TruncationPolicy;
+use motyga_utils_output_truncation::approx_token_count;
+use motyga_utils_output_truncation::truncate_text;
 use futures::prelude::*;
 use tracing::error;
 
-use codex_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::ModelProviderInfo;
 
-pub use codex_prompts::SUMMARIZATION_PROMPT;
-pub use codex_prompts::SUMMARY_PREFIX;
+pub use motyga_prompts::SUMMARIZATION_PROMPT;
+pub use motyga_prompts::SUMMARY_PREFIX;
 const COMPACT_USER_MESSAGE_MAX_TOKENS: usize = 20_000;
 
 /// Controls whether compaction replacement history must include initial context.
@@ -94,7 +94,7 @@ pub(crate) async fn run_inline_auto_compact_task(
     initial_context_injection: InitialContextInjection,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let prompt = turn_context
         .config
         .compact_prompt
@@ -124,7 +124,7 @@ pub(crate) async fn run_compact_task(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
     input: Vec<UserInput>,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let start_event = EventMsg::TurnStarted(TurnStartedEvent {
         turn_id: turn_context.sub_id.clone(),
         trace_id: turn_context.trace_id.clone(),
@@ -154,7 +154,7 @@ async fn run_compact_task_inner(
     trigger: CompactionTrigger,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let compaction_metadata =
         CompactionTurnMetadata::new(trigger, reason, CompactionImplementation::Responses, phase);
     let attempt = CompactionAnalyticsAttempt::begin(
@@ -170,7 +170,7 @@ async fn run_compact_task_inner(
     match pre_compact_outcome {
         PreCompactHookOutcome::Continue => {}
         PreCompactHookOutcome::Stopped => {
-            let error = CodexErr::TurnAborted;
+            let error = MotygaErr::TurnAborted;
             attempt
                 .track(
                     sess.as_ref(),
@@ -191,7 +191,7 @@ async fn run_compact_task_inner(
     )
     .await;
     let status = compaction_status_from_result(&result);
-    let codex_error = result.as_ref().err();
+    let motyga_error = result.as_ref().err();
     if result.is_ok() {
         let post_compact_outcome = run_post_compact_hooks(&sess, &turn_context, trigger).await;
         if let PostCompactHookOutcome::Stopped = post_compact_outcome {
@@ -199,18 +199,18 @@ async fn run_compact_task_inner(
                 .track(
                     sess.as_ref(),
                     status,
-                    codex_error,
+                    motyga_error,
                     CompactionAnalyticsDetails::default(),
                 )
                 .await;
-            return Err(CodexErr::TurnAborted);
+            return Err(MotygaErr::TurnAborted);
         }
     }
     attempt
         .track(
             sess.as_ref(),
             status,
-            codex_error,
+            motyga_error,
             CompactionAnalyticsDetails::default(),
         )
         .await;
@@ -223,7 +223,7 @@ async fn run_compact_task_inner_impl(
     input: Vec<UserInput>,
     initial_context_injection: InitialContextInjection,
     compaction_metadata: CompactionTurnMetadata,
-) -> CodexResult<String> {
+) -> MotygaResult<String> {
     let compaction_item = TurnItem::ContextCompaction(ContextCompactionItem::new());
     sess.emit_turn_item_started(&turn_context, &compaction_item)
         .await;
@@ -245,7 +245,7 @@ async fn run_compact_task_inner_impl(
     let responses_metadata = turn_context.turn_metadata_state.to_responses_metadata(
         sess.installation_id.clone(),
         window_id,
-        CodexResponsesRequestKind::Compaction(compaction_metadata),
+        MotygaResponsesRequestKind::Compaction(compaction_metadata),
     );
 
     loop {
@@ -272,16 +272,16 @@ async fn run_compact_task_inner_impl(
             Ok(()) => {
                 break;
             }
-            Err(err @ (CodexErr::Interrupted | CodexErr::TurnAborted)) => {
+            Err(err @ (MotygaErr::Interrupted | MotygaErr::TurnAborted)) => {
                 return Err(err);
             }
-            Err(e @ CodexErr::SessionBudgetExceeded) => {
-                sess.track_turn_codex_error(turn_context.as_ref(), &e);
+            Err(e @ MotygaErr::SessionBudgetExceeded) => {
+                sess.track_turn_motyga_error(turn_context.as_ref(), &e);
                 let event = EventMsg::Error(e.to_error_event(/*message_prefix*/ None));
                 sess.send_event(&turn_context, event).await;
                 return Err(e);
             }
-            Err(e @ CodexErr::ContextWindowExceeded) => {
+            Err(e @ MotygaErr::ContextWindowExceeded) => {
                 if turn_input_len > 1 {
                     // Trim from the beginning to preserve cache (prefix-based) and keep recent messages intact.
                     error!(
@@ -292,7 +292,7 @@ async fn run_compact_task_inner_impl(
                     continue;
                 }
                 sess.set_total_tokens_full(turn_context.as_ref()).await;
-                sess.track_turn_codex_error(turn_context.as_ref(), &e);
+                sess.track_turn_motyga_error(turn_context.as_ref(), &e);
                 let event = EventMsg::Error(e.to_error_event(/*message_prefix*/ None));
                 sess.send_event(&turn_context, event).await;
                 return Err(e);
@@ -310,7 +310,7 @@ async fn run_compact_task_inner_impl(
                     tokio::time::sleep(delay).await;
                     continue;
                 } else {
-                    sess.track_turn_codex_error(turn_context.as_ref(), &e);
+                    sess.track_turn_motyga_error(turn_context.as_ref(), &e);
                     let event = EventMsg::Error(e.to_error_event(/*message_prefix*/ None));
                     sess.send_event(&turn_context, event).await;
                     return Err(e);
@@ -423,7 +423,7 @@ impl CompactionAnalyticsAttempt {
         self,
         sess: &Session,
         status: CompactionStatus,
-        codex_error: Option<&CodexErr>,
+        motyga_error: Option<&MotygaErr>,
         details: CompactionAnalyticsDetails,
     ) {
         let CompactionAnalyticsDetails {
@@ -437,7 +437,7 @@ impl CompactionAnalyticsAttempt {
         let active_context_tokens_after = sess.get_total_token_usage().await;
         sess.services
             .analytics_events_client
-            .track_compaction(CodexCompactionEvent {
+            .track_compaction(MotygaCompactionEvent {
                 thread_id: self.thread_id,
                 turn_id: self.turn_id,
                 trigger: self.trigger,
@@ -446,9 +446,9 @@ impl CompactionAnalyticsAttempt {
                 phase: self.phase,
                 strategy: CompactionStrategy::Memento,
                 status,
-                codex_error_kind: codex_error.map(Into::into),
-                codex_error_http_status_code: codex_error
-                    .and_then(CodexErr::http_status_code_value),
+                motyga_error_kind: motyga_error.map(Into::into),
+                motyga_error_http_status_code: motyga_error
+                    .and_then(MotygaErr::http_status_code_value),
                 active_context_tokens_before,
                 active_context_tokens_after,
                 retained_image_count,
@@ -463,10 +463,10 @@ impl CompactionAnalyticsAttempt {
     }
 }
 
-pub(crate) fn compaction_status_from_result<T>(result: &CodexResult<T>) -> CompactionStatus {
+pub(crate) fn compaction_status_from_result<T>(result: &MotygaResult<T>) -> CompactionStatus {
     match result {
         Ok(_) => CompactionStatus::Completed,
-        Err(CodexErr::Interrupted | CodexErr::TurnAborted) => CompactionStatus::Interrupted,
+        Err(MotygaErr::Interrupted | MotygaErr::TurnAborted) => CompactionStatus::Interrupted,
         Err(_) => CompactionStatus::Failed,
     }
 }
@@ -662,9 +662,9 @@ async fn drain_to_completed(
     sess: &Session,
     turn_context: &TurnContext,
     client_session: &mut ModelClientSession,
-    responses_metadata: &CodexResponsesMetadata,
+    responses_metadata: &MotygaResponsesMetadata,
     prompt: &Prompt,
-) -> CodexResult<()> {
+) -> MotygaResult<()> {
     let mut stream = client_session
         .stream(
             prompt,
@@ -683,7 +683,7 @@ async fn drain_to_completed(
     loop {
         let maybe_event = stream.next().await;
         let Some(event) = maybe_event else {
-            return Err(CodexErr::Stream(
+            return Err(MotygaErr::Stream(
                 "stream closed before response.completed".into(),
                 None,
             ));

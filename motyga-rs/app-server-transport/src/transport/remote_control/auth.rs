@@ -1,8 +1,8 @@
 use axum::http::HeaderMap;
 use axum::http::HeaderValue;
-use codex_api::SharedAuthProvider;
-use codex_login::AuthManager;
-use codex_login::UnauthorizedRecovery;
+use motyga_api::SharedAuthProvider;
+use motyga_login::AuthManager;
+use motyga_login::UnauthorizedRecovery;
 use std::io;
 use std::io::ErrorKind;
 use std::sync::Arc;
@@ -50,7 +50,7 @@ pub(super) async fn load_remote_control_auth(
             reloaded = true;
             continue;
         };
-        if !auth.uses_codex_backend() {
+        if !auth.uses_motyga_backend() {
             break auth;
         }
         if auth.get_account_id().is_none() && !reloaded {
@@ -61,7 +61,7 @@ pub(super) async fn load_remote_control_auth(
         break auth;
     };
 
-    if !auth.uses_codex_backend() {
+    if !auth.uses_motyga_backend() {
         return Err(io::Error::new(
             ErrorKind::PermissionDenied,
             "remote control requires ChatGPT authentication; API key auth is not supported",
@@ -69,7 +69,7 @@ pub(super) async fn load_remote_control_auth(
     }
 
     Ok(RemoteControlConnectionAuth {
-        auth_provider: codex_model_provider::auth_provider_from_auth(&auth),
+        auth_provider: motyga_model_provider::auth_provider_from_auth(&auth),
         account_id: auth.get_account_id().ok_or_else(|| {
             io::Error::new(
                 ErrorKind::WouldBlock,
@@ -128,7 +128,7 @@ pub(super) fn mark_recovery_auth_change_seen(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_api::AuthProvider;
+    use motyga_api::AuthProvider;
     use pretty_assertions::assert_eq;
 
     #[derive(Debug)]

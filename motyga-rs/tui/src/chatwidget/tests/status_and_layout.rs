@@ -2,7 +2,7 @@ use super::*;
 use crate::bottom_pane::goal_status_indicator_line;
 use crate::chatwidget::rate_limits::NUDGE_MODEL_SLUG;
 use crate::chatwidget::rate_limits::get_limits_duration;
-use codex_app_server_protocol::SpendControlLimitSnapshot;
+use motyga_app_server_protocol::SpendControlLimitSnapshot;
 use pretty_assertions::assert_eq;
 use ratatui::backend::TestBackend;
 use serial_test::serial;
@@ -48,7 +48,7 @@ async fn app_server_cyber_policy_error_renders_dedicated_notice() {
     handle_error(
         &mut chat,
         "server fallback message",
-        Some(CodexErrorInfo::CyberPolicy),
+        Some(MotygaErrorInfo::CyberPolicy),
     );
 
     let cells = drain_insert_history(&mut rx);
@@ -73,8 +73,10 @@ async fn app_server_model_verification_renders_warning() {
     let rendered = lines_to_single_string(&cells[0]);
     assert!(rendered.contains("multiple flags for possible cybersecurity risk"));
     assert!(rendered.contains("extra safety checks are on"));
-    assert!(rendered.contains("Trusted Access for Cyber"));
-    assert!(rendered.contains("https://chatgpt.com/cyber"));
+    // Matches TRUSTED_ACCESS_FOR_CYBER_VERIFICATION_WARNING, whose wording was
+    // rewritten during the rebrand; the old "Trusted Access for Cyber" phrasing is gone.
+    assert!(rendered.contains("authorized security work"));
+    assert!(rendered.contains("https://motyga.com/docs"));
 }
 
 #[tokio::test]
@@ -419,7 +421,7 @@ async fn configured_pet_load_is_deferred_until_after_construction() {
     let tx = AppEventSender::new(tx_raw);
     let mut cfg = test_config().await;
     cfg.tui_pet = Some(crate::pets::DEFAULT_PET_ID.to_string());
-    crate::pets::write_test_pack(&cfg.codex_home);
+    crate::pets::write_test_pack(&cfg.motyga_home);
     let resolved_model = get_model_offline_for_tests(cfg.model.as_deref());
     let session_telemetry = test_session_telemetry(&cfg, resolved_model.as_str());
     let init = ChatWidgetInit {
@@ -430,9 +432,9 @@ async fn configured_pet_load_is_deferred_until_after_construction() {
         initial_user_message: None,
         enhanced_keys_supported: false,
         has_chatgpt_account: false,
-        has_codex_backend_auth: false,
+        has_motyga_backend_auth: false,
         model_catalog: test_model_catalog(&cfg),
-        feedback: codex_feedback::CodexFeedback::new(),
+        feedback: motyga_feedback::MotygaFeedback::new(),
         is_first_run: true,
         status_account_display: None,
         runtime_model_provider_base_url: None,
@@ -466,7 +468,7 @@ async fn prefetch_rate_limits_is_gated_on_chatgpt_auth_provider() {
 
     assert!(!chat.should_prefetch_rate_limits());
 
-    set_chatgpt_auth(&mut chat);
+    set_chatgpt_auth_with_openai_provider(&mut chat);
     assert!(chat.should_prefetch_rate_limits());
 
     chat.config.model_provider.requires_openai_auth = false;
@@ -775,7 +777,7 @@ async fn rate_limit_snapshot_keeps_prior_credits_when_missing_from_headers() {
     }));
     let initial_balance = chat
         .rate_limit_snapshots_by_limit_id
-        .get("codex")
+        .get("motyga")
         .and_then(|snapshot| snapshot.credits.as_ref())
         .and_then(|credits| credits.balance.as_deref());
     assert_eq!(initial_balance, Some("17.5"));
@@ -797,7 +799,7 @@ async fn rate_limit_snapshot_keeps_prior_credits_when_missing_from_headers() {
 
     let display = chat
         .rate_limit_snapshots_by_limit_id
-        .get("codex")
+        .get("motyga")
         .expect("rate limits should be cached");
     let credits = display
         .credits
@@ -828,7 +830,7 @@ async fn rolling_rate_limit_snapshot_preserves_prior_individual_limit() {
 
     let display = chat
         .rate_limit_snapshots_by_limit_id
-        .get("codex")
+        .get("motyga")
         .expect("rate limits should be cached");
     let individual_limit = display
         .individual_limit
@@ -841,7 +843,7 @@ async fn rolling_rate_limit_snapshot_preserves_prior_individual_limit() {
     chat.on_rate_limit_snapshot(Some(snapshot(/*percent*/ 30.0)));
     let display = chat
         .rate_limit_snapshots_by_limit_id
-        .get("codex")
+        .get("motyga")
         .expect("rate limits should be cached");
     assert!(display.individual_limit.is_none());
 }
@@ -916,8 +918,8 @@ async fn rate_limit_snapshots_keep_separate_entries_per_limit_id() {
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
 
     chat.on_rate_limit_snapshot(Some(RateLimitSnapshot {
-        limit_id: Some("codex".to_string()),
-        limit_name: Some("codex".to_string()),
+        limit_id: Some("motyga".to_string()),
+        limit_name: Some("motyga".to_string()),
         primary: Some(RateLimitWindow {
             used_percent: 20,
             window_duration_mins: Some(300),
@@ -935,8 +937,8 @@ async fn rate_limit_snapshots_keep_separate_entries_per_limit_id() {
     }));
 
     chat.on_rate_limit_snapshot(Some(RateLimitSnapshot {
-        limit_id: Some("codex_other".to_string()),
-        limit_name: Some("codex_other".to_string()),
+        limit_id: Some("motyga_other".to_string()),
+        limit_name: Some("motyga_other".to_string()),
         primary: Some(RateLimitWindow {
             used_percent: 90,
             window_duration_mins: Some(60),
@@ -949,18 +951,18 @@ async fn rate_limit_snapshots_keep_separate_entries_per_limit_id() {
         rate_limit_reached_type: None,
     }));
 
-    let codex = chat
+    let motyga = chat
         .rate_limit_snapshots_by_limit_id
-        .get("codex")
-        .expect("codex snapshot should exist");
+        .get("motyga")
+        .expect("motyga snapshot should exist");
     let other = chat
         .rate_limit_snapshots_by_limit_id
-        .get("codex_other")
-        .expect("codex_other snapshot should exist");
+        .get("motyga_other")
+        .expect("motyga_other snapshot should exist");
 
-    assert_eq!(codex.primary.as_ref().map(|w| w.used_percent), Some(20.0));
+    assert_eq!(motyga.primary.as_ref().map(|w| w.used_percent), Some(20.0));
     assert_eq!(
-        codex
+        motyga
             .credits
             .as_ref()
             .and_then(|credits| credits.balance.as_deref()),
@@ -984,13 +986,13 @@ async fn rate_limit_switch_prompt_skips_when_on_lower_cost_model() {
 }
 
 #[tokio::test]
-async fn rate_limit_switch_prompt_skips_non_codex_limit() {
+async fn rate_limit_switch_prompt_skips_non_motyga_limit() {
     let (mut chat, _, _) = make_chatwidget_manual(Some("gpt-5")).await;
     chat.has_chatgpt_account = true;
 
     chat.on_rate_limit_snapshot(Some(RateLimitSnapshot {
-        limit_id: Some("codex_other".to_string()),
-        limit_name: Some("codex_other".to_string()),
+        limit_id: Some("motyga_other".to_string()),
+        limit_name: Some("motyga_other".to_string()),
         primary: Some(RateLimitWindow {
             used_percent: 95,
             window_duration_mins: Some(60),
@@ -1118,7 +1120,7 @@ async fn account_update_clears_derived_usage_limit_state_and_prompt() {
     chat.maybe_show_pending_rate_limit_prompt();
 
     assert!(chat.rate_limit_warnings.primary_index > 0);
-    assert!(chat.codex_rate_limit_reached_type.is_some());
+    assert!(chat.motyga_rate_limit_reached_type.is_some());
     assert!(matches!(
         chat.rate_limit_switch_prompt,
         RateLimitSwitchPromptState::Shown
@@ -1127,12 +1129,12 @@ async fn account_update_clears_derived_usage_limit_state_and_prompt() {
 
     chat.update_account_state(
         /*status_account_display*/ None, /*plan_type*/ None,
-        /*has_chatgpt_account*/ true, /*has_codex_backend_auth*/ true,
+        /*has_chatgpt_account*/ true, /*has_motyga_backend_auth*/ true,
     );
 
     assert_eq!(chat.rate_limit_warnings.primary_index, 0);
     assert_eq!(chat.rate_limit_warnings.secondary_index, 0);
-    assert_eq!(chat.codex_rate_limit_reached_type, None);
+    assert_eq!(chat.motyga_rate_limit_reached_type, None);
     assert!(matches!(
         chat.rate_limit_switch_prompt,
         RateLimitSwitchPromptState::Idle
@@ -1544,7 +1546,7 @@ async fn esc_interrupt_pauses_active_goal_turn() {
 
     chat.handle_key_event(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
 
-    assert_matches!(rx.try_recv(), Ok(AppEvent::CodexOp(Op::Interrupt { .. })));
+    assert_matches!(rx.try_recv(), Ok(AppEvent::MotygaOp(Op::Interrupt { .. })));
     assert_goal_paused_event(&mut rx, thread_id);
 
     update_thread_goal(&mut chat, thread_id, AppThreadGoalStatus::Paused);
@@ -1581,7 +1583,7 @@ async fn request_user_input_interrupt_pauses_active_goal_turn() {
 
         chat.handle_key_event(key_event);
 
-        assert_matches!(rx.try_recv(), Ok(AppEvent::CodexOp(Op::Interrupt { .. })));
+        assert_matches!(rx.try_recv(), Ok(AppEvent::MotygaOp(Op::Interrupt { .. })));
         assert_goal_paused_event(&mut rx, thread_id);
     }
 }
@@ -1605,7 +1607,7 @@ fn update_thread_goal(chat: &mut ChatWidget, thread_id: ThreadId, status: AppThr
     goal.thread_id = thread_id.clone();
     chat.handle_server_notification(
         ServerNotification::ThreadGoalUpdated(
-            codex_app_server_protocol::ThreadGoalUpdatedNotification {
+            motyga_app_server_protocol::ThreadGoalUpdatedNotification {
                 thread_id,
                 turn_id: None,
                 goal,
@@ -1822,8 +1824,8 @@ async fn ambient_pet_stays_hidden_until_a_pet_is_selected() {
     ));
     assert!(chat.ambient_pet.is_none());
 
-    crate::pets::write_test_pack(&chat.config.codex_home);
-    chat.set_tui_pet(Some("codex".to_string()));
+    crate::pets::write_test_pack(&chat.config.motyga_home);
+    chat.set_tui_pet(Some("motyga".to_string()));
 
     let area = Rect::new(
         /*x*/ 0, /*y*/ 0, /*width*/ 60, /*height*/ 20,
@@ -1855,7 +1857,7 @@ async fn ambient_pet_stays_hidden_until_a_pet_is_selected() {
 #[tokio::test]
 #[serial]
 async fn ambient_pet_screen_bottom_anchor_uses_terminal_bottom() {
-    use codex_config::types::TuiPetAnchor;
+    use motyga_config::types::TuiPetAnchor;
     use ratatui::layout::Rect;
 
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
@@ -2363,7 +2365,7 @@ async fn account_update_clears_workspace_headline_state() {
 
     chat.update_account_state(
         /*status_account_display*/ None, /*plan_type*/ None,
-        /*has_chatgpt_account*/ false, /*has_codex_backend_auth*/ false,
+        /*has_chatgpt_account*/ false, /*has_motyga_backend_auth*/ false,
     );
 
     assert_eq!(
@@ -2384,7 +2386,7 @@ async fn workspace_headline_fetch_allows_backend_auth_without_chatgpt_account() 
 
     chat.update_account_state(
         /*status_account_display*/ None, /*plan_type*/ None,
-        /*has_chatgpt_account*/ false, /*has_codex_backend_auth*/ true,
+        /*has_chatgpt_account*/ false, /*has_motyga_backend_auth*/ true,
     );
 
     let request_id = take_workspace_headline_request_id(&mut rx);
@@ -2406,7 +2408,7 @@ async fn account_update_discards_stale_workspace_headline_results() {
         }),
         /*plan_type*/ None,
         /*has_chatgpt_account*/ true,
-        /*has_codex_backend_auth*/ true,
+        /*has_motyga_backend_auth*/ true,
     );
     let stale_request_id = take_workspace_headline_request_id(&mut rx);
 
@@ -2417,7 +2419,7 @@ async fn account_update_discards_stale_workspace_headline_results() {
         }),
         /*plan_type*/ None,
         /*has_chatgpt_account*/ true,
-        /*has_codex_backend_auth*/ true,
+        /*has_motyga_backend_auth*/ true,
     );
     let current_request_id = take_workspace_headline_request_id(&mut rx);
 
@@ -2541,7 +2543,7 @@ async fn interrupted_turn_clears_visible_running_hook() {
         &mut chat,
         hook_started_run(
             "pre-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PreToolUse,
+            motyga_app_server_protocol::HookEventName::PreToolUse,
             Some("checking command policy"),
         ),
     );
@@ -2567,7 +2569,7 @@ async fn completed_turn_clears_visible_running_hook() {
         &mut chat,
         hook_started_run(
             "post-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
             /*status_message*/ None,
         ),
     );
@@ -2776,7 +2778,7 @@ async fn renamed_thread_footer_title_snapshot() {
     chat.thread_id = Some(thread_id);
     chat.handle_server_notification(
         ServerNotification::ThreadNameUpdated(
-            codex_app_server_protocol::ThreadNameUpdatedNotification {
+            motyga_app_server_protocol::ThreadNameUpdatedNotification {
                 thread_id: thread_id.to_string(),
                 thread_name: Some("Roadmap cleanup".to_string()),
             },
@@ -2876,11 +2878,11 @@ async fn status_line_goal_active_token_budget_footer_snapshot() {
     chat.refresh_status_line();
     chat.handle_server_notification(
         ServerNotification::ThreadGoalUpdated(
-            codex_app_server_protocol::ThreadGoalUpdatedNotification {
+            motyga_app_server_protocol::ThreadGoalUpdatedNotification {
                 thread_id: "thread-1".to_string(),
                 turn_id: None,
                 goal: test_thread_goal(
-                    codex_app_server_protocol::ThreadGoalStatus::Active,
+                    motyga_app_server_protocol::ThreadGoalStatus::Active,
                     /*token_budget*/ Some(50_000),
                     /*tokens_used*/ 40_000,
                 ),
@@ -2912,14 +2914,14 @@ async fn status_line_goal_complete_elapsed_footer_snapshot() {
     chat.config.tui_status_line = Some(vec!["model-name".to_string()]);
     chat.refresh_status_line();
     let mut goal = test_thread_goal(
-        codex_app_server_protocol::ThreadGoalStatus::Complete,
+        motyga_app_server_protocol::ThreadGoalStatus::Complete,
         /*token_budget*/ None,
         /*tokens_used*/ 40_000,
     );
     goal.time_used_seconds = 2 * 24 * 60 * 60 + 23 * 60 * 60 + 42 * 60;
     chat.handle_server_notification(
         ServerNotification::ThreadGoalUpdated(
-            codex_app_server_protocol::ThreadGoalUpdatedNotification {
+            motyga_app_server_protocol::ThreadGoalUpdatedNotification {
                 thread_id: "thread-1".to_string(),
                 turn_id: None,
                 goal,
@@ -2946,11 +2948,11 @@ async fn session_configured_clears_goal_status_footer() {
     chat.set_feature_enabled(Feature::Goals, /*enabled*/ true);
     chat.handle_server_notification(
         ServerNotification::ThreadGoalUpdated(
-            codex_app_server_protocol::ThreadGoalUpdatedNotification {
+            motyga_app_server_protocol::ThreadGoalUpdatedNotification {
                 thread_id: "thread-1".to_string(),
                 turn_id: None,
                 goal: test_thread_goal(
-                    codex_app_server_protocol::ThreadGoalStatus::Active,
+                    motyga_app_server_protocol::ThreadGoalStatus::Active,
                     /*token_budget*/ Some(50_000),
                     /*tokens_used*/ 40_000,
                 ),
@@ -3003,7 +3005,7 @@ async fn thread_goal_update_for_other_thread_is_ignored() {
     chat.thread_id = Some(ThreadId::new());
     let other_thread_id = ThreadId::new().to_string();
     let mut goal = test_thread_goal(
-        codex_app_server_protocol::ThreadGoalStatus::BudgetLimited,
+        motyga_app_server_protocol::ThreadGoalStatus::BudgetLimited,
         /*token_budget*/ Some(50_000),
         /*tokens_used*/ 50_000,
     );
@@ -3011,7 +3013,7 @@ async fn thread_goal_update_for_other_thread_is_ignored() {
 
     chat.handle_server_notification(
         ServerNotification::ThreadGoalUpdated(
-            codex_app_server_protocol::ThreadGoalUpdatedNotification {
+            motyga_app_server_protocol::ThreadGoalUpdatedNotification {
                 thread_id: other_thread_id,
                 turn_id: Some("turn-other".to_string()),
                 goal,
@@ -3029,7 +3031,7 @@ async fn thread_goal_update_for_other_thread_is_ignored() {
 fn goal_status_indicator_formats_statuses_and_budgets() {
     assert_eq!(
         goal_status_indicator_from_app_goal(&test_thread_goal(
-            codex_app_server_protocol::ThreadGoalStatus::Active,
+            motyga_app_server_protocol::ThreadGoalStatus::Active,
             /*token_budget*/ Some(50_000),
             /*tokens_used*/ 40_000,
         )),
@@ -3039,7 +3041,7 @@ fn goal_status_indicator_formats_statuses_and_budgets() {
     );
     assert_eq!(
         goal_status_indicator_from_app_goal(&test_thread_goal(
-            codex_app_server_protocol::ThreadGoalStatus::Active,
+            motyga_app_server_protocol::ThreadGoalStatus::Active,
             /*token_budget*/ None,
             /*tokens_used*/ 0,
         )),
@@ -3049,7 +3051,7 @@ fn goal_status_indicator_formats_statuses_and_budgets() {
     );
     assert_eq!(
         goal_status_indicator_from_app_goal(&test_thread_goal(
-            codex_app_server_protocol::ThreadGoalStatus::Blocked,
+            motyga_app_server_protocol::ThreadGoalStatus::Blocked,
             /*token_budget*/ None,
             /*tokens_used*/ 0,
         )),
@@ -3057,7 +3059,7 @@ fn goal_status_indicator_formats_statuses_and_budgets() {
     );
     assert_eq!(
         goal_status_indicator_from_app_goal(&test_thread_goal(
-            codex_app_server_protocol::ThreadGoalStatus::UsageLimited,
+            motyga_app_server_protocol::ThreadGoalStatus::UsageLimited,
             /*token_budget*/ None,
             /*tokens_used*/ 0,
         )),
@@ -3065,7 +3067,7 @@ fn goal_status_indicator_formats_statuses_and_budgets() {
     );
     assert_eq!(
         goal_status_indicator_from_app_goal(&test_thread_goal(
-            codex_app_server_protocol::ThreadGoalStatus::BudgetLimited,
+            motyga_app_server_protocol::ThreadGoalStatus::BudgetLimited,
             /*token_budget*/ Some(50_000),
             /*tokens_used*/ 51_000,
         )),
@@ -3075,7 +3077,7 @@ fn goal_status_indicator_formats_statuses_and_budgets() {
     );
     assert_eq!(
         goal_status_indicator_from_app_goal(&test_thread_goal(
-            codex_app_server_protocol::ThreadGoalStatus::BudgetLimited,
+            motyga_app_server_protocol::ThreadGoalStatus::BudgetLimited,
             /*token_budget*/ None,
             /*tokens_used*/ 0,
         )),
@@ -3083,7 +3085,7 @@ fn goal_status_indicator_formats_statuses_and_budgets() {
     );
     assert_eq!(
         goal_status_indicator_from_app_goal(&test_thread_goal(
-            codex_app_server_protocol::ThreadGoalStatus::Complete,
+            motyga_app_server_protocol::ThreadGoalStatus::Complete,
             /*token_budget*/ Some(50_000),
             /*tokens_used*/ 40_000,
         )),
@@ -3143,11 +3145,11 @@ fn goal_status_indicator_line_formats_goal_text() {
 }
 
 fn test_thread_goal(
-    status: codex_app_server_protocol::ThreadGoalStatus,
+    status: motyga_app_server_protocol::ThreadGoalStatus,
     token_budget: Option<i64>,
     tokens_used: i64,
-) -> codex_app_server_protocol::ThreadGoal {
-    codex_app_server_protocol::ThreadGoal {
+) -> motyga_app_server_protocol::ThreadGoal {
+    motyga_app_server_protocol::ThreadGoal {
         thread_id: "thread-1".to_string(),
         objective: "Keep improving the benchmark".to_string(),
         status,
@@ -3318,7 +3320,7 @@ async fn user_prompt_submit_app_server_hook_notifications_render_snapshot() {
                 execution_mode: AppServerHookExecutionMode::Sync,
                 scope: AppServerHookScope::Turn,
                 source_path: PathBuf::from(test_path_display("/tmp/hooks.json")).abs(),
-                source: codex_app_server_protocol::HookSource::User,
+                source: motyga_app_server_protocol::HookSource::User,
                 display_order: 0,
                 status: AppServerHookRunStatus::Running,
                 status_message: Some("checking go-workflow input policy".to_string()),
@@ -3341,7 +3343,7 @@ async fn user_prompt_submit_app_server_hook_notifications_render_snapshot() {
                 execution_mode: AppServerHookExecutionMode::Sync,
                 scope: AppServerHookScope::Turn,
                 source_path: PathBuf::from(test_path_display("/tmp/hooks.json")).abs(),
-                source: codex_app_server_protocol::HookSource::User,
+                source: motyga_app_server_protocol::HookSource::User,
                 display_order: 0,
                 status: AppServerHookRunStatus::Stopped,
                 status_message: Some("checking go-workflow input policy".to_string()),
@@ -3378,7 +3380,7 @@ async fn user_prompt_submit_app_server_hook_notifications_render_snapshot() {
 #[tokio::test]
 async fn pre_tool_use_hook_events_render_snapshot() {
     assert_hook_events_snapshot(
-        codex_app_server_protocol::HookEventName::PreToolUse,
+        motyga_app_server_protocol::HookEventName::PreToolUse,
         "pre-tool-use:0:/tmp/hooks.json",
         "warming the shell",
         "pre_tool_use_hook_events_render_snapshot",
@@ -3389,7 +3391,7 @@ async fn pre_tool_use_hook_events_render_snapshot() {
 #[tokio::test]
 async fn post_tool_use_hook_events_render_snapshot() {
     assert_hook_events_snapshot(
-        codex_app_server_protocol::HookEventName::PostToolUse,
+        motyga_app_server_protocol::HookEventName::PostToolUse,
         "post-tool-use:0:/tmp/hooks.json",
         "warming the shell",
         "post_tool_use_hook_events_render_snapshot",
@@ -3405,7 +3407,7 @@ async fn completed_hook_with_no_entries_stays_out_of_history() {
         &mut chat,
         hook_started_run(
             "post-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
             /*status_message*/ None,
         ),
     );
@@ -3417,8 +3419,8 @@ async fn completed_hook_with_no_entries_stays_out_of_history() {
         &mut chat,
         hook_completed_run(
             "post-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
-            codex_app_server_protocol::HookRunStatus::Completed,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookRunStatus::Completed,
             Vec::new(),
         ),
     );
@@ -3442,7 +3444,7 @@ async fn quiet_hook_linger_starts_when_delayed_redraw_reveals_hook() {
         &mut chat,
         hook_started_run(
             "post-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
             Some("checking output policy"),
         ),
     );
@@ -3453,8 +3455,8 @@ async fn quiet_hook_linger_starts_when_delayed_redraw_reveals_hook() {
         &mut chat,
         hook_completed_run(
             "post-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
-            codex_app_server_protocol::HookRunStatus::Completed,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookRunStatus::Completed,
             Vec::new(),
         ),
     );
@@ -3476,10 +3478,10 @@ async fn blocked_and_failed_hooks_render_feedback_and_errors() {
         &mut chat,
         hook_completed_run(
             "pre-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PreToolUse,
-            codex_app_server_protocol::HookRunStatus::Blocked,
-            vec![codex_app_server_protocol::HookOutputEntry {
-                kind: codex_app_server_protocol::HookOutputEntryKind::Feedback,
+            motyga_app_server_protocol::HookEventName::PreToolUse,
+            motyga_app_server_protocol::HookRunStatus::Blocked,
+            vec![motyga_app_server_protocol::HookOutputEntry {
+                kind: motyga_app_server_protocol::HookOutputEntryKind::Feedback,
                 text: "run tests before touching the fixture".to_string(),
             }],
         ),
@@ -3488,10 +3490,10 @@ async fn blocked_and_failed_hooks_render_feedback_and_errors() {
         &mut chat,
         hook_completed_run(
             "post-tool-use:1:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
-            codex_app_server_protocol::HookRunStatus::Failed,
-            vec![codex_app_server_protocol::HookOutputEntry {
-                kind: codex_app_server_protocol::HookOutputEntryKind::Error,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookRunStatus::Failed,
+            vec![motyga_app_server_protocol::HookOutputEntry {
+                kind: motyga_app_server_protocol::HookOutputEntryKind::Error,
                 text: "hook exited with code 7".to_string(),
             }],
         ),
@@ -3522,7 +3524,7 @@ async fn completed_hook_with_output_flushes_immediately() {
         &mut chat,
         hook_started_run(
             "pre-tool-use:0:/tmp/hooks.json:tool-call-1",
-            codex_app_server_protocol::HookEventName::PreToolUse,
+            motyga_app_server_protocol::HookEventName::PreToolUse,
             Some("checking command"),
         ),
     );
@@ -3533,10 +3535,10 @@ async fn completed_hook_with_output_flushes_immediately() {
         &mut chat,
         hook_completed_run(
             "pre-tool-use:0:/tmp/hooks.json:tool-call-1",
-            codex_app_server_protocol::HookEventName::PreToolUse,
-            codex_app_server_protocol::HookRunStatus::Blocked,
-            vec![codex_app_server_protocol::HookOutputEntry {
-                kind: codex_app_server_protocol::HookOutputEntryKind::Feedback,
+            motyga_app_server_protocol::HookEventName::PreToolUse,
+            motyga_app_server_protocol::HookRunStatus::Blocked,
+            vec![motyga_app_server_protocol::HookOutputEntry {
+                kind: motyga_app_server_protocol::HookOutputEntryKind::Feedback,
                 text: "command blocked by policy".to_string(),
             }],
         ),
@@ -3561,7 +3563,7 @@ async fn completed_hook_output_precedes_following_assistant_message() {
         &mut chat,
         hook_started_run(
             "pre-tool-use:0:/tmp/hooks.json:tool-call-1",
-            codex_app_server_protocol::HookEventName::PreToolUse,
+            motyga_app_server_protocol::HookEventName::PreToolUse,
             Some("checking command"),
         ),
     );
@@ -3571,10 +3573,10 @@ async fn completed_hook_output_precedes_following_assistant_message() {
         &mut chat,
         hook_completed_run(
             "pre-tool-use:0:/tmp/hooks.json:tool-call-1",
-            codex_app_server_protocol::HookEventName::PreToolUse,
-            codex_app_server_protocol::HookRunStatus::Blocked,
-            vec![codex_app_server_protocol::HookOutputEntry {
-                kind: codex_app_server_protocol::HookOutputEntryKind::Feedback,
+            motyga_app_server_protocol::HookEventName::PreToolUse,
+            motyga_app_server_protocol::HookRunStatus::Blocked,
+            vec![motyga_app_server_protocol::HookOutputEntry {
+                kind: motyga_app_server_protocol::HookOutputEntryKind::Feedback,
                 text: "command blocked by policy".to_string(),
             }],
         ),
@@ -3619,7 +3621,7 @@ async fn completed_same_id_hook_output_survives_restart() {
         &mut chat,
         hook_started_run(
             hook_id,
-            codex_app_server_protocol::HookEventName::Stop,
+            motyga_app_server_protocol::HookEventName::Stop,
             Some("checking stop condition"),
         ),
     );
@@ -3628,10 +3630,10 @@ async fn completed_same_id_hook_output_survives_restart() {
         &mut chat,
         hook_completed_run(
             hook_id,
-            codex_app_server_protocol::HookEventName::Stop,
-            codex_app_server_protocol::HookRunStatus::Stopped,
-            vec![codex_app_server_protocol::HookOutputEntry {
-                kind: codex_app_server_protocol::HookOutputEntryKind::Stop,
+            motyga_app_server_protocol::HookEventName::Stop,
+            motyga_app_server_protocol::HookRunStatus::Stopped,
+            vec![motyga_app_server_protocol::HookOutputEntry {
+                kind: motyga_app_server_protocol::HookOutputEntryKind::Stop,
                 text: "continue with more context".to_string(),
             }],
         ),
@@ -3640,7 +3642,7 @@ async fn completed_same_id_hook_output_survives_restart() {
         &mut chat,
         hook_started_run(
             hook_id,
-            codex_app_server_protocol::HookEventName::Stop,
+            motyga_app_server_protocol::HookEventName::Stop,
             Some("checking stop condition"),
         ),
     );
@@ -3672,7 +3674,7 @@ async fn identical_parallel_running_hooks_collapse_to_count() {
             &mut chat,
             hook_started_run(
                 &format!("pre-tool-use:0:/tmp/hooks.json:{tool_call_id}"),
-                codex_app_server_protocol::HookEventName::PreToolUse,
+                motyga_app_server_protocol::HookEventName::PreToolUse,
                 Some("checking command policy"),
             ),
         );
@@ -3696,7 +3698,7 @@ async fn overlapping_hook_live_cell_tracks_parallel_quiet_hooks() {
         &mut chat,
         hook_started_run(
             "pre-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PreToolUse,
+            motyga_app_server_protocol::HookEventName::PreToolUse,
             Some("checking command policy"),
         ),
     );
@@ -3708,7 +3710,7 @@ async fn overlapping_hook_live_cell_tracks_parallel_quiet_hooks() {
         &mut chat,
         hook_started_run(
             "post-tool-use:1:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
             Some("checking output policy"),
         ),
     );
@@ -3720,8 +3722,8 @@ async fn overlapping_hook_live_cell_tracks_parallel_quiet_hooks() {
         &mut chat,
         hook_completed_run(
             "pre-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PreToolUse,
-            codex_app_server_protocol::HookRunStatus::Completed,
+            motyga_app_server_protocol::HookEventName::PreToolUse,
+            motyga_app_server_protocol::HookRunStatus::Completed,
             Vec::new(),
         ),
     );
@@ -3736,8 +3738,8 @@ async fn overlapping_hook_live_cell_tracks_parallel_quiet_hooks() {
         &mut chat,
         hook_completed_run(
             "post-tool-use:1:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
-            codex_app_server_protocol::HookRunStatus::Completed,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookRunStatus::Completed,
             Vec::new(),
         ),
     );
@@ -3767,7 +3769,7 @@ async fn running_hook_does_not_displace_active_exec_cell() {
         &mut chat,
         hook_started_run(
             "post-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
             Some("checking output policy"),
         ),
     );
@@ -3789,8 +3791,8 @@ async fn running_hook_does_not_displace_active_exec_cell() {
         &mut chat,
         hook_completed_run(
             "post-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
-            codex_app_server_protocol::HookRunStatus::Completed,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookRunStatus::Completed,
             Vec::new(),
         ),
     );
@@ -3821,7 +3823,7 @@ async fn hidden_active_hook_does_not_add_transcript_separator() {
         &mut chat,
         hook_started_run(
             "post-tool-use:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::PostToolUse,
+            motyga_app_server_protocol::HookEventName::PostToolUse,
             Some("checking output policy"),
         ),
     );
@@ -3859,7 +3861,7 @@ async fn hook_completed_before_reveal_renders_completed_without_running_flash() 
         &mut chat,
         hook_started_run(
             "session-start:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::SessionStart,
+            motyga_app_server_protocol::HookEventName::SessionStart,
             Some("warming the shell"),
         ),
     );
@@ -3869,10 +3871,10 @@ async fn hook_completed_before_reveal_renders_completed_without_running_flash() 
         &mut chat,
         hook_completed_run(
             "session-start:0:/tmp/hooks.json",
-            codex_app_server_protocol::HookEventName::SessionStart,
-            codex_app_server_protocol::HookRunStatus::Completed,
-            vec![codex_app_server_protocol::HookOutputEntry {
-                kind: codex_app_server_protocol::HookOutputEntryKind::Context,
+            motyga_app_server_protocol::HookEventName::SessionStart,
+            motyga_app_server_protocol::HookRunStatus::Completed,
+            vec![motyga_app_server_protocol::HookOutputEntry {
+                kind: motyga_app_server_protocol::HookOutputEntryKind::Context,
                 text: "session context\nsecond line".to_string(),
             }],
         ),
@@ -3891,7 +3893,7 @@ async fn hook_completed_before_reveal_renders_completed_without_running_flash() 
 #[tokio::test]
 async fn session_start_hook_events_render_snapshot() {
     assert_hook_events_snapshot(
-        codex_app_server_protocol::HookEventName::SessionStart,
+        motyga_app_server_protocol::HookEventName::SessionStart,
         "session-start:0:/tmp/hooks.json",
         "warming the shell",
         "session_start_hook_events_render_snapshot",
@@ -3901,13 +3903,13 @@ async fn session_start_hook_events_render_snapshot() {
 
 fn hook_started_run(
     id: &str,
-    event_name: codex_app_server_protocol::HookEventName,
+    event_name: motyga_app_server_protocol::HookEventName,
     status_message: Option<&str>,
-) -> codex_app_server_protocol::HookRunSummary {
+) -> motyga_app_server_protocol::HookRunSummary {
     hook_run_summary(
         id,
         event_name,
-        codex_app_server_protocol::HookRunStatus::Running,
+        motyga_app_server_protocol::HookRunStatus::Running,
         status_message,
         Vec::new(),
     )
@@ -3915,10 +3917,10 @@ fn hook_started_run(
 
 fn hook_completed_run(
     id: &str,
-    event_name: codex_app_server_protocol::HookEventName,
-    status: codex_app_server_protocol::HookRunStatus,
-    entries: Vec<codex_app_server_protocol::HookOutputEntry>,
-) -> codex_app_server_protocol::HookRunSummary {
+    event_name: motyga_app_server_protocol::HookEventName,
+    status: motyga_app_server_protocol::HookRunStatus,
+    entries: Vec<motyga_app_server_protocol::HookOutputEntry>,
+) -> motyga_app_server_protocol::HookRunSummary {
     hook_run_summary(
         id, event_name, status, /*status_message*/ None, entries,
     )
@@ -3926,25 +3928,25 @@ fn hook_completed_run(
 
 fn hook_run_summary(
     id: &str,
-    event_name: codex_app_server_protocol::HookEventName,
-    status: codex_app_server_protocol::HookRunStatus,
+    event_name: motyga_app_server_protocol::HookEventName,
+    status: motyga_app_server_protocol::HookRunStatus,
     status_message: Option<&str>,
-    entries: Vec<codex_app_server_protocol::HookOutputEntry>,
-) -> codex_app_server_protocol::HookRunSummary {
-    codex_app_server_protocol::HookRunSummary {
+    entries: Vec<motyga_app_server_protocol::HookOutputEntry>,
+) -> motyga_app_server_protocol::HookRunSummary {
+    motyga_app_server_protocol::HookRunSummary {
         id: id.to_string(),
         event_name,
-        handler_type: codex_app_server_protocol::HookHandlerType::Command,
-        execution_mode: codex_app_server_protocol::HookExecutionMode::Sync,
-        scope: codex_app_server_protocol::HookScope::Turn,
+        handler_type: motyga_app_server_protocol::HookHandlerType::Command,
+        execution_mode: motyga_app_server_protocol::HookExecutionMode::Sync,
+        scope: motyga_app_server_protocol::HookScope::Turn,
         source_path: PathBuf::from(test_path_display("/tmp/hooks.json")).abs(),
-        source: codex_app_server_protocol::HookSource::User,
+        source: motyga_app_server_protocol::HookSource::User,
         display_order: 0,
         status,
         status_message: status_message.map(str::to_string),
         started_at: 1,
-        completed_at: (status != codex_app_server_protocol::HookRunStatus::Running).then_some(2),
-        duration_ms: (status != codex_app_server_protocol::HookRunStatus::Running).then_some(1),
+        completed_at: (status != motyga_app_server_protocol::HookRunStatus::Running).then_some(2),
+        duration_ms: (status != motyga_app_server_protocol::HookRunStatus::Running).then_some(1),
         entries,
     }
 }
@@ -3997,7 +3999,7 @@ async fn chatwidget_exec_and_status_layout_vt100_snapshot() {
         &mut chat,
         AppServerThreadItem::CommandExecution {
             id: "c1".into(),
-            command: codex_shell_command::parse_command::shlex_join(&command),
+            command: motyga_shell_command::parse_command::shlex_join(&command),
             cwd: cwd.clone().into(),
             process_id: None,
             source: ExecCommandSource::Agent,
@@ -4012,7 +4014,7 @@ async fn chatwidget_exec_and_status_layout_vt100_snapshot() {
         &mut chat,
         AppServerThreadItem::CommandExecution {
             id: "c1".into(),
-            command: codex_shell_command::parse_command::shlex_join(&command),
+            command: motyga_shell_command::parse_command::shlex_join(&command),
             cwd: cwd.into(),
             process_id: None,
             source: ExecCommandSource::Agent,

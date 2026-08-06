@@ -2,14 +2,14 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
 
 use super::MOTYGA_HOME_FLAG;
-use super::CODEX_WINDOWS_SANDBOX_ARG1;
+use super::MOTYGA_WINDOWS_SANDBOX_ARG1;
 use super::COMMAND_CWD_FLAG;
 use super::DENY_READ_PATHS_JSON_FLAG;
 use super::DENY_WRITE_PATHS_JSON_FLAG;
@@ -52,8 +52,8 @@ fn windows_wrapper_args_round_trip() {
 
     let args = create_windows_sandbox_command_args_for_permission_profile(
         vec![
-            "codex.exe".to_string(),
-            "--codex-run-as-fs-helper".to_string(),
+            "motyga.exe".to_string(),
+            "--motyga-run-as-fs-helper".to_string(),
         ],
         &command_cwd,
         workspace_roots.as_slice(),
@@ -68,10 +68,10 @@ fn windows_wrapper_args_round_trip() {
         Some(write_roots_override.as_slice()),
         deny_read_paths_override.as_slice(),
         deny_write_paths_override.as_slice(),
-        Path::new(r"C:\Users\me\.codex"),
+        Path::new(r"C:\Users\me\.motyga"),
     );
 
-    assert_eq!(args[0], CODEX_WINDOWS_SANDBOX_ARG1);
+    assert_eq!(args[0], MOTYGA_WINDOWS_SANDBOX_ARG1);
     assert!(args.contains(&MOTYGA_HOME_FLAG.to_string()));
     assert!(args.contains(&COMMAND_CWD_FLAG.to_string()));
     assert!(args.contains(&WORKSPACE_ROOT_FLAG.to_string()));
@@ -92,7 +92,7 @@ fn windows_wrapper_args_round_trip() {
 
     assert_eq!(
         parsed.command,
-        vec!["codex.exe", "--codex-run-as-fs-helper"]
+        vec!["motyga.exe", "--motyga-run-as-fs-helper"]
     );
     assert_eq!(parsed.command_cwd, command_cwd);
     assert_eq!(parsed.workspace_roots, workspace_roots);

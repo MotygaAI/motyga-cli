@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use codex_app_server_protocol::Model;
-use codex_app_server_protocol::ModelServiceTier;
-use codex_app_server_protocol::ModelUpgradeInfo;
-use codex_app_server_protocol::ReasoningEffortOption;
-use codex_core::ThreadManager;
-use codex_models_manager::manager::RefreshStrategy;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ReasoningEffortPreset;
+use motyga_app_server_protocol::Model;
+use motyga_app_server_protocol::ModelServiceTier;
+use motyga_app_server_protocol::ModelUpgradeInfo;
+use motyga_app_server_protocol::ReasoningEffortOption;
+use motyga_core::ThreadManager;
+use motyga_models_manager::manager::RefreshStrategy;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::openai_models::ReasoningEffortPreset;
 
 pub async fn supported_models(
     thread_manager: Arc<ThreadManager>,

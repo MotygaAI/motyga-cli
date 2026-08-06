@@ -11,10 +11,10 @@ ensure_local_sdk_src()
 
 import asyncio
 
-from openai_codex import (
-    AsyncCodex,
+from motyga_sdk import (
+    AsyncMotyga,
 )
-from openai_codex.types import (
+from motyga_sdk.types import (
     ThreadTokenUsageUpdatedNotification,
     TurnCompletedNotification,
 )
@@ -31,10 +31,10 @@ def _format_usage(usage: object) -> str:
 
 
 async def main() -> None:
-    print("Codex async mini CLI. Type /exit to quit.")
+    print("Motyga async mini CLI. Type /exit to quit.")
 
-    async with AsyncCodex(config=runtime_config()) as codex:
-        thread = await codex.thread_start(
+    async with AsyncMotyga(config=runtime_config()) as motyga:
+        thread = await motyga.thread_start(
             model="gpt-5.4", config={"model_reasoning_effort": "high"}
         )
         print("Thread:", thread.id)

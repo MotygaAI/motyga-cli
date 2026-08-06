@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use codex_tools::ToolName;
+use motyga_tools::ToolName;
 
 use crate::ExtensionData;
 

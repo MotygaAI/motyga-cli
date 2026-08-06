@@ -1,8 +1,8 @@
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::PermissionProfile;
-use codex_sandboxing::SandboxType;
-use codex_sandboxing::get_platform_sandbox;
-use codex_sandboxing::policy_transforms::should_require_platform_sandbox;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::PermissionProfile;
+use motyga_sandboxing::SandboxType;
+use motyga_sandboxing::get_platform_sandbox;
+use motyga_sandboxing::policy_transforms::should_require_platform_sandbox;
 use std::path::Path;
 
 pub(crate) fn permission_profile_sandbox_tag(

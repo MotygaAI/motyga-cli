@@ -28,10 +28,10 @@ Environment
       version                  git version 2.54.0
       repo detected            true
   ⚠ terminal     narrow terminal
-  ✓ title        default · project codex
+  ✓ title        default · project motyga
       title source             default
       title items              activity, project-name
-      project value            codex
+      project value            motyga
   ✓ state        state paths inspectable
 
 Configuration

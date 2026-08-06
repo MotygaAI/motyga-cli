@@ -2,9 +2,9 @@ use std::time::Instant;
 
 use crate::facts::AcceptedLineFingerprint;
 use crate::facts::AppInvocation;
-use crate::facts::CodexCompactionEvent;
-use crate::facts::CodexErrKind;
-use crate::facts::CodexGoalEvent;
+use crate::facts::MotygaCompactionEvent;
+use crate::facts::MotygaErrKind;
+use crate::facts::MotygaGoalEvent;
 use crate::facts::CompactionImplementation;
 use crate::facts::CompactionPhase;
 use crate::facts::CompactionReason;
@@ -24,24 +24,24 @@ use crate::facts::TurnSteerRejectionReason;
 use crate::facts::TurnSteerResult;
 use crate::facts::TurnSubmissionType;
 use crate::now_unix_millis;
-use codex_app_server_protocol::CodexErrorInfo;
-use codex_app_server_protocol::CommandExecutionSource;
-use codex_login::default_client::originator;
-use codex_plugin::PluginId;
-use codex_plugin::PluginTelemetryMetadata;
-use codex_protocol::approvals::NetworkApprovalProtocol;
-use codex_protocol::models::AdditionalPermissionProfile;
-use codex_protocol::models::SandboxPermissions;
-use codex_protocol::protocol::GuardianAssessmentOutcome;
-use codex_protocol::protocol::GuardianCommandSource;
-use codex_protocol::protocol::GuardianRiskLevel;
-use codex_protocol::protocol::GuardianUserAuthorization;
-use codex_protocol::protocol::HookEventName;
-use codex_protocol::protocol::HookRunStatus;
-use codex_protocol::protocol::HookSource;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::ThreadSource;
-use codex_protocol::protocol::TokenUsage;
+use motyga_app_server_protocol::MotygaErrorInfo;
+use motyga_app_server_protocol::CommandExecutionSource;
+use motyga_login::default_client::originator;
+use motyga_plugin::PluginId;
+use motyga_plugin::PluginTelemetryMetadata;
+use motyga_protocol::approvals::NetworkApprovalProtocol;
+use motyga_protocol::models::AdditionalPermissionProfile;
+use motyga_protocol::models::SandboxPermissions;
+use motyga_protocol::protocol::GuardianAssessmentOutcome;
+use motyga_protocol::protocol::GuardianCommandSource;
+use motyga_protocol::protocol::GuardianRiskLevel;
+use motyga_protocol::protocol::GuardianUserAuthorization;
+use motyga_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::HookRunStatus;
+use motyga_protocol::protocol::HookSource;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_protocol::protocol::TokenUsage;
 use serde::Serialize;
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -63,32 +63,32 @@ pub(crate) enum TrackEventRequest {
     SkillInvocation(SkillInvocationEventRequest),
     ThreadInitialized(ThreadInitializedEvent),
     GuardianReview(Box<GuardianReviewEventRequest>),
-    AppMentioned(CodexAppMentionedEventRequest),
-    AppUsed(CodexAppUsedEventRequest),
-    HookRun(CodexHookRunEventRequest),
-    Compaction(Box<CodexCompactionEventRequest>),
-    Goal(Box<CodexGoalEventRequest>),
-    TurnEvent(Box<CodexTurnEventRequest>),
-    TurnSteer(CodexTurnSteerEventRequest),
-    CommandExecution(CodexCommandExecutionEventRequest),
-    FileChange(CodexFileChangeEventRequest),
-    McpToolCall(CodexMcpToolCallEventRequest),
-    DynamicToolCall(CodexDynamicToolCallEventRequest),
-    CollabAgentToolCall(CodexCollabAgentToolCallEventRequest),
-    WebSearch(CodexWebSearchEventRequest),
-    ImageGeneration(CodexImageGenerationEventRequest),
-    AcceptedLineFingerprints(Box<CodexAcceptedLineFingerprintsEventRequest>),
+    AppMentioned(MotygaAppMentionedEventRequest),
+    AppUsed(MotygaAppUsedEventRequest),
+    HookRun(MotygaHookRunEventRequest),
+    Compaction(Box<MotygaCompactionEventRequest>),
+    Goal(Box<MotygaGoalEventRequest>),
+    TurnEvent(Box<MotygaTurnEventRequest>),
+    TurnSteer(MotygaTurnSteerEventRequest),
+    CommandExecution(MotygaCommandExecutionEventRequest),
+    FileChange(MotygaFileChangeEventRequest),
+    McpToolCall(MotygaMcpToolCallEventRequest),
+    DynamicToolCall(MotygaDynamicToolCallEventRequest),
+    CollabAgentToolCall(MotygaCollabAgentToolCallEventRequest),
+    WebSearch(MotygaWebSearchEventRequest),
+    ImageGeneration(MotygaImageGenerationEventRequest),
+    AcceptedLineFingerprints(Box<MotygaAcceptedLineFingerprintsEventRequest>),
     #[allow(dead_code)]
-    ReviewEvent(CodexReviewEventRequest),
-    PluginUsed(CodexPluginUsedEventRequest),
-    PluginInstallRequested(CodexPluginInstallRequestedEventRequest),
-    PluginInstalled(CodexPluginEventRequest),
-    PluginUninstalled(CodexPluginEventRequest),
-    PluginEnabled(CodexPluginEventRequest),
-    PluginDisabled(CodexPluginEventRequest),
-    PluginInstallFailed(CodexPluginInstallFailedEventRequest),
-    ExternalAgentConfigImportCompleted(CodexOnboardingExternalAgentImportCompleteEventRequest),
-    ExternalAgentConfigImportFailure(CodexOnboardingExternalAgentImportFailureEventRequest),
+    ReviewEvent(MotygaReviewEventRequest),
+    PluginUsed(MotygaPluginUsedEventRequest),
+    PluginInstallRequested(MotygaPluginInstallRequestedEventRequest),
+    PluginInstalled(MotygaPluginEventRequest),
+    PluginUninstalled(MotygaPluginEventRequest),
+    PluginEnabled(MotygaPluginEventRequest),
+    PluginDisabled(MotygaPluginEventRequest),
+    PluginInstallFailed(MotygaPluginInstallFailedEventRequest),
+    ExternalAgentConfigImportCompleted(MotygaOnboardingExternalAgentImportCompleteEventRequest),
+    ExternalAgentConfigImportFailure(MotygaOnboardingExternalAgentImportFailureEventRequest),
 }
 
 impl TrackEventRequest {
@@ -98,7 +98,7 @@ impl TrackEventRequest {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexAcceptedLineFingerprintsEventParams {
+pub(crate) struct MotygaAcceptedLineFingerprintsEventParams {
     pub(crate) event_type: &'static str,
     pub(crate) turn_id: String,
     pub(crate) thread_id: String,
@@ -112,9 +112,9 @@ pub(crate) struct CodexAcceptedLineFingerprintsEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexAcceptedLineFingerprintsEventRequest {
+pub(crate) struct MotygaAcceptedLineFingerprintsEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexAcceptedLineFingerprintsEventParams,
+    pub(crate) event_params: MotygaAcceptedLineFingerprintsEventParams,
 }
 
 #[derive(Serialize)]
@@ -138,7 +138,7 @@ pub(crate) struct SkillInvocationEventParams {
 }
 
 #[derive(Clone, Serialize)]
-pub(crate) struct CodexAppServerClientMetadata {
+pub(crate) struct MotygaAppServerClientMetadata {
     pub(crate) product_client_id: String,
     pub(crate) client_name: Option<String>,
     pub(crate) client_version: Option<String>,
@@ -147,8 +147,8 @@ pub(crate) struct CodexAppServerClientMetadata {
 }
 
 #[derive(Clone, Serialize)]
-pub(crate) struct CodexRuntimeMetadata {
-    pub(crate) codex_rs_version: String,
+pub(crate) struct MotygaRuntimeMetadata {
+    pub(crate) motyga_rs_version: String,
     pub(crate) runtime_os: String,
     pub(crate) runtime_os_version: String,
     pub(crate) runtime_arch: String,
@@ -158,8 +158,8 @@ pub(crate) struct CodexRuntimeMetadata {
 pub(crate) struct ThreadInitializedEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
-    pub(crate) app_server_client: CodexAppServerClientMetadata,
-    pub(crate) runtime: CodexRuntimeMetadata,
+    pub(crate) app_server_client: MotygaAppServerClientMetadata,
+    pub(crate) runtime: MotygaRuntimeMetadata,
     pub(crate) model: String,
     pub(crate) ephemeral: bool,
     pub(crate) thread_source: Option<ThreadSource>,
@@ -221,7 +221,7 @@ pub enum GuardianReviewSessionKind {
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GuardianApprovalRequestSource {
-    /// Approval requested directly by the main Codex turn.
+    /// Approval requested directly by the main Motyga turn.
     MainTurn,
     /// Approval requested by a delegated subagent and routed through the parent
     /// session for guardian review.
@@ -471,8 +471,8 @@ pub struct GuardianReviewSessionAnalyticsParams {
 #[derive(Serialize)]
 pub(crate) struct GuardianReviewEventPayload {
     pub(crate) session_id: String,
-    pub(crate) app_server_client: CodexAppServerClientMetadata,
-    pub(crate) runtime: CodexRuntimeMetadata,
+    pub(crate) app_server_client: MotygaAppServerClientMetadata,
+    pub(crate) runtime: MotygaRuntimeMetadata,
     #[serde(flatten)]
     pub(crate) guardian_review: GuardianReviewEventParams,
 }
@@ -516,14 +516,14 @@ pub(crate) enum ToolItemFailureKind {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexToolItemEventBase {
+pub(crate) struct MotygaToolItemEventBase {
     pub(crate) thread_id: String,
     pub(crate) turn_id: String,
     /// App-server ThreadItem.id. For tool-originated items this generally
     /// corresponds to the originating core call_id.
     pub(crate) item_id: String,
-    pub(crate) app_server_client: CodexAppServerClientMetadata,
-    pub(crate) runtime: CodexRuntimeMetadata,
+    pub(crate) app_server_client: MotygaAppServerClientMetadata,
+    pub(crate) runtime: MotygaRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
@@ -594,13 +594,13 @@ pub(crate) enum ReviewResolution {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexReviewEventParams {
+pub(crate) struct MotygaReviewEventParams {
     pub(crate) thread_id: String,
     pub(crate) turn_id: String,
     pub(crate) item_id: Option<String>,
     pub(crate) review_id: String,
-    pub(crate) app_server_client: CodexAppServerClientMetadata,
-    pub(crate) runtime: CodexRuntimeMetadata,
+    pub(crate) app_server_client: MotygaAppServerClientMetadata,
+    pub(crate) runtime: MotygaRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
@@ -616,9 +616,9 @@ pub(crate) struct CodexReviewEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexReviewEventRequest {
+pub(crate) struct MotygaReviewEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexReviewEventParams,
+    pub(crate) event_params: MotygaReviewEventParams,
 }
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -631,9 +631,9 @@ pub(crate) enum WebSearchActionKind {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexCommandExecutionEventParams {
+pub(crate) struct MotygaCommandExecutionEventParams {
     #[serde(flatten)]
-    pub(crate) base: CodexToolItemEventBase,
+    pub(crate) base: MotygaToolItemEventBase,
     pub(crate) command_execution_source: CommandExecutionSource,
     pub(crate) exit_code: Option<i32>,
     pub(crate) command_total_action_count: u64,
@@ -644,15 +644,15 @@ pub(crate) struct CodexCommandExecutionEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexCommandExecutionEventRequest {
+pub(crate) struct MotygaCommandExecutionEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexCommandExecutionEventParams,
+    pub(crate) event_params: MotygaCommandExecutionEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexFileChangeEventParams {
+pub(crate) struct MotygaFileChangeEventParams {
     #[serde(flatten)]
-    pub(crate) base: CodexToolItemEventBase,
+    pub(crate) base: MotygaToolItemEventBase,
     pub(crate) file_change_count: u64,
     pub(crate) file_add_count: u64,
     pub(crate) file_update_count: u64,
@@ -661,15 +661,15 @@ pub(crate) struct CodexFileChangeEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexFileChangeEventRequest {
+pub(crate) struct MotygaFileChangeEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexFileChangeEventParams,
+    pub(crate) event_params: MotygaFileChangeEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexMcpToolCallEventParams {
+pub(crate) struct MotygaMcpToolCallEventParams {
     #[serde(flatten)]
-    pub(crate) base: CodexToolItemEventBase,
+    pub(crate) base: MotygaToolItemEventBase,
     pub(crate) mcp_server_name: String,
     pub(crate) mcp_tool_name: String,
     pub(crate) mcp_error_present: bool,
@@ -677,15 +677,15 @@ pub(crate) struct CodexMcpToolCallEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexMcpToolCallEventRequest {
+pub(crate) struct MotygaMcpToolCallEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexMcpToolCallEventParams,
+    pub(crate) event_params: MotygaMcpToolCallEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexDynamicToolCallEventParams {
+pub(crate) struct MotygaDynamicToolCallEventParams {
     #[serde(flatten)]
-    pub(crate) base: CodexToolItemEventBase,
+    pub(crate) base: MotygaToolItemEventBase,
     pub(crate) dynamic_tool_name: String,
     pub(crate) success: Option<bool>,
     pub(crate) output_content_item_count: Option<u64>,
@@ -694,15 +694,15 @@ pub(crate) struct CodexDynamicToolCallEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexDynamicToolCallEventRequest {
+pub(crate) struct MotygaDynamicToolCallEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexDynamicToolCallEventParams,
+    pub(crate) event_params: MotygaDynamicToolCallEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexCollabAgentToolCallEventParams {
+pub(crate) struct MotygaCollabAgentToolCallEventParams {
     #[serde(flatten)]
-    pub(crate) base: CodexToolItemEventBase,
+    pub(crate) base: MotygaToolItemEventBase,
     pub(crate) sender_thread_id: String,
     pub(crate) receiver_thread_count: u64,
     pub(crate) receiver_thread_ids: Option<Vec<String>>,
@@ -714,42 +714,42 @@ pub(crate) struct CodexCollabAgentToolCallEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexCollabAgentToolCallEventRequest {
+pub(crate) struct MotygaCollabAgentToolCallEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexCollabAgentToolCallEventParams,
+    pub(crate) event_params: MotygaCollabAgentToolCallEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexWebSearchEventParams {
+pub(crate) struct MotygaWebSearchEventParams {
     #[serde(flatten)]
-    pub(crate) base: CodexToolItemEventBase,
+    pub(crate) base: MotygaToolItemEventBase,
     pub(crate) web_search_action: Option<WebSearchActionKind>,
     pub(crate) query_present: bool,
     pub(crate) query_count: Option<u64>,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexWebSearchEventRequest {
+pub(crate) struct MotygaWebSearchEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexWebSearchEventParams,
+    pub(crate) event_params: MotygaWebSearchEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexImageGenerationEventParams {
+pub(crate) struct MotygaImageGenerationEventParams {
     #[serde(flatten)]
-    pub(crate) base: CodexToolItemEventBase,
+    pub(crate) base: MotygaToolItemEventBase,
     pub(crate) revised_prompt_present: bool,
     pub(crate) saved_path_present: bool,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexImageGenerationEventRequest {
+pub(crate) struct MotygaImageGenerationEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexImageGenerationEventParams,
+    pub(crate) event_params: MotygaImageGenerationEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexAppMetadata {
+pub(crate) struct MotygaAppMetadata {
     pub(crate) connector_id: Option<String>,
     pub(crate) thread_id: Option<String>,
     pub(crate) turn_id: Option<String>,
@@ -760,19 +760,19 @@ pub(crate) struct CodexAppMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexAppMentionedEventRequest {
+pub(crate) struct MotygaAppMentionedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexAppMetadata,
+    pub(crate) event_params: MotygaAppMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexAppUsedEventRequest {
+pub(crate) struct MotygaAppUsedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexAppMetadata,
+    pub(crate) event_params: MotygaAppMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexHookRunMetadata {
+pub(crate) struct MotygaHookRunMetadata {
     pub(crate) thread_id: Option<String>,
     pub(crate) turn_id: Option<String>,
     pub(crate) product_client_id: Option<String>,
@@ -783,18 +783,18 @@ pub(crate) struct CodexHookRunMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexHookRunEventRequest {
+pub(crate) struct MotygaHookRunEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexHookRunMetadata,
+    pub(crate) event_params: MotygaHookRunMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexCompactionEventParams {
+pub(crate) struct MotygaCompactionEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
     pub(crate) turn_id: String,
-    pub(crate) app_server_client: CodexAppServerClientMetadata,
-    pub(crate) runtime: CodexRuntimeMetadata,
+    pub(crate) app_server_client: MotygaAppServerClientMetadata,
+    pub(crate) runtime: MotygaRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
@@ -804,8 +804,8 @@ pub(crate) struct CodexCompactionEventParams {
     pub(crate) phase: CompactionPhase,
     pub(crate) strategy: CompactionStrategy,
     pub(crate) status: CompactionStatus,
-    pub(crate) codex_error_kind: Option<CodexErrKind>,
-    pub(crate) codex_error_http_status_code: Option<u16>,
+    pub(crate) motyga_error_kind: Option<MotygaErrKind>,
+    pub(crate) motyga_error_http_status_code: Option<u16>,
     pub(crate) active_context_tokens_before: i64,
     pub(crate) active_context_tokens_after: i64,
     pub(crate) retained_image_count: Option<usize>,
@@ -817,45 +817,45 @@ pub(crate) struct CodexCompactionEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexCompactionEventRequest {
+pub(crate) struct MotygaCompactionEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexCompactionEventParams,
+    pub(crate) event_params: MotygaCompactionEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexGoalEventParams {
+pub(crate) struct MotygaGoalEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
     pub(crate) turn_id: Option<String>,
-    pub(crate) app_server_client: CodexAppServerClientMetadata,
-    pub(crate) runtime: CodexRuntimeMetadata,
+    pub(crate) app_server_client: MotygaAppServerClientMetadata,
+    pub(crate) runtime: MotygaRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
     pub(crate) goal_id: String,
     pub(crate) event_kind: GoalEventKind,
-    pub(crate) goal_status: codex_state::ThreadGoalStatus,
+    pub(crate) goal_status: motyga_state::ThreadGoalStatus,
     pub(crate) has_token_budget: bool,
     pub(crate) cumulative_tokens_accounted: Option<i64>,
     pub(crate) cumulative_time_accounted_seconds: Option<i64>,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexGoalEventRequest {
+pub(crate) struct MotygaGoalEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexGoalEventParams,
+    pub(crate) event_params: MotygaGoalEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexTurnEventParams {
+pub(crate) struct MotygaTurnEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
     pub(crate) turn_id: String,
     // TODO(rhan-oai): Populate once queued/default submission type is plumbed from
     // the turn/start callsites instead of always being reported as None.
     pub(crate) submission_type: Option<TurnSubmissionType>,
-    pub(crate) app_server_client: CodexAppServerClientMetadata,
-    pub(crate) runtime: CodexRuntimeMetadata,
+    pub(crate) app_server_client: MotygaAppServerClientMetadata,
+    pub(crate) runtime: MotygaRuntimeMetadata,
     pub(crate) ephemeral: bool,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) initialization_mode: ThreadInitializationMode,
@@ -876,9 +876,9 @@ pub(crate) struct CodexTurnEventParams {
     pub(crate) num_input_images: usize,
     pub(crate) is_first_turn: bool,
     pub(crate) status: Option<TurnStatus>,
-    pub(crate) turn_error: Option<CodexErrorInfo>,
-    pub(crate) codex_error_kind: Option<CodexErrKind>,
-    pub(crate) codex_error_http_status_code: Option<u16>,
+    pub(crate) turn_error: Option<MotygaErrorInfo>,
+    pub(crate) motyga_error_kind: Option<MotygaErrKind>,
+    pub(crate) motyga_error_http_status_code: Option<u16>,
     pub(crate) steer_count: Option<usize>,
     pub(crate) total_tool_call_count: Option<usize>,
     pub(crate) shell_command_count: Option<usize>,
@@ -906,19 +906,19 @@ pub(crate) struct CodexTurnEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexTurnEventRequest {
+pub(crate) struct MotygaTurnEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexTurnEventParams,
+    pub(crate) event_params: MotygaTurnEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexTurnSteerEventParams {
+pub(crate) struct MotygaTurnSteerEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
     pub(crate) expected_turn_id: Option<String>,
     pub(crate) accepted_turn_id: Option<String>,
-    pub(crate) app_server_client: CodexAppServerClientMetadata,
-    pub(crate) runtime: CodexRuntimeMetadata,
+    pub(crate) app_server_client: MotygaAppServerClientMetadata,
+    pub(crate) runtime: MotygaRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
@@ -929,13 +929,13 @@ pub(crate) struct CodexTurnSteerEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexTurnSteerEventRequest {
+pub(crate) struct MotygaTurnSteerEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexTurnSteerEventParams,
+    pub(crate) event_params: MotygaTurnSteerEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexPluginMetadata {
+pub(crate) struct MotygaPluginMetadata {
     pub(crate) plugin_id: Option<String>,
     pub(crate) remote_plugin_id: Option<String>,
     pub(crate) plugin_name: Option<String>,
@@ -947,9 +947,9 @@ pub(crate) struct CodexPluginMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexPluginUsedMetadata {
+pub(crate) struct MotygaPluginUsedMetadata {
     #[serde(flatten)]
-    pub(crate) plugin: CodexPluginMetadata,
+    pub(crate) plugin: MotygaPluginMetadata,
     pub(crate) mcp_server_names: Option<Vec<String>>,
     pub(crate) thread_id: Option<String>,
     pub(crate) turn_id: Option<String>,
@@ -957,7 +957,7 @@ pub(crate) struct CodexPluginUsedMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexPluginInstallRequestedPluginMetadata {
+pub(crate) struct MotygaPluginInstallRequestedPluginMetadata {
     pub(crate) plugin_id: String,
     pub(crate) remote_plugin_id: Option<String>,
     pub(crate) plugin_name: String,
@@ -965,9 +965,9 @@ pub(crate) struct CodexPluginInstallRequestedPluginMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexPluginInstallRequestedMetadata {
+pub(crate) struct MotygaPluginInstallRequestedMetadata {
     pub(crate) suggestion_id: String,
-    pub(crate) plugins: Vec<CodexPluginInstallRequestedPluginMetadata>,
+    pub(crate) plugins: Vec<MotygaPluginInstallRequestedPluginMetadata>,
     pub(crate) source: crate::facts::PluginInstallRequestSource,
     pub(crate) thread_id: String,
     pub(crate) turn_id: String,
@@ -976,32 +976,32 @@ pub(crate) struct CodexPluginInstallRequestedMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexPluginInstallRequestedEventRequest {
+pub(crate) struct MotygaPluginInstallRequestedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexPluginInstallRequestedMetadata,
+    pub(crate) event_params: MotygaPluginInstallRequestedMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexPluginEventRequest {
+pub(crate) struct MotygaPluginEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexPluginMetadata,
+    pub(crate) event_params: MotygaPluginMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexPluginInstallFailedMetadata {
+pub(crate) struct MotygaPluginInstallFailedMetadata {
     #[serde(flatten)]
-    pub(crate) plugin: CodexPluginMetadata,
+    pub(crate) plugin: MotygaPluginMetadata,
     pub(crate) error_type: String,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexPluginInstallFailedEventRequest {
+pub(crate) struct MotygaPluginInstallFailedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexPluginInstallFailedMetadata,
+    pub(crate) event_params: MotygaPluginInstallFailedMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexOnboardingExternalAgentImportCompleteMetadata {
+pub(crate) struct MotygaOnboardingExternalAgentImportCompleteMetadata {
     pub(crate) import_id: String,
     pub(crate) source: String,
     #[serde(rename = "type")]
@@ -1012,13 +1012,13 @@ pub(crate) struct CodexOnboardingExternalAgentImportCompleteMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexOnboardingExternalAgentImportCompleteEventRequest {
+pub(crate) struct MotygaOnboardingExternalAgentImportCompleteEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexOnboardingExternalAgentImportCompleteMetadata,
+    pub(crate) event_params: MotygaOnboardingExternalAgentImportCompleteMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexOnboardingExternalAgentImportFailureMetadata {
+pub(crate) struct MotygaOnboardingExternalAgentImportFailureMetadata {
     pub(crate) import_id: String,
     pub(crate) source: String,
     #[serde(rename = "type")]
@@ -1029,31 +1029,31 @@ pub(crate) struct CodexOnboardingExternalAgentImportFailureMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexOnboardingExternalAgentImportFailureEventRequest {
+pub(crate) struct MotygaOnboardingExternalAgentImportFailureEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexOnboardingExternalAgentImportFailureMetadata,
+    pub(crate) event_params: MotygaOnboardingExternalAgentImportFailureMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct CodexPluginUsedEventRequest {
+pub(crate) struct MotygaPluginUsedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: CodexPluginUsedMetadata,
+    pub(crate) event_params: MotygaPluginUsedMetadata,
 }
 
 pub(crate) fn plugin_state_event_type(state: PluginState) -> &'static str {
     match state {
-        PluginState::Installed => "codex_plugin_installed",
-        PluginState::Uninstalled => "codex_plugin_uninstalled",
-        PluginState::Enabled => "codex_plugin_enabled",
-        PluginState::Disabled => "codex_plugin_disabled",
+        PluginState::Installed => "motyga_plugin_installed",
+        PluginState::Uninstalled => "motyga_plugin_uninstalled",
+        PluginState::Enabled => "motyga_plugin_enabled",
+        PluginState::Disabled => "motyga_plugin_disabled",
     }
 }
 
-pub(crate) fn codex_app_metadata(
+pub(crate) fn motyga_app_metadata(
     tracking: &TrackEventsContext,
     app: AppInvocation,
-) -> CodexAppMetadata {
-    CodexAppMetadata {
+) -> MotygaAppMetadata {
+    MotygaAppMetadata {
         connector_id: app.connector_id,
         thread_id: Some(tracking.thread_id.clone()),
         turn_id: Some(tracking.turn_id.clone()),
@@ -1064,20 +1064,20 @@ pub(crate) fn codex_app_metadata(
     }
 }
 
-pub(crate) fn codex_plugin_metadata(plugin: PluginTelemetryMetadata) -> CodexPluginMetadata {
-    codex_plugin_metadata_with_product_client_id(plugin, originator().value)
+pub(crate) fn motyga_plugin_metadata(plugin: PluginTelemetryMetadata) -> MotygaPluginMetadata {
+    motyga_plugin_metadata_with_product_client_id(plugin, originator().value)
 }
 
-fn codex_plugin_metadata_with_product_client_id(
+fn motyga_plugin_metadata_with_product_client_id(
     plugin: PluginTelemetryMetadata,
     product_client_id: String,
-) -> CodexPluginMetadata {
+) -> MotygaPluginMetadata {
     let PluginTelemetryMetadata {
         plugin_id,
         remote_plugin_id,
         capability_summary,
     } = plugin;
-    CodexPluginMetadata {
+    MotygaPluginMetadata {
         plugin_id: plugin_id.as_ref().map(PluginId::as_key),
         remote_plugin_id,
         plugin_name: plugin_id
@@ -1101,16 +1101,16 @@ fn codex_plugin_metadata_with_product_client_id(
     }
 }
 
-pub(crate) fn codex_plugin_install_requested_metadata(
+pub(crate) fn motyga_plugin_install_requested_metadata(
     tracking: &TrackEventsContext,
     request: PluginInstallRequested,
-) -> CodexPluginInstallRequestedMetadata {
-    CodexPluginInstallRequestedMetadata {
+) -> MotygaPluginInstallRequestedMetadata {
+    MotygaPluginInstallRequestedMetadata {
         suggestion_id: request.suggestion_id,
         plugins: request
             .plugins
             .into_iter()
-            .map(|plugin| CodexPluginInstallRequestedPluginMetadata {
+            .map(|plugin| MotygaPluginInstallRequestedPluginMetadata {
                 plugin_id: plugin.plugin_id,
                 remote_plugin_id: plugin.remote_plugin_id,
                 plugin_name: plugin.plugin_name,
@@ -1125,16 +1125,16 @@ pub(crate) fn codex_plugin_install_requested_metadata(
     }
 }
 
-pub(crate) fn codex_compaction_event_params(
-    input: CodexCompactionEvent,
+pub(crate) fn motyga_compaction_event_params(
+    input: MotygaCompactionEvent,
     session_id: String,
-    app_server_client: CodexAppServerClientMetadata,
-    runtime: CodexRuntimeMetadata,
+    app_server_client: MotygaAppServerClientMetadata,
+    runtime: MotygaRuntimeMetadata,
     thread_source: Option<ThreadSource>,
     subagent_source: Option<String>,
     parent_thread_id: Option<String>,
-) -> CodexCompactionEventParams {
-    CodexCompactionEventParams {
+) -> MotygaCompactionEventParams {
+    MotygaCompactionEventParams {
         thread_id: input.thread_id,
         session_id,
         turn_id: input.turn_id,
@@ -1149,8 +1149,8 @@ pub(crate) fn codex_compaction_event_params(
         phase: input.phase,
         strategy: input.strategy,
         status: input.status,
-        codex_error_kind: input.codex_error_kind,
-        codex_error_http_status_code: input.codex_error_http_status_code,
+        motyga_error_kind: input.motyga_error_kind,
+        motyga_error_http_status_code: input.motyga_error_http_status_code,
         active_context_tokens_before: input.active_context_tokens_before,
         active_context_tokens_after: input.active_context_tokens_after,
         retained_image_count: input.retained_image_count,
@@ -1162,16 +1162,16 @@ pub(crate) fn codex_compaction_event_params(
     }
 }
 
-pub(crate) fn codex_goal_event_params(
-    input: CodexGoalEvent,
+pub(crate) fn motyga_goal_event_params(
+    input: MotygaGoalEvent,
     session_id: String,
-    app_server_client: CodexAppServerClientMetadata,
-    runtime: CodexRuntimeMetadata,
+    app_server_client: MotygaAppServerClientMetadata,
+    runtime: MotygaRuntimeMetadata,
     thread_source: Option<ThreadSource>,
     subagent_source: Option<String>,
     parent_thread_id: Option<String>,
-) -> CodexGoalEventParams {
-    CodexGoalEventParams {
+) -> MotygaGoalEventParams {
+    MotygaGoalEventParams {
         thread_id: input.thread_id,
         session_id,
         turn_id: input.turn_id,
@@ -1189,16 +1189,16 @@ pub(crate) fn codex_goal_event_params(
     }
 }
 
-pub(crate) fn codex_plugin_used_metadata(
+pub(crate) fn motyga_plugin_used_metadata(
     tracking: &TrackEventsContext,
     plugin: PluginTelemetryMetadata,
-) -> CodexPluginUsedMetadata {
+) -> MotygaPluginUsedMetadata {
     let mcp_server_names = plugin
         .capability_summary
         .as_ref()
         .map(|summary| summary.mcp_server_names.clone());
-    CodexPluginUsedMetadata {
-        plugin: codex_plugin_metadata_with_product_client_id(
+    MotygaPluginUsedMetadata {
+        plugin: motyga_plugin_metadata_with_product_client_id(
             plugin,
             tracking.product_client_id.clone(),
         ),
@@ -1209,11 +1209,11 @@ pub(crate) fn codex_plugin_used_metadata(
     }
 }
 
-pub(crate) fn codex_hook_run_metadata(
+pub(crate) fn motyga_hook_run_metadata(
     tracking: &TrackEventsContext,
     hook: HookRunFact,
-) -> CodexHookRunMetadata {
-    CodexHookRunMetadata {
+) -> MotygaHookRunMetadata {
+    MotygaHookRunMetadata {
         thread_id: Some(tracking.thread_id.clone()),
         turn_id: Some(tracking.turn_id.clone()),
         product_client_id: Some(tracking.product_client_id.clone()),
@@ -1255,10 +1255,10 @@ fn analytics_hook_source(source: HookSource) -> &'static str {
     }
 }
 
-pub(crate) fn current_runtime_metadata() -> CodexRuntimeMetadata {
+pub(crate) fn current_runtime_metadata() -> MotygaRuntimeMetadata {
     let os_info = os_info::get();
-    CodexRuntimeMetadata {
-        codex_rs_version: env!("CARGO_PKG_VERSION").to_string(),
+    MotygaRuntimeMetadata {
+        motyga_rs_version: env!("CARGO_PKG_VERSION").to_string(),
         runtime_os: std::env::consts::OS.to_string(),
         runtime_os_version: os_info.version().to_string(),
         runtime_arch: std::env::consts::ARCH.to_string(),
@@ -1271,7 +1271,7 @@ pub(crate) fn subagent_thread_started_event_request(
     let event_params = ThreadInitializedEventParams {
         thread_id: input.thread_id,
         session_id: input.session_id,
-        app_server_client: CodexAppServerClientMetadata {
+        app_server_client: MotygaAppServerClientMetadata {
             product_client_id: input.product_client_id,
             client_name: Some(input.client_name),
             client_version: Some(input.client_version),
@@ -1289,7 +1289,7 @@ pub(crate) fn subagent_thread_started_event_request(
         created_at: input.created_at,
     };
     ThreadInitializedEvent {
-        event_type: "codex_thread_initialized",
+        event_type: "motyga_thread_initialized",
         event_params,
     }
 }

@@ -1,5 +1,5 @@
 use super::*;
-use codex_app_server_protocol::WorkspaceMessage;
+use motyga_app_server_protocol::WorkspaceMessage;
 use pretty_assertions::assert_eq;
 
 #[test]

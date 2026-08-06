@@ -8,28 +8,28 @@ use app_test_support::TestAppServer;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
 use app_test_support::write_mock_responses_config_toml_with_chatgpt_base_url;
-use codex_app_server_protocol::AppInfo;
-use codex_app_server_protocol::CapabilityRootLocation;
-use codex_app_server_protocol::EnvironmentAddResponse;
-use codex_app_server_protocol::ListMcpServerStatusParams;
-use codex_app_server_protocol::ListMcpServerStatusResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SelectedCapabilityRoot;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadResumeResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnEnvironmentParams;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::UserInput;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Settings;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_app_server_protocol::AppInfo;
+use motyga_app_server_protocol::CapabilityRootLocation;
+use motyga_app_server_protocol::EnvironmentAddResponse;
+use motyga_app_server_protocol::ListMcpServerStatusParams;
+use motyga_app_server_protocol::ListMcpServerStatusResponse;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::SelectedCapabilityRoot;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_app_server_protocol::ThreadResumeParams;
+use motyga_app_server_protocol::ThreadResumeResponse;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::TurnEnvironmentParams;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::UserInput;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+use motyga_protocol::config_types::CollaborationMode;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::config_types::Settings;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use core_test_support::process::wait_for_pid_file;
 use core_test_support::responses;
 use core_test_support::responses::ResponsesRequest;
@@ -139,7 +139,7 @@ async fn selected_capability_stack_tracks_environment_availability_and_resume() 
     )
     .await;
 
-    let mut app_server = TestAppServer::new(fixture.codex_home.path()).await?;
+    let mut app_server = TestAppServer::new(fixture.motyga_home.path()).await?;
     timeout(READ_TIMEOUT, app_server.initialize()).await??;
     let thread_id = start_thread(
         &mut app_server,
@@ -159,7 +159,7 @@ async fn selected_capability_stack_tracks_environment_availability_and_resume() 
     assert_selected_capabilities_absent(&initial_requests[0]);
 
     let mut exec_server =
-        spawn_exec_server(fixture.codex_home.path(), &fixture.exec_server_url).await?;
+        spawn_exec_server(fixture.motyga_home.path(), &fixture.exec_server_url).await?;
     add_environment(&mut app_server, &fixture.exec_server_url).await?;
     wait_for_selected_mcp_server(&mut app_server, &thread_id).await?;
 
@@ -185,7 +185,7 @@ async fn selected_capability_stack_tracks_environment_availability_and_resume() 
     drop(app_server);
     std::fs::remove_file(&fixture.pid_file)?;
 
-    let mut app_server = TestAppServer::new(fixture.codex_home.path()).await?;
+    let mut app_server = TestAppServer::new(fixture.motyga_home.path()).await?;
     timeout(READ_TIMEOUT, app_server.initialize()).await??;
     let request_id = app_server
         .send_thread_resume_request(ThreadResumeParams {
@@ -216,7 +216,7 @@ async fn selected_capability_stack_tracks_environment_availability_and_resume() 
             .is_some_and(|text| text.contains(NO_SELECTED_SKILLS_MESSAGE))
     );
 
-    exec_server = spawn_exec_server(fixture.codex_home.path(), &fixture.exec_server_url).await?;
+    exec_server = spawn_exec_server(fixture.motyga_home.path(), &fixture.exec_server_url).await?;
     add_environment(&mut app_server, &fixture.exec_server_url).await?;
     wait_for_selected_mcp_server(&mut app_server, &thread_id).await?;
 
@@ -330,7 +330,7 @@ async fn selected_capabilities_become_available_between_samples_in_one_turn() ->
     )
     .await;
 
-    let mut app_server = TestAppServer::new(fixture.codex_home.path()).await?;
+    let mut app_server = TestAppServer::new(fixture.motyga_home.path()).await?;
     timeout(READ_TIMEOUT, app_server.initialize()).await??;
     let thread_id = start_thread(
         &mut app_server,
@@ -375,7 +375,7 @@ async fn selected_capabilities_become_available_between_samples_in_one_turn() ->
     assert_selected_capabilities_absent(&requests[0]);
 
     let mut exec_server =
-        spawn_exec_server(fixture.codex_home.path(), &fixture.exec_server_url).await?;
+        spawn_exec_server(fixture.motyga_home.path(), &fixture.exec_server_url).await?;
     add_environment(&mut app_server, &fixture.exec_server_url).await?;
     tokio::time::sleep(Duration::from_millis(200)).await;
     app_server
@@ -414,7 +414,7 @@ async fn selected_capabilities_become_available_between_samples_in_one_turn() ->
 }
 
 struct SelectedCapabilityFixture {
-    codex_home: TempDir,
+    motyga_home: TempDir,
     _plugin: TempDir,
     pid_file: std::path::PathBuf,
     exec_server_url: String,
@@ -426,13 +426,13 @@ fn selected_capability_fixture(
     responses_server_uri: &str,
     apps_url: &str,
 ) -> Result<SelectedCapabilityFixture> {
-    let codex_home = TempDir::new()?;
+    let motyga_home = TempDir::new()?;
     write_mock_responses_config_toml_with_chatgpt_base_url(
-        codex_home.path(),
+        motyga_home.path(),
         responses_server_uri,
         apps_url,
     )?;
-    let config_path = codex_home.path().join("config.toml");
+    let config_path = motyga_home.path().join("config.toml");
     let config = std::fs::read_to_string(&config_path)?.replacen(
         "model_provider = \"mock_provider\"",
         "mcp_oauth_credentials_store = \"file\"\nmodel_provider = \"mock_provider\"",
@@ -445,7 +445,7 @@ fn selected_capability_fixture(
         ),
     )?;
     write_chatgpt_auth(
-        codex_home.path(),
+        motyga_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .email("selected-capability-stack@example.com")
@@ -460,13 +460,13 @@ fn selected_capability_fixture(
     let exec_server_url = format!("ws://{}", listener.local_addr()?);
     drop(listener);
     std::fs::write(
-        codex_home.path().join("environments.toml"),
+        motyga_home.path().join("environments.toml"),
         format!(
             "default = \"{EXECUTOR_ID}\"\ninclude_local = true\n\n[[environments]]\nid = \"{EXECUTOR_ID}\"\nurl = \"{exec_server_url}\"\nconnect_timeout_sec = 0.05\n"
         ),
     )?;
 
-    let local_skill_dir = codex_home.path().join("skills/local-deploy");
+    let local_skill_dir = motyga_home.path().join("skills/local-deploy");
     std::fs::create_dir_all(&local_skill_dir)?;
     std::fs::write(
         local_skill_dir.join("SKILL.md"),
@@ -520,7 +520,7 @@ fn selected_capability_fixture(
     };
     let environment_cwd = AbsolutePathBuf::try_from(plugin.path().to_path_buf())?;
     Ok(SelectedCapabilityFixture {
-        codex_home,
+        motyga_home,
         _plugin: plugin,
         pid_file,
         exec_server_url,
@@ -546,7 +546,7 @@ fn assert_selected_plugin_tools_absent(request: &ResponsesRequest) {
             .is_none()
     );
     let connector = request
-        .tool_by_name("mcp__codex_apps__calendar", "connector_calendar")
+        .tool_by_name("mcp__motyga_apps__calendar", "connector_calendar")
         .expect("host connector should remain model-visible");
     assert!(
         connector["description"]
@@ -592,7 +592,7 @@ fn assert_selected_plugin_tools(request: &ResponsesRequest) {
             .is_some()
     );
     let connector = request
-        .tool_by_name("mcp__codex_apps__calendar", "connector_calendar")
+        .tool_by_name("mcp__motyga_apps__calendar", "connector_calendar")
         .expect("selected connector should be model-visible");
     assert!(
         connector["description"]
@@ -711,14 +711,14 @@ async fn wait_for_selected_mcp_server(
     Ok(())
 }
 
-async fn spawn_exec_server(codex_home: &std::path::Path, url: &str) -> Result<Child> {
-    let mut child = Command::new(codex_utils_cargo_bin::cargo_bin("motyga")?)
+async fn spawn_exec_server(motyga_home: &std::path::Path, url: &str) -> Result<Child> {
+    let mut child = Command::new(motyga_utils_cargo_bin::cargo_bin("motyga")?)
         .args(["exec-server", "--listen", url])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .kill_on_drop(true)
-        .env("MOTYGA_HOME", codex_home)
+        .env("MOTYGA_HOME", motyga_home)
         .env(EXECUTOR_ENV_NAME, EXECUTOR_ENV_VALUE)
         .spawn()?;
     let stdout = child

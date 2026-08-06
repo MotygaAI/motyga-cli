@@ -1,24 +1,24 @@
 mod common;
 
 use anyhow::Result;
-use codex_exec_server::Environment;
-use codex_exec_server::ExecServerClient;
-use codex_exec_server::ExecServerError;
-use codex_exec_server::ExecutorFileSystem;
-use codex_exec_server::FileSystemSandboxContext;
-use codex_exec_server::FsCloseParams;
-use codex_exec_server::FsOpenParams;
-use codex_exec_server::FsReadBlockParams;
-use codex_exec_server::FsReadBlockResponse;
-use codex_exec_server::RemoteExecServerConnectArgs;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::Environment;
+use motyga_exec_server::ExecServerClient;
+use motyga_exec_server::ExecServerError;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_exec_server::FileSystemSandboxContext;
+use motyga_exec_server::FsCloseParams;
+use motyga_exec_server::FsOpenParams;
+use motyga_exec_server::FsReadBlockParams;
+use motyga_exec_server::FsReadBlockResponse;
+use motyga_exec_server::RemoteExecServerConnectArgs;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use futures::TryStreamExt;
 use pretty_assertions::assert_eq;
 use std::sync::Arc;
@@ -154,7 +154,7 @@ async fn file_reads_reject_named_pipes() -> Result<()> {
     let server = exec_server().await?;
     let file_system = connect_file_system(server.websocket_url())?;
 
-    let read_path = format!(r"\\.\pipe\codex-fs-read-{}", Uuid::new_v4());
+    let read_path = format!(r"\\.\pipe\motyga-fs-read-{}", Uuid::new_v4());
     let _read_pipe = ServerOptions::new()
         .first_pipe_instance(true)
         .create(&read_path)?;
@@ -169,7 +169,7 @@ async fn file_reads_reject_named_pipes() -> Result<()> {
     .expect("reading a named pipe should not hang")
     .expect_err("reading a named pipe should be rejected");
 
-    let stream_path = format!(r"\\.\pipe\codex-fs-stream-{}", Uuid::new_v4());
+    let stream_path = format!(r"\\.\pipe\motyga-fs-stream-{}", Uuid::new_v4());
     let _stream_pipe = ServerOptions::new()
         .first_pipe_instance(true)
         .create(&stream_path)?;

@@ -1,21 +1,21 @@
 use crate::outgoing_message::ConnectionId;
 use crate::outgoing_message::ConnectionRequestId;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadGoal;
-use codex_app_server_protocol::ThreadHistoryBuilder;
-use codex_app_server_protocol::ThreadSettings;
-use codex_app_server_protocol::Turn;
-use codex_app_server_protocol::TurnError;
-use codex_core::CodexThread;
-use codex_core::ThreadConfigSnapshot;
-use codex_file_watcher::WatchRegistration;
-use codex_protocol::ThreadId;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ThreadGoal;
+use motyga_app_server_protocol::ThreadHistoryBuilder;
+use motyga_app_server_protocol::ThreadSettings;
+use motyga_app_server_protocol::Turn;
+use motyga_app_server_protocol::TurnError;
+use motyga_core::MotygaThread;
+use motyga_core::ThreadConfigSnapshot;
+use motyga_file_watcher::WatchRegistration;
+use motyga_protocol::ThreadId;
 #[cfg(test)]
-use codex_protocol::config_types::MultiAgentMode;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RolloutItem;
-use codex_rollout::state_db::StateDbHandle;
-use codex_utils_path_uri::LegacyAppPathString;
+use motyga_protocol::config_types::MultiAgentMode;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_rollout::state_db::StateDbHandle;
+use motyga_utils_path_uri::LegacyAppPathString;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -34,12 +34,12 @@ pub(crate) struct PendingThreadResumeRequest {
     pub(crate) history_items: Vec<RolloutItem>,
     pub(crate) config_snapshot: ThreadConfigSnapshot,
     pub(crate) instruction_sources: Vec<LegacyAppPathString>,
-    pub(crate) thread_summary: codex_app_server_protocol::Thread,
+    pub(crate) thread_summary: motyga_app_server_protocol::Thread,
     pub(crate) emit_thread_goal_update: bool,
     pub(crate) thread_goal_state_db: Option<StateDbHandle>,
     pub(crate) include_turns: bool,
     pub(crate) initial_turns_page:
-        Option<codex_app_server_protocol::ThreadResumeInitialTurnsPageParams>,
+        Option<motyga_app_server_protocol::ThreadResumeInitialTurnsPageParams>,
     pub(crate) redact_resume_payloads: bool,
 }
 
@@ -86,12 +86,12 @@ pub(crate) struct ThreadState {
     last_thread_settings: Option<ThreadSettings>,
     listener_command_tx: Option<mpsc::UnboundedSender<ThreadListenerCommand>>,
     current_turn_history: ThreadHistoryBuilder,
-    listener_thread: Option<Weak<CodexThread>>,
+    listener_thread: Option<Weak<MotygaThread>>,
     watch_registration: WatchRegistration,
 }
 
 impl ThreadState {
-    pub(crate) fn listener_matches(&self, conversation: &Arc<CodexThread>) -> bool {
+    pub(crate) fn listener_matches(&self, conversation: &Arc<MotygaThread>) -> bool {
         self.listener_thread
             .as_ref()
             .and_then(Weak::upgrade)
@@ -101,7 +101,7 @@ impl ThreadState {
     pub(crate) fn set_listener(
         &mut self,
         cancel_tx: oneshot::Sender<()>,
-        conversation: &Arc<CodexThread>,
+        conversation: &Arc<MotygaThread>,
         watch_registration: WatchRegistration,
         thread_settings_baseline: ThreadSettings,
     ) -> (mpsc::UnboundedReceiver<ThreadListenerCommand>, u64) {
@@ -196,13 +196,13 @@ pub(crate) async fn resolve_server_request_on_thread_listener(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_app_server_protocol::ApprovalsReviewer;
-    use codex_app_server_protocol::AskForApproval;
-    use codex_app_server_protocol::SandboxPolicy;
-    use codex_protocol::config_types::CollaborationMode;
-    use codex_protocol::config_types::ModeKind;
-    use codex_protocol::config_types::Settings;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_app_server_protocol::ApprovalsReviewer;
+    use motyga_app_server_protocol::AskForApproval;
+    use motyga_app_server_protocol::SandboxPolicy;
+    use motyga_protocol::config_types::CollaborationMode;
+    use motyga_protocol::config_types::ModeKind;
+    use motyga_protocol::config_types::Settings;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
 
     #[test]

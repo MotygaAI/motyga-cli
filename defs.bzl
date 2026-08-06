@@ -177,7 +177,7 @@ workspace_root_test = rule(
     },
 )
 
-def codex_rust_crate(
+def motyga_rust_crate(
         name,
         crate_name,
         crate_features = [],
@@ -212,7 +212,7 @@ def codex_rust_crate(
         name: Bazel target name for the library, should be the directory name.
             Example: `app-server`.
         crate_name: Cargo crate name from Cargo.toml
-            Example: `codex_app_server`.
+            Example: `motyga_app_server`.
         crate_features: Cargo features to enable for this crate.
             Crates are only compiled in a single configuration across the workspace, i.e.
             with all features in this list enabled. So use sparingly, and prefer to refactor
@@ -552,7 +552,7 @@ def codex_rust_crate(
             wine_test_binaries["wine-windows-exec-server"] = ":" + wine_exec_server
             wine_runtime = wine_test_runtime(wine_test_binaries)
             wine_runfile_env = dict(wine_runtime.runfile_env)
-            wine_runfile_env[native_test_binary] = "CODEX_WINE_EXEC_TEST_BINARY"
+            wine_runfile_env[native_test_binary] = "MOTYGA_WINE_EXEC_TEST_BINARY"
 
             wine_test_kwargs = {}
             wine_test_kwargs.update(integration_test_kwargs)

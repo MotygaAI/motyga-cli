@@ -20,7 +20,7 @@ if defined TESTBRIDGE_TEST_ONLY if "%~1"=="" (
   "%test_bin%" "%TESTBRIDGE_TEST_ONLY%"
   exit /b !ERRORLEVEL!
 )
-if defined CODEX_BAZEL_TEST_SKIP_FILTERS (
+if defined MOTYGA_BAZEL_TEST_SKIP_FILTERS (
   call :run_selected_libtest %*
   exit /b !ERRORLEVEL!
 )
@@ -73,7 +73,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
   "[Array]::Sort($tests, [StringComparer]::Ordinal);" ^
   "$hasShards = -not [string]::IsNullOrEmpty($env:HAS_SHARDS);" ^
   "$skipFilters = @();" ^
-  "if (-not [string]::IsNullOrEmpty($env:CODEX_BAZEL_TEST_SKIP_FILTERS)) { $skipFilters = @($env:CODEX_BAZEL_TEST_SKIP_FILTERS -split ',' | Where-Object { $_ -ne '' }) };" ^
+  "if (-not [string]::IsNullOrEmpty($env:MOTYGA_BAZEL_TEST_SKIP_FILTERS)) { $skipFilters = @($env:MOTYGA_BAZEL_TEST_SKIP_FILTERS -split ',' | Where-Object { $_ -ne '' }) };" ^
   "if ($hasShards) { $totalShards = [uint32]$env:TOTAL_SHARDS; $shardIndex = [uint32]$env:SHARD_INDEX };" ^
   "$fnvPrime = [uint64]16777619; $u32Mask = [uint64]4294967295;" ^
   "foreach ($test in $tests) { $skip = $false; foreach ($filter in $skipFilters) { if ($test.Contains($filter)) { $skip = $true; break } }; if ($skip) { continue }; if ($hasShards) { $hash = [uint32]2166136261; foreach ($byte in [Text.Encoding]::UTF8.GetBytes($test)) { $hash = [uint32](([uint64]($hash -bxor $byte) * $fnvPrime) -band $u32Mask) }; if (($hash %% $totalShards) -eq $shardIndex) { $test } } else { $test } }" ^

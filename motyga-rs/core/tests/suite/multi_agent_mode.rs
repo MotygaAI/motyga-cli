@@ -1,14 +1,14 @@
 use anyhow::Result;
-use codex_core::config::Config;
-use codex_features::Feature;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::MULTI_AGENT_MODE_OPEN_TAG;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::ThreadSettingsOverrides;
-use codex_protocol::user_input::UserInput;
+use motyga_core::config::Config;
+use motyga_features::Feature;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::openai_models::ReasoningEffortPreset;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::MULTI_AGENT_MODE_OPEN_TAG;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::ThreadSettingsOverrides;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_once;
@@ -16,7 +16,7 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -61,11 +61,11 @@ fn count_containing(texts: &[&str], target: &str) -> usize {
 }
 
 async fn submit_turn(
-    codex: &codex_core::CodexThread,
+    motyga: &motyga_core::MotygaThread,
     prompt: &str,
     effort: Option<ReasoningEffort>,
 ) -> Result<()> {
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.to_string(),
@@ -80,7 +80,7 @@ async fn submit_turn(
             },
         })
         .await?;
-    wait_for_event(codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(motyga, |event| matches!(event, EventMsg::TurnComplete(_))).await;
     Ok(())
 }
 
@@ -94,13 +94,13 @@ async fn ultra_reasoning_uses_max_and_proactive_mode() -> Result<()> {
         sse(vec![ev_response_created("resp-1"), ev_completed("resp-1")]),
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_model_info_override("gpt-5.4", add_ultra_reasoning)
         .with_config(configure_ultra)
         .build(&server)
         .await?;
 
-    submit_turn(&test.codex, "hello", /*effort*/ None).await?;
+    submit_turn(&test.motyga, "hello", /*effort*/ None).await?;
 
     let request = response.single_request();
     assert_eq!(
@@ -137,7 +137,7 @@ async fn leaving_ultra_after_cold_resume_emits_explicit_mode() -> Result<()> {
             .collect(),
     )
     .await;
-    let initial = test_codex()
+    let initial = test_motyga()
         .with_model_info_override("gpt-5.4", add_ultra_reasoning)
         .with_config(configure_ultra)
         .build(&server)
@@ -149,14 +149,14 @@ async fn leaving_ultra_after_cold_resume_emits_explicit_mode() -> Result<()> {
         .clone()
         .expect("rollout path");
 
-    submit_turn(&initial.codex, "before resume", /*effort*/ None).await?;
+    submit_turn(&initial.motyga, "before resume", /*effort*/ None).await?;
     drop(initial);
 
-    let mut resume_builder = test_codex()
+    let mut resume_builder = test_motyga()
         .with_model_info_override("gpt-5.4", add_ultra_reasoning)
         .with_config(configure_ultra);
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
-    submit_turn(&resumed.codex, "after resume", Some(ReasoningEffort::High)).await?;
+    submit_turn(&resumed.motyga, "after resume", Some(ReasoningEffort::High)).await?;
 
     let requests = responses.requests();
     assert_eq!(
@@ -194,7 +194,7 @@ async fn ultra_on_multi_agent_v1_uses_max_without_mode_instructions() -> Result<
         sse(vec![ev_response_created("resp-1"), ev_completed("resp-1")]),
     )
     .await;
-    let test = test_codex()
+    let test = test_motyga()
         .with_model_info_override("gpt-5.4", add_ultra_reasoning)
         .with_config(|config| {
             config.model_reasoning_effort = Some(ReasoningEffort::Ultra);
@@ -202,7 +202,7 @@ async fn ultra_on_multi_agent_v1_uses_max_without_mode_instructions() -> Result<
         .build(&server)
         .await?;
 
-    submit_turn(&test.codex, "hello", /*effort*/ None).await?;
+    submit_turn(&test.motyga, "hello", /*effort*/ None).await?;
 
     let request = response.single_request();
     assert_eq!(

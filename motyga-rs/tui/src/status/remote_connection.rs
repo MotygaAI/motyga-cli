@@ -45,7 +45,7 @@ fn sanitized_websocket_display_address(raw: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
 
     #[test]
     fn remote_connection_status_value_formats_display_value() -> color_eyre::Result<()> {
@@ -68,7 +68,7 @@ mod tests {
             })
         );
 
-        let socket_path = AbsolutePathBuf::relative_to_current_dir("codex.sock")?;
+        let socket_path = AbsolutePathBuf::relative_to_current_dir("motyga.sock")?;
         let daemon_target = AppServerTarget::LocalDaemon {
             endpoint: RemoteAppServerEndpoint::UnixSocket {
                 socket_path: socket_path.clone(),

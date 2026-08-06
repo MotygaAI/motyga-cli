@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use codex_extension_api::FunctionCallError;
-use codex_extension_api::JsonToolOutput;
-use codex_extension_api::ToolCall;
-use codex_extension_api::ToolExecutor;
-use codex_extension_api::ToolName;
-use codex_extension_api::ToolOutput;
-use codex_extension_api::ToolSpec;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::ThreadGoal;
-use codex_protocol::protocol::ThreadGoalStatus;
-use codex_protocol::protocol::validate_thread_goal_objective;
+use motyga_extension_api::FunctionCallError;
+use motyga_extension_api::JsonToolOutput;
+use motyga_extension_api::ToolCall;
+use motyga_extension_api::ToolExecutor;
+use motyga_extension_api::ToolName;
+use motyga_extension_api::ToolOutput;
+use motyga_extension_api::ToolSpec;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::ThreadGoal;
+use motyga_protocol::protocol::ThreadGoalStatus;
+use motyga_protocol::protocol::validate_thread_goal_objective;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -31,7 +31,7 @@ use crate::spec::create_update_goal_tool;
 pub(crate) struct GoalToolExecutor {
     kind: GoalToolKind,
     thread_id: ThreadId,
-    state_db: Arc<codex_state::StateRuntime>,
+    state_db: Arc<motyga_state::StateRuntime>,
     accounting_state: Arc<GoalAccountingState>,
     analytics: GoalAnalytics,
     event_emitter: GoalEventEmitter,
@@ -75,7 +75,7 @@ enum CompletionBudgetReport {
 impl GoalToolExecutor {
     pub(crate) fn get(
         thread_id: ThreadId,
-        state_db: Arc<codex_state::StateRuntime>,
+        state_db: Arc<motyga_state::StateRuntime>,
         accounting_state: Arc<GoalAccountingState>,
         analytics: GoalAnalytics,
         event_emitter: GoalEventEmitter,
@@ -94,7 +94,7 @@ impl GoalToolExecutor {
 
     pub(crate) fn create(
         thread_id: ThreadId,
-        state_db: Arc<codex_state::StateRuntime>,
+        state_db: Arc<motyga_state::StateRuntime>,
         accounting_state: Arc<GoalAccountingState>,
         analytics: GoalAnalytics,
         event_emitter: GoalEventEmitter,
@@ -113,7 +113,7 @@ impl GoalToolExecutor {
 
     pub(crate) fn update(
         thread_id: ThreadId,
-        state_db: Arc<codex_state::StateRuntime>,
+        state_db: Arc<motyga_state::StateRuntime>,
         accounting_state: Arc<GoalAccountingState>,
         analytics: GoalAnalytics,
         event_emitter: GoalEventEmitter,
@@ -148,7 +148,7 @@ impl ToolExecutor<ToolCall> for GoalToolExecutor {
         }
     }
 
-    fn handle(&self, invocation: ToolCall) -> codex_extension_api::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolCall) -> motyga_extension_api::ToolExecutorFuture<'_> {
         Box::pin(async move {
             match self.kind {
                 GoalToolKind::Get => self.handle_get(invocation).await,
@@ -193,7 +193,7 @@ impl GoalToolExecutor {
             .insert_thread_goal(
                 self.thread_id,
                 request.objective.as_str(),
-                codex_state::ThreadGoalStatus::Active,
+                motyga_state::ThreadGoalStatus::Active,
                 request.token_budget,
             )
             .await
@@ -235,8 +235,8 @@ impl GoalToolExecutor {
 
         self.account_active_goal_progress(
             match args.status {
-                ThreadGoalStatus::Complete => codex_state::GoalAccountingMode::ActiveOrComplete,
-                ThreadGoalStatus::Blocked => codex_state::GoalAccountingMode::ActiveOrStopped,
+                ThreadGoalStatus::Complete => motyga_state::GoalAccountingMode::ActiveOrComplete,
+                ThreadGoalStatus::Blocked => motyga_state::GoalAccountingMode::ActiveOrStopped,
                 ThreadGoalStatus::Active
                 | ThreadGoalStatus::Paused
                 | ThreadGoalStatus::UsageLimited
@@ -254,7 +254,7 @@ impl GoalToolExecutor {
             .thread_goals()
             .update_thread_goal(
                 self.thread_id,
-                codex_state::GoalUpdate {
+                motyga_state::GoalUpdate {
                     objective: None,
                     status: Some(state_status_from_protocol(args.status)),
                     token_budget: None,
@@ -302,7 +302,7 @@ impl GoalToolExecutor {
 
     async fn account_active_goal_progress(
         &self,
-        mode: codex_state::GoalAccountingMode,
+        mode: motyga_state::GoalAccountingMode,
         event_id: &str,
         budget_limited_goal_disposition: BudgetLimitedGoalDisposition,
     ) -> Result<Option<ThreadGoal>, FunctionCallError> {
@@ -339,7 +339,7 @@ impl GoalToolExecutor {
                 FunctionCallError::RespondToModel(format!("failed to account goal progress: {err}"))
             })?;
         Ok(match outcome {
-            codex_state::GoalAccountingOutcome::Updated(goal) => {
+            motyga_state::GoalAccountingOutcome::Updated(goal) => {
                 self.metrics
                     .record_terminal_if_status_changed(previous_status, &goal);
                 self.analytics
@@ -363,14 +363,14 @@ impl GoalToolExecutor {
                 );
                 Some(goal)
             }
-            codex_state::GoalAccountingOutcome::Unchanged(_) => None,
+            motyga_state::GoalAccountingOutcome::Unchanged(_) => None,
         })
     }
 
     async fn current_goal_status_for_metrics(
         &self,
         expected_goal_id: Option<&str>,
-    ) -> Result<Option<codex_state::ThreadGoalStatus>, FunctionCallError> {
+    ) -> Result<Option<motyga_state::ThreadGoalStatus>, FunctionCallError> {
         let goal = self
             .state_db
             .thread_goals()
@@ -437,9 +437,9 @@ impl GoalToolResponse {
 }
 
 pub(crate) async fn fill_empty_thread_preview_if_possible(
-    state_db: &codex_state::StateRuntime,
+    state_db: &motyga_state::StateRuntime,
     thread_id: ThreadId,
-    goal: &codex_state::ThreadGoal,
+    goal: &motyga_state::ThreadGoal,
 ) {
     if let Err(err) = state_db
         .set_thread_preview_if_empty(thread_id, goal.objective.as_str())
@@ -451,7 +451,7 @@ pub(crate) async fn fill_empty_thread_preview_if_possible(
     }
 }
 
-pub(crate) fn protocol_goal_from_state(goal: codex_state::ThreadGoal) -> ThreadGoal {
+pub(crate) fn protocol_goal_from_state(goal: motyga_state::ThreadGoal) -> ThreadGoal {
     ThreadGoal {
         thread_id: goal.thread_id,
         objective: goal.objective,
@@ -464,27 +464,27 @@ pub(crate) fn protocol_goal_from_state(goal: codex_state::ThreadGoal) -> ThreadG
     }
 }
 
-fn protocol_status_from_state(status: codex_state::ThreadGoalStatus) -> ThreadGoalStatus {
+fn protocol_status_from_state(status: motyga_state::ThreadGoalStatus) -> ThreadGoalStatus {
     match status {
-        codex_state::ThreadGoalStatus::Active => ThreadGoalStatus::Active,
-        codex_state::ThreadGoalStatus::Paused => ThreadGoalStatus::Paused,
-        codex_state::ThreadGoalStatus::Blocked => ThreadGoalStatus::Blocked,
-        codex_state::ThreadGoalStatus::UsageLimited => ThreadGoalStatus::UsageLimited,
-        codex_state::ThreadGoalStatus::BudgetLimited => ThreadGoalStatus::BudgetLimited,
-        codex_state::ThreadGoalStatus::Complete => ThreadGoalStatus::Complete,
+        motyga_state::ThreadGoalStatus::Active => ThreadGoalStatus::Active,
+        motyga_state::ThreadGoalStatus::Paused => ThreadGoalStatus::Paused,
+        motyga_state::ThreadGoalStatus::Blocked => ThreadGoalStatus::Blocked,
+        motyga_state::ThreadGoalStatus::UsageLimited => ThreadGoalStatus::UsageLimited,
+        motyga_state::ThreadGoalStatus::BudgetLimited => ThreadGoalStatus::BudgetLimited,
+        motyga_state::ThreadGoalStatus::Complete => ThreadGoalStatus::Complete,
     }
 }
 
 pub(crate) fn state_status_from_protocol(
     status: ThreadGoalStatus,
-) -> codex_state::ThreadGoalStatus {
+) -> motyga_state::ThreadGoalStatus {
     match status {
-        ThreadGoalStatus::Active => codex_state::ThreadGoalStatus::Active,
-        ThreadGoalStatus::Paused => codex_state::ThreadGoalStatus::Paused,
-        ThreadGoalStatus::Blocked => codex_state::ThreadGoalStatus::Blocked,
-        ThreadGoalStatus::UsageLimited => codex_state::ThreadGoalStatus::UsageLimited,
-        ThreadGoalStatus::BudgetLimited => codex_state::ThreadGoalStatus::BudgetLimited,
-        ThreadGoalStatus::Complete => codex_state::ThreadGoalStatus::Complete,
+        ThreadGoalStatus::Active => motyga_state::ThreadGoalStatus::Active,
+        ThreadGoalStatus::Paused => motyga_state::ThreadGoalStatus::Paused,
+        ThreadGoalStatus::Blocked => motyga_state::ThreadGoalStatus::Blocked,
+        ThreadGoalStatus::UsageLimited => motyga_state::ThreadGoalStatus::UsageLimited,
+        ThreadGoalStatus::BudgetLimited => motyga_state::ThreadGoalStatus::BudgetLimited,
+        ThreadGoalStatus::Complete => motyga_state::ThreadGoalStatus::Complete,
     }
 }
 

@@ -1,29 +1,29 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use codex_api::AgentIdentityTelemetry;
-use codex_api::ModelsClient;
-use codex_api::RequestTelemetry;
-use codex_api::ReqwestTransport;
-use codex_api::TransportError;
-use codex_api::auth_header_telemetry;
-use codex_api::map_api_error;
-use codex_feedback::FeedbackRequestTags;
-use codex_feedback::emit_feedback_request_tags_with_auth_env;
-use codex_login::AuthEnvTelemetry;
-use codex_login::AuthManager;
-use codex_login::CodexAuth;
-use codex_login::collect_auth_env_telemetry;
-use codex_login::default_client::build_reqwest_client;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_models_manager::manager::ModelsEndpointClient;
-use codex_models_manager::manager::ModelsEndpointFuture;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result as CoreResult;
-use codex_protocol::openai_models::ModelInfo;
-use codex_response_debug_context::extract_response_debug_context;
-use codex_response_debug_context::telemetry_transport_error_message;
+use motyga_api::AgentIdentityTelemetry;
+use motyga_api::ModelsClient;
+use motyga_api::RequestTelemetry;
+use motyga_api::ReqwestTransport;
+use motyga_api::TransportError;
+use motyga_api::auth_header_telemetry;
+use motyga_api::map_api_error;
+use motyga_feedback::FeedbackRequestTags;
+use motyga_feedback::emit_feedback_request_tags_with_auth_env;
+use motyga_login::AuthEnvTelemetry;
+use motyga_login::AuthManager;
+use motyga_login::MotygaAuth;
+use motyga_login::collect_auth_env_telemetry;
+use motyga_login::default_client::build_reqwest_client;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_models_manager::manager::ModelsEndpointClient;
+use motyga_models_manager::manager::ModelsEndpointFuture;
+use motyga_otel::TelemetryAuthMode;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result as CoreResult;
+use motyga_protocol::openai_models::ModelInfo;
+use motyga_response_debug_context::extract_response_debug_context;
+use motyga_response_debug_context::telemetry_transport_error_message;
 use http::HeaderMap;
 use tokio::time::timeout;
 
@@ -51,18 +51,18 @@ impl OpenAiModelsEndpoint {
         }
     }
 
-    async fn auth(&self) -> Option<CodexAuth> {
+    async fn auth(&self) -> Option<MotygaAuth> {
         match self.auth_manager.as_ref() {
             Some(auth_manager) => auth_manager.auth().await,
             None => None,
         }
     }
 
-    async fn uses_codex_backend(&self) -> bool {
+    async fn uses_motyga_backend(&self) -> bool {
         self.auth()
             .await
             .as_ref()
-            .is_some_and(CodexAuth::uses_codex_backend)
+            .is_some_and(MotygaAuth::uses_motyga_backend)
     }
 
     async fn list_models(
@@ -70,14 +70,14 @@ impl OpenAiModelsEndpoint {
         client_version: &str,
     ) -> CoreResult<(Vec<ModelInfo>, Option<String>)> {
         let _timer =
-            codex_otel::start_global_timer("codex.remote_models.fetch_update.duration_ms", &[]);
+            motyga_otel::start_global_timer("motyga.remote_models.fetch_update.duration_ms", &[]);
         let auth = self.auth().await;
-        let auth_mode = auth.as_ref().map(CodexAuth::auth_mode);
+        let auth_mode = auth.as_ref().map(MotygaAuth::auth_mode);
         let api_provider = self.provider_info.to_api_provider(auth_mode)?;
         let api_auth = resolve_provider_auth(auth.as_ref(), &self.provider_info)?;
         let transport = ReqwestTransport::new(build_reqwest_client());
         let auth_telemetry = auth_header_telemetry(api_auth.as_ref());
-        let agent_identity_telemetry = if let Some(CodexAuth::AgentIdentity(auth)) = auth.as_ref() {
+        let agent_identity_telemetry = if let Some(MotygaAuth::AgentIdentity(auth)) = auth.as_ref() {
             Some(agent_identity_telemetry(auth))
         } else {
             None
@@ -97,16 +97,16 @@ impl OpenAiModelsEndpoint {
             client.list_models(client_version, HeaderMap::new()),
         )
         .await
-        .map_err(|_| CodexErr::Timeout)?
+        .map_err(|_| MotygaErr::Timeout)?
         .map_err(map_api_error)
     }
 
     fn auth_env(&self) -> AuthEnvTelemetry {
-        let codex_api_key_env_enabled = self
+        let motyga_api_key_env_enabled = self
             .auth_manager
             .as_ref()
-            .is_some_and(|auth_manager| auth_manager.codex_api_key_env_enabled());
-        collect_auth_env_telemetry(&self.provider_info, codex_api_key_env_enabled)
+            .is_some_and(|auth_manager| auth_manager.motyga_api_key_env_enabled());
+        collect_auth_env_telemetry(&self.provider_info, motyga_api_key_env_enabled)
     }
 }
 
@@ -119,8 +119,8 @@ impl ModelsEndpointClient for OpenAiModelsEndpoint {
         self.provider_info.is_motyga()
     }
 
-    fn uses_codex_backend(&self) -> ModelsEndpointFuture<'_, bool> {
-        Box::pin(OpenAiModelsEndpoint::uses_codex_backend(self))
+    fn uses_motyga_backend(&self) -> ModelsEndpointFuture<'_, bool> {
+        Box::pin(OpenAiModelsEndpoint::uses_motyga_backend(self))
     }
 
     fn list_models<'a>(
@@ -155,9 +155,9 @@ impl RequestTelemetry for ModelsRequestTelemetry {
             .unwrap_or_default();
         let status = status.map(|status| status.as_u16());
         tracing::event!(
-            target: "codex_otel.log_only",
+            target: "motyga_otel.log_only",
             tracing::Level::INFO,
-            event.name = "codex.api_request",
+            event.name = "motyga.api_request",
             duration_ms = %duration.as_millis(),
             http.response.status_code = status,
             success = success,
@@ -167,8 +167,8 @@ impl RequestTelemetry for ModelsRequestTelemetry {
             auth.header_attached = self.auth_header_attached,
             auth.header_name = self.auth_header_name,
             auth.env_openai_api_key_present = self.auth_env.openai_api_key_env_present,
-            auth.env_codex_api_key_present = self.auth_env.codex_api_key_env_present,
-            auth.env_codex_api_key_enabled = self.auth_env.codex_api_key_env_enabled,
+            auth.env_motyga_api_key_present = self.auth_env.motyga_api_key_env_present,
+            auth.env_motyga_api_key_enabled = self.auth_env.motyga_api_key_env_enabled,
             auth.env_provider_key_name = self.auth_env.provider_env_key_name.as_deref(),
             auth.env_provider_key_present = self.auth_env.provider_env_key_present,
             auth.env_refresh_token_url_override_present = self.auth_env.refresh_token_url_override_present,
@@ -181,9 +181,9 @@ impl RequestTelemetry for ModelsRequestTelemetry {
             auth.task_id = self.agent_identity_telemetry.as_ref().map(|metadata| metadata.task_id.as_str()),
         );
         tracing::event!(
-            target: "codex_otel.trace_safe",
+            target: "motyga_otel.trace_safe",
             tracing::Level::INFO,
-            event.name = "codex.api_request",
+            event.name = "motyga.api_request",
             duration_ms = %duration.as_millis(),
             http.response.status_code = status,
             success = success,
@@ -193,8 +193,8 @@ impl RequestTelemetry for ModelsRequestTelemetry {
             auth.header_attached = self.auth_header_attached,
             auth.header_name = self.auth_header_name,
             auth.env_openai_api_key_present = self.auth_env.openai_api_key_env_present,
-            auth.env_codex_api_key_present = self.auth_env.codex_api_key_env_present,
-            auth.env_codex_api_key_enabled = self.auth_env.codex_api_key_env_enabled,
+            auth.env_motyga_api_key_present = self.auth_env.motyga_api_key_env_present,
+            auth.env_motyga_api_key_enabled = self.auth_env.motyga_api_key_env_enabled,
             auth.env_provider_key_name = self.auth_env.provider_env_key_name.as_deref(),
             auth.env_provider_key_present = self.auth_env.provider_env_key_present,
             auth.env_refresh_token_url_override_present = self.auth_env.refresh_token_url_override_present,
@@ -233,7 +233,7 @@ mod tests {
     use std::num::NonZeroU64;
 
     use super::*;
-    use codex_protocol::config_types::ModelProviderAuthInfo;
+    use motyga_protocol::config_types::ModelProviderAuthInfo;
 
     fn provider_info_with_command_auth() -> ModelProviderInfo {
         ModelProviderInfo {

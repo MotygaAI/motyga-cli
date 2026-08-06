@@ -5,8 +5,8 @@ use std::sync::atomic::Ordering;
 use std::sync::mpsc as std_mpsc;
 use std::time::Duration;
 
-use codex_code_mode_protocol::ExecuteRequest;
-use codex_code_mode_protocol::FunctionCallOutputContentItem;
+use motyga_code_mode_protocol::ExecuteRequest;
+use motyga_code_mode_protocol::FunctionCallOutputContentItem;
 use pretty_assertions::assert_eq;
 use serde_json::Value as JsonValue;
 use tokio::sync::mpsc;
@@ -412,11 +412,11 @@ async fn dropped_pending_observer_preserves_the_frontier_for_the_next_observatio
         .event_tx
         .send(RuntimeEvent::ToolCall {
             id: "tool-1".to_string(),
-            name: codex_protocol::ToolName {
+            name: motyga_protocol::ToolName {
                 name: "echo".to_string(),
                 namespace: None,
             },
-            kind: codex_code_mode_protocol::CodeModeToolKind::Function,
+            kind: motyga_code_mode_protocol::CodeModeToolKind::Function,
             input: Some(serde_json::json!({})),
         })
         .unwrap();

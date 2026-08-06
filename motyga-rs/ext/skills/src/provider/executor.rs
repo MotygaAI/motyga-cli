@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use codex_core_skills::loader::EnvironmentSkillMetadata;
-use codex_core_skills::loader::load_environment_skills_from_root;
-use codex_exec_server::EnvironmentManager;
-use codex_protocol::capabilities::CapabilityRootLocation;
-use codex_protocol::protocol::Product;
-use codex_utils_path_uri::PathConvention;
+use motyga_core_skills::loader::EnvironmentSkillMetadata;
+use motyga_core_skills::loader::load_environment_skills_from_root;
+use motyga_exec_server::EnvironmentManager;
+use motyga_protocol::capabilities::CapabilityRootLocation;
+use motyga_protocol::protocol::Product;
+use motyga_utils_path_uri::PathConvention;
 
 use crate::catalog::SkillAuthority;
 use crate::catalog::SkillCatalog;

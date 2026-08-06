@@ -1,4 +1,4 @@
-#[path = "proto/codex.exec_server.relay.v1.rs"]
+#[path = "proto/motyga.exec_server.relay.v1.rs"]
 mod generated;
 
 pub(crate) use generated::RelayData;

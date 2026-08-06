@@ -18,17 +18,17 @@
 use crate::config::Config;
 use crate::context::UserInstructions as ContextUserInstructions;
 use crate::environment_selection::TurnEnvironmentSnapshot;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::default_project_root_markers;
-use codex_config::merge_toml_values;
-use codex_config::project_root_markers_from_config;
-use codex_exec_server::ExecutorFileSystem;
-use codex_extension_api::UserInstructions;
-use codex_file_system::FindUpErrorPolicy;
-use codex_file_system::find_nearest_ancestor_with_markers;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::default_project_root_markers;
+use motyga_config::merge_toml_values;
+use motyga_config::project_root_markers_from_config;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_extension_api::UserInstructions;
+use motyga_file_system::FindUpErrorPolicy;
+use motyga_file_system::find_nearest_ancestor_with_markers;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use std::io;
 use toml::Value as TomlValue;
 use tracing::error;
@@ -272,7 +272,7 @@ impl LoadedAgentsMd {
     /// Creates source-less user instructions for tests.
     ///
     /// This cannot be gated with `#[cfg(test)]` because integration tests
-    /// compile `codex-core` as a normal dependency without that configuration.
+    /// compile `motyga-core` as a normal dependency without that configuration.
     pub fn from_text_for_testing(contents: impl Into<String>) -> Self {
         let contents = contents.into();
         if contents.trim().is_empty() {

@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../../.." && pwd)"
 proto_dir="$repo_root/motyga-rs/config/src/thread_config/proto"
-generated="$proto_dir/codex.thread_config.v1.rs"
+generated="$proto_dir/motyga.thread_config.v1.rs"
 tmpdir="$(mktemp -d)"
 
 cleanup() {
@@ -15,7 +15,7 @@ trap cleanup EXIT
 (
     cd "$repo_root/motyga-rs"
     CARGO_TARGET_DIR="$tmpdir/target" cargo run \
-        -p codex-config \
+        -p motyga-config \
         --example generate-proto \
         -- "$proto_dir"
 )

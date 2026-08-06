@@ -2,22 +2,22 @@ use crate::history_cell::PlainHistoryCell;
 use crate::legacy_core::config::Config;
 use crate::legacy_core::config::Permissions;
 use crate::session_state::SessionNetworkProxyRuntime;
-use codex_config::CONFIG_TOML_FILE;
-use codex_config::ConfigLayerEntry;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::ManagedHooksRequirementsToml;
-use codex_config::NetworkConstraints;
-use codex_config::NetworkDomainPermissionToml;
-use codex_config::NetworkUnixSocketPermissionToml;
-use codex_config::RequirementSource;
-use codex_config::ResidencyRequirement;
-use codex_config::SandboxModeRequirement;
-use codex_config::WebSearchModeRequirement;
-use codex_config::format_config_layer_source;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::permissions::NetworkSandboxPolicy;
+use motyga_config::CONFIG_TOML_FILE;
+use motyga_config::ConfigLayerEntry;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::ManagedHooksRequirementsToml;
+use motyga_config::NetworkConstraints;
+use motyga_config::NetworkDomainPermissionToml;
+use motyga_config::NetworkUnixSocketPermissionToml;
+use motyga_config::RequirementSource;
+use motyga_config::ResidencyRequirement;
+use motyga_config::SandboxModeRequirement;
+use motyga_config::WebSearchModeRequirement;
+use motyga_config::format_config_layer_source;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use toml::Value as TomlValue;
@@ -556,38 +556,38 @@ mod tests {
     use super::sandbox_mode_is_allowed_by_permissions;
     use super::session_all_proxy_url;
     use crate::legacy_core::config::Permissions;
-    use codex_app_server_protocol::AskForApproval;
-    use codex_config::ConfigLayerEntry;
-    use codex_config::ConfigLayerSource;
-    use codex_config::ConfigLayerStack;
-    use codex_config::ConfigRequirements;
-    use codex_config::ConfigRequirementsToml;
-    use codex_config::Constrained;
-    use codex_config::ConstrainedWithSource;
-    use codex_config::ConstraintError;
-    use codex_config::FeatureRequirementsToml;
-    use codex_config::FilesystemConstraints;
-    use codex_config::HookEventsToml;
-    use codex_config::HookHandlerConfig;
-    use codex_config::ManagedHooksRequirementsToml;
-    use codex_config::MatcherGroup;
-    use codex_config::McpServerIdentity;
-    use codex_config::McpServerRequirement;
-    use codex_config::NetworkConstraints;
-    use codex_config::NetworkDomainPermissionToml;
-    use codex_config::NetworkDomainPermissionsToml;
-    use codex_config::NetworkUnixSocketPermissionToml;
-    use codex_config::NetworkUnixSocketPermissionsToml;
-    use codex_config::RequirementSource;
-    use codex_config::ResidencyRequirement;
-    use codex_config::SandboxModeRequirement;
-    use codex_config::Sourced;
-    use codex_config::WebSearchModeRequirement;
-    use codex_config::sandbox_mode_requirement_for_permission_profile;
-    use codex_protocol::config_types::ApprovalsReviewer;
-    use codex_protocol::config_types::WebSearchMode;
-    use codex_protocol::models::PermissionProfile;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_app_server_protocol::AskForApproval;
+    use motyga_config::ConfigLayerEntry;
+    use motyga_config::ConfigLayerSource;
+    use motyga_config::ConfigLayerStack;
+    use motyga_config::ConfigRequirements;
+    use motyga_config::ConfigRequirementsToml;
+    use motyga_config::Constrained;
+    use motyga_config::ConstrainedWithSource;
+    use motyga_config::ConstraintError;
+    use motyga_config::FeatureRequirementsToml;
+    use motyga_config::FilesystemConstraints;
+    use motyga_config::HookEventsToml;
+    use motyga_config::HookHandlerConfig;
+    use motyga_config::ManagedHooksRequirementsToml;
+    use motyga_config::MatcherGroup;
+    use motyga_config::McpServerIdentity;
+    use motyga_config::McpServerRequirement;
+    use motyga_config::NetworkConstraints;
+    use motyga_config::NetworkDomainPermissionToml;
+    use motyga_config::NetworkDomainPermissionsToml;
+    use motyga_config::NetworkUnixSocketPermissionToml;
+    use motyga_config::NetworkUnixSocketPermissionsToml;
+    use motyga_config::RequirementSource;
+    use motyga_config::ResidencyRequirement;
+    use motyga_config::SandboxModeRequirement;
+    use motyga_config::Sourced;
+    use motyga_config::WebSearchModeRequirement;
+    use motyga_config::sandbox_mode_requirement_for_permission_profile;
+    use motyga_protocol::config_types::ApprovalsReviewer;
+    use motyga_protocol::config_types::WebSearchMode;
+    use motyga_protocol::models::PermissionProfile;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use ratatui::text::Line;
     use std::collections::BTreeMap;
     use toml::Value as TomlValue;
@@ -630,14 +630,14 @@ mod tests {
     #[test]
     fn debug_config_output_lists_all_layers_including_disabled() {
         let system_file = if cfg!(windows) {
-            absolute_path("C:\\etc\\codex\\config.toml")
+            absolute_path("C:\\etc\\motyga\\config.toml")
         } else {
-            absolute_path("/etc/codex/config.toml")
+            absolute_path("/etc/motyga/config.toml")
         };
         let project_folder = if cfg!(windows) {
-            absolute_path("C:\\repo\\.codex")
+            absolute_path("C:\\repo\\.motyga")
         } else {
-            absolute_path("/repo/.codex")
+            absolute_path("/repo/.motyga")
         };
 
         let layers = vec![
@@ -647,7 +647,7 @@ mod tests {
             ),
             ConfigLayerEntry::new_disabled(
                 ConfigLayerSource::Project {
-                    dot_codex_folder: project_folder,
+                    dot_motyga_folder: project_folder,
                 },
                 empty_toml_table(),
                 "project is untrusted",
@@ -671,9 +671,9 @@ mod tests {
     #[test]
     fn debug_config_output_lists_requirement_sources() {
         let requirements_file = if cfg!(windows) {
-            absolute_path("C:\\ProgramData\\OpenAI\\Codex\\requirements.toml")
+            absolute_path("C:\\ProgramData\\OpenAI\\Motyga\\requirements.toml")
         } else {
-            absolute_path("/etc/codex/requirements.toml")
+            absolute_path("/etc/motyga/requirements.toml")
         };
         let denied_path = if cfg!(windows) {
             absolute_path("C:\\Users\\alice\\.gitconfig")
@@ -701,7 +701,7 @@ mod tests {
                     "docs".to_string(),
                     McpServerRequirement::Identity {
                         identity: McpServerIdentity::Command {
-                            command: "codex-mcp".to_string(),
+                            command: "motyga-mcp".to_string(),
                         },
                     },
                 )]),
@@ -780,7 +780,7 @@ mod tests {
                 "docs".to_string(),
                 McpServerRequirement::Identity {
                     identity: McpServerIdentity::Command {
-                        command: "codex-mcp".to_string(),
+                        command: "motyga-mcp".to_string(),
                     },
                 },
             )])),
@@ -795,7 +795,7 @@ mod tests {
         };
 
         let user_file = if cfg!(windows) {
-            absolute_path("C:\\users\\alice\\.codex\\config.toml")
+            absolute_path("C:\\users\\alice\\.motyga\\config.toml")
         } else {
             absolute_path("/home/alice/.motyga/config.toml")
         };
@@ -872,9 +872,9 @@ mod tests {
     #[test]
     fn debug_config_output_filters_sandbox_modes_blocked_by_deny_read_requirements() {
         let requirements_file = if cfg!(windows) {
-            absolute_path("C:\\ProgramData\\OpenAI\\Codex\\requirements.toml")
+            absolute_path("C:\\ProgramData\\OpenAI\\Motyga\\requirements.toml")
         } else {
-            absolute_path("/etc/codex/requirements.toml")
+            absolute_path("/etc/motyga/requirements.toml")
         };
         let denied_path = if cfg!(windows) {
             absolute_path("C:\\Users\\alice\\.gitconfig")
@@ -987,7 +987,7 @@ mod tests {
                     unix_sockets: Some(NetworkUnixSocketPermissionsToml {
                         entries: BTreeMap::from([
                             (
-                                "/tmp/codex.sock".to_string(),
+                                "/tmp/motyga.sock".to_string(),
                                 NetworkUnixSocketPermissionToml::Allow,
                             ),
                             (
@@ -1010,7 +1010,7 @@ mod tests {
         let rendered = render_stack_to_text(&stack);
         let requirements_source = (RequirementSource::LegacyManagedConfigTomlFromMdm).to_string();
         assert!(rendered.contains(&format!(
-            "experimental_network: unix_sockets={{/tmp/blocked.sock=deny, /tmp/codex.sock=allow}} (source: {requirements_source})"
+            "experimental_network: unix_sockets={{/tmp/blocked.sock=deny, /tmp/motyga.sock=allow}} (source: {requirements_source})"
         )));
     }
 
@@ -1053,9 +1053,9 @@ approval_policy = "never"
 "#;
         let mdm_value = toml::from_str::<TomlValue>(raw_mdm_toml).expect("MDM value");
         let mdm_base_dir = if cfg!(windows) {
-            absolute_path("C:\\codex")
+            absolute_path("C:\\motyga")
         } else {
-            absolute_path("/var/lib/codex")
+            absolute_path("/var/lib/motyga")
         };
 
         let stack = ConfigLayerStack::new(
@@ -1087,9 +1087,9 @@ approval_policy = "never"
 "#;
         let cloud_value = toml::from_str::<TomlValue>(raw_cloud_toml).expect("cloud value");
         let cloud_base_dir = if cfg!(windows) {
-            absolute_path("C:\\codex")
+            absolute_path("C:\\motyga")
         } else {
-            absolute_path("/var/lib/codex")
+            absolute_path("/var/lib/motyga")
         };
 
         let stack = ConfigLayerStack::new(

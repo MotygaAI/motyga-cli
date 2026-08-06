@@ -1,11 +1,11 @@
 [package]
 edition.workspace = true
 license.workspace = true
-name = "codex-thread-store"
+name = "motyga-thread-store"
 version.workspace = true
 
 [lib]
-name = "codex_thread_store"
+name = "motyga_thread_store"
 path = "src/lib.rs"
 doctest = false
 
@@ -14,13 +14,13 @@ workspace = true
 
 [dependencies]
 chrono = { workspace = true, features = ["serde"] }
-codex-git-utils = { workspace = true }
-codex-install-context = { workspace = true }
-codex-otel = { workspace = true }
-codex-protocol = { workspace = true }
-codex-rollout = { workspace = true }
-codex-state = { workspace = true }
-codex-utils-path = { workspace = true }
+motyga-git-utils = { workspace = true }
+motyga-install-context = { workspace = true }
+motyga-otel = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-rollout = { workspace = true }
+motyga-state = { workspace = true }
+motyga-utils-path = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

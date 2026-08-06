@@ -1,6 +1,6 @@
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::protocol::TokenUsage;
-use codex_state::ThreadGoalStatus;
+use motyga_protocol::config_types::ModeKind;
+use motyga_protocol::protocol::TokenUsage;
+use motyga_state::ThreadGoalStatus;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::sync::PoisonError;

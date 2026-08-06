@@ -1,5 +1,5 @@
 [package]
-name = "codex-rmcp-client"
+name = "motyga-rmcp-client"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,15 +15,15 @@ axum = { workspace = true, default-features = false, features = [
     "tokio",
 ] }
 base64 = { workspace = true }
-codex-api = { workspace = true }
-codex-config = { workspace = true }
-codex-exec-server = { workspace = true }
-codex-keyring-store = { workspace = true }
-codex-protocol = { workspace = true }
-codex-secrets = { workspace = true }
-codex-utils-path-uri = { workspace = true }
-codex-utils-pty = { workspace = true }
-codex-utils-home-dir = { workspace = true }
+motyga-api = { workspace = true }
+motyga-config = { workspace = true }
+motyga-exec-server = { workspace = true }
+motyga-keyring-store = { workspace = true }
+motyga-protocol = { workspace = true }
+motyga-secrets = { workspace = true }
+motyga-utils-path-uri = { workspace = true }
+motyga-utils-pty = { workspace = true }
+motyga-utils-home-dir = { workspace = true }
 bytes = { workspace = true }
 futures = { workspace = true, default-features = false, features = ["std"] }
 keyring = { workspace = true, features = ["crypto-rust"] }
@@ -67,7 +67,7 @@ webbrowser = { workspace = true }
 which = { workspace = true }
 
 [dev-dependencies]
-codex-utils-cargo-bin = { workspace = true }
+motyga-utils-cargo-bin = { workspace = true }
 pretty_assertions = { workspace = true }
 serial_test = { workspace = true }
 tempfile = { workspace = true }

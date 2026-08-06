@@ -1,1 +1,1 @@
-#define PACKAGE_STRING "bubblewrap built for Codex"
+#define PACKAGE_STRING "bubblewrap built for Motyga"

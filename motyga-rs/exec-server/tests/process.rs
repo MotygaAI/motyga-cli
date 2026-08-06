@@ -2,17 +2,17 @@
 
 mod common;
 
-use codex_exec_server::ExecResponse;
-use codex_exec_server::InitializeParams;
-use codex_exec_server::InitializeResponse;
-use codex_exec_server::ProcessId;
-use codex_exec_server::ReadResponse;
-use codex_exec_server::TerminateResponse;
-use codex_exec_server::WriteResponse;
-use codex_exec_server::WriteStatus;
-use codex_exec_server_protocol::JSONRPCMessage;
-use codex_exec_server_protocol::JSONRPCResponse;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server::ExecResponse;
+use motyga_exec_server::InitializeParams;
+use motyga_exec_server::InitializeResponse;
+use motyga_exec_server::ProcessId;
+use motyga_exec_server::ReadResponse;
+use motyga_exec_server::TerminateResponse;
+use motyga_exec_server::WriteResponse;
+use motyga_exec_server::WriteStatus;
+use motyga_exec_server_protocol::JSONRPCMessage;
+use motyga_exec_server_protocol::JSONRPCResponse;
+use motyga_utils_path_uri::PathUri;
 use common::exec_server::exec_server;
 use pretty_assertions::assert_eq;
 

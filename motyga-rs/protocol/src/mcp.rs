@@ -1,8 +1,8 @@
 //! Types used when representing Model Context Protocol (MCP) values inside the
-//! Codex protocol.
+//! Motyga protocol.
 //!
 //! We intentionally keep these types TS/JSON-schema friendly (via `ts-rs` and
-//! `schemars`) so they can be embedded in Codex's own protocol structures.
+//! `schemars`) so they can be embedded in Motyga's own protocol structures.
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -164,7 +164,7 @@ pub struct CallToolResult {
 
 // === Adapter helpers ===
 //
-// These types and conversions intentionally live in `codex-protocol` so other crates can convert
+// These types and conversions intentionally live in `motyga-protocol` so other crates can convert
 // “wire-shaped” MCP JSON (typically coming from rmcp model structs serialized with serde) into our
 // TS/JsonSchema-friendly protocol types without depending on `mcp-types`.
 

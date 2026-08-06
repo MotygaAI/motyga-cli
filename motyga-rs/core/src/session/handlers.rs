@@ -4,8 +4,8 @@ use crate::realtime_conversation::handle_speech as handle_realtime_conversation_
 use crate::realtime_conversation::handle_start as handle_realtime_conversation_start;
 use crate::realtime_conversation::handle_text as handle_realtime_conversation_text;
 use async_channel::Receiver;
-use codex_otel::set_parent_from_w3c_trace_context;
-use codex_protocol::protocol::Submission;
+use motyga_otel::set_parent_from_w3c_trace_context;
+use motyga_protocol::protocol::Submission;
 use tracing::Instrument;
 use tracing::debug_span;
 use tracing::info_span;
@@ -22,38 +22,38 @@ use crate::tasks::CompactTask;
 use crate::tasks::UserShellCommandMode;
 use crate::tasks::UserShellCommandTask;
 use crate::tasks::execute_user_shell_command;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::ErrorEvent;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::GuardianAssessmentEvent;
-use codex_protocol::protocol::GuardianAssessmentStatus;
-use codex_protocol::protocol::InterAgentCommunication;
-use codex_protocol::protocol::McpServerRefreshConfig;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RealtimeConversationListVoicesResponseEvent;
-use codex_protocol::protocol::RealtimeVoicesList;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::ReviewRequest;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::ThreadMemoryMode;
-use codex_protocol::protocol::ThreadRolledBackEvent;
-use codex_protocol::protocol::ThreadSettingsAppliedEvent;
-use codex_protocol::protocol::ThreadSettingsOverrides;
-use codex_protocol::protocol::ThreadSettingsSnapshot;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::protocol::WarningEvent;
-use codex_protocol::request_permissions::RequestPermissionsResponse;
-use codex_protocol::request_user_input::RequestUserInputResponse;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::ResponseInputItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::ErrorEvent;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::GuardianAssessmentEvent;
+use motyga_protocol::protocol::GuardianAssessmentStatus;
+use motyga_protocol::protocol::InterAgentCommunication;
+use motyga_protocol::protocol::McpServerRefreshConfig;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RealtimeConversationListVoicesResponseEvent;
+use motyga_protocol::protocol::RealtimeVoicesList;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::ReviewRequest;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::ThreadMemoryMode;
+use motyga_protocol::protocol::ThreadRolledBackEvent;
+use motyga_protocol::protocol::ThreadSettingsAppliedEvent;
+use motyga_protocol::protocol::ThreadSettingsOverrides;
+use motyga_protocol::protocol::ThreadSettingsSnapshot;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_protocol::protocol::WarningEvent;
+use motyga_protocol::request_permissions::RequestPermissionsResponse;
+use motyga_protocol::request_user_input::RequestUserInputResponse;
 
 use crate::context_manager::is_user_turn_boundary;
-use codex_protocol::dynamic_tools::DynamicToolResponse;
-use codex_protocol::mcp::RequestId as ProtocolRequestId;
-use codex_rmcp_client::ElicitationAction;
-use codex_rmcp_client::ElicitationResponse;
+use motyga_protocol::dynamic_tools::DynamicToolResponse;
+use motyga_protocol::mcp::RequestId as ProtocolRequestId;
+use motyga_rmcp_client::ElicitationAction;
+use motyga_rmcp_client::ElicitationResponse;
 use serde_json::Value;
 use std::sync::Arc;
 use tracing::debug;
@@ -99,7 +99,7 @@ pub async fn update_thread_settings(
         Ok(()) => thread_settings_applied_event(sess).await,
         Err(err) => EventMsg::Error(ErrorEvent {
             message: format!("invalid thread settings override: {err}"),
-            codex_error_info: Some(CodexErrorInfo::BadRequest),
+            motyga_error_info: Some(MotygaErrorInfo::BadRequest),
         }),
     };
     sess.send_event_raw(Event { id: sub_id, msg }).await;
@@ -323,14 +323,14 @@ pub async fn resolve_elicitation(
     sess: &Arc<Session>,
     server_name: String,
     request_id: ProtocolRequestId,
-    decision: codex_protocol::approvals::ElicitationAction,
+    decision: motyga_protocol::approvals::ElicitationAction,
     content: Option<Value>,
     meta: Option<Value>,
 ) {
     let action = match decision {
-        codex_protocol::approvals::ElicitationAction::Accept => ElicitationAction::Accept,
-        codex_protocol::approvals::ElicitationAction::Decline => ElicitationAction::Decline,
-        codex_protocol::approvals::ElicitationAction::Cancel => ElicitationAction::Cancel,
+        motyga_protocol::approvals::ElicitationAction::Accept => ElicitationAction::Accept,
+        motyga_protocol::approvals::ElicitationAction::Decline => ElicitationAction::Decline,
+        motyga_protocol::approvals::ElicitationAction::Cancel => ElicitationAction::Cancel,
     };
     let content = match action {
         // Preserve the legacy fallback for clients that only send an action.
@@ -455,7 +455,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             id: sub_id,
             msg: EventMsg::Error(ErrorEvent {
                 message: "num_turns must be >= 1".to_string(),
-                codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
+                motyga_error_info: Some(MotygaErrorInfo::ThreadRollbackFailed),
             }),
         })
         .await;
@@ -468,7 +468,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             id: sub_id,
             msg: EventMsg::Error(ErrorEvent {
                 message: "Cannot rollback while a turn is in progress.".to_string(),
-                codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
+                motyga_error_info: Some(MotygaErrorInfo::ThreadRollbackFailed),
             }),
         })
         .await;
@@ -483,7 +483,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
                 id: turn_context.sub_id.clone(),
                 msg: EventMsg::Error(ErrorEvent {
                     message: "thread rollback requires persisted thread history".to_string(),
-                    codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
+                    motyga_error_info: Some(MotygaErrorInfo::ThreadRollbackFailed),
                 }),
             })
             .await;
@@ -495,7 +495,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             id: turn_context.sub_id.clone(),
             msg: EventMsg::Error(ErrorEvent {
                 message: format!("failed to flush thread persistence for rollback replay: {err}"),
-                codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
+                motyga_error_info: Some(MotygaErrorInfo::ThreadRollbackFailed),
             }),
         })
         .await;
@@ -509,7 +509,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
                 id: turn_context.sub_id.clone(),
                 msg: EventMsg::Error(ErrorEvent {
                     message: format!("failed to load thread history for rollback replay: {err}"),
-                    codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
+                    motyga_error_info: Some(MotygaErrorInfo::ThreadRollbackFailed),
                 }),
             })
             .await;
@@ -578,7 +578,7 @@ pub async fn set_thread_memory_mode(sess: &Arc<Session>, sub_id: String, mode: T
             id: sub_id,
             msg: EventMsg::Error(ErrorEvent {
                 message: err.to_string(),
-                codex_error_info: Some(CodexErrorInfo::Other),
+                motyga_error_info: Some(MotygaErrorInfo::Other),
             }),
         };
         sess.send_event_raw(event).await;
@@ -609,7 +609,7 @@ async fn shutdown_session_runtime(sess: &Arc<Session>) {
 async fn emit_thread_stop_lifecycle(sess: &Session) {
     for contributor in sess.services.extensions.thread_lifecycle_contributors() {
         contributor
-            .on_thread_stop(codex_extension_api::ThreadStopInput {
+            .on_thread_stop(motyga_extension_api::ThreadStopInput {
                 session_store: &sess.services.session_extension_data,
                 thread_store: &sess.services.thread_extension_data,
             })
@@ -627,7 +627,7 @@ pub async fn shutdown(sess: &Arc<Session>, sub_id: String) -> bool {
         .filter(|item| is_user_turn_boundary(item))
         .count();
     sess.services.session_telemetry.counter(
-        "codex.conversation.turn.count",
+        "motyga.conversation.turn.count",
         i64::try_from(turn_count).unwrap_or(0),
         &[],
     );
@@ -644,7 +644,7 @@ pub async fn shutdown(sess: &Arc<Session>, sub_id: String) -> bool {
             id: sub_id.clone(),
             msg: EventMsg::Error(ErrorEvent {
                 message: "Failed to shutdown thread persistence".to_string(),
-                codex_error_info: Some(CodexErrorInfo::Other),
+                motyga_error_info: Some(MotygaErrorInfo::Other),
             }),
         };
         sess.send_event_raw(event).await;
@@ -660,7 +660,7 @@ pub async fn shutdown(sess: &Arc<Session>, sub_id: String) -> bool {
     sess.deliver_event_raw(event).await;
     sess.services
         .rollout_thread_trace
-        .record_ended(codex_rollout_trace::RolloutStatus::Completed);
+        .record_ended(motyga_rollout_trace::RolloutStatus::Completed);
     true
 }
 
@@ -692,7 +692,7 @@ pub async fn review(
                 id: sub_id,
                 msg: EventMsg::Error(ErrorEvent {
                     message: err.to_string(),
-                    codex_error_info: Some(CodexErrorInfo::Other),
+                    motyga_error_info: Some(MotygaErrorInfo::Other),
                 }),
             };
             sess.send_event(&turn_context, event.msg).await;
@@ -728,7 +728,7 @@ pub(super) async fn submission_loop(
                             id: sub.id.clone(),
                             msg: EventMsg::Error(ErrorEvent {
                                 message: err.to_string(),
-                                codex_error_info: Some(CodexErrorInfo::Other),
+                                motyga_error_info: Some(MotygaErrorInfo::Other),
                             }),
                         })
                         .await;
@@ -909,14 +909,14 @@ pub(super) fn submission_dispatch_span(sub: &Submission) -> tracing::Span {
                 "submission_dispatch",
                 otel.name = span_name.as_str(),
                 submission.id = sub.id.as_str(),
-                codex.op = op_name
+                motyga.op = op_name
             )
         }
         _ => info_span!(
             "submission_dispatch",
             otel.name = span_name.as_str(),
             submission.id = sub.id.as_str(),
-            codex.op = op_name
+            motyga.op = op_name
         ),
     };
     if let Some(trace) = sub.trace.as_ref()

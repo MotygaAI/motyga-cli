@@ -1,6 +1,6 @@
 use super::residency::is_v2_resident_session_source;
 use super::*;
-use codex_extension_api::ExtensionDataInit;
+use motyga_extension_api::ExtensionDataInit;
 
 const AGENT_NAMES: &str = include_str!("../agent_names.txt");
 
@@ -102,7 +102,7 @@ impl AgentControl {
         config: Config,
         initial_input: Vec<UserInput>,
         session_source: Option<SessionSource>,
-    ) -> CodexResult<ThreadId> {
+    ) -> MotygaResult<ThreadId> {
         let spawned_agent = Box::pin(self.spawn_agent_internal(
             config,
             SpawnInitialInput::UserInput(initial_input),
@@ -120,7 +120,7 @@ impl AgentControl {
         initial_input: Vec<UserInput>,
         session_source: Option<SessionSource>,
         options: SpawnAgentOptions, // TODO(jif) drop with new fork.
-    ) -> CodexResult<LiveAgent> {
+    ) -> MotygaResult<LiveAgent> {
         Box::pin(self.spawn_agent_internal(
             config,
             SpawnInitialInput::UserInput(initial_input),
@@ -137,7 +137,7 @@ impl AgentControl {
         context: AgentCommunicationContext,
         session_source: Option<SessionSource>,
         options: SpawnAgentOptions,
-    ) -> CodexResult<LiveAgent> {
+    ) -> MotygaResult<LiveAgent> {
         Box::pin(self.spawn_agent_internal(
             config,
             SpawnInitialInput::InterAgentCommunication(communication, context),
@@ -151,14 +151,14 @@ impl AgentControl {
         &self,
         config: Config,
         thread_id: ThreadId,
-    ) -> CodexResult<()> {
+    ) -> MotygaResult<()> {
         let state = self.upgrade()?;
         if state.get_thread(thread_id).await.is_ok() {
             self.touch_loaded_v2_residency(&state, thread_id).await;
             return Ok(());
         }
         if self.state.agent_metadata_for_thread(thread_id).is_none() {
-            return Err(CodexErr::ThreadNotFound(thread_id));
+            return Err(MotygaErr::ThreadNotFound(thread_id));
         }
 
         let stored_thread = state
@@ -172,7 +172,7 @@ impl AgentControl {
         let stored_parent_thread_id = stored_thread.parent_thread_id;
         let history = stored_thread
             .history
-            .ok_or(CodexErr::ThreadNotFound(thread_id))?
+            .ok_or(MotygaErr::ThreadNotFound(thread_id))?
             .items;
         let initial_history = InitialHistory::Resumed(ResumedHistory {
             conversation_id: thread_id,
@@ -180,7 +180,7 @@ impl AgentControl {
             rollout_path: stored_thread.rollout_path,
         });
         if initial_history.get_multi_agent_version() != Some(MultiAgentVersion::V2) {
-            return Err(CodexErr::ThreadNotFound(thread_id));
+            return Err(MotygaErr::ThreadNotFound(thread_id));
         }
         let residency_slot = self
             .reserve_v2_residency_slot(&state, &config, Some(thread_id))
@@ -233,7 +233,7 @@ impl AgentControl {
         initial_input: SpawnInitialInput,
         session_source: Option<SessionSource>,
         options: SpawnAgentOptions,
-    ) -> CodexResult<LiveAgent> {
+    ) -> MotygaResult<LiveAgent> {
         let state = self.upgrade()?;
         let multi_agent_version = state
             .effective_multi_agent_version_for_spawn(
@@ -342,7 +342,7 @@ impl AgentControl {
             let client_metadata = match state.get_thread(*parent_thread_id).await {
                 Ok(parent_thread) => {
                     parent_thread
-                        .codex
+                        .motyga
                         .session
                         .app_server_client_metadata()
                         .await
@@ -359,17 +359,17 @@ impl AgentControl {
                     }
                 }
             };
-            let thread_config = new_thread.thread.codex.thread_config_snapshot().await;
+            let thread_config = new_thread.thread.motyga.thread_config_snapshot().await;
             let parent_thread_id = thread_config.parent_thread_id;
             emit_subagent_session_started(
                 &new_thread
                     .thread
-                    .codex
+                    .motyga
                     .session
                     .services
                     .analytics_events_client,
                 client_metadata,
-                new_thread.thread.codex.session.session_id(),
+                new_thread.thread.motyga.session.session_id(),
                 new_thread.thread_id,
                 parent_thread_id,
                 thread_config,
@@ -433,18 +433,18 @@ impl AgentControl {
         options: &SpawnAgentOptions,
         inheritance: SpawnAgentThreadInheritance,
         multi_agent_version: MultiAgentVersion,
-    ) -> CodexResult<crate::thread_manager::NewThread> {
+    ) -> MotygaResult<crate::thread_manager::NewThread> {
         let SpawnAgentThreadInheritance {
             environments: inherited_environments,
             exec_policy: inherited_exec_policy,
         } = inheritance;
         if options.fork_parent_spawn_call_id.is_none() {
-            return Err(CodexErr::Fatal(
+            return Err(MotygaErr::Fatal(
                 "spawn_agent fork requires a parent spawn call id".to_string(),
             ));
         }
         let Some(fork_mode) = options.fork_mode.as_ref() else {
-            return Err(CodexErr::Fatal(
+            return Err(MotygaErr::Fatal(
                 "spawn_agent fork requires a fork mode".to_string(),
             ));
         };
@@ -452,7 +452,7 @@ impl AgentControl {
             parent_thread_id, ..
         }) = &session_source
         else {
-            return Err(CodexErr::Fatal(
+            return Err(MotygaErr::Fatal(
                 "spawn_agent fork requires a thread-spawn session source".to_string(),
             ));
         };
@@ -475,7 +475,7 @@ impl AgentControl {
             .await?
             .history
             .ok_or_else(|| {
-                CodexErr::Fatal(format!(
+                MotygaErr::Fatal(format!(
                     "parent thread history unavailable for fork: {parent_thread_id}"
                 ))
             })?;
@@ -498,7 +498,7 @@ impl AgentControl {
         let multi_agent_v2_usage_hint_texts_to_filter: Vec<String> =
             if let Some(parent_thread) = parent_thread.as_ref() {
                 if multi_agent_version == MultiAgentVersion::V2 {
-                    let parent_config = parent_thread.codex.session.get_config().await;
+                    let parent_config = parent_thread.motyga.session.get_config().await;
                     [
                         parent_config
                             .multi_agent_v2
@@ -587,7 +587,7 @@ impl AgentControl {
         config: Config,
         thread_id: ThreadId,
         session_source: SessionSource,
-    ) -> CodexResult<ThreadId> {
+    ) -> MotygaResult<ThreadId> {
         let root_depth = thread_spawn_depth(&session_source).unwrap_or(0);
         let (resumed_thread_id, resumed_multi_agent_version) = Box::pin(
             self.resume_single_agent_from_rollout(config.clone(), thread_id, session_source),
@@ -608,7 +608,7 @@ impl AgentControl {
             let child_ids = match agent_graph_store
                 .list_thread_spawn_children(
                     parent_thread_id,
-                    Some(codex_agent_graph_store::ThreadSpawnEdgeStatus::Open),
+                    Some(motyga_agent_graph_store::ThreadSpawnEdgeStatus::Open),
                 )
                 .await
             {
@@ -662,7 +662,7 @@ impl AgentControl {
         config: Config,
         thread_id: ThreadId,
         session_source: SessionSource,
-    ) -> CodexResult<(ThreadId, MultiAgentVersion)> {
+    ) -> MotygaResult<(ThreadId, MultiAgentVersion)> {
         let state = self.upgrade()?;
         let stored_thread = state
             .read_stored_thread(ReadThreadParams {
@@ -676,12 +676,12 @@ impl AgentControl {
             .as_deref()
             .map(AgentPath::try_from)
             .transpose()
-            .map_err(|err| CodexErr::InvalidRequest(format!("invalid stored agent path: {err}")))?;
+            .map_err(|err| MotygaErr::InvalidRequest(format!("invalid stored agent path: {err}")))?;
         let resumed_agent_nickname = stored_thread.agent_nickname.clone();
         let resumed_agent_role = stored_thread.agent_role.clone();
         let history = stored_thread
             .history
-            .ok_or_else(|| CodexErr::ThreadNotFound(thread_id))?
+            .ok_or_else(|| MotygaErr::ThreadNotFound(thread_id))?
             .items;
         let initial_history = InitialHistory::Resumed(ResumedHistory {
             conversation_id: thread_id,

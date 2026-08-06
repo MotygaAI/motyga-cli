@@ -10,21 +10,21 @@ use crate::tools::registry::CoreToolRuntime;
 use crate::tools::registry::ToolExecutor;
 use crate::tools::registry::ToolExposure;
 use crate::turn_timing::now_unix_timestamp_ms;
-use codex_protocol::dynamic_tools::DynamicToolCallRequest;
-use codex_protocol::dynamic_tools::DynamicToolFunctionSpec;
-use codex_protocol::dynamic_tools::DynamicToolNamespaceSpec;
-use codex_protocol::dynamic_tools::DynamicToolResponse;
-use codex_protocol::models::FunctionCallOutputContentItem;
-use codex_protocol::protocol::DynamicToolCallResponseEvent;
-use codex_protocol::protocol::EventMsg;
-use codex_tools::ResponsesApiNamespace;
-use codex_tools::ResponsesApiNamespaceTool;
-use codex_tools::ToolName;
-use codex_tools::ToolSearchInfo;
-use codex_tools::ToolSearchSourceInfo;
-use codex_tools::ToolSpec;
-use codex_tools::default_namespace_description;
-use codex_tools::dynamic_tool_to_responses_api_tool;
+use motyga_protocol::dynamic_tools::DynamicToolCallRequest;
+use motyga_protocol::dynamic_tools::DynamicToolFunctionSpec;
+use motyga_protocol::dynamic_tools::DynamicToolNamespaceSpec;
+use motyga_protocol::dynamic_tools::DynamicToolResponse;
+use motyga_protocol::models::FunctionCallOutputContentItem;
+use motyga_protocol::protocol::DynamicToolCallResponseEvent;
+use motyga_protocol::protocol::EventMsg;
+use motyga_tools::ResponsesApiNamespace;
+use motyga_tools::ResponsesApiNamespaceTool;
+use motyga_tools::ToolName;
+use motyga_tools::ToolSearchInfo;
+use motyga_tools::ToolSearchSourceInfo;
+use motyga_tools::ToolSpec;
+use motyga_tools::default_namespace_description;
+use motyga_tools::dynamic_tool_to_responses_api_tool;
 use serde_json::Value;
 use std::time::Instant;
 use tokio::sync::oneshot;
@@ -101,12 +101,12 @@ impl ToolExecutor<ToolInvocation> for DynamicToolHandler {
             self.spec(),
             Some(ToolSearchSourceInfo {
                 name: "Dynamic tools".to_string(),
-                description: Some("Tools provided by the current Codex thread.".to_string()),
+                description: Some("Tools provided by the current Motyga thread.".to_string()),
             }),
         )
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(invocation))
     }
 }

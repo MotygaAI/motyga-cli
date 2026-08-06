@@ -1,79 +1,79 @@
-use codex_app_server_protocol::CollabAgentState as ApiCollabAgentState;
-use codex_app_server_protocol::CollabAgentStatus as ApiCollabAgentStatus;
-use codex_app_server_protocol::CollabAgentTool;
-use codex_app_server_protocol::CollabAgentToolCallStatus as ApiCollabAgentToolCallStatus;
-use codex_app_server_protocol::CommandAction;
-use codex_app_server_protocol::CommandExecutionSource;
-use codex_app_server_protocol::CommandExecutionStatus as ApiCommandExecutionStatus;
-use codex_app_server_protocol::ErrorNotification;
-use codex_app_server_protocol::FileUpdateChange as ApiFileUpdateChange;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::ItemStartedNotification;
-use codex_app_server_protocol::McpToolCallError;
-use codex_app_server_protocol::McpToolCallResult;
-use codex_app_server_protocol::McpToolCallStatus as ApiMcpToolCallStatus;
-use codex_app_server_protocol::PatchApplyStatus as ApiPatchApplyStatus;
-use codex_app_server_protocol::PatchChangeKind as ApiPatchChangeKind;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadTokenUsage;
-use codex_app_server_protocol::TokenUsageBreakdown;
-use codex_app_server_protocol::Turn;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnError;
-use codex_app_server_protocol::TurnPlanStep;
-use codex_app_server_protocol::TurnPlanStepStatus;
-use codex_app_server_protocol::TurnPlanUpdatedNotification;
-use codex_app_server_protocol::TurnStartedNotification;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::WebSearchAction as ApiWebSearchAction;
-use codex_protocol::SessionId;
-use codex_protocol::ThreadId;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::SessionConfiguredEvent;
-use codex_utils_absolute_path::test_support::PathBufExt;
-use codex_utils_absolute_path::test_support::test_path_buf;
+use motyga_app_server_protocol::CollabAgentState as ApiCollabAgentState;
+use motyga_app_server_protocol::CollabAgentStatus as ApiCollabAgentStatus;
+use motyga_app_server_protocol::CollabAgentTool;
+use motyga_app_server_protocol::CollabAgentToolCallStatus as ApiCollabAgentToolCallStatus;
+use motyga_app_server_protocol::CommandAction;
+use motyga_app_server_protocol::CommandExecutionSource;
+use motyga_app_server_protocol::CommandExecutionStatus as ApiCommandExecutionStatus;
+use motyga_app_server_protocol::ErrorNotification;
+use motyga_app_server_protocol::FileUpdateChange as ApiFileUpdateChange;
+use motyga_app_server_protocol::ItemCompletedNotification;
+use motyga_app_server_protocol::ItemStartedNotification;
+use motyga_app_server_protocol::McpToolCallError;
+use motyga_app_server_protocol::McpToolCallResult;
+use motyga_app_server_protocol::McpToolCallStatus as ApiMcpToolCallStatus;
+use motyga_app_server_protocol::PatchApplyStatus as ApiPatchApplyStatus;
+use motyga_app_server_protocol::PatchChangeKind as ApiPatchChangeKind;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ThreadItem;
+use motyga_app_server_protocol::ThreadTokenUsage;
+use motyga_app_server_protocol::TokenUsageBreakdown;
+use motyga_app_server_protocol::Turn;
+use motyga_app_server_protocol::TurnCompletedNotification;
+use motyga_app_server_protocol::TurnError;
+use motyga_app_server_protocol::TurnPlanStep;
+use motyga_app_server_protocol::TurnPlanStepStatus;
+use motyga_app_server_protocol::TurnPlanUpdatedNotification;
+use motyga_app_server_protocol::TurnStartedNotification;
+use motyga_app_server_protocol::TurnStatus;
+use motyga_app_server_protocol::WebSearchAction as ApiWebSearchAction;
+use motyga_protocol::SessionId;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::WebSearchAction;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::SessionConfiguredEvent;
+use motyga_utils_absolute_path::test_support::PathBufExt;
+use motyga_utils_absolute_path::test_support::test_path_buf;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 
-use codex_exec::AgentMessageItem;
-use codex_exec::CodexStatus;
-use codex_exec::CollabAgentState;
-use codex_exec::CollabAgentStatus;
-use codex_exec::CollabTool;
-use codex_exec::CollabToolCallItem;
-use codex_exec::CollabToolCallStatus;
-use codex_exec::CollectedThreadEvents;
-use codex_exec::CommandExecutionItem;
-use codex_exec::CommandExecutionStatus;
-use codex_exec::ErrorItem;
-use codex_exec::EventProcessorWithJsonOutput;
-use codex_exec::ExecThreadItem;
-use codex_exec::FileChangeItem;
-use codex_exec::FileUpdateChange as ExecFileUpdateChange;
-use codex_exec::ItemCompletedEvent;
-use codex_exec::ItemStartedEvent;
-use codex_exec::ItemUpdatedEvent;
-use codex_exec::McpToolCallItem;
-use codex_exec::McpToolCallItemError;
-use codex_exec::McpToolCallItemResult;
-use codex_exec::McpToolCallStatus;
-use codex_exec::PatchApplyStatus;
-use codex_exec::PatchChangeKind;
-use codex_exec::ReasoningItem;
-use codex_exec::ThreadErrorEvent;
-use codex_exec::ThreadEvent;
-use codex_exec::ThreadItemDetails;
-use codex_exec::ThreadStartedEvent;
-use codex_exec::TodoItem;
-use codex_exec::TodoListItem;
-use codex_exec::TurnCompletedEvent;
-use codex_exec::TurnFailedEvent;
-use codex_exec::TurnStartedEvent;
-use codex_exec::Usage;
-use codex_exec::WebSearchItem;
+use motyga_exec::AgentMessageItem;
+use motyga_exec::MotygaStatus;
+use motyga_exec::CollabAgentState;
+use motyga_exec::CollabAgentStatus;
+use motyga_exec::CollabTool;
+use motyga_exec::CollabToolCallItem;
+use motyga_exec::CollabToolCallStatus;
+use motyga_exec::CollectedThreadEvents;
+use motyga_exec::CommandExecutionItem;
+use motyga_exec::CommandExecutionStatus;
+use motyga_exec::ErrorItem;
+use motyga_exec::EventProcessorWithJsonOutput;
+use motyga_exec::ExecThreadItem;
+use motyga_exec::FileChangeItem;
+use motyga_exec::FileUpdateChange as ExecFileUpdateChange;
+use motyga_exec::ItemCompletedEvent;
+use motyga_exec::ItemStartedEvent;
+use motyga_exec::ItemUpdatedEvent;
+use motyga_exec::McpToolCallItem;
+use motyga_exec::McpToolCallItemError;
+use motyga_exec::McpToolCallItemResult;
+use motyga_exec::McpToolCallStatus;
+use motyga_exec::PatchApplyStatus;
+use motyga_exec::PatchChangeKind;
+use motyga_exec::ReasoningItem;
+use motyga_exec::ThreadErrorEvent;
+use motyga_exec::ThreadEvent;
+use motyga_exec::ThreadItemDetails;
+use motyga_exec::ThreadStartedEvent;
+use motyga_exec::TodoItem;
+use motyga_exec::TodoListItem;
+use motyga_exec::TurnCompletedEvent;
+use motyga_exec::TurnFailedEvent;
+use motyga_exec::TurnStartedEvent;
+use motyga_exec::Usage;
+use motyga_exec::WebSearchItem;
 
 #[test]
 fn map_todo_items_preserves_text_and_completion_state() {
@@ -118,7 +118,7 @@ fn session_configured_produces_thread_started_event() {
         model_provider_id: "test-provider".to_string(),
         service_tier: None,
         approval_policy: AskForApproval::Never,
-        approvals_reviewer: codex_protocol::config_types::ApprovalsReviewer::User,
+        approvals_reviewer: motyga_protocol::config_types::ApprovalsReviewer::User,
         permission_profile: PermissionProfile::read_only(),
         active_permission_profile: None,
         cwd: test_path_buf("/tmp/project").abs(),
@@ -145,7 +145,7 @@ fn turn_started_emits_turn_started_event() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::InProgress,
                 error: None,
@@ -159,7 +159,7 @@ fn turn_started_emits_turn_started_event() {
         collected,
         CollectedThreadEvents {
             events: vec![ThreadEvent::TurnStarted(TurnStartedEvent {})],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -201,7 +201,7 @@ fn command_execution_started_and_completed_translate_to_thread_events() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 
@@ -238,7 +238,7 @@ fn command_execution_started_and_completed_translate_to_thread_events() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -264,7 +264,7 @@ fn empty_reasoning_items_are_ignored() {
         collected,
         CollectedThreadEvents {
             events: Vec::new(),
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -289,7 +289,7 @@ fn unsupported_items_do_not_consume_synthetic_ids() {
         ignored,
         CollectedThreadEvents {
             events: Vec::new(),
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 
@@ -318,7 +318,7 @@ fn unsupported_items_do_not_consume_synthetic_ids() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -351,7 +351,7 @@ fn reasoning_items_emit_summary_not_raw_content() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -392,7 +392,7 @@ fn web_search_completion_preserves_query_and_action() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -442,7 +442,7 @@ fn web_search_start_and_completion_reuse_item_id() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
     assert_eq!(
@@ -461,7 +461,7 @@ fn web_search_start_and_completion_reuse_item_id() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -530,7 +530,7 @@ fn mcp_tool_call_begin_and_end_emit_item_events() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
     assert_eq!(
@@ -553,7 +553,7 @@ fn mcp_tool_call_begin_and_end_emit_item_events() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -603,7 +603,7 @@ fn mcp_tool_call_failure_sets_failed_status() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -675,7 +675,7 @@ fn mcp_tool_call_defaults_arguments_and_preserves_structured_content() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
     assert_eq!(
@@ -701,7 +701,7 @@ fn mcp_tool_call_defaults_arguments_and_preserves_structured_content() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -768,7 +768,7 @@ fn collab_spawn_begin_and_end_emit_item_events() {
                     },),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
     assert_eq!(
@@ -793,7 +793,7 @@ fn collab_spawn_begin_and_end_emit_item_events() {
                     },),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -856,7 +856,7 @@ fn file_change_completion_maps_change_kinds() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -897,7 +897,7 @@ fn file_change_declined_maps_to_failed_status() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -931,7 +931,7 @@ fn agent_message_item_updates_final_message() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
     assert_eq!(processor.final_message(), Some("hello"));
@@ -958,7 +958,7 @@ fn agent_message_item_started_is_ignored() {
         collected,
         CollectedThreadEvents {
             events: Vec::new(),
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -991,7 +991,7 @@ fn reasoning_item_completed_uses_synthetic_id() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -1015,7 +1015,7 @@ fn warning_event_produces_error_item() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -1061,7 +1061,7 @@ fn plan_update_emits_started_then_updated_then_completed() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 
@@ -1102,7 +1102,7 @@ fn plan_update_emits_started_then_updated_then_completed() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 
@@ -1111,7 +1111,7 @@ fn plan_update_emits_started_then_updated_then_completed() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Completed,
                 error: None,
@@ -1146,7 +1146,7 @@ fn plan_update_emits_started_then_updated_then_completed() {
                     usage: Usage::default(),
                 }),
             ],
-            status: CodexStatus::InitiateShutdown,
+            status: MotygaStatus::InitiateShutdown,
         }
     );
 }
@@ -1171,7 +1171,7 @@ fn plan_update_after_completion_starts_new_todo_list_with_new_id() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Completed,
                 error: None,
@@ -1208,7 +1208,7 @@ fn plan_update_after_completion_starts_new_todo_list_with_new_id() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 }
@@ -1219,7 +1219,7 @@ fn token_usage_update_is_emitted_on_turn_completion() {
 
     let usage_update =
         processor.collect_thread_events(ServerNotification::ThreadTokenUsageUpdated(
-            codex_app_server_protocol::ThreadTokenUsageUpdatedNotification {
+            motyga_app_server_protocol::ThreadTokenUsageUpdatedNotification {
                 thread_id: "thread-1".to_string(),
                 turn_id: "turn-1".to_string(),
                 token_usage: ThreadTokenUsage {
@@ -1245,7 +1245,7 @@ fn token_usage_update_is_emitted_on_turn_completion() {
         usage_update,
         CollectedThreadEvents {
             events: Vec::new(),
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 
@@ -1254,7 +1254,7 @@ fn token_usage_update_is_emitted_on_turn_completion() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Completed,
                 error: None,
@@ -1275,7 +1275,7 @@ fn token_usage_update_is_emitted_on_turn_completion() {
                     reasoning_output_tokens: 7,
                 },
             })],
-            status: CodexStatus::InitiateShutdown,
+            status: MotygaStatus::InitiateShutdown,
         }
     );
 }
@@ -1289,7 +1289,7 @@ fn turn_completion_recovers_final_message_from_turn_items() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: vec![ThreadItem::AgentMessage {
                     id: "msg-1".to_string(),
                     text: "final answer".to_string(),
@@ -1311,7 +1311,7 @@ fn turn_completion_recovers_final_message_from_turn_items() {
             events: vec![ThreadEvent::TurnCompleted(TurnCompletedEvent {
                 usage: Usage::default(),
             })],
-            status: CodexStatus::InitiateShutdown,
+            status: MotygaStatus::InitiateShutdown,
         }
     );
     assert_eq!(processor.final_message(), Some("final answer"));
@@ -1353,7 +1353,7 @@ fn turn_completion_reconciles_started_items_from_turn_items() {
                     }),
                 },
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 
@@ -1362,7 +1362,7 @@ fn turn_completion_reconciles_started_items_from_turn_items() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: vec![ThreadItem::CommandExecution {
                     id: "cmd-1".to_string(),
                     command: "ls".to_string(),
@@ -1403,7 +1403,7 @@ fn turn_completion_reconciles_started_items_from_turn_items() {
                     usage: Usage::default(),
                 }),
             ],
-            status: CodexStatus::InitiateShutdown,
+            status: MotygaStatus::InitiateShutdown,
         }
     );
 }
@@ -1430,7 +1430,7 @@ fn turn_completion_overwrites_stale_final_message_from_turn_items() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: vec![ThreadItem::AgentMessage {
                     id: "msg-1".to_string(),
                     text: "final answer".to_string(),
@@ -1452,7 +1452,7 @@ fn turn_completion_overwrites_stale_final_message_from_turn_items() {
             events: vec![ThreadEvent::TurnCompleted(TurnCompletedEvent {
                 usage: Usage::default(),
             })],
-            status: CodexStatus::InitiateShutdown,
+            status: MotygaStatus::InitiateShutdown,
         }
     );
     assert_eq!(processor.final_message(), Some("final answer"));
@@ -1480,7 +1480,7 @@ fn turn_completion_preserves_streamed_final_message_when_turn_items_are_empty() 
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Completed,
                 error: None,
@@ -1497,7 +1497,7 @@ fn turn_completion_preserves_streamed_final_message_when_turn_items_are_empty() 
             events: vec![ThreadEvent::TurnCompleted(TurnCompletedEvent {
                 usage: Usage::default(),
             })],
-            status: CodexStatus::InitiateShutdown,
+            status: MotygaStatus::InitiateShutdown,
         }
     );
     assert_eq!(processor.final_message(), Some("streamed answer"));
@@ -1521,7 +1521,7 @@ fn failed_turn_clears_stale_final_message() {
         },
     ));
 
-    assert_eq!(collected.status, CodexStatus::Running);
+    assert_eq!(collected.status, MotygaStatus::Running);
     assert_eq!(processor.final_message(), Some("partial answer"));
 
     let collected = processor.collect_thread_events(ServerNotification::TurnCompleted(
@@ -1529,13 +1529,13 @@ fn failed_turn_clears_stale_final_message() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Failed,
                 error: Some(TurnError {
                     message: "turn failed".to_string(),
                     additional_details: None,
-                    codex_error_info: None,
+                    motyga_error_info: None,
                 }),
                 started_at: None,
                 completed_at: None,
@@ -1544,7 +1544,7 @@ fn failed_turn_clears_stale_final_message() {
         },
     ));
 
-    assert_eq!(collected.status, CodexStatus::InitiateShutdown);
+    assert_eq!(collected.status, MotygaStatus::InitiateShutdown);
     assert_eq!(processor.final_message(), None);
 }
 
@@ -1557,7 +1557,7 @@ fn turn_completion_falls_back_to_final_plan_text() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: vec![ThreadItem::Plan {
                     id: "plan-1".to_string(),
                     text: "ship the typed adapter".to_string(),
@@ -1577,7 +1577,7 @@ fn turn_completion_falls_back_to_final_plan_text() {
             events: vec![ThreadEvent::TurnCompleted(TurnCompletedEvent {
                 usage: Usage::default(),
             })],
-            status: CodexStatus::InitiateShutdown,
+            status: MotygaStatus::InitiateShutdown,
         }
     );
     assert_eq!(processor.final_message(), Some("ship the typed adapter"));
@@ -1590,7 +1590,7 @@ fn turn_failure_prefers_structured_error_message() {
     let error = processor.collect_thread_events(ServerNotification::Error(ErrorNotification {
         error: TurnError {
             message: "backend failed".to_string(),
-            codex_error_info: None,
+            motyga_error_info: None,
             additional_details: Some("request id abc".to_string()),
         },
         will_retry: false,
@@ -1603,7 +1603,7 @@ fn turn_failure_prefers_structured_error_message() {
             events: vec![ThreadEvent::Error(ThreadErrorEvent {
                 message: "backend failed (request id abc)".to_string(),
             })],
-            status: CodexStatus::Running,
+            status: MotygaStatus::Running,
         }
     );
 
@@ -1612,7 +1612,7 @@ fn turn_failure_prefers_structured_error_message() {
             thread_id: "thread-1".to_string(),
             turn: Turn {
                 id: "turn-1".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
                 status: TurnStatus::Failed,
                 error: None,
@@ -1630,7 +1630,7 @@ fn turn_failure_prefers_structured_error_message() {
                     message: "backend failed (request id abc)".to_string(),
                 },
             })],
-            status: CodexStatus::InitiateShutdown,
+            status: MotygaStatus::InitiateShutdown,
         }
     );
 }
@@ -1640,16 +1640,16 @@ fn model_reroute_surfaces_as_error_item() {
     let mut processor = EventProcessorWithJsonOutput::new(/*last_message_path*/ None);
 
     let collected = processor.collect_thread_events(ServerNotification::ModelRerouted(
-        codex_app_server_protocol::ModelReroutedNotification {
+        motyga_app_server_protocol::ModelReroutedNotification {
             thread_id: "thread-1".to_string(),
             turn_id: "turn-1".to_string(),
             from_model: "gpt-5".to_string(),
             to_model: "gpt-5-mini".to_string(),
-            reason: codex_app_server_protocol::ModelRerouteReason::HighRiskCyberActivity,
+            reason: motyga_app_server_protocol::ModelRerouteReason::HighRiskCyberActivity,
         },
     ));
 
-    assert_eq!(collected.status, CodexStatus::Running);
+    assert_eq!(collected.status, MotygaStatus::Running);
     assert_eq!(collected.events.len(), 1);
     let ThreadEvent::ItemCompleted(ItemCompletedEvent { item }) = &collected.events[0] else {
         panic!("expected ItemCompleted");

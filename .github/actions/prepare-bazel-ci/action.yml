@@ -61,4 +61,4 @@ runs:
       shell: bash
       run: |
         mkdir -p "${RUNNER_TEMP}/bazel-execution-logs"
-        echo "CODEX_BAZEL_EXECUTION_LOG_COMPACT_DIR=${RUNNER_TEMP}/bazel-execution-logs" >> "${GITHUB_ENV}"
+        echo "MOTYGA_BAZEL_EXECUTION_LOG_COMPACT_DIR=${RUNNER_TEMP}/bazel-execution-logs" >> "${GITHUB_ENV}"

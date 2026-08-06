@@ -9,7 +9,7 @@ use crate::metrics::validation::validate_metric_name;
 use crate::metrics::validation::validate_tag_key;
 use crate::metrics::validation::validate_tag_value;
 use crate::metrics::validation::validate_tags;
-use codex_utils_string::sanitize_metric_tag_value;
+use motyga_utils_string::sanitize_metric_tag_value;
 use opentelemetry::KeyValue;
 use opentelemetry::metrics::Counter;
 use opentelemetry::metrics::Gauge;
@@ -42,7 +42,7 @@ use std::time::Duration;
 use tracing::debug;
 
 const ENV_ATTRIBUTE: &str = "env";
-const METER_NAME: &str = "codex";
+const METER_NAME: &str = "motyga";
 const MILLISECOND_DURATION_UNIT: &str = "ms";
 const MILLISECOND_DURATION_DESCRIPTION: &str = "Duration in milliseconds.";
 const MILLISECOND_DURATION_BOUNDARIES: &[f64] = &[
@@ -273,7 +273,7 @@ impl MetricsClientInner {
     }
 }
 
-/// OpenTelemetry metrics client used by Codex.
+/// OpenTelemetry metrics client used by Motyga.
 #[derive(Clone, Debug)]
 pub struct MetricsClient(std::sync::Arc<MetricsClientInner>);
 

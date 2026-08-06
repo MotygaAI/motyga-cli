@@ -1,21 +1,21 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ForcedLoginMethod;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::parse_command::ParsedCommand;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::FileChange;
-pub use codex_protocol::protocol::GitSha;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::ThreadId;
+use motyga_protocol::config_types::ForcedLoginMethod;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::config_types::SandboxMode;
+use motyga_protocol::config_types::Verbosity;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::parse_command::ParsedCommand;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::FileChange;
+pub use motyga_protocol::protocol::GitSha;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -64,7 +64,7 @@ pub struct InitializeCapabilities {
 pub struct InitializeResponse {
     pub user_agent: String,
     /// Absolute path to the server's $MOTYGA_HOME directory.
-    pub codex_home: AbsolutePathBuf,
+    pub motyga_home: AbsolutePathBuf,
     /// Platform family for the running app-server target, for example
     /// `"unix"` or `"windows"`.
     pub platform_family: String,
@@ -132,8 +132,8 @@ pub struct GitDiffToRemoteResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ApplyPatchApprovalParams {
     pub conversation_id: ThreadId,
-    /// Use to correlate this with [codex_protocol::protocol::PatchApplyBeginEvent]
-    /// and [codex_protocol::protocol::PatchApplyEndEvent].
+    /// Use to correlate this with [motyga_protocol::protocol::PatchApplyBeginEvent]
+    /// and [motyga_protocol::protocol::PatchApplyEndEvent].
     pub call_id: String,
     pub file_changes: HashMap<PathBuf, FileChange>,
     /// Optional explanatory reason (e.g. request for extra write access).
@@ -153,8 +153,8 @@ pub struct ApplyPatchApprovalResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ExecCommandApprovalParams {
     pub conversation_id: ThreadId,
-    /// Use to correlate this with [codex_protocol::protocol::ExecCommandBeginEvent]
-    /// and [codex_protocol::protocol::ExecCommandEndEvent].
+    /// Use to correlate this with [motyga_protocol::protocol::ExecCommandBeginEvent]
+    /// and [motyga_protocol::protocol::ExecCommandEndEvent].
     pub call_id: String,
     /// Identifier for this specific approval callback.
     pub approval_id: Option<String>,

@@ -395,7 +395,7 @@ mod tests {
         let status = Command::new(std::env::current_exe().expect("current test binary"))
             .arg("from_absolute_path_with_removed_current_dir_child")
             .arg("--ignored")
-            .env("CODEX_ABSOLUTE_PATH_REMOVED_CWD_CHILD", "1")
+            .env("MOTYGA_ABSOLUTE_PATH_REMOVED_CWD_CHILD", "1")
             .status()
             .expect("run child test");
 
@@ -406,7 +406,7 @@ mod tests {
     #[test]
     #[ignore]
     fn from_absolute_path_with_removed_current_dir_child() {
-        if std::env::var_os("CODEX_ABSOLUTE_PATH_REMOVED_CWD_CHILD").is_none() {
+        if std::env::var_os("MOTYGA_ABSOLUTE_PATH_REMOVED_CWD_CHILD").is_none() {
             return;
         }
 
@@ -418,14 +418,14 @@ mod tests {
         std::env::current_dir().expect_err("current dir should be unavailable");
 
         let path = AbsolutePathBuf::from_absolute_path(test_path_buf(
-            "/tmp/codex/../codex-home/plugins/cache",
+            "/tmp/motyga/../motyga-home/plugins/cache",
         ))
         .expect("absolute path should not require current dir");
 
         std::env::set_current_dir(original_cwd).expect("restore cwd");
         assert_eq!(
             path.as_path(),
-            test_path_buf("/tmp/codex-home/plugins/cache")
+            test_path_buf("/tmp/motyga-home/plugins/cache")
         );
     }
 

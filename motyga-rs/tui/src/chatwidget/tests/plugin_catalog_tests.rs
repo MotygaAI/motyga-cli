@@ -43,7 +43,7 @@ async fn plugins_popup_uses_product_labels_for_remote_and_personal_tabs() {
                 )],
             ),
             PluginMarketplaceEntry {
-                name: "codex-curated".to_string(),
+                name: "motyga-curated".to_string(),
                 path: Some(plugins_test_personal_marketplace_path()),
                 interface: Some(MarketplaceInterface {
                     display_name: Some("Personal".to_string()),

@@ -36,20 +36,20 @@ class RunBazelWithBuildBuddyTest(unittest.TestCase):
     def test_keyless_invocation_drops_remote_ci_configuration(self) -> None:
         self.assertIsNone(
             run_bazel_with_buildbuddy.remote_config(
-                ["build", "--config=ci-linux", "//motyga-rs/cli:codex"],
+                ["build", "--config=ci-linux", "//motyga-rs/cli:motyga"],
                 {},
             )
         )
         self.assertEqual(
             run_bazel_with_buildbuddy.bazel_args_with_remote_config(
-                ["build", "--config=ci-linux", "--", "//motyga-rs/cli:codex"],
+                ["build", "--config=ci-linux", "--", "//motyga-rs/cli:motyga"],
                 {},
             ),
-            ["build", "--", "//motyga-rs/cli:codex"],
+            ["build", "--", "//motyga-rs/cli:motyga"],
         )
 
     def test_program_arguments_after_separator_do_not_select_or_lose_rbe(self) -> None:
-        args = ["run", "//motyga-rs/cli:codex", "--", "--config=remote"]
+        args = ["run", "//motyga-rs/cli:motyga", "--", "--config=remote"]
 
         self.assertEqual(
             run_bazel_with_buildbuddy.bazel_args_with_remote_config(args, {}),
@@ -68,7 +68,7 @@ class RunBazelWithBuildBuddyTest(unittest.TestCase):
 
             self.assertEqual(
                 run_bazel_with_buildbuddy.bazel_args_with_remote_config(
-                    ["build", "--config=ci-linux", "--", "//motyga-rs/cli:codex"],
+                    ["build", "--config=ci-linux", "--", "//motyga-rs/cli:motyga"],
                     env,
                 ),
                 [
@@ -77,7 +77,7 @@ class RunBazelWithBuildBuddyTest(unittest.TestCase):
                     "--remote_header=x-buildbuddy-api-key=token",
                     "--config=ci-linux",
                     "--",
-                    "//motyga-rs/cli:codex",
+                    "//motyga-rs/cli:motyga",
                 ],
             )
 
@@ -86,7 +86,7 @@ class RunBazelWithBuildBuddyTest(unittest.TestCase):
 
         self.assertEqual(
             run_bazel_with_buildbuddy.bazel_args_with_remote_config(
-                ["build", "--config=ci-windows-cross", "//motyga-rs/cli:codex"],
+                ["build", "--config=ci-windows-cross", "//motyga-rs/cli:motyga"],
                 env,
             ),
             [
@@ -94,7 +94,7 @@ class RunBazelWithBuildBuddyTest(unittest.TestCase):
                 "--config=buildbuddy-generic-rbe",
                 "--remote_header=x-buildbuddy-api-key=fork-token",
                 "--config=ci-windows-cross",
-                "//motyga-rs/cli:codex",
+                "//motyga-rs/cli:motyga",
             ],
         )
 
@@ -146,7 +146,7 @@ class RunBazelWithBuildBuddyTest(unittest.TestCase):
 
     def test_run_in_fork_repository_cannot_select_openai_host(self) -> None:
         with TemporaryDirectory() as temp_dir:
-            env = self.github_env(temp_dir, repository="contributor/codex")
+            env = self.github_env(temp_dir, repository="contributor/motyga")
 
             self.assertEqual(
                 run_bazel_with_buildbuddy.remote_config(
@@ -177,7 +177,7 @@ class RunBazelWithBuildBuddyTest(unittest.TestCase):
             run_bazel_with_buildbuddy.bazel_command(
                 "info",
                 "execution_root",
-                env={"CODEX_BAZEL_BIN": "fake-bazel"},
+                env={"MOTYGA_BAZEL_BIN": "fake-bazel"},
             ),
             ["fake-bazel", "info", "execution_root"],
         )
@@ -222,7 +222,7 @@ class RunBazelWithBuildBuddyTest(unittest.TestCase):
             f"import sys; sys.exit(37 if sys.argv[1] == {spaced_arg!r} else 91)"
         )
         env = os.environ.copy()
-        env["CODEX_BAZEL_BIN"] = sys.executable
+        env["MOTYGA_BAZEL_BIN"] = sys.executable
         env.pop("BAZEL_OUTPUT_USER_ROOT", None)
         env.pop("BUILDBUDDY_API_KEY", None)
         env.pop("GITHUB_ACTIONS", None)

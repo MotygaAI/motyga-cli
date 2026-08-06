@@ -1,6 +1,6 @@
 //! Shortcut picker construction for `/keymap`.
 
-use codex_config::types::TuiKeymap;
+use motyga_config::types::TuiKeymap;
 use ratatui::style::Styled;
 use ratatui::style::Stylize;
 use ratatui::text::Line;

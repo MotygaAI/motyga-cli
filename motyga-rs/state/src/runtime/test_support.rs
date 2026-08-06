@@ -3,15 +3,15 @@ use chrono::DateTime;
 #[cfg(test)]
 use chrono::Utc;
 #[cfg(test)]
-use codex_protocol::ThreadId;
+use motyga_protocol::ThreadId;
 #[cfg(test)]
-use codex_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::openai_models::ReasoningEffort;
 #[cfg(test)]
-use codex_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::AskForApproval;
 #[cfg(test)]
-use codex_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::SandboxPolicy;
 #[cfg(test)]
-use codex_protocol::protocol::ThreadHistoryMode;
+use motyga_protocol::protocol::ThreadHistoryMode;
 #[cfg(test)]
 use std::path::Path;
 #[cfg(test)]
@@ -32,21 +32,21 @@ pub(super) fn unique_temp_dir() -> PathBuf {
         .duration_since(UNIX_EPOCH)
         .map_or(0, |duration| duration.as_nanos());
     std::env::temp_dir().join(format!(
-        "codex-state-runtime-test-{nanos}-{}",
+        "motyga-state-runtime-test-{nanos}-{}",
         Uuid::new_v4()
     ))
 }
 
 #[cfg(test)]
 pub(super) fn test_thread_metadata(
-    codex_home: &Path,
+    motyga_home: &Path,
     thread_id: ThreadId,
     cwd: PathBuf,
 ) -> ThreadMetadata {
     let now = DateTime::<Utc>::from_timestamp(1_700_000_000, 0).expect("timestamp");
     ThreadMetadata {
         id: thread_id,
-        rollout_path: codex_home.join(format!("rollout-{thread_id}.jsonl")),
+        rollout_path: motyga_home.join(format!("rollout-{thread_id}.jsonl")),
         created_at: now,
         updated_at: now,
         recency_at: now,

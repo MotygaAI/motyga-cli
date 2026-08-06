@@ -1,23 +1,23 @@
-use codex_analytics::GuardianApprovalRequestSource;
-use codex_analytics::GuardianReviewAnalyticsResult;
-use codex_analytics::GuardianReviewDecision;
-use codex_analytics::GuardianReviewFailureReason;
-use codex_analytics::GuardianReviewTerminalStatus;
-use codex_analytics::GuardianReviewTrackContext;
-use codex_analytics::GuardianReviewedAction;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::GuardianAssessmentDecisionSource;
-use codex_protocol::protocol::GuardianAssessmentEvent;
-use codex_protocol::protocol::GuardianAssessmentStatus;
-use codex_protocol::protocol::GuardianRiskLevel;
-use codex_protocol::protocol::GuardianUserAuthorization;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::SubAgentSource;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::protocol::WarningEvent;
+use motyga_analytics::GuardianApprovalRequestSource;
+use motyga_analytics::GuardianReviewAnalyticsResult;
+use motyga_analytics::GuardianReviewDecision;
+use motyga_analytics::GuardianReviewFailureReason;
+use motyga_analytics::GuardianReviewTerminalStatus;
+use motyga_analytics::GuardianReviewTrackContext;
+use motyga_analytics::GuardianReviewedAction;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::MotygaErrorInfo;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::GuardianAssessmentDecisionSource;
+use motyga_protocol::protocol::GuardianAssessmentEvent;
+use motyga_protocol::protocol::GuardianAssessmentStatus;
+use motyga_protocol::protocol::GuardianRiskLevel;
+use motyga_protocol::protocol::GuardianUserAuthorization;
+use motyga_protocol::protocol::ReviewDecision;
+use motyga_protocol::protocol::SubAgentSource;
+use motyga_protocol::protocol::TurnAbortReason;
+use motyga_protocol::protocol::WarningEvent;
 use std::sync::Arc;
 use tokio::sync::oneshot;
 use tokio::time::Instant;
@@ -106,7 +106,7 @@ pub(super) enum GuardianReviewError {
     },
     Session {
         message: String,
-        error_info: Option<CodexErrorInfo>,
+        error_info: Option<MotygaErrorInfo>,
     },
     Parse {
         message: String,
@@ -129,7 +129,7 @@ impl GuardianReviewError {
         }
     }
 
-    fn session_with_error_info(err: anyhow::Error, error_info: CodexErrorInfo) -> Self {
+    fn session_with_error_info(err: anyhow::Error, error_info: MotygaErrorInfo) -> Self {
         Self::Session {
             message: err.to_string(),
             error_info: Some(error_info),
@@ -181,11 +181,11 @@ pub(crate) fn routes_approval_to_guardian_with_reviewer(
 }
 
 pub(crate) fn is_guardian_reviewer_source(
-    session_source: &codex_protocol::protocol::SessionSource,
+    session_source: &motyga_protocol::protocol::SessionSource,
 ) -> bool {
     matches!(
         session_source,
-        codex_protocol::protocol::SessionSource::SubAgent(SubAgentSource::Other(label))
+        motyga_protocol::protocol::SessionSource::SubAgent(SubAgentSource::Other(label))
             if label == GUARDIAN_REVIEWER_NAME
     )
 }
@@ -668,7 +668,7 @@ pub(crate) fn spawn_approval_request_review(
 pub(super) struct GuardianReviewSessionConfig {
     pub(super) spawn_config: crate::config::Config,
     model: String,
-    reasoning_effort: Option<codex_protocol::openai_models::ReasoningEffort>,
+    reasoning_effort: Option<motyga_protocol::openai_models::ReasoningEffort>,
     default_review_model_id: String,
     catalog_contains_auto_review: bool,
     model_overridden: bool,
@@ -687,12 +687,12 @@ pub(super) async fn guardian_review_session_config(
     let available_models = session
         .services
         .models_manager
-        .list_models(codex_models_manager::manager::RefreshStrategy::Offline)
+        .list_models(motyga_models_manager::manager::RefreshStrategy::Offline)
         .await;
     let default_review_model_id = turn.provider.approval_review_preferred_model();
     let preferred_reasoning_effort = |supports_low: bool, fallback| {
         if supports_low {
-            Some(codex_protocol::openai_models::ReasoningEffort::Low)
+            Some(motyga_protocol::openai_models::ReasoningEffort::Low)
         } else {
             fallback
         }
@@ -712,7 +712,7 @@ pub(super) async fn guardian_review_session_config(
             preset
                 .supported_reasoning_efforts
                 .iter()
-                .any(|effort| effort.effort == codex_protocol::openai_models::ReasoningEffort::Low),
+                .any(|effort| effort.effort == motyga_protocol::openai_models::ReasoningEffort::Low),
             Some(preset.default_reasoning_effort.clone()),
         );
         (review_model_id.to_string(), reasoning_effort)
@@ -721,7 +721,7 @@ pub(super) async fn guardian_review_session_config(
             turn.model_info
                 .supported_reasoning_levels
                 .iter()
-                .any(|preset| preset.effort == codex_protocol::openai_models::ReasoningEffort::Low),
+                .any(|preset| preset.effort == motyga_protocol::openai_models::ReasoningEffort::Low),
             turn.reasoning_effort
                 .clone()
                 .or_else(|| turn.model_info.default_reasoning_level.clone()),
@@ -922,11 +922,11 @@ fn should_retry_guardian_review(outcome: &GuardianReviewOutcome) -> bool {
         GuardianReviewOutcome::Error(
             GuardianReviewError::Session {
                 error_info: Some(
-                    CodexErrorInfo::ServerOverloaded
-                        | CodexErrorInfo::HttpConnectionFailed { .. }
-                        | CodexErrorInfo::ResponseStreamConnectionFailed { .. }
-                        | CodexErrorInfo::InternalServerError
-                        | CodexErrorInfo::ResponseStreamDisconnected { .. }
+                    MotygaErrorInfo::ServerOverloaded
+                        | MotygaErrorInfo::HttpConnectionFailed { .. }
+                        | MotygaErrorInfo::ResponseStreamConnectionFailed { .. }
+                        | MotygaErrorInfo::InternalServerError
+                        | MotygaErrorInfo::ResponseStreamDisconnected { .. }
                 ),
                 ..
             } | GuardianReviewError::Parse { .. }
@@ -947,7 +947,7 @@ mod review_tests {
             GuardianReviewError::session(anyhow::anyhow!("guardian runtime failed"));
         let structured_session_error = GuardianReviewError::session_with_error_info(
             anyhow::anyhow!("temporary guardian failure"),
-            CodexErrorInfo::ServerOverloaded,
+            MotygaErrorInfo::ServerOverloaded,
         );
 
         assert!(matches!(
@@ -977,15 +977,15 @@ mod review_tests {
             rationale: "deny".to_string(),
         };
         let transient_error_info = [
-            CodexErrorInfo::ServerOverloaded,
-            CodexErrorInfo::HttpConnectionFailed {
+            MotygaErrorInfo::ServerOverloaded,
+            MotygaErrorInfo::HttpConnectionFailed {
                 http_status_code: Some(502),
             },
-            CodexErrorInfo::ResponseStreamConnectionFailed {
+            MotygaErrorInfo::ResponseStreamConnectionFailed {
                 http_status_code: Some(503),
             },
-            CodexErrorInfo::InternalServerError,
-            CodexErrorInfo::ResponseStreamDisconnected {
+            MotygaErrorInfo::InternalServerError,
+            MotygaErrorInfo::ResponseStreamDisconnected {
                 http_status_code: None,
             },
         ];
@@ -1018,7 +1018,7 @@ mod review_tests {
             (
                 GuardianReviewOutcome::Error(GuardianReviewError::session_with_error_info(
                     anyhow::anyhow!("bad request"),
-                    CodexErrorInfo::BadRequest,
+                    MotygaErrorInfo::BadRequest,
                 )),
                 false,
             ),

@@ -5,8 +5,8 @@ import asyncio
 from app_server_harness import AppServerHarness
 from app_server_helpers import response_approval_policy
 
-from openai_codex import ApprovalMode, AsyncCodex, Codex
-from openai_codex.generated.v2_all import AskForApprovalValue, ThreadResumeParams
+from motyga_sdk import ApprovalMode, AsyncMotyga, Motyga
+from motyga_sdk.generated.v2_all import AskForApprovalValue, ThreadResumeParams
 
 
 def test_thread_resume_inherits_deny_all_approval_mode(tmp_path) -> None:
@@ -14,11 +14,11 @@ def test_thread_resume_inherits_deny_all_approval_mode(tmp_path) -> None:
     with AppServerHarness(tmp_path) as harness:
         harness.responses.enqueue_assistant_message("source seeded", response_id="resume-mode")
 
-        with Codex(config=harness.app_server_config()) as codex:
-            source = codex.thread_start(approval_mode=ApprovalMode.deny_all)
+        with Motyga(config=harness.app_server_config()) as motyga:
+            source = motyga.thread_start(approval_mode=ApprovalMode.deny_all)
             result = source.run("seed the source rollout")
-            resumed = codex.thread_resume(source.id)
-            resumed_state = codex._client.thread_resume(  # noqa: SLF001
+            resumed = motyga.thread_resume(source.id)
+            resumed_state = motyga._client.thread_resume(  # noqa: SLF001
                 resumed.id,
                 ThreadResumeParams(thread_id=resumed.id),
             )
@@ -37,11 +37,11 @@ def test_thread_fork_inherits_deny_all_approval_mode(tmp_path) -> None:
     with AppServerHarness(tmp_path) as harness:
         harness.responses.enqueue_assistant_message("source seeded", response_id="fork-mode")
 
-        with Codex(config=harness.app_server_config()) as codex:
-            source = codex.thread_start(approval_mode=ApprovalMode.deny_all)
+        with Motyga(config=harness.app_server_config()) as motyga:
+            source = motyga.thread_start(approval_mode=ApprovalMode.deny_all)
             result = source.run("seed the source rollout")
-            forked = codex.thread_fork(source.id)
-            forked_state = codex._client.thread_resume(  # noqa: SLF001
+            forked = motyga.thread_fork(source.id)
+            forked_state = motyga._client.thread_resume(  # noqa: SLF001
                 forked.id,
                 ThreadResumeParams(thread_id=forked.id),
             )
@@ -65,14 +65,14 @@ def test_thread_fork_can_override_approval_mode(tmp_path) -> None:
             response_id="fork-override-mode",
         )
 
-        with Codex(config=harness.app_server_config()) as codex:
-            source = codex.thread_start(approval_mode=ApprovalMode.deny_all)
+        with Motyga(config=harness.app_server_config()) as motyga:
+            source = motyga.thread_start(approval_mode=ApprovalMode.deny_all)
             result = source.run("seed the source rollout")
-            forked = codex.thread_fork(
+            forked = motyga.thread_fork(
                 source.id,
                 approval_mode=ApprovalMode.auto_review,
             )
-            forked_state = codex._client.thread_resume(  # noqa: SLF001
+            forked_state = motyga._client.thread_resume(  # noqa: SLF001
                 forked.id,
                 ThreadResumeParams(thread_id=forked.id),
             )
@@ -92,18 +92,18 @@ def test_turn_approval_mode_persists_until_next_turn(tmp_path) -> None:
         harness.responses.enqueue_assistant_message("turn override", response_id="turn-mode-1")
         harness.responses.enqueue_assistant_message("turn inherited", response_id="turn-mode-2")
 
-        with Codex(config=harness.app_server_config()) as codex:
-            thread = codex.thread_start()
+        with Motyga(config=harness.app_server_config()) as motyga:
+            thread = motyga.thread_start()
             first_result = thread.run(
                 "deny this and later turns",
                 approval_mode=ApprovalMode.deny_all,
             )
-            after_turn_override = codex._client.thread_resume(  # noqa: SLF001
+            after_turn_override = motyga._client.thread_resume(  # noqa: SLF001
                 thread.id,
                 ThreadResumeParams(thread_id=thread.id),
             )
             second_result = thread.run("inherit previous approval mode")
-            after_omitted_turn = codex._client.thread_resume(  # noqa: SLF001
+            after_omitted_turn = motyga._client.thread_resume(  # noqa: SLF001
                 thread.id,
                 ThreadResumeParams(thread_id=thread.id),
             )
@@ -128,11 +128,11 @@ def test_thread_run_approval_mode_persists_until_explicit_override(tmp_path) -> 
         harness.responses.enqueue_assistant_message("locked down", response_id="approval-1")
         harness.responses.enqueue_assistant_message("reviewable", response_id="approval-2")
 
-        with Codex(config=harness.app_server_config()) as codex:
-            thread = codex.thread_start(approval_mode=ApprovalMode.deny_all)
+        with Motyga(config=harness.app_server_config()) as motyga:
+            thread = motyga.thread_start(approval_mode=ApprovalMode.deny_all)
 
             first_result = thread.run("keep approvals denied")
-            after_default_run = codex._client.thread_resume(  # noqa: SLF001
+            after_default_run = motyga._client.thread_resume(  # noqa: SLF001
                 thread.id,
                 ThreadResumeParams(thread_id=thread.id),
             )
@@ -140,7 +140,7 @@ def test_thread_run_approval_mode_persists_until_explicit_override(tmp_path) -> 
                 "allow auto review now",
                 approval_mode=ApprovalMode.auto_review,
             )
-            after_override_run = codex._client.thread_resume(  # noqa: SLF001
+            after_override_run = motyga._client.thread_resume(  # noqa: SLF001
                 thread.id,
                 ThreadResumeParams(thread_id=thread.id),
             )
@@ -176,10 +176,10 @@ def test_async_thread_run_approval_mode_persists_until_explicit_override(
                 response_id="async-approval-2",
             )
 
-            async with AsyncCodex(config=harness.app_server_config()) as codex:
-                thread = await codex.thread_start(approval_mode=ApprovalMode.deny_all)
+            async with AsyncMotyga(config=harness.app_server_config()) as motyga:
+                thread = await motyga.thread_start(approval_mode=ApprovalMode.deny_all)
                 first_result = await thread.run("keep async approvals denied")
-                after_default_run = await codex._client.thread_resume(  # noqa: SLF001
+                after_default_run = await motyga._client.thread_resume(  # noqa: SLF001
                     thread.id,
                     ThreadResumeParams(thread_id=thread.id),
                 )
@@ -187,7 +187,7 @@ def test_async_thread_run_approval_mode_persists_until_explicit_override(
                     "allow async auto review now",
                     approval_mode=ApprovalMode.auto_review,
                 )
-                after_override_run = await codex._client.thread_resume(  # noqa: SLF001
+                after_override_run = await motyga._client.thread_resume(  # noqa: SLF001
                     thread.id,
                     ThreadResumeParams(thread_id=thread.id),
                 )

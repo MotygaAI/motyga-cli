@@ -3,7 +3,7 @@
 //! This module mirrors the semantics used by the macOS Seatbelt sandbox:
 //! - the filesystem is read-only by default,
 //! - explicit writable roots are layered on top, and
-//! - sensitive subpaths such as `.git`, `.agents`, and `.codex` remain
+//! - sensitive subpaths such as `.git`, `.agents`, and `.motyga` remain
 //!   read-only even when their parent root is writable.
 //!
 //! The overall Linux sandbox is composed of:
@@ -24,15 +24,15 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
-use codex_protocol::error::CodexErr;
-use codex_protocol::error::Result;
-use codex_protocol::permissions::is_protected_metadata_name;
-use codex_protocol::protocol::FileSystemAccessMode;
-use codex_protocol::protocol::FileSystemPath;
-use codex_protocol::protocol::FileSystemSandboxPolicy;
-use codex_protocol::protocol::FileSystemSpecialPath;
-use codex_protocol::protocol::WritableRoot;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::error::Result;
+use motyga_protocol::permissions::is_protected_metadata_name;
+use motyga_protocol::protocol::FileSystemAccessMode;
+use motyga_protocol::protocol::FileSystemPath;
+use motyga_protocol::protocol::FileSystemSandboxPolicy;
+use motyga_protocol::protocol::FileSystemSpecialPath;
+use motyga_protocol::protocol::WritableRoot;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use globset::GlobBuilder;
 use globset::GlobSet;
 use globset::GlobSetBuilder;
@@ -405,7 +405,7 @@ fn create_filesystem_args(
                 };
                 // Automatic repo-metadata read masks are skipped here so the
                 // metadata handling below can apply the root-scoped
-                // protection consistently for `.git`, `.agents`, and `.codex`.
+                // protection consistently for `.git`, `.agents`, and `.motyga`.
                 // User-authored `read` rules for other subpaths and `none`
                 // rules should keep their normal bwrap behavior, which can mask
                 // the first missing component to prevent creation under writable
@@ -732,7 +732,7 @@ fn expand_unreadable_globs_with_ripgrep(
             }
             expanded_paths.insert(path);
             if expanded_paths.len() > MAX_UNREADABLE_GLOB_MATCHES {
-                return Err(CodexErr::Fatal(format!(
+                return Err(MotygaErr::Fatal(format!(
                     "unreadable glob expansion for {} matched more than {MAX_UNREADABLE_GLOB_MATCHES} paths",
                     search_root.display()
                 )));
@@ -851,7 +851,7 @@ fn ripgrep_files(
         }
 
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(CodexErr::Fatal(format!(
+        return Err(MotygaErr::Fatal(format!(
             "ripgrep unreadable glob scan failed for {}: {stderr}",
             search_root.display()
         )));
@@ -886,7 +886,7 @@ fn glob_files(
             .allow_unclosed_class(true)
             .build()
             .map_err(|err| {
-                CodexErr::Fatal(format!(
+                MotygaErr::Fatal(format!(
                     "unreadable glob pattern is invalid for {}: {err}",
                     search_root.display()
                 ))
@@ -894,7 +894,7 @@ fn glob_files(
         builder.add(glob);
     }
     let glob_set = builder.build().map_err(|err| {
-        CodexErr::Fatal(format!(
+        MotygaErr::Fatal(format!(
             "unreadable glob matcher failed for {}: {err}",
             search_root.display()
         ))
@@ -1030,7 +1030,7 @@ fn append_read_only_subpath_args(
          * only protect a startup-time snapshot; the sandboxed process could
          * replace the writable symlink before it reads through the logical path.
          */
-        return Err(CodexErr::Fatal(format!(
+        return Err(MotygaErr::Fatal(format!(
             "cannot enforce sandbox read-only path {} because it crosses writable symlink {}",
             subpath.display(),
             symlink.display()
@@ -1151,7 +1151,7 @@ fn append_unreadable_root_args(
          * protect the old target while the logical path could later point
          * somewhere else.
          */
-        return Err(CodexErr::Fatal(format!(
+        return Err(MotygaErr::Fatal(format!(
             "cannot enforce sandbox deny-read path {} because it crosses writable symlink {}",
             unreadable_root.display(),
             symlink.display()
@@ -1328,12 +1328,12 @@ fn find_first_non_existent_component(target_path: &Path) -> Option<PathBuf> {
 mod tests {
     use super::*;
 
-    use codex_protocol::protocol::FileSystemAccessMode;
-    use codex_protocol::protocol::FileSystemPath;
-    use codex_protocol::protocol::FileSystemSandboxEntry;
-    use codex_protocol::protocol::FileSystemSandboxPolicy;
-    use codex_protocol::protocol::FileSystemSpecialPath;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_protocol::protocol::FileSystemAccessMode;
+    use motyga_protocol::protocol::FileSystemPath;
+    use motyga_protocol::protocol::FileSystemSandboxEntry;
+    use motyga_protocol::protocol::FileSystemSandboxPolicy;
+    use motyga_protocol::protocol::FileSystemSpecialPath;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
     use tempfile::TempDir;
 
@@ -1576,13 +1576,13 @@ mod tests {
     fn writable_roots_under_symlinked_ancestors_bind_real_target() {
         let temp_dir = TempDir::new().expect("temp dir");
         let logical_home = temp_dir.path().join("home");
-        let real_codex = temp_dir.path().join("real-codex");
-        let logical_codex = logical_home.join(".motyga");
-        let real_memories = real_codex.join("memories");
-        let logical_memories = logical_codex.join("memories");
+        let real_motyga = temp_dir.path().join("real-motyga");
+        let logical_motyga = logical_home.join(".motyga");
+        let real_memories = real_motyga.join("memories");
+        let logical_memories = logical_motyga.join("memories");
         std::fs::create_dir_all(&logical_home).expect("create logical home");
         std::fs::create_dir_all(&real_memories).expect("create memories dir");
-        std::os::unix::fs::symlink(&real_codex, &logical_codex)
+        std::os::unix::fs::symlink(&real_motyga, &logical_motyga)
             .expect("create symlinked motyga home");
 
         let logical_memories_root =
@@ -1946,16 +1946,16 @@ mod tests {
                 .expect("filesystem args");
         let dot_git = path_to_string(&temp_dir.path().join(".git"));
         let dot_agents = path_to_string(&temp_dir.path().join(".agents"));
-        let dot_codex = path_to_string(&temp_dir.path().join(".motyga"));
+        let dot_motyga = path_to_string(&temp_dir.path().join(".motyga"));
 
         assert_empty_directory_mounted_read_only(&args.args, Path::new(&dot_git));
         assert_empty_directory_mounted_read_only(&args.args, Path::new(&dot_agents));
-        assert_empty_directory_mounted_read_only(&args.args, Path::new(&dot_codex));
+        assert_empty_directory_mounted_read_only(&args.args, Path::new(&dot_motyga));
         assert!(args.preserved_files.is_empty());
         let synthetic_targets = synthetic_mount_target_paths(&args);
         assert!(synthetic_targets.contains(&PathBuf::from(&dot_git)));
         assert!(synthetic_targets.contains(&PathBuf::from(&dot_agents)));
-        assert!(synthetic_targets.contains(&PathBuf::from(&dot_codex)));
+        assert!(synthetic_targets.contains(&PathBuf::from(&dot_motyga)));
         assert_eq!(
             protected_create_target_paths(&args),
             Vec::<PathBuf>::new(),
@@ -2023,10 +2023,10 @@ mod tests {
             vec![
                 PathBuf::from("/.git"),
                 PathBuf::from("/.agents"),
-                PathBuf::from("/.codex"),
+                PathBuf::from("/.motyga"),
                 PathBuf::from("/dev/.git"),
                 PathBuf::from("/dev/.agents"),
-                PathBuf::from("/dev/.codex"),
+                PathBuf::from("/dev/.motyga"),
             ]
         );
         assert_eq!(
@@ -2061,9 +2061,9 @@ mod tests {
                 "--perms".to_string(),
                 "555".to_string(),
                 "--tmpfs".to_string(),
-                "/.codex".to_string(),
+                "/.motyga".to_string(),
                 "--remount-ro".to_string(),
-                "/.codex".to_string(),
+                "/.motyga".to_string(),
                 // Rebind /dev after the root bind so device nodes remain
                 // writable/usable inside the writable root.
                 "--bind".to_string(),
@@ -2086,9 +2086,9 @@ mod tests {
                 "--perms".to_string(),
                 "555".to_string(),
                 "--tmpfs".to_string(),
-                "/dev/.codex".to_string(),
+                "/dev/.motyga".to_string(),
                 "--remount-ro".to_string(),
-                "/dev/.codex".to_string(),
+                "/dev/.motyga".to_string(),
             ]
         );
     }

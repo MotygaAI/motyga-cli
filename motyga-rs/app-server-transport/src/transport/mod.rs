@@ -4,10 +4,10 @@ use crate::outgoing_message::ConnectionId;
 use crate::outgoing_message::OutgoingError;
 use crate::outgoing_message::OutgoingMessage;
 use crate::outgoing_message::QueuedOutgoingMessage;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_core::config::find_codex_home;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::JSONRPCMessage;
+use motyga_core::config::find_motyga_home;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use std::net::SocketAddr;
 use std::path::Path;
 use std::str::FromStr;
@@ -53,17 +53,17 @@ const APP_SERVER_CONTROL_SOCKET_DIR_NAME: &str = "app-server-control";
 const APP_SERVER_CONTROL_SOCKET_FILE_NAME: &str = "app-server-control.sock";
 const APP_SERVER_STARTUP_LOCK_FILE_NAME: &str = "app-server-startup.lock";
 
-pub fn app_server_control_socket_path(codex_home: &Path) -> std::io::Result<AbsolutePathBuf> {
+pub fn app_server_control_socket_path(motyga_home: &Path) -> std::io::Result<AbsolutePathBuf> {
     AbsolutePathBuf::from_absolute_path(
-        codex_home
+        motyga_home
             .join(APP_SERVER_CONTROL_SOCKET_DIR_NAME)
             .join(APP_SERVER_CONTROL_SOCKET_FILE_NAME),
     )
 }
 
-pub fn app_server_startup_lock_path(codex_home: &Path) -> std::io::Result<AbsolutePathBuf> {
+pub fn app_server_startup_lock_path(motyga_home: &Path) -> std::io::Result<AbsolutePathBuf> {
     AbsolutePathBuf::from_absolute_path(
-        codex_home
+        motyga_home
             .join(APP_SERVER_CONTROL_SOCKET_DIR_NAME)
             .join(APP_SERVER_STARTUP_LOCK_FILE_NAME),
     )
@@ -118,13 +118,13 @@ impl AppServerTransport {
 
         if let Some(raw_socket_path) = listen_url.strip_prefix("unix://") {
             let socket_path = if raw_socket_path.is_empty() {
-                let codex_home = find_codex_home().map_err(|err| {
+                let motyga_home = find_motyga_home().map_err(|err| {
                     AppServerTransportParseError::InvalidUnixSocketPath {
                         listen_url: listen_url.to_string(),
                         message: format!("failed to resolve MOTYGA_HOME: {err}"),
                     }
                 })?;
-                app_server_control_socket_path(&codex_home).map_err(|err| {
+                app_server_control_socket_path(&motyga_home).map_err(|err| {
                     AppServerTransportParseError::InvalidUnixSocketPath {
                         listen_url: listen_url.to_string(),
                         message: err.to_string(),
@@ -275,12 +275,12 @@ fn serialize_outgoing_message(outgoing_message: OutgoingMessage) -> Option<Strin
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_app_server_protocol::ConfigWarningNotification;
-    use codex_app_server_protocol::JSONRPCNotification;
-    use codex_app_server_protocol::JSONRPCRequest;
-    use codex_app_server_protocol::JSONRPCResponse;
-    use codex_app_server_protocol::RequestId;
-    use codex_app_server_protocol::ServerNotification;
+    use motyga_app_server_protocol::ConfigWarningNotification;
+    use motyga_app_server_protocol::JSONRPCNotification;
+    use motyga_app_server_protocol::JSONRPCRequest;
+    use motyga_app_server_protocol::JSONRPCResponse;
+    use motyga_app_server_protocol::RequestId;
+    use motyga_app_server_protocol::ServerNotification;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use tokio::time::Duration;

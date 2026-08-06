@@ -9,7 +9,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use anyhow::Context;
-use codex_uds::UnixListener;
+use motyga_uds::UnixListener;
 use pretty_assertions::assert_eq;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
@@ -72,13 +72,13 @@ async fn pipes_stdin_and_stdout_through_socket() -> anyhow::Result<()> {
     let child_task = tokio::task::spawn_blocking(move || -> anyhow::Result<ChildOutput> {
         let stdin =
             std::fs::File::open(&request_path).context("failed to open child stdin fixture")?;
-        let mut child = Command::new(codex_utils_cargo_bin::cargo_bin("codex-stdio-to-uds")?)
+        let mut child = Command::new(motyga_utils_cargo_bin::cargo_bin("motyga-stdio-to-uds")?)
             .arg(&socket_path)
             .stdin(Stdio::from(stdin))
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .context("failed to spawn codex-stdio-to-uds")?;
+            .context("failed to spawn motyga-stdio-to-uds")?;
 
         let mut child_stdout = child.stdout.take().context("missing child stdout")?;
         let mut child_stderr = child.stderr.take().context("missing child stderr")?;
@@ -114,7 +114,7 @@ async fn pipes_stdin_and_stdout_through_socket() -> anyhow::Result<()> {
                     .context("timed out waiting for child stderr after kill")?
                     .context("failed to read child stderr")?;
                 anyhow::bail!(
-                    "codex-stdio-to-uds did not exit in time; server events: {:?}; stderr: {}",
+                    "motyga-stdio-to-uds did not exit in time; server events: {:?}; stderr: {}",
                     server_events,
                     String::from_utf8_lossy(&stderr).trim_end()
                 );
@@ -143,7 +143,7 @@ async fn pipes_stdin_and_stdout_through_socket() -> anyhow::Result<()> {
     let child_output = child_task.await.context("child task panicked")??;
     assert!(
         child_output.status.success(),
-        "codex-stdio-to-uds exited with {status}; server events: {:?}; stderr: {}",
+        "motyga-stdio-to-uds exited with {status}; server events: {:?}; stderr: {}",
         child_output.server_events,
         String::from_utf8_lossy(&child_output.stderr).trim_end(),
         status = child_output.status

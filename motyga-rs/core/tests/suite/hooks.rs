@@ -3,25 +3,25 @@ use std::path::Path;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_core::config::Config;
-use codex_core::config::Constrained;
-use codex_features::Feature;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::built_in_model_providers;
-use codex_plugin::PluginHookSource;
-use codex_plugin::PluginId;
-use codex_protocol::items::parse_hook_prompt_fragment;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_core::config::Config;
+use motyga_core::config::Constrained;
+use motyga_features::Feature;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::built_in_model_providers;
+use motyga_plugin::PluginHookSource;
+use motyga_plugin::PluginId;
+use motyga_protocol::items::parse_hook_prompt_fragment;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::RolloutLine;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use core_test_support::hooks::trust_discovered_hooks;
 use core_test_support::hooks::trust_hooks;
 use core_test_support::managed_network_requirements_loader;
@@ -42,7 +42,7 @@ use core_test_support::skip_if_host_windows;
 use core_test_support::skip_if_no_network;
 use core_test_support::streaming_sse::StreamingSseChunk;
 use core_test_support::streaming_sse::start_streaming_sse_server;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -106,13 +106,13 @@ fn non_openai_model_provider(server: &wiremock::MockServer) -> ModelProviderInfo
 fn trust_plugin_hooks(config: &mut Config, plugin_hook_sources: Vec<PluginHookSource>) {
     config
         .features
-        .enable(Feature::CodexHooks)
+        .enable(Feature::MotygaHooks)
         .expect("test config should allow feature update");
-    let listed = codex_hooks::list_hooks(codex_hooks::HooksConfig {
+    let listed = motyga_hooks::list_hooks(motyga_hooks::HooksConfig {
         feature_enabled: true,
         config_layer_stack: Some(config.config_layer_stack.clone()),
         plugin_hook_sources,
-        ..codex_hooks::HooksConfig::default()
+        ..motyga_hooks::HooksConfig::default()
     });
     assert!(
         !listed.hooks.is_empty(),
@@ -1092,7 +1092,7 @@ async fn stop_hook_can_block_multiple_times_in_same_turn() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_stop_hook(
                 home,
@@ -1121,7 +1121,7 @@ async fn stop_hook_can_block_multiple_times_in_same_turn() -> Result<()> {
         "third request should retain hook prompts in user history",
     );
 
-    let hook_inputs = read_stop_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_stop_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 3);
     let stop_turn_ids = hook_inputs
         .iter()
@@ -1158,7 +1158,7 @@ async fn stop_hook_can_block_multiple_times_in_same_turn() -> Result<()> {
         vec![false, true, true],
     );
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.motyga.rollout_path().expect("rollout path");
     let rollout_text = fs::read_to_string(&rollout_path)?;
     let hook_prompt_texts = rollout_hook_prompt_texts(&rollout_text)?;
     assert!(
@@ -1188,7 +1188,7 @@ async fn session_start_hook_sees_materialized_transcript_path() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_session_start_hook_recording_transcript(home)
                 .expect("failed to write session start hook test fixture");
@@ -1198,7 +1198,7 @@ async fn session_start_hook_sees_materialized_transcript_path() -> Result<()> {
 
     test.submit_turn("hello").await?;
 
-    let hook_inputs = read_session_start_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_session_start_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(
         hook_inputs[0]
@@ -1227,7 +1227,7 @@ async fn session_start_runs_before_user_prompt_submit_on_first_turn() -> Result<
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_session_start_and_user_prompt_submit_order_hooks(home)
                 .expect("failed to write hook ordering fixtures");
@@ -1237,7 +1237,7 @@ async fn session_start_runs_before_user_prompt_submit_on_first_turn() -> Result<
 
     test.submit_turn("hello").await?;
 
-    let hook_inputs = read_hook_order_inputs(test.codex_home_path())?;
+    let hook_inputs = read_hook_order_inputs(test.motyga_home_path())?;
     assert_eq!(
         hook_inputs
             .iter()
@@ -1275,7 +1275,7 @@ async fn session_start_hook_spills_large_additional_context() -> Result<()> {
     .await;
     let additional_context = "remember the reef ".repeat(800);
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook({
             let additional_context = additional_context.clone();
             move |home| {
@@ -1331,7 +1331,7 @@ async fn pre_tool_use_hook_spills_large_additional_context() -> Result<()> {
     .await;
     let additional_context = "remember the pre tool reef ".repeat(800);
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook({
             let additional_context = additional_context.clone();
             move |home| {
@@ -1388,7 +1388,7 @@ async fn compact_session_start_hook_records_additional_context_for_next_turn() -
     let additional_context = "remember the compacted reef";
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(move |home| {
             write_compact_session_start_hook_with_context(home, additional_context)
                 .expect("failed to write compact session start hook fixture");
@@ -1400,8 +1400,8 @@ async fn compact_session_start_hook_records_additional_context_for_next_turn() -
     let test = builder.build(&server).await?;
 
     test.submit_turn("hello before compact").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Compact).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1424,7 +1424,7 @@ async fn compact_session_start_hook_records_additional_context_for_next_turn() -
         "compact matcher should inject additional context before the next model turn",
     );
 
-    let hook_inputs = read_session_start_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_session_start_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(
         hook_inputs[0].get("source").and_then(Value::as_str),
@@ -1471,7 +1471,7 @@ async fn resumed_thread_runs_resume_then_compact_session_start_hooks() -> Result
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(move |home| {
             write_resume_and_compact_session_start_hook_with_context(
                 home,
@@ -1495,7 +1495,7 @@ async fn resumed_thread_runs_resume_then_compact_session_start_hooks() -> Result
     initial.submit_turn("hello before resume").await?;
     assert_eq!(responses_mock.requests().len(), 1);
 
-    let mut resume_builder = test_codex().with_config(move |config| {
+    let mut resume_builder = test_motyga().with_config(move |config| {
         config.model_auto_compact_token_limit = Some(limit);
         trust_discovered_hooks(config);
     });
@@ -1518,7 +1518,7 @@ async fn resumed_thread_runs_resume_then_compact_session_start_hooks() -> Result
         "compact matcher should inject additional context before the next model turn",
     );
 
-    let hook_inputs = read_session_start_hook_inputs(resumed.codex_home_path())?;
+    let hook_inputs = read_session_start_hook_inputs(resumed.motyga_home_path())?;
     assert_eq!(
         hook_inputs
             .iter()
@@ -1555,7 +1555,7 @@ async fn stop_hook_spills_large_continuation_prompt() -> Result<()> {
         .collect::<Vec<_>>()
         .join(" ");
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook({
             let continuation_prompt = continuation_prompt.clone();
             move |home| {
@@ -1602,7 +1602,7 @@ async fn resumed_thread_keeps_stop_continuation_prompt_in_history() -> Result<()
     )
     .await;
 
-    let mut initial_builder = test_codex()
+    let mut initial_builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_stop_hook(home, &[FIRST_CONTINUATION_PROMPT])
                 .expect("failed to write stop hook test fixture");
@@ -1630,7 +1630,7 @@ async fn resumed_thread_keeps_stop_continuation_prompt_in_history() -> Result<()
     )
     .await;
 
-    let mut resume_builder = test_codex().with_config(trust_discovered_hooks);
+    let mut resume_builder = test_motyga().with_config(trust_discovered_hooks);
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
 
     resumed.submit_turn("and now continue").await?;
@@ -1667,7 +1667,7 @@ async fn multiple_blocking_stop_hooks_persist_multiple_hook_prompt_fragments() -
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_parallel_stop_hooks(
                 home,
@@ -1691,7 +1691,7 @@ async fn multiple_blocking_stop_hooks_persist_multiple_hook_prompt_fragments() -
         "second request should receive one user hook prompt message with both fragments",
     );
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.motyga.rollout_path().expect("rollout path");
     let rollout_text = fs::read_to_string(&rollout_path)?;
     assert_eq!(
         rollout_hook_prompt_texts(&rollout_text)?,
@@ -1720,7 +1720,7 @@ async fn blocked_user_prompt_submit_persists_additional_context_for_next_turn() 
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_user_prompt_submit_hook(home, "blocked first prompt", BLOCKED_PROMPT_CONTEXT)
                 .expect("failed to write user prompt submit hook test fixture");
@@ -1753,7 +1753,7 @@ async fn blocked_user_prompt_submit_persists_additional_context_for_next_turn() 
         "second request should include the accepted prompt",
     );
 
-    let hook_inputs = read_user_prompt_submit_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_user_prompt_submit_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 2);
     assert_eq!(
         hook_inputs
@@ -1818,7 +1818,7 @@ async fn blocked_queued_prompt_does_not_strand_earlier_accepted_prompt() -> Resu
     let (server, _completions) =
         start_streaming_sse_server(vec![first_chunks, second_chunks]).await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model("gpt-5.4")
         .with_pre_build_hook(|home| {
             write_user_prompt_submit_hook(home, "blocked queued prompt", BLOCKED_PROMPT_CONTEXT)
@@ -1827,7 +1827,7 @@ async fn blocked_queued_prompt_does_not_strand_earlier_accepted_prompt() -> Resu
         .with_config(trust_discovered_hooks);
     let test = builder.build_with_streaming_server(&server).await?;
 
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "initial prompt".to_string(),
@@ -1840,13 +1840,13 @@ async fn blocked_queued_prompt_does_not_strand_earlier_accepted_prompt() -> Resu
         })
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::AgentMessageContentDelta(_))
     })
     .await;
 
     for text in ["accepted queued prompt", "blocked queued prompt"] {
-        test.codex
+        test.motyga
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: text.to_string(),
@@ -1891,7 +1891,7 @@ async fn blocked_queued_prompt_does_not_strand_earlier_accepted_prompt() -> Resu
         "second request should not include the blocked queued prompt",
     );
 
-    let hook_inputs = read_user_prompt_submit_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_user_prompt_submit_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 3);
     assert_eq!(
         hook_inputs
@@ -1969,7 +1969,7 @@ async fn permission_request_hook_allows_shell_command_without_user_approval() ->
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             install_allow_permission_request_hook(home)
                 .expect("failed to write permission request hook test fixture");
@@ -1995,7 +1995,7 @@ async fn permission_request_hook_allows_shell_command_without_user_approval() ->
     );
 
     let hook_inputs = assert_single_permission_request_hook_input(
-        test.codex_home_path(),
+        test.motyga_home_path(),
         &command,
         /*description*/ None,
     )?;
@@ -2043,7 +2043,7 @@ async fn permission_request_hook_allows_apply_patch_with_write_alias() -> Result
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_permission_request_hook(
                 home,
@@ -2075,7 +2075,7 @@ async fn permission_request_hook_allows_apply_patch_with_write_alias() -> Result
     );
 
     assert_single_permission_request_hook_input_for_tool(
-        test.codex_home_path(),
+        test.motyga_home_path(),
         "apply_patch",
         &patch,
         /*description*/ None,
@@ -2120,7 +2120,7 @@ async fn permission_request_hook_sees_raw_exec_command_input() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             install_allow_permission_request_hook(home)
                 .expect("failed to write permission request hook test fixture");
@@ -2153,7 +2153,7 @@ async fn permission_request_hook_sees_raw_exec_command_input() -> Result<()> {
     );
 
     assert_single_permission_request_hook_input(
-        test.codex_home_path(),
+        test.motyga_home_path(),
         &command,
         Some(justification),
     )?;
@@ -2181,7 +2181,7 @@ allow_local_binding = true
 "#,
     )?;
     let call_id = "permissionrequest-network-approval";
-    let command = r#"python3 -c "import urllib.request; opener = urllib.request.build_opener(urllib.request.ProxyHandler()); print('OK:' + opener.open('http://codex-network-test.invalid', timeout=2).read().decode(errors='replace'))""#;
+    let command = r#"python3 -c "import urllib.request; opener = urllib.request.build_opener(urllib.request.ProxyHandler()); print('OK:' + opener.open('http://motyga-network-test.invalid', timeout=2).read().decode(errors='replace'))""#;
     let args = serde_json::json!({ "command": command });
     let _responses = mount_sse_sequence(
         &server,
@@ -2203,7 +2203,7 @@ allow_local_binding = true
     let approval_policy = AskForApproval::OnRequest;
     let permission_profile = network_workspace_write_profile();
     let permission_profile_for_config = permission_profile.clone();
-    let test = test_codex()
+    let test = test_motyga()
         .with_home(Arc::clone(&home))
         .with_pre_build_hook(|home| {
             install_allow_permission_request_hook(home)
@@ -2243,7 +2243,7 @@ allow_local_binding = true
     timeout(Duration::from_secs(10), async {
         loop {
             if test
-                .codex_home_path()
+                .motyga_home_path()
                 .join("permission_request_hook_log.jsonl")
                 .exists()
             {
@@ -2258,7 +2258,7 @@ allow_local_binding = true
     assert!(
         timeout(
             Duration::from_secs(2),
-            wait_for_event(&test.codex, |event| matches!(
+            wait_for_event(&test.motyga, |event| matches!(
                 event,
                 EventMsg::ExecApprovalRequest(_)
             ))
@@ -2269,13 +2269,13 @@ allow_local_binding = true
     );
 
     assert_single_permission_request_hook_input(
-        test.codex_home_path(),
+        test.motyga_home_path(),
         command,
-        Some("network-access http://codex-network-test.invalid:80"),
+        Some("network-access http://motyga-network-test.invalid:80"),
     )?;
 
-    test.codex.submit(Op::Shutdown {}).await?;
-    wait_for_event(&test.codex, |event| {
+    test.motyga.submit(Op::Shutdown {}).await?;
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -2313,7 +2313,7 @@ async fn pre_tool_use_blocks_shell_command_before_execution() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_pre_tool_use_hook(home, Some("^Bash$"), "json_deny", "blocked by pre hook")
                 .expect("failed to write pre tool use hook test fixture");
@@ -2351,7 +2351,7 @@ async fn pre_tool_use_blocks_shell_command_before_execution() -> Result<()> {
         "blocked command should not create marker file"
     );
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["hook_event_name"], "PreToolUse");
     assert_eq!(hook_inputs[0]["tool_name"], "Bash");
@@ -2407,7 +2407,7 @@ async fn pre_tool_use_records_additional_context_for_shell_command() -> Result<(
     .await;
 
     let pre_context = "Remember the bash pre-tool note.";
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_pre_tool_use_hook(home, Some("^Bash$"), "context", pre_context)
                 .expect("failed to write pre tool use hook test fixture");
@@ -2470,7 +2470,7 @@ async fn blocked_pre_tool_use_records_additional_context_for_shell_command() -> 
     .await;
 
     let pre_context = "blocked by pre hook with context";
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_pre_tool_use_hook(home, Some("^Bash$"), "json_deny_with_context", pre_context)
                 .expect("failed to write pre tool use hook test fixture");
@@ -2597,7 +2597,7 @@ async fn assert_pre_tool_use_rewrites_bash_surface(surface: BashRewriteSurface) 
     .await;
 
     let updated_input = serde_json::json!({ "command": rewritten_command });
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(move |home| {
             write_updating_pre_tool_use_hook(home, "^Bash$", &updated_input)
                 .expect("failed to write updating pre tool use hook fixture");
@@ -2630,7 +2630,7 @@ async fn assert_pre_tool_use_rewrites_bash_surface(surface: BashRewriteSurface) 
         "rewritten"
     );
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_input"]["command"], original_command);
 
@@ -2690,7 +2690,7 @@ text(output.output);
     .await;
 
     let updated_input = serde_json::json!({ "command": rewritten_command });
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model("test-gpt-5.1-codex")
         .with_pre_build_hook(move |home| {
             write_updating_pre_tool_use_hook(home, "^Bash$", &updated_input)
@@ -2730,7 +2730,7 @@ text(output.output);
         "rewritten"
     );
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_input"]["command"], original_command);
 
@@ -2775,7 +2775,7 @@ try {{
     .await;
 
     let reason = "blocked nested command";
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model("test-gpt-5.1-codex")
         .with_pre_build_hook(move |home| {
             write_pre_tool_use_hook(home, Some("^Bash$"), "json_deny", reason)
@@ -2805,7 +2805,7 @@ try {{
         "PreToolUse-blocked nested command should not execute"
     );
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_input"]["command"], command);
 
@@ -2854,7 +2854,7 @@ try {{
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model("test-gpt-5.1-codex")
         .with_pre_build_hook(move |home| {
             write_post_tool_use_hook(home, Some("^Bash$"), hook_mode, reason)
@@ -2889,7 +2889,7 @@ try {{
         "PostToolUse should run after the nested command executes"
     );
 
-    let hook_inputs = read_post_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_post_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_input"]["command"], command);
     assert_eq!(
@@ -3014,12 +3014,12 @@ print(json.dumps({{
         plugin_data_root,
         source_path: plugin_hooks_path_abs,
         source_relative_path: "hooks/hooks.json".to_string(),
-        hooks: serde_json::from_str::<codex_config::HooksFile>(plugin_hooks_json)
+        hooks: serde_json::from_str::<motyga_config::HooksFile>(plugin_hooks_json)
             .context("parse plugin hooks")?
             .hooks,
     }];
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_home(Arc::clone(&home))
         .with_config(move |config| {
             config
@@ -3036,7 +3036,7 @@ print(json.dumps({{
 
     test.submit_turn_with_policy(
         "run the shell command blocked by a plugin hook",
-        codex_protocol::protocol::SandboxPolicy::DangerFullAccess,
+        motyga_protocol::protocol::SandboxPolicy::DangerFullAccess,
     )
     .await?;
 
@@ -3096,7 +3096,7 @@ async fn pre_tool_use_blocks_shell_when_defined_in_config_toml() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_pre_tool_use_hook_toml(
                 home,
@@ -3138,7 +3138,7 @@ async fn pre_tool_use_blocks_shell_when_defined_in_config_toml() -> Result<()> {
     );
 
     let hook_inputs = read_hook_inputs_from_log(
-        test.codex_home_path()
+        test.motyga_home_path()
             .join("pre_tool_use_config_hook_log.jsonl")
             .as_path(),
     )?;
@@ -3179,7 +3179,7 @@ async fn pre_tool_use_merges_hooks_json_and_config_toml() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_pre_tool_use_hook(home, Some("^Bash$"), "allow", "unused")
                 .expect("failed to write hooks.json hook fixture");
@@ -3211,7 +3211,7 @@ async fn pre_tool_use_merges_hooks_json_and_config_toml() -> Result<()> {
         "shell command output should still reach the model",
     );
 
-    let json_hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?
+    let json_hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?
         .into_iter()
         .map(|hook_input| {
             serde_json::json!({
@@ -3223,7 +3223,7 @@ async fn pre_tool_use_merges_hooks_json_and_config_toml() -> Result<()> {
         })
         .collect::<Vec<_>>();
     let toml_hook_inputs = read_hook_inputs_from_log(
-        test.codex_home_path()
+        test.motyga_home_path()
             .join("pre_tool_use_toml_hook_log.jsonl")
             .as_path(),
     )?
@@ -3281,7 +3281,7 @@ async fn pre_tool_use_blocks_exec_command_before_execution() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_pre_tool_use_hook(home, Some("^Bash$"), "exit_2", "blocked exec command")
                 .expect("failed to write pre tool use hook test fixture");
@@ -3319,7 +3319,7 @@ async fn pre_tool_use_blocks_exec_command_before_execution() -> Result<()> {
     );
     assert!(!marker.exists(), "blocked exec command should not execute");
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_use_id"], call_id);
     assert_eq!(hook_inputs[0]["tool_input"]["command"], command);
@@ -3362,7 +3362,7 @@ async fn pre_tool_use_blocks_apply_patch_before_execution() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_pre_tool_use_hook(
                 home,
@@ -3395,7 +3395,7 @@ async fn pre_tool_use_blocks_apply_patch_before_execution() -> Result<()> {
         "blocked apply_patch should not create the file"
     );
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_name"], "apply_patch");
     assert_eq!(hook_inputs[0]["tool_use_id"], call_id);
@@ -3442,7 +3442,7 @@ async fn pre_tool_use_rewrites_apply_patch_before_execution() -> Result<()> {
     .await;
 
     let updated_input = serde_json::json!({ "command": rewritten_patch });
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(move |home| {
             write_updating_pre_tool_use_hook(home, "^apply_patch$", &updated_input)
                 .expect("failed to write updating pre tool use hook fixture");
@@ -3467,7 +3467,7 @@ async fn pre_tool_use_rewrites_apply_patch_before_execution() -> Result<()> {
         "rewritten\n"
     );
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_input"]["command"], original_patch);
 
@@ -3504,7 +3504,7 @@ async fn pre_tool_use_blocks_apply_patch_with_write_alias() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_pre_tool_use_hook(home, Some("^Write$"), "json_deny", "blocked write alias")
                 .expect("failed to write pre tool use hook test fixture");
@@ -3533,7 +3533,7 @@ async fn pre_tool_use_blocks_apply_patch_with_write_alias() -> Result<()> {
         "blocked apply_patch should not create the file"
     );
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_name"], "apply_patch");
     assert_eq!(hook_inputs[0]["tool_use_id"], call_id);
@@ -3567,7 +3567,7 @@ async fn pre_tool_use_blocks_local_function_tool_before_execution() -> Result<()
     .await;
 
     let reason = "blocked local function pre hook";
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model("test-gpt-5.1-codex")
         .with_pre_build_hook(|home| {
             write_pre_tool_use_hook(home, Some("^test_sync_tool$"), "json_deny", reason)
@@ -3593,7 +3593,7 @@ async fn pre_tool_use_blocks_local_function_tool_before_execution() -> Result<()
         "blocked local function output should surface the hook reason and tool name",
     );
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["hook_event_name"], "PreToolUse");
     assert_eq!(hook_inputs[0]["tool_name"], "test_sync_tool");
@@ -3637,7 +3637,7 @@ async fn pre_tool_use_rewrites_local_function_tool_before_execution() -> Result<
     .await;
 
     let updated_input = serde_json::json!({});
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_model("test-gpt-5.1-codex")
         .with_pre_build_hook(move |home| {
             write_updating_pre_tool_use_hook(home, "^test_sync_tool$", &updated_input)
@@ -3658,7 +3658,7 @@ async fn pre_tool_use_rewrites_local_function_tool_before_execution() -> Result<
         .expect("rewritten local function tool output string");
     assert_eq!(output, "ok");
 
-    let hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_input"], original_args);
 
@@ -3695,7 +3695,7 @@ async fn post_tool_use_records_additional_context_for_shell_command() -> Result<
     .await;
 
     let post_context = "Remember the bash post-tool note.";
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_post_tool_use_hook(home, Some("^Bash$"), "context", post_context)
                 .expect("failed to write post tool use hook test fixture");
@@ -3724,7 +3724,7 @@ async fn post_tool_use_records_additional_context_for_shell_command() -> Result<
         "shell command output should still reach the model",
     );
 
-    let hook_inputs = read_post_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_post_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["hook_event_name"], "PostToolUse");
     assert_eq!(hook_inputs[0]["tool_name"], "Bash");
@@ -3784,7 +3784,7 @@ async fn post_tool_use_block_decision_replaces_shell_command_output_with_reason(
     .await;
 
     let reason = "bash output looked sketchy";
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_post_tool_use_hook(home, Some("^Bash$"), "decision_block", reason)
                 .expect("failed to write post tool use hook test fixture");
@@ -3804,7 +3804,7 @@ async fn post_tool_use_block_decision_replaces_shell_command_output_with_reason(
         .expect("shell command output string");
     assert_eq!(output, reason);
 
-    let hook_inputs = read_post_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_post_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(
         hook_inputs[0]["tool_response"],
@@ -3845,7 +3845,7 @@ async fn post_tool_use_continue_false_replaces_shell_command_output_with_stop_re
     .await;
 
     let stop_reason = "Execution halted by post-tool hook";
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_post_tool_use_hook(home, Some("^Bash$"), "continue_false", stop_reason)
                 .expect("failed to write post tool use hook test fixture");
@@ -3865,7 +3865,7 @@ async fn post_tool_use_continue_false_replaces_shell_command_output_with_stop_re
         .expect("shell command output string");
     assert_eq!(output, stop_reason);
 
-    let hook_inputs = read_post_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_post_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(
         hook_inputs[0]["tool_response"],
@@ -3905,7 +3905,7 @@ async fn post_tool_use_exit_two_replaces_one_shot_exec_command_output_with_feedb
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_post_tool_use_hook(home, Some("^Bash$"), "exit_2", "blocked by post hook")
                 .expect("failed to write post tool use hook test fixture");
@@ -3932,7 +3932,7 @@ async fn post_tool_use_exit_two_replaces_one_shot_exec_command_output_with_feedb
         .expect("exec command output string");
     assert_eq!(output, "blocked by post hook");
 
-    let hook_inputs = read_post_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_post_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_use_id"], call_id);
     assert_eq!(hook_inputs[0]["tool_input"]["command"], command);
@@ -3974,7 +3974,7 @@ async fn post_tool_use_spills_large_feedback_message() -> Result<()> {
     .await;
     let feedback = "blocked by post hook ".repeat(800);
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook({
             let feedback = feedback.clone();
             move |home| {
@@ -4061,7 +4061,7 @@ async fn post_tool_use_blocks_when_exec_session_completes_via_write_stdin() -> R
     )
     .await;
 
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_logging_pre_and_blocking_post_tool_use_hooks(home, feedback)
                 .expect("failed to write tool use hook test fixture");
@@ -4088,13 +4088,13 @@ async fn post_tool_use_blocks_when_exec_session_completes_via_write_stdin() -> R
         .expect("write_stdin output string");
     assert_eq!(output, feedback);
 
-    let pre_hook_inputs = read_pre_tool_use_hook_inputs(test.codex_home_path())?;
+    let pre_hook_inputs = read_pre_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(pre_hook_inputs.len(), 1);
     assert_eq!(pre_hook_inputs[0]["tool_name"], "Bash");
     assert_eq!(pre_hook_inputs[0]["tool_use_id"], start_call_id);
     assert_eq!(pre_hook_inputs[0]["tool_input"]["command"], command);
 
-    let post_hook_inputs = read_post_tool_use_hook_inputs(test.codex_home_path())?;
+    let post_hook_inputs = read_post_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(post_hook_inputs.len(), 1);
     assert_eq!(post_hook_inputs[0]["hook_event_name"], "PostToolUse");
     assert_eq!(post_hook_inputs[0]["tool_name"], "Bash");
@@ -4142,7 +4142,7 @@ async fn post_tool_use_records_additional_context_for_apply_patch() -> Result<()
     .await;
 
     let post_context = "Remember the apply_patch post-tool note.";
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_post_tool_use_hook(home, Some("^apply_patch$"), "context", post_context)
                 .expect("failed to write post tool use hook test fixture");
@@ -4167,7 +4167,7 @@ async fn post_tool_use_records_additional_context_for_apply_patch() -> Result<()
         "apply_patch should create the file"
     );
 
-    let hook_inputs = read_post_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_post_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_name"], "apply_patch");
     assert_eq!(hook_inputs[0]["tool_use_id"], call_id);
@@ -4213,7 +4213,7 @@ async fn post_tool_use_records_apply_patch_context_with_edit_alias() -> Result<(
     .await;
 
     let post_context = "Remember the edit alias post-tool note.";
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_pre_build_hook(|home| {
             write_post_tool_use_hook(home, Some("^Edit$"), "context", post_context)
                 .expect("failed to write post tool use hook test fixture");
@@ -4239,7 +4239,7 @@ async fn post_tool_use_records_apply_patch_context_with_edit_alias() -> Result<(
         "apply_patch should create the file"
     );
 
-    let hook_inputs = read_post_tool_use_hook_inputs(test.codex_home_path())?;
+    let hook_inputs = read_post_tool_use_hook_inputs(test.motyga_home_path())?;
     assert_eq!(hook_inputs.len(), 1);
     assert_eq!(hook_inputs[0]["tool_name"], "apply_patch");
     assert_eq!(hook_inputs[0]["tool_use_id"], call_id);

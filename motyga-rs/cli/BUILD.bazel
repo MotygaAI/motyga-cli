@@ -1,9 +1,9 @@
-load("//:defs.bzl", "MACOS_WEBRTC_RUSTC_LINK_FLAGS", "codex_rust_crate")
+load("//:defs.bzl", "MACOS_WEBRTC_RUSTC_LINK_FLAGS", "motyga_rust_crate")
 load("//bazel/platforms:release_binaries.bzl", "multiplatform_binaries")
 
-codex_rust_crate(
+motyga_rust_crate(
     name = "cli",
-    crate_name = "codex_cli",
+    crate_name = "motyga_cli",
     extra_binaries = [
         "//motyga-rs/bwrap:bwrap",
     ],
@@ -11,5 +11,5 @@ codex_rust_crate(
 )
 
 multiplatform_binaries(
-    name = "codex",
+    name = "motyga",
 )

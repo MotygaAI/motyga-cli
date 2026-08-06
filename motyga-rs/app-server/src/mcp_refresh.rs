@@ -1,9 +1,9 @@
 use crate::config_manager::ConfigManager;
-use codex_core::CodexThread;
-use codex_core::ThreadManager;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::McpServerRefreshConfig;
-use codex_protocol::protocol::Op;
+use motyga_core::MotygaThread;
+use motyga_core::ThreadManager;
+use motyga_protocol::ThreadId;
+use motyga_protocol::protocol::McpServerRefreshConfig;
+use motyga_protocol::protocol::Op;
 use std::io;
 use std::sync::Arc;
 use tracing::warn;
@@ -56,7 +56,7 @@ pub(crate) async fn queue_best_effort_refresh(
 }
 
 async fn build_refresh_config(
-    thread: &CodexThread,
+    thread: &MotygaThread,
     config_manager: &ConfigManager,
 ) -> io::Result<McpServerRefreshConfig> {
     let thread_config = thread.config().await;
@@ -64,7 +64,7 @@ async fn build_refresh_config(
         .load_latest_config_for_thread(thread_config.as_ref())
         .await?;
     let mcp_config = thread.runtime_mcp_config(&config).await;
-    let mcp_servers = codex_mcp::configured_mcp_servers(&mcp_config);
+    let mcp_servers = motyga_mcp::configured_mcp_servers(&mcp_config);
     Ok(McpServerRefreshConfig {
         mcp_servers: serde_json::to_value(mcp_servers).map_err(io::Error::other)?,
         mcp_oauth_credentials_store_mode: serde_json::to_value(
@@ -78,7 +78,7 @@ async fn build_refresh_config(
 
 async fn queue_refresh(
     thread_id: ThreadId,
-    thread: Arc<CodexThread>,
+    thread: Arc<MotygaThread>,
     config: McpServerRefreshConfig,
 ) -> io::Result<()> {
     thread
@@ -98,25 +98,25 @@ mod tests {
     use crate::extensions::ThreadExtensionDependencies;
     use crate::extensions::guardian_agent_spawner;
     use crate::extensions::thread_extensions;
-    use codex_arg0::Arg0DispatchPaths;
-    use codex_config::CloudConfigBundleLoader;
-    use codex_config::LoaderOverrides;
-    use codex_config::ThreadConfigContext;
-    use codex_config::ThreadConfigLoadError;
-    use codex_config::ThreadConfigLoadErrorCode;
-    use codex_config::ThreadConfigLoader;
-    use codex_config::ThreadConfigSource;
-    use codex_config::types::AuthKeyringBackendKind;
-    use codex_core::config::ConfigOverrides;
-    use codex_core::init_state_db;
-    use codex_core::thread_store_from_config;
-    use codex_exec_server::EnvironmentManager;
-    use codex_extension_api::NoopExtensionEventSink;
-    use codex_home::CodexHomeUserInstructionsProvider;
-    use codex_login::AuthManager;
-    use codex_login::CodexAuth;
-    use codex_protocol::protocol::SessionSource;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_arg0::Arg0DispatchPaths;
+    use motyga_config::CloudConfigBundleLoader;
+    use motyga_config::LoaderOverrides;
+    use motyga_config::ThreadConfigContext;
+    use motyga_config::ThreadConfigLoadError;
+    use motyga_config::ThreadConfigLoadErrorCode;
+    use motyga_config::ThreadConfigLoader;
+    use motyga_config::ThreadConfigSource;
+    use motyga_config::types::AuthKeyringBackendKind;
+    use motyga_core::config::ConfigOverrides;
+    use motyga_core::init_state_db;
+    use motyga_core::thread_store_from_config;
+    use motyga_exec_server::EnvironmentManager;
+    use motyga_extension_api::NoopExtensionEventSink;
+    use motyga_home::MotygaHomeUserInstructionsProvider;
+    use motyga_login::AuthManager;
+    use motyga_login::MotygaAuth;
+    use motyga_protocol::protocol::SessionSource;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
     use std::sync::atomic::AtomicUsize;
     use std::sync::atomic::Ordering;
@@ -149,7 +149,7 @@ mod tests {
     async fn refresh_config_uses_latest_auth_keyring_backend() -> anyhow::Result<()> {
         let (temp_dir, thread_manager, config_manager, _loader) = refresh_test_state().await?;
         std::fs::write(
-            temp_dir.path().join(codex_config::CONFIG_TOML_FILE),
+            temp_dir.path().join(motyga_config::CONFIG_TOML_FILE),
             "[features]\nsecret_auth_storage = true\n",
         )?;
 
@@ -189,7 +189,7 @@ mod tests {
         std::fs::create_dir_all(&good_cwd)?;
         std::fs::create_dir_all(&bad_cwd)?;
         std::fs::write(
-            temp_dir.path().join(codex_config::CONFIG_TOML_FILE),
+            temp_dir.path().join(motyga_config::CONFIG_TOML_FILE),
             "[features]\nsecret_auth_storage = false\n",
         )?;
 
@@ -210,14 +210,14 @@ mod tests {
             )
             .await?;
 
-        let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("dummy"));
+        let auth_manager = AuthManager::from_auth_for_testing(MotygaAuth::from_api_key("dummy"));
         let state_db = init_state_db(&good_config)
             .await
             .expect("refresh tests require state db");
         let thread_store = thread_store_from_config(&good_config, Some(state_db.clone()));
         let environment_manager = Arc::new(EnvironmentManager::default_for_tests());
-        let executor_skill_provider: Arc<dyn codex_skills_extension::SkillProvider> = Arc::new(
-            codex_skills_extension::ExecutorSkillProvider::new_with_restriction_product(
+        let executor_skill_provider: Arc<dyn motyga_skills_extension::SkillProvider> = Arc::new(
+            motyga_skills_extension::ExecutorSkillProvider::new_with_restriction_product(
                 Arc::clone(&environment_manager),
                 SessionSource::Exec.restriction_product(),
             ),
@@ -234,20 +234,20 @@ mod tests {
                         event_sink: Arc::new(NoopExtensionEventSink),
                         auth_manager: auth_manager.clone(),
                         state_db: Some(state_db.clone()),
-                        analytics_events_client: codex_analytics::AnalyticsEventsClient::disabled(),
+                        analytics_events_client: motyga_analytics::AnalyticsEventsClient::disabled(),
                         thread_manager: thread_manager.clone(),
-                        goal_service: Arc::new(codex_goal_extension::GoalService::new()),
+                        goal_service: Arc::new(motyga_goal_extension::GoalService::new()),
                         environment_manager: Arc::clone(&environment_manager),
                         executor_skill_provider: Arc::clone(&executor_skill_provider),
                         thread_store: Arc::clone(&thread_store),
                     },
                 ),
-                Arc::new(CodexHomeUserInstructionsProvider::new(
-                    good_config.codex_home.clone(),
+                Arc::new(MotygaHomeUserInstructionsProvider::new(
+                    good_config.motyga_home.clone(),
                 )),
                 /*analytics_events_client*/ None,
                 Arc::clone(&thread_store),
-                codex_core::local_agent_graph_store_from_state_db(Some(&state_db)),
+                motyga_core::local_agent_graph_store_from_state_db(Some(&state_db)),
                 "11111111-1111-4111-8111-111111111111".to_string(),
                 /*attestation_provider*/ None,
                 /*external_time_provider*/ None,
@@ -306,7 +306,7 @@ mod tests {
         fn load(
             &self,
             context: ThreadConfigContext,
-        ) -> codex_config::ThreadConfigLoaderFuture<'_, Vec<ThreadConfigSource>> {
+        ) -> motyga_config::ThreadConfigLoaderFuture<'_, Vec<ThreadConfigSource>> {
             Box::pin(CountingThreadConfigLoader::load(self, context))
         }
     }

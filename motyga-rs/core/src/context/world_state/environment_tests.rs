@@ -2,11 +2,11 @@ use super::*;
 use crate::context::ContextualUserFragment;
 use crate::context::world_state::WorldState;
 use anyhow::Result;
-use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::permissions::NetworkSandboxPolicy;
+use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 

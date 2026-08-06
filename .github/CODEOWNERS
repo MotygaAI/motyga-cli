@@ -1,14 +1,23 @@
-# Core crate ownership.
-/motyga-rs/core/ @openai/codex-core-agent-team
-/motyga-rs/exec-server-protocol/ @openai/codex-core-agent-team
-/motyga-rs/ext/extension-api/ @openai/codex-core-agent-team
-/motyga-rs/prompts/ @openai/codex-core-agent-team
-/motyga-rs/utils/path-uri/ @openai/codex-core-agent-team
-
-# Keep macOS AKV signing changes reviewed by Codex maintainers.
-/.github/actions/setup-akv-pkcs11-codesigning/ @openai/codex-core-agent-team
-/.github/scripts/macos-signing/ @openai/codex-core-agent-team
-/.github/workflows/rust-release.yml @openai/codex-core-agent-team
-
+# Ownership rules are DISABLED pending a real Motyga review team.
+#
+# Every rule here used to name `@openai/codex-core-agent-team` — a team in the
+# OpenAI org, which GitHub cannot resolve from this repository. An unresolvable
+# owner matches nobody, so these rules have never enforced a review here; they
+# came in with the fork. They are kept as comments so the intended review
+# surface is not lost.
+#
+# To re-enable: create the team, then uncomment and substitute it below.
+#
+# /motyga-rs/core/                               @MotygaAI/<team>
+# /motyga-rs/exec-server-protocol/               @MotygaAI/<team>
+# /motyga-rs/ext/extension-api/                  @MotygaAI/<team>
+# /motyga-rs/prompts/                            @MotygaAI/<team>
+# /motyga-rs/utils/path-uri/                     @MotygaAI/<team>
+#
+# Keep macOS AKV signing changes reviewed by Motyga maintainers.
+# /.github/actions/setup-akv-pkcs11-codesigning/ @MotygaAI/<team>
+# /.github/scripts/macos-signing/                @MotygaAI/<team>
+# /.github/workflows/release.yml                 @MotygaAI/<team>
+#
 # Keep ownership changes reviewed by the same team.
-/.github/CODEOWNERS @openai/codex-core-agent-team
+# /.github/CODEOWNERS                            @MotygaAI/<team>

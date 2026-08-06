@@ -6,7 +6,7 @@ import type { McpElicitationSchema } from "./McpElicitationSchema";
 
 export type McpServerElicitationRequestParams = { threadId: string,
 /**
- * Active Codex turn when this elicitation was observed, if app-server could correlate one.
+ * Active Motyga turn when this elicitation was observed, if app-server could correlate one.
  *
  * This is nullable because MCP models elicitation as a standalone server-to-client request
  * identified by the MCP server request id. It may be triggered during a turn, but turn

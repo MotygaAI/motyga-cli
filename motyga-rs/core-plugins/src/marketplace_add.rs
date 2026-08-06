@@ -1,8 +1,8 @@
 use crate::installed_marketplaces::marketplace_install_root;
 use crate::marketplace_policy::validate_marketplace_name_for_add;
 use crate::marketplace_policy::validate_marketplace_source_for_add;
-use codex_config::ConfigRequirements;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_config::ConfigRequirements;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -50,12 +50,12 @@ pub enum MarketplaceAddError {
 }
 
 pub async fn add_marketplace(
-    codex_home: PathBuf,
+    motyga_home: PathBuf,
     requirements: ConfigRequirements,
     request: MarketplaceAddRequest,
 ) -> Result<MarketplaceAddOutcome, MarketplaceAddError> {
     tokio::task::spawn_blocking(move || {
-        add_marketplace_sync(codex_home.as_path(), &requirements, request)
+        add_marketplace_sync(motyga_home.as_path(), &requirements, request)
     })
     .await
     .map_err(|err| MarketplaceAddError::Internal(format!("failed to add marketplace: {err}")))?
@@ -72,15 +72,15 @@ pub fn is_local_marketplace_source(
 }
 
 fn add_marketplace_sync(
-    codex_home: &Path,
+    motyga_home: &Path,
     requirements: &ConfigRequirements,
     request: MarketplaceAddRequest,
 ) -> Result<MarketplaceAddOutcome, MarketplaceAddError> {
-    add_marketplace_sync_with_cloner(codex_home, requirements, request, clone_git_source)
+    add_marketplace_sync_with_cloner(motyga_home, requirements, request, clone_git_source)
 }
 
 fn add_marketplace_sync_with_cloner<F>(
-    codex_home: &Path,
+    motyga_home: &Path,
     requirements: &ConfigRequirements,
     request: MarketplaceAddRequest,
     clone_source: F,
@@ -95,7 +95,7 @@ where
     } = request;
     let source = parse_marketplace_source(&source, ref_name)?;
     let managed_marketplace_name =
-        validate_marketplace_source_for_add(codex_home, requirements, &source)
+        validate_marketplace_source_for_add(motyga_home, requirements, &source)
             .map_err(MarketplaceAddError::InvalidRequest)?;
     if !sparse_paths.is_empty() && !matches!(source, MarketplaceSource::Git { .. }) {
         return Err(MarketplaceAddError::InvalidRequest(
@@ -103,7 +103,7 @@ where
         ));
     }
 
-    let install_root = marketplace_install_root(codex_home);
+    let install_root = marketplace_install_root(motyga_home);
     fs::create_dir_all(&install_root).map_err(|err| {
         MarketplaceAddError::Internal(format!(
             "failed to create marketplace install directory {}: {err}",
@@ -113,12 +113,12 @@ where
 
     let install_metadata = MarketplaceInstallMetadata::from_source(&source, &sparse_paths);
     if let Some(existing_root) =
-        installed_marketplace_root_for_source(codex_home, &install_root, &install_metadata)?
+        installed_marketplace_root_for_source(motyga_home, &install_root, &install_metadata)?
     {
         let marketplace_name = validate_marketplace_source_root(&existing_root)?;
         validate_marketplace_name_for_add(managed_marketplace_name, &marketplace_name)
             .map_err(MarketplaceAddError::InvalidRequest)?;
-        record_added_marketplace_entry(codex_home, &marketplace_name, &install_metadata)?;
+        record_added_marketplace_entry(motyga_home, &marketplace_name, &install_metadata)?;
         return Ok(MarketplaceAddOutcome {
             marketplace_name,
             source_display: source.display(),
@@ -135,12 +135,12 @@ where
         let marketplace_name = validate_marketplace_source_root(path)?;
         validate_marketplace_name_for_add(managed_marketplace_name, &marketplace_name)
             .map_err(MarketplaceAddError::InvalidRequest)?;
-        if find_marketplace_root_by_name(codex_home, &install_root, &marketplace_name)?.is_some() {
+        if find_marketplace_root_by_name(motyga_home, &install_root, &marketplace_name)?.is_some() {
             return Err(MarketplaceAddError::InvalidRequest(format!(
                 "marketplace '{marketplace_name}' is already added from a different source; remove it before adding this source"
             )));
         }
-        record_added_marketplace_entry(codex_home, &marketplace_name, &install_metadata)?;
+        record_added_marketplace_entry(motyga_home, &marketplace_name, &install_metadata)?;
         return Ok(MarketplaceAddOutcome {
             marketplace_name,
             source_display: source.display(),
@@ -191,7 +191,7 @@ where
         ))
     })?;
     if let Err(err) =
-        record_added_marketplace_entry(codex_home, &marketplace_name, &install_metadata)
+        record_added_marketplace_entry(motyga_home, &marketplace_name, &install_metadata)
     {
         if let Err(rollback_err) = fs::rename(&destination, &staged_root) {
             return Err(MarketplaceAddError::Internal(format!(
@@ -218,9 +218,9 @@ where
 mod tests {
     use super::*;
     use anyhow::Result;
-    use codex_config::RequirementSource;
-    use codex_config::RequirementsLayerEntry;
-    use codex_config::compose_requirements;
+    use motyga_config::RequirementSource;
+    use motyga_config::RequirementsLayerEntry;
+    use motyga_config::compose_requirements;
     use pretty_assertions::assert_eq;
     use std::cell::Cell;
     use tempfile::TempDir;
@@ -237,12 +237,12 @@ mod tests {
 
     #[test]
     fn add_marketplace_sync_installs_marketplace_and_updates_config() -> Result<()> {
-        let codex_home = TempDir::new()?;
+        let motyga_home = TempDir::new()?;
         let source_root = TempDir::new()?;
         write_marketplace_source(source_root.path(), "remote copy")?;
 
         let result = add_marketplace_sync_with_cloner(
-            codex_home.path(),
+            motyga_home.path(),
             &ConfigRequirements::default(),
             MarketplaceAddRequest {
                 source: "https://github.com/owner/repo.git".to_string(),
@@ -266,7 +266,7 @@ mod tests {
                 .is_file()
         );
 
-        let config = fs::read_to_string(codex_home.path().join(codex_config::CONFIG_TOML_FILE))?;
+        let config = fs::read_to_string(motyga_home.path().join(motyga_config::CONFIG_TOML_FILE))?;
         assert!(config.contains("[marketplaces.debug]"));
         assert!(config.contains("source_type = \"git\""));
         assert!(config.contains("source = \"https://github.com/owner/repo.git\""));
@@ -275,7 +275,7 @@ mod tests {
 
     #[test]
     fn denied_git_marketplace_does_not_clone_or_create_install_root() {
-        let codex_home = TempDir::new().expect("create Motyga home");
+        let motyga_home = TempDir::new().expect("create Motyga home");
         let requirements = requirements(
             r#"
 [marketplaces]
@@ -289,7 +289,7 @@ url = "https://github.com/example/allowed.git"
         let cloner_called = Cell::new(false);
 
         let err = add_marketplace_sync_with_cloner(
-            codex_home.path(),
+            motyga_home.path(),
             &requirements,
             MarketplaceAddRequest {
                 source: "https://github.com/example/blocked.git".to_string(),
@@ -305,23 +305,23 @@ url = "https://github.com/example/allowed.git"
 
         assert!(err.to_string().contains("is not allowed by requirements"));
         assert!(!cloner_called.get());
-        assert!(!marketplace_install_root(codex_home.path()).exists());
+        assert!(!marketplace_install_root(motyga_home.path()).exists());
         assert!(
-            !codex_home
+            !motyga_home
                 .path()
-                .join(codex_config::CONFIG_TOML_FILE)
+                .join(motyga_config::CONFIG_TOML_FILE)
                 .exists()
         );
     }
 
     #[test]
     fn add_marketplace_sync_installs_local_directory_source_and_updates_config() -> Result<()> {
-        let codex_home = TempDir::new()?;
+        let motyga_home = TempDir::new()?;
         let source_root = TempDir::new()?;
         write_marketplace_source(source_root.path(), "local copy")?;
 
         let result = add_marketplace_sync_with_cloner(
-            codex_home.path(),
+            motyga_home.path(),
             &ConfigRequirements::default(),
             MarketplaceAddRequest {
                 source: source_root.path().display().to_string(),
@@ -341,12 +341,12 @@ url = "https://github.com/example/allowed.git"
         assert_eq!(result.installed_root, expected_installed_root);
         assert!(!result.already_added);
         assert!(
-            !marketplace_install_root(codex_home.path())
+            !marketplace_install_root(motyga_home.path())
                 .join("debug")
                 .exists()
         );
 
-        let config = fs::read_to_string(codex_home.path().join(codex_config::CONFIG_TOML_FILE))?;
+        let config = fs::read_to_string(motyga_home.path().join(motyga_config::CONFIG_TOML_FILE))?;
         let config: toml::Value = toml::from_str(&config)?;
         assert_eq!(
             config["marketplaces"]["debug"]["source_type"].as_str(),
@@ -361,12 +361,12 @@ url = "https://github.com/example/allowed.git"
 
     #[test]
     fn add_marketplace_sync_rejects_sparse_checkout_for_local_directory_source() -> Result<()> {
-        let codex_home = TempDir::new()?;
+        let motyga_home = TempDir::new()?;
         let source_root = TempDir::new()?;
         write_marketplace_source(source_root.path(), "local copy")?;
 
         let err = add_marketplace_sync_with_cloner(
-            codex_home.path(),
+            motyga_home.path(),
             &ConfigRequirements::default(),
             MarketplaceAddRequest {
                 source: source_root.path().display().to_string(),
@@ -384,9 +384,9 @@ url = "https://github.com/example/allowed.git"
             "--sparse is only supported for git marketplace sources"
         );
         assert!(
-            !codex_home
+            !motyga_home
                 .path()
-                .join(codex_config::CONFIG_TOML_FILE)
+                .join(motyga_config::CONFIG_TOML_FILE)
                 .exists()
         );
         Ok(())
@@ -395,7 +395,7 @@ url = "https://github.com/example/allowed.git"
     #[test]
     fn add_marketplace_sync_treats_existing_local_directory_source_as_already_added() -> Result<()>
     {
-        let codex_home = TempDir::new()?;
+        let motyga_home = TempDir::new()?;
         let source_root = TempDir::new()?;
         write_marketplace_source(source_root.path(), "local copy")?;
 
@@ -406,7 +406,7 @@ url = "https://github.com/example/allowed.git"
         };
         let requirements = ConfigRequirements::default();
         let first_result = add_marketplace_sync_with_cloner(
-            codex_home.path(),
+            motyga_home.path(),
             &requirements,
             request.clone(),
             |_url, _ref_name, _sparse_paths, _destination| {
@@ -414,7 +414,7 @@ url = "https://github.com/example/allowed.git"
             },
         )?;
         let second_result = add_marketplace_sync_with_cloner(
-            codex_home.path(),
+            motyga_home.path(),
             &requirements,
             request,
             |_url, _ref_name, _sparse_paths, _destination| {

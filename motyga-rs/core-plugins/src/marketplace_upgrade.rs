@@ -10,14 +10,14 @@ use crate::installed_marketplaces::marketplace_install_root;
 use crate::marketplace::validate_marketplace_root;
 use crate::marketplace_add::MarketplaceSource;
 use crate::marketplace_policy::MarketplacePolicy;
-use codex_config::CONFIG_TOML_FILE;
-use codex_config::ConfigLayerStack;
-use codex_config::MarketplaceConfigUpdate;
-use codex_config::record_user_marketplace;
-use codex_config::types::MarketplaceConfig;
-use codex_config::types::MarketplaceSourceType;
-use codex_plugin::validate_plugin_segment;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_config::CONFIG_TOML_FILE;
+use motyga_config::ConfigLayerStack;
+use motyga_config::MarketplaceConfigUpdate;
+use motyga_config::record_user_marketplace;
+use motyga_config::types::MarketplaceConfig;
+use motyga_config::types::MarketplaceSourceType;
+use motyga_plugin::validate_plugin_segment;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use std::path::Path;
 use std::time::Duration;
 
@@ -68,7 +68,7 @@ pub fn configured_git_marketplace_names(config_layer_stack: &ConfigLayerStack) -
 }
 
 pub fn upgrade_configured_git_marketplaces(
-    codex_home: &Path,
+    motyga_home: &Path,
     config_layer_stack: &ConfigLayerStack,
     marketplace_name: Option<&str>,
 ) -> ConfiguredMarketplaceUpgradeOutcome {
@@ -87,7 +87,7 @@ pub fn upgrade_configured_git_marketplaces(
         return ConfiguredMarketplaceUpgradeOutcome::default();
     }
 
-    let install_root = marketplace_install_root(codex_home);
+    let install_root = marketplace_install_root(motyga_home);
     let mut selected_marketplaces = marketplaces
         .iter()
         .map(|marketplace| marketplace.name.clone())
@@ -110,7 +110,7 @@ pub fn upgrade_configured_git_marketplaces(
                 }
             };
         match upgrade_configured_git_marketplace(
-            codex_home,
+            motyga_home,
             &install_root,
             &marketplace,
             normalized_source.as_ref(),
@@ -200,7 +200,7 @@ fn parse_configured_git_marketplace(
 }
 
 fn upgrade_configured_git_marketplace(
-    codex_home: &Path,
+    motyga_home: &Path,
     install_root: &Path,
     marketplace: &ConfiguredGitMarketplace,
     normalized_source: Option<&MarketplaceSource>,
@@ -267,8 +267,8 @@ fn upgrade_configured_git_marketplace(
         sparse_paths: &marketplace.sparse_paths,
     };
     activate_marketplace_root(&destination, staged_dir, || {
-        ensure_configured_git_marketplace_unchanged(codex_home, marketplace)?;
-        record_user_marketplace(codex_home, &marketplace.name, &update).map_err(|err| {
+        ensure_configured_git_marketplace_unchanged(motyga_home, marketplace)?;
+        record_user_marketplace(motyga_home, &marketplace.name, &update).map_err(|err| {
             format!(
                 "failed to record upgraded marketplace `{}` in user config.toml: {err}",
                 marketplace.name
@@ -281,10 +281,10 @@ fn upgrade_configured_git_marketplace(
         .map_err(|err| format!("upgraded marketplace path is not absolute: {err}"))
 }
 fn ensure_configured_git_marketplace_unchanged(
-    codex_home: &Path,
+    motyga_home: &Path,
     expected: &ConfiguredGitMarketplace,
 ) -> Result<(), String> {
-    let current = read_configured_git_marketplace(codex_home, &expected.name)?;
+    let current = read_configured_git_marketplace(motyga_home, &expected.name)?;
     match current {
         Some(current) if current == *expected => Ok(()),
         Some(_) => Err(format!(
@@ -299,10 +299,10 @@ fn ensure_configured_git_marketplace_unchanged(
 }
 
 fn read_configured_git_marketplace(
-    codex_home: &Path,
+    motyga_home: &Path,
     marketplace_name: &str,
 ) -> Result<Option<ConfiguredGitMarketplace>, String> {
-    let config_path = codex_home.join(CONFIG_TOML_FILE);
+    let config_path = motyga_home.join(CONFIG_TOML_FILE);
     let raw_config = match std::fs::read_to_string(&config_path) {
         Ok(raw_config) => raw_config,
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(None),

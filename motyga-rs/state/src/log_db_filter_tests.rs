@@ -8,9 +8,9 @@ use super::*;
 
 #[tokio::test]
 async fn sqlite_sink_drops_low_level_opentelemetry_sdk_logs() {
-    let codex_home =
-        std::env::temp_dir().join(format!("codex-state-log-db-filter-{}", Uuid::new_v4()));
-    let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string())
+    let motyga_home =
+        std::env::temp_dir().join(format!("motyga-state-log-db-filter-{}", Uuid::new_v4()));
+    let runtime = StateRuntime::init(motyga_home.clone(), "test-provider".to_string())
         .await
         .expect("initialize runtime");
     let layer = start(runtime.clone());
@@ -26,7 +26,7 @@ async fn sqlite_sink_drops_low_level_opentelemetry_sdk_logs() {
     tracing::trace!(target: "opentelemetry_sdk", "dropped-trace");
     tracing::debug!(target: "opentelemetry_sdk", "dropped-debug");
     tracing::info!(target: "opentelemetry_sdk", "retained-info");
-    tracing::trace!(target: "codex_state", "retained-trace");
+    tracing::trace!(target: "motyga_state", "retained-trace");
 
     layer.flush().await;
     drop(guard);
@@ -45,9 +45,9 @@ async fn sqlite_sink_drops_low_level_opentelemetry_sdk_logs() {
             .collect::<Vec<_>>(),
         vec![
             ("INFO", "opentelemetry_sdk", Some("retained-info")),
-            ("TRACE", "codex_state", Some("retained-trace")),
+            ("TRACE", "motyga_state", Some("retained-trace")),
         ]
     );
 
-    let _ = tokio::fs::remove_dir_all(codex_home).await;
+    let _ = tokio::fs::remove_dir_all(motyga_home).await;
 }

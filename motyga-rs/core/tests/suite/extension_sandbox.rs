@@ -2,37 +2,37 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_core::config::Config;
-use codex_core::config::Constrained;
-use codex_extension_api::ExtensionRegistry;
-use codex_extension_api::ExtensionRegistryBuilder;
-use codex_features::Feature;
-use codex_image_generation_extension::install as install_image_generation_extension;
-use codex_login::CodexAuth;
-use codex_protocol::config_types::ApprovalsReviewer;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::models::FileSystemPermissions;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::permissions::FileSystemAccessMode;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSandboxEntry;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::request_permissions::PermissionGrantScope;
-use codex_protocol::request_permissions::RequestPermissionProfile;
-use codex_protocol::request_permissions::RequestPermissionsResponse;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_core::config::Config;
+use motyga_core::config::Constrained;
+use motyga_extension_api::ExtensionRegistry;
+use motyga_extension_api::ExtensionRegistryBuilder;
+use motyga_features::Feature;
+use motyga_image_generation_extension::install as install_image_generation_extension;
+use motyga_login::MotygaAuth;
+use motyga_protocol::config_types::ApprovalsReviewer;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::models::FileSystemPermissions;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::openai_models::InputModality;
+use motyga_protocol::permissions::FileSystemAccessMode;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSandboxEntry;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::request_permissions::PermissionGrantScope;
+use motyga_protocol::request_permissions::RequestPermissionProfile;
+use motyga_protocol::request_permissions::RequestPermissionsResponse;
+use motyga_protocol::user_input::UserInput;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use core_test_support::responses;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_sandbox;
-use core_test_support::test_codex::local_selections;
-use core_test_support::test_codex::test_codex;
-use core_test_support::test_codex::turn_permission_fields;
+use core_test_support::test_motyga::local_selections;
+use core_test_support::test_motyga::test_motyga;
+use core_test_support::test_motyga::turn_permission_fields;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::json;
@@ -50,10 +50,10 @@ const TINY_PNG_BASE64: &str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAD
 const TINY_PNG_DATA_URL: &str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";
 
 fn image_generation_extensions(
-    auth: &CodexAuth,
+    auth: &MotygaAuth,
     resolve_save_root: impl Fn(&Config) -> Option<AbsolutePathBuf> + Send + Sync + 'static,
 ) -> Arc<ExtensionRegistry<Config>> {
-    let auth_manager = codex_core::test_support::auth_manager_from_auth(auth.clone());
+    let auth_manager = motyga_core::test_support::auth_manager_from_auth(auth.clone());
     let mut extension_builder = ExtensionRegistryBuilder::<Config>::new();
     install_image_generation_extension(&mut extension_builder, auth_manager, resolve_save_root);
     Arc::new(extension_builder.build())
@@ -64,9 +64,9 @@ async fn extension_tool_receives_turn_environment_sandbox() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = responses::start_mock_server().await;
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
-    let extensions = image_generation_extensions(&auth, |config| Some(config.codex_home.clone()));
-    let mut builder = test_codex()
+    let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
+    let extensions = image_generation_extensions(&auth, |config| Some(config.motyga_home.clone()));
+    let mut builder = test_motyga()
         .with_auth(auth)
         .with_extensions(extensions)
         .with_model_info_override("gpt-5.4", |model_info| {
@@ -160,7 +160,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
         .mount(&server)
         .await;
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
     let extensions = image_generation_extensions(&auth, |_config| None);
     let base_permission_profile = PermissionProfile::workspace_write_with(
         &[],
@@ -169,7 +169,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
         /*exclude_slash_tmp*/ true,
     );
     let permission_profile_for_config = base_permission_profile.clone();
-    let mut builder = test_codex()
+    let mut builder = test_motyga()
         .with_auth(auth)
         .with_extensions(extensions)
         .with_model_info_override("gpt-5.4", |model_info| {
@@ -246,7 +246,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
 
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(base_permission_profile, test.config.cwd.as_path());
-    test.codex
+    test.motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "request access and edit the image".to_string(),
@@ -255,15 +255,15 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
             final_output_json_schema: None,
             responsesapi_client_metadata: None,
             additional_context: Default::default(),
-            thread_settings: codex_protocol::protocol::ThreadSettingsOverrides {
+            thread_settings: motyga_protocol::protocol::ThreadSettingsOverrides {
                 environments: Some(local_selections(test.config.cwd.clone())),
                 approval_policy: Some(AskForApproval::OnRequest),
                 approvals_reviewer: Some(ApprovalsReviewer::User),
                 sandbox_policy: Some(sandbox_policy),
                 permission_profile,
-                collaboration_mode: Some(codex_protocol::config_types::CollaborationMode {
-                    mode: codex_protocol::config_types::ModeKind::Default,
-                    settings: codex_protocol::config_types::Settings {
+                collaboration_mode: Some(motyga_protocol::config_types::CollaborationMode {
+                    mode: motyga_protocol::config_types::ModeKind::Default,
+                    settings: motyga_protocol::config_types::Settings {
                         model: test.session_configured.model.clone(),
                         reasoning_effort: None,
                         developer_instructions: None,
@@ -273,7 +273,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
             },
         })
         .await?;
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.motyga, |event| {
         matches!(
             event,
             EventMsg::RequestPermissions(_) | EventMsg::TurnComplete(_)
@@ -284,7 +284,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
         panic!("expected request_permissions before turn completion");
     };
     assert_eq!(request.call_id, permissions_call_id);
-    test.codex
+    test.motyga
         .submit(Op::RequestPermissionsResponse {
             id: permissions_call_id.to_string(),
             response: RequestPermissionsResponse {
@@ -294,7 +294,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.motyga, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -310,7 +310,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
             "image_url": TINY_PNG_DATA_URL,
         }])
     );
-    assert!(!test.config.codex_home.join("generated_images").exists());
+    assert!(!test.config.motyga_home.join("generated_images").exists());
 
     Ok(())
 }

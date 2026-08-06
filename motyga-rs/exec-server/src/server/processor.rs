@@ -116,7 +116,7 @@ async fn run_connection(
                 warn!("ignoring malformed exec-server message: {reason}");
                 if outgoing_tx
                     .send(RpcServerOutboundMessage::Error {
-                        request_id: codex_exec_server_protocol::RequestId::Integer(-1),
+                        request_id: motyga_exec_server_protocol::RequestId::Integer(-1),
                         error: invalid_request(reason),
                     })
                     .await
@@ -126,7 +126,7 @@ async fn run_connection(
                 }
             }
             JsonRpcConnectionEvent::Message(message) => match message {
-                codex_exec_server_protocol::JSONRPCMessage::Request(request) => {
+                motyga_exec_server_protocol::JSONRPCMessage::Request(request) => {
                     let request_started_at = Instant::now();
                     if let Some((method, route)) = router.request_route(request.method.as_str()) {
                         let request_span = request_span(method, &request);
@@ -184,7 +184,7 @@ async fn run_connection(
                         telemetry.request_completed(method, "error", request_started_at.elapsed());
                     }
                 }
-                codex_exec_server_protocol::JSONRPCMessage::Notification(notification) => {
+                motyga_exec_server_protocol::JSONRPCMessage::Notification(notification) => {
                     let Some(route) = router.notification_route(notification.method.as_str())
                     else {
                         warn!(
@@ -207,14 +207,14 @@ async fn run_connection(
                         break;
                     }
                 }
-                codex_exec_server_protocol::JSONRPCMessage::Response(response) => {
+                motyga_exec_server_protocol::JSONRPCMessage::Response(response) => {
                     warn!(
                         "closing exec-server connection after unexpected client response: {:?}",
                         response.id
                     );
                     break;
                 }
-                codex_exec_server_protocol::JSONRPCMessage::Error(error) => {
+                motyga_exec_server_protocol::JSONRPCMessage::Error(error) => {
                     warn!(
                         "closing exec-server connection after unexpected client error: {:?}",
                         error.id
@@ -243,18 +243,18 @@ async fn run_connection(
 
 fn request_span(
     span_name: &str,
-    request: &codex_exec_server_protocol::JSONRPCRequest,
+    request: &motyga_exec_server_protocol::JSONRPCRequest,
 ) -> tracing::Span {
     let method = request.method.as_str();
     let span = tracing::info_span!(
-        "codex.exec_server.request",
+        "motyga.exec_server.request",
         otel.kind = "server",
         otel.name = span_name,
         method,
         result = tracing::field::Empty,
     );
     if let Some(trace) = &request.trace
-        && !codex_otel::set_parent_from_w3c_trace_context(&span, trace)
+        && !motyga_otel::set_parent_from_w3c_trace_context(&span, trace)
     {
         warn!(method, "ignoring invalid inbound exec-server trace carrier");
     }
@@ -277,12 +277,12 @@ mod tests {
     use std::sync::Arc;
     use std::time::Duration;
 
-    use codex_exec_server_protocol::JSONRPCMessage;
-    use codex_exec_server_protocol::JSONRPCNotification;
-    use codex_exec_server_protocol::JSONRPCRequest;
-    use codex_exec_server_protocol::JSONRPCResponse;
-    use codex_exec_server_protocol::RequestId;
-    use codex_utils_path_uri::PathUri;
+    use motyga_exec_server_protocol::JSONRPCMessage;
+    use motyga_exec_server_protocol::JSONRPCNotification;
+    use motyga_exec_server_protocol::JSONRPCRequest;
+    use motyga_exec_server_protocol::JSONRPCResponse;
+    use motyga_exec_server_protocol::RequestId;
+    use motyga_utils_path_uri::PathUri;
     use opentelemetry::trace::SpanId;
     use opentelemetry::trace::TraceId;
     use opentelemetry::trace::TracerProvider as _;
@@ -333,11 +333,11 @@ mod tests {
         let subscriber = tracing_subscriber::registry().with(
             tracing_opentelemetry::layer()
                 .with_tracer(tracer)
-                .with_filter(filter_fn(codex_otel::OtelProvider::trace_export_filter)),
+                .with_filter(filter_fn(motyga_otel::OtelProvider::trace_export_filter)),
         );
         let trace_id = TraceId::from_hex("00000000000000000000000000000001").expect("trace id");
         let parent_span_id = SpanId::from_hex("0000000000000002").expect("span id");
-        let trace = codex_protocol::protocol::W3cTraceContext {
+        let trace = motyga_protocol::protocol::W3cTraceContext {
             traceparent: Some(format!("00-{trace_id}-{parent_span_id}-01")),
             tracestate: None,
         };
@@ -517,7 +517,7 @@ mod tests {
     fn test_runtime_paths() -> ExecServerRuntimePaths {
         ExecServerRuntimePaths::new(
             std::env::current_exe().expect("current exe"),
-            /*codex_linux_sandbox_exe*/ None,
+            /*motyga_linux_sandbox_exe*/ None,
         )
         .expect("runtime paths")
     }

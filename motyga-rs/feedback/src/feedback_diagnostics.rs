@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-pub const FEEDBACK_DIAGNOSTICS_ATTACHMENT_FILENAME: &str = "codex-connectivity-diagnostics.txt";
+pub const FEEDBACK_DIAGNOSTICS_ATTACHMENT_FILENAME: &str = "motyga-connectivity-diagnostics.txt";
 const PROXY_ENV_VARS: &[&str] = &[
     "HTTP_PROXY",
     "http_proxy",

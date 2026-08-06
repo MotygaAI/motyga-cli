@@ -5,7 +5,7 @@ use pretty_assertions::assert_eq;
 fn resume_parses_prompt_after_global_flags() {
     const PROMPT: &str = "echo resume-with-global-flags-after-subcommand";
     let cli = Cli::parse_from([
-        "codex-exec",
+        "motyga-exec",
         "resume",
         "--last",
         "--json",
@@ -39,7 +39,7 @@ fn resume_parses_prompt_after_global_flags() {
 fn resume_accepts_output_flags_after_subcommand() {
     const PROMPT: &str = "echo resume-with-output-file";
     let cli = Cli::parse_from([
-        "codex-exec",
+        "motyga-exec",
         "resume",
         "session-123",
         "-o",
@@ -64,7 +64,7 @@ fn resume_accepts_output_flags_after_subcommand() {
 #[test]
 fn parses_config_isolation_flags() {
     let cli = Cli::parse_from([
-        "codex-exec",
+        "motyga-exec",
         "--ignore-user-config",
         "--ignore-rules",
         "summarize",
@@ -76,7 +76,7 @@ fn parses_config_isolation_flags() {
 
 #[test]
 fn removed_full_auto_flag_reports_migration_path() {
-    let cli = Cli::parse_from(["codex-exec", "--full-auto", "summarize"]);
+    let cli = Cli::parse_from(["motyga-exec", "--full-auto", "summarize"]);
 
     assert_eq!(
         cli.removed_full_auto_warning(),

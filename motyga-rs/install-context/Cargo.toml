@@ -1,11 +1,11 @@
 [package]
-name = "codex-install-context"
+name = "motyga-install-context"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_install_context"
+name = "motyga_install_context"
 path = "src/lib.rs"
 doctest = false
 
@@ -13,8 +13,8 @@ doctest = false
 workspace = true
 
 [dependencies]
-codex-utils-absolute-path = { workspace = true }
-codex-utils-home-dir = { workspace = true }
+motyga-utils-absolute-path = { workspace = true }
+motyga-utils-home-dir = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

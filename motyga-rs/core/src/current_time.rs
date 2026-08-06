@@ -7,8 +7,8 @@ use anyhow::Result;
 use anyhow::anyhow;
 use chrono::DateTime;
 use chrono::Utc;
-use codex_features::CurrentTimeSource;
-use codex_protocol::ThreadId;
+use motyga_features::CurrentTimeSource;
+use motyga_protocol::ThreadId;
 
 use crate::config::CurrentTimeReminderConfig;
 

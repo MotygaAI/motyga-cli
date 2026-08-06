@@ -35,7 +35,7 @@ fn build_request_plugin_install_elicitation_request_uses_expected_shape() {
         request,
         ElicitationRequest::Form {
             meta: Some(json!(RequestPluginInstallMeta {
-                codex_approval_kind: REQUEST_PLUGIN_INSTALL_APPROVAL_KIND_VALUE,
+                motyga_approval_kind: REQUEST_PLUGIN_INSTALL_APPROVAL_KIND_VALUE,
                 persist: REQUEST_PLUGIN_INSTALL_PERSIST_ALWAYS_VALUE,
                 tool_type: DiscoverableToolType::Connector,
                 suggest_type: DiscoverableToolAction::Install,
@@ -78,7 +78,7 @@ fn build_request_plugin_install_elicitation_request_injects_plugin_metadata() {
         request,
         ElicitationRequest::Form {
             meta: Some(json!(RequestPluginInstallMeta {
-                codex_approval_kind: REQUEST_PLUGIN_INSTALL_APPROVAL_KIND_VALUE,
+                motyga_approval_kind: REQUEST_PLUGIN_INSTALL_APPROVAL_KIND_VALUE,
                 persist: REQUEST_PLUGIN_INSTALL_PERSIST_ALWAYS_VALUE,
                 tool_type: DiscoverableToolType::Plugin,
                 suggest_type: DiscoverableToolAction::Install,
@@ -125,7 +125,7 @@ fn build_request_plugin_install_meta_uses_expected_shape() {
     assert_eq!(
         meta,
         RequestPluginInstallMeta {
-            codex_approval_kind: REQUEST_PLUGIN_INSTALL_APPROVAL_KIND_VALUE,
+            motyga_approval_kind: REQUEST_PLUGIN_INSTALL_APPROVAL_KIND_VALUE,
             persist: REQUEST_PLUGIN_INSTALL_PERSIST_ALWAYS_VALUE,
             tool_type: DiscoverableToolType::Connector,
             suggest_type: DiscoverableToolAction::Install,

@@ -6,111 +6,111 @@ use crate::unified_exec::MIN_EMPTY_YIELD_TIME_MS;
 use crate::windows_sandbox::WindowsSandboxLevelExt;
 use crate::windows_sandbox::resolve_windows_sandbox_mode;
 use crate::windows_sandbox::resolve_windows_sandbox_private_desktop;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigLayerStackOrdering;
-use codex_config::ConfigRequirements;
-use codex_config::ConfigRequirementsToml;
-use codex_config::ConstrainedWithSource;
-use codex_config::FeatureRequirementsToml;
-use codex_config::McpServerRequirement;
-use codex_config::PluginRequirementsToml;
-use codex_config::ProfileV2Name;
-use codex_config::ResidencyRequirement;
-use codex_config::SandboxModeRequirement;
-use codex_config::Sourced;
-use codex_config::ThreadConfigLoader;
-use codex_config::config_toml::ConfigLockfileToml;
-use codex_config::config_toml::ConfigToml;
-use codex_config::config_toml::DEFAULT_PROJECT_DOC_MAX_BYTES;
-use codex_config::config_toml::ProjectConfig;
-use codex_config::config_toml::RealtimeAudioConfig;
-use codex_config::config_toml::RealtimeConfig;
-use codex_config::config_toml::ThreadStoreToml;
-use codex_config::config_toml::validate_model_providers;
-use codex_config::loader::load_config_layers_state;
-use codex_config::loader::project_trust_key;
-use codex_config::permissions_toml::PermissionsToml;
-use codex_config::sandbox_mode_requirement_for_permission_profile;
-use codex_config::types::ApprovalsReviewer;
-use codex_config::types::AuthCredentialsStoreMode;
-use codex_config::types::AuthKeyringBackendKind;
-use codex_config::types::History;
-use codex_config::types::McpServerConfig;
-use codex_config::types::McpServerDisabledReason;
-use codex_config::types::MemoriesConfig;
-use codex_config::types::ModelAvailabilityNuxConfig;
-use codex_config::types::Notice;
-use codex_config::types::OAuthCredentialsStoreMode;
-use codex_config::types::SessionPickerViewMode;
-use codex_config::types::ToolSuggestConfig;
-use codex_config::types::ToolSuggestDisabledTool;
-use codex_config::types::ToolSuggestDiscoverable;
-use codex_config::types::TuiKeymap;
-use codex_config::types::TuiNotificationSettings;
-use codex_config::types::TuiPetAnchor;
-use codex_config::types::UriBasedFileOpener;
-use codex_config::types::WindowsSandboxModeToml;
-use codex_core_plugins::PluginsConfigInput;
-use codex_exec_server::ExecutorFileSystem;
-use codex_exec_server::LOCAL_FS;
-use codex_features::CodeModeConfigToml;
-use codex_features::CurrentTimeReminderConfigToml;
-use codex_features::CurrentTimeReminderDeliveryMode;
-use codex_features::CurrentTimeSource;
-use codex_features::Feature;
-use codex_features::FeatureConfigSource;
-use codex_features::FeatureOverrides;
-use codex_features::FeatureToml;
-use codex_features::Features;
-use codex_features::FeaturesToml;
-use codex_features::MultiAgentV2ConfigToml;
-use codex_features::NetworkProxyConfigToml;
-use codex_features::TokenBudgetConfigToml;
-use codex_git_utils::resolve_root_git_project_for_trust;
-use codex_install_context::InstallContext;
-use codex_login::AuthManagerConfig;
-use codex_login::AuthRouteConfig;
-use codex_mcp::McpConfig;
-use codex_mcp::McpPluginAttribution;
-use codex_mcp::McpServerRegistration;
-use codex_mcp::ResolvedMcpCatalog;
-use codex_memories_read::memory_root;
-use codex_model_provider_info::LEGACY_OLLAMA_CHAT_PROVIDER_ID;
-use codex_model_provider_info::ModelProviderInfo;
-use codex_model_provider_info::OLLAMA_CHAT_PROVIDER_REMOVED_ERROR;
-use codex_model_provider_info::built_in_model_providers;
-use codex_model_provider_info::merge_configured_model_providers;
-use codex_models_manager::ModelsManagerConfig;
-use codex_protocol::config_types::AltScreenMode;
-use codex_protocol::config_types::AutoCompactTokenLimitScope;
-use codex_protocol::config_types::ForcedLoginMethod;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::config_types::ShellEnvironmentPolicy;
-use codex_protocol::config_types::TrustLevel;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::config_types::WebSearchConfig;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::SandboxEnforcement;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::permissions::FileSystemSandboxPolicy;
-use codex_protocol::permissions::NetworkSandboxPolicy;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::SandboxPolicy;
-pub use codex_thread_store::ExtraConfig;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_absolute_path::AbsolutePathBufGuard;
-use codex_utils_path_uri::PathUri;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigLayerStackOrdering;
+use motyga_config::ConfigRequirements;
+use motyga_config::ConfigRequirementsToml;
+use motyga_config::ConstrainedWithSource;
+use motyga_config::FeatureRequirementsToml;
+use motyga_config::McpServerRequirement;
+use motyga_config::PluginRequirementsToml;
+use motyga_config::ProfileV2Name;
+use motyga_config::ResidencyRequirement;
+use motyga_config::SandboxModeRequirement;
+use motyga_config::Sourced;
+use motyga_config::ThreadConfigLoader;
+use motyga_config::config_toml::ConfigLockfileToml;
+use motyga_config::config_toml::ConfigToml;
+use motyga_config::config_toml::DEFAULT_PROJECT_DOC_MAX_BYTES;
+use motyga_config::config_toml::ProjectConfig;
+use motyga_config::config_toml::RealtimeAudioConfig;
+use motyga_config::config_toml::RealtimeConfig;
+use motyga_config::config_toml::ThreadStoreToml;
+use motyga_config::config_toml::validate_model_providers;
+use motyga_config::loader::load_config_layers_state;
+use motyga_config::loader::project_trust_key;
+use motyga_config::permissions_toml::PermissionsToml;
+use motyga_config::sandbox_mode_requirement_for_permission_profile;
+use motyga_config::types::ApprovalsReviewer;
+use motyga_config::types::AuthCredentialsStoreMode;
+use motyga_config::types::AuthKeyringBackendKind;
+use motyga_config::types::History;
+use motyga_config::types::McpServerConfig;
+use motyga_config::types::McpServerDisabledReason;
+use motyga_config::types::MemoriesConfig;
+use motyga_config::types::ModelAvailabilityNuxConfig;
+use motyga_config::types::Notice;
+use motyga_config::types::OAuthCredentialsStoreMode;
+use motyga_config::types::SessionPickerViewMode;
+use motyga_config::types::ToolSuggestConfig;
+use motyga_config::types::ToolSuggestDisabledTool;
+use motyga_config::types::ToolSuggestDiscoverable;
+use motyga_config::types::TuiKeymap;
+use motyga_config::types::TuiNotificationSettings;
+use motyga_config::types::TuiPetAnchor;
+use motyga_config::types::UriBasedFileOpener;
+use motyga_config::types::WindowsSandboxModeToml;
+use motyga_core_plugins::PluginsConfigInput;
+use motyga_exec_server::ExecutorFileSystem;
+use motyga_exec_server::LOCAL_FS;
+use motyga_features::CodeModeConfigToml;
+use motyga_features::CurrentTimeReminderConfigToml;
+use motyga_features::CurrentTimeReminderDeliveryMode;
+use motyga_features::CurrentTimeSource;
+use motyga_features::Feature;
+use motyga_features::FeatureConfigSource;
+use motyga_features::FeatureOverrides;
+use motyga_features::FeatureToml;
+use motyga_features::Features;
+use motyga_features::FeaturesToml;
+use motyga_features::MultiAgentV2ConfigToml;
+use motyga_features::NetworkProxyConfigToml;
+use motyga_features::TokenBudgetConfigToml;
+use motyga_git_utils::resolve_root_git_project_for_trust;
+use motyga_install_context::InstallContext;
+use motyga_login::AuthManagerConfig;
+use motyga_login::AuthRouteConfig;
+use motyga_mcp::McpConfig;
+use motyga_mcp::McpPluginAttribution;
+use motyga_mcp::McpServerRegistration;
+use motyga_mcp::ResolvedMcpCatalog;
+use motyga_memories_read::memory_root;
+use motyga_model_provider_info::LEGACY_OLLAMA_CHAT_PROVIDER_ID;
+use motyga_model_provider_info::ModelProviderInfo;
+use motyga_model_provider_info::OLLAMA_CHAT_PROVIDER_REMOVED_ERROR;
+use motyga_model_provider_info::built_in_model_providers;
+use motyga_model_provider_info::merge_configured_model_providers;
+use motyga_models_manager::ModelsManagerConfig;
+use motyga_protocol::config_types::AltScreenMode;
+use motyga_protocol::config_types::AutoCompactTokenLimitScope;
+use motyga_protocol::config_types::ForcedLoginMethod;
+use motyga_protocol::config_types::Personality;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
+use motyga_protocol::config_types::SandboxMode;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::config_types::ShellEnvironmentPolicy;
+use motyga_protocol::config_types::TrustLevel;
+use motyga_protocol::config_types::Verbosity;
+use motyga_protocol::config_types::WebSearchConfig;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::SandboxEnforcement;
+use motyga_protocol::openai_models::ModelsResponse;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::permissions::FileSystemSandboxPolicy;
+use motyga_protocol::permissions::NetworkSandboxPolicy;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::SandboxPolicy;
+pub use motyga_thread_store::ExtraConfig;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBufGuard;
+use motyga_utils_path_uri::PathUri;
 use rmcp::model::ElicitationCapability;
 use rmcp::model::FormElicitationCapability;
 use rmcp::model::UrlElicitationCapability;
@@ -131,13 +131,13 @@ use crate::config::permissions::builtin_permission_profile;
 use crate::config::permissions::compile_permission_profile_selection;
 use crate::config::permissions::compile_permission_profile_workspace_roots;
 use crate::config::permissions::default_builtin_permission_profile_name;
-use crate::config::permissions::get_readable_roots_required_for_codex_runtime;
+use crate::config::permissions::get_readable_roots_required_for_motyga_runtime;
 use crate::config::permissions::network_proxy_config_for_profile_selection;
 use crate::config::permissions::validate_user_permission_profile_names;
 use crate::config_lock::config_without_lock_controls;
 use crate::config_lock::lock_layer_from_config;
 use crate::config_lock::read_config_lock_from_path;
-use codex_network_proxy::NetworkProxyConfig;
+use motyga_network_proxy::NetworkProxyConfig;
 use toml::Value as TomlValue;
 use toml_edit::DocumentMut;
 
@@ -153,14 +153,14 @@ mod resolved_permission_profile;
 #[cfg(test)]
 mod schema;
 pub use auth_keyring::resolve_bootstrap_auth_keyring_backend_kind;
-pub use codex_config::ConfigLoadOptions;
-pub use codex_config::Constrained;
-pub use codex_config::ConstraintError;
-pub use codex_config::ConstraintResult;
-pub use codex_config::LoaderOverrides;
-pub use codex_network_proxy::NetworkProxyAuditMetadata;
-use codex_sandboxing::compatibility_sandbox_policy_for_permission_profile;
-pub use codex_sandboxing::system_bwrap_warning;
+pub use motyga_config::ConfigLoadOptions;
+pub use motyga_config::Constrained;
+pub use motyga_config::ConstraintError;
+pub use motyga_config::ConstraintResult;
+pub use motyga_config::LoaderOverrides;
+pub use motyga_network_proxy::NetworkProxyAuditMetadata;
+use motyga_sandboxing::compatibility_sandbox_policy_for_permission_profile;
+pub use motyga_sandboxing::system_bwrap_warning;
 pub use managed_features::ManagedFeatures;
 pub use network_proxy_spec::NetworkProxySpec;
 pub use network_proxy_spec::StartedNetworkProxy;
@@ -270,7 +270,7 @@ pub const CONFIG_TOML_FILE: &str = "config.toml";
 const CONFIG_PROFILE_V2_SUFFIX: &str = ".config.toml";
 
 fn resolve_sqlite_home_env(resolved_cwd: &Path) -> Option<PathBuf> {
-    let raw = std::env::var(codex_state::SQLITE_HOME_ENV).ok()?;
+    let raw = std::env::var(motyga_state::SQLITE_HOME_ENV).ok()?;
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return None;
@@ -311,11 +311,11 @@ fn resolve_mcp_oauth_credentials_store_mode(
 
 #[cfg(test)]
 pub(crate) async fn test_config() -> Config {
-    let codex_home = tempfile::tempdir().expect("create temp dir");
+    let motyga_home = tempfile::tempdir().expect("create temp dir");
     Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
         ConfigOverrides::default(),
-        AbsolutePathBuf::from_absolute_path(codex_home.path()).expect("temp dir should resolve"),
+        AbsolutePathBuf::from_absolute_path(motyga_home.path()).expect("temp dir should resolve"),
     )
     .await
     .expect("load default test config")
@@ -435,7 +435,7 @@ impl Permissions {
     }
 
     /// Workspace roots that came from user-visible configuration or runtime
-    /// selection. Internal Codex-only writable roots are intentionally excluded.
+    /// selection. Internal Motyga-only writable roots are intentionally excluded.
     pub fn user_visible_workspace_roots(&self) -> &[AbsolutePathBuf] {
         &self.workspace_roots
     }
@@ -550,7 +550,7 @@ impl Permissions {
 }
 
 // A profile override only inherits the selected profile's proxy/allowlist config
-// when Codex is still responsible for the network policy. `Disabled` means no
+// when Motyga is still responsible for the network policy. `Disabled` means no
 // outer sandbox, so starting the managed proxy would narrow the override.
 fn profile_allows_configured_network_proxy(permission_profile: &PermissionProfile) -> bool {
     match permission_profile {
@@ -563,7 +563,7 @@ fn profile_allows_configured_network_proxy(permission_profile: &PermissionProfil
 
 fn build_network_proxy_spec(
     configured_network_proxy_config: NetworkProxyConfig,
-    network_requirements: Option<Sourced<codex_config::NetworkConstraints>>,
+    network_requirements: Option<Sourced<motyga_config::NetworkConstraints>>,
     permission_profile: &PermissionProfile,
 ) -> std::io::Result<Option<NetworkProxySpec>> {
     let (network_requirements, network_requirements_source) = match network_requirements {
@@ -708,23 +708,23 @@ pub struct Config {
     /// Compact prompt override.
     pub compact_prompt: Option<String>,
 
-    /// Optional external notifier command. When set, Codex will spawn this
+    /// Optional external notifier command. When set, Motyga will spawn this
     /// program after each completed *turn* (i.e. when the agent finishes
     /// processing a user submission). The value must be the full command
-    /// broken into argv tokens **without** the trailing JSON argument - Codex
+    /// broken into argv tokens **without** the trailing JSON argument - Motyga
     /// appends one extra argument containing a JSON payload describing the
     /// event.
     ///
     /// Example `~/.motyga/config.toml` snippet:
     ///
     /// ```toml
-    /// notify = ["notify-send", "Codex"]
+    /// notify = ["notify-send", "Motyga"]
     /// ```
     ///
     /// which will be invoked as:
     ///
     /// ```shell
-    /// notify-send Codex '{"type":"agent-turn-complete","turn-id":"12345"}'
+    /// notify-send Motyga '{"type":"agent-turn-complete","turn-id":"12345"}'
     /// ```
     ///
     /// If unset the feature is disabled.
@@ -811,26 +811,26 @@ pub struct Config {
     pub workspace_roots_explicit: bool,
 
     /// Preferred store for CLI auth credentials.
-    /// file (default): Use a file in the Codex home directory.
+    /// file (default): Use a file in the Motyga home directory.
     /// keyring: Use an OS-specific keyring service.
     /// auto: Use the OS-specific keyring service if available, otherwise use a file.
     pub cli_auth_credentials_store_mode: AuthCredentialsStoreMode,
 
-    /// Definition for MCP servers that Codex can reach out to for tool calls.
+    /// Definition for MCP servers that Motyga can reach out to for tool calls.
     pub mcp_servers: Constrained<HashMap<String, McpServerConfig>>,
 
     /// Preferred store for MCP OAuth credentials.
     /// keyring: Use an OS-specific keyring service.
-    ///          Credentials stored in the keyring will only be readable by Codex unless the user explicitly grants access via OS-level keyring access.
-    ///          https://github.com/openai/codex/blob/main/motyga-rs/rmcp-client/src/oauth.rs#L2
+    ///          Credentials stored in the keyring will only be readable by Motyga unless the user explicitly grants access via OS-level keyring access.
+    ///          https://github.com/openai/codex/blob/main/codex-rs/rmcp-client/src/oauth.rs#L2
     /// file: MOTYGA_HOME/.credentials.json
-    ///       This file will be readable to Codex and other applications running as the same user.
+    ///       This file will be readable to Motyga and other applications running as the same user.
     /// auto (default): keyring if available, otherwise file.
     pub mcp_oauth_credentials_store_mode: OAuthCredentialsStoreMode,
 
     /// Optional fixed port to use for the local HTTP callback server used during MCP OAuth login.
     ///
-    /// When unset, Codex will bind to an ephemeral port chosen by the OS.
+    /// When unset, Motyga will bind to an ephemeral port chosen by the OS.
     pub mcp_oauth_callback_port: Option<u16>,
 
     /// Optional redirect URI to use during MCP OAuth login.
@@ -869,22 +869,22 @@ pub struct Config {
     /// Memories subsystem settings.
     pub memories: MemoriesConfig,
 
-    /// Directory containing all Codex state (defaults to `~/.codex` but can be
+    /// Directory containing all Motyga state (defaults to `~/.motyga` but can be
     /// overridden by the `MOTYGA_HOME` environment variable).
-    pub codex_home: AbsolutePathBuf,
+    pub motyga_home: AbsolutePathBuf,
 
-    /// Directory where Codex stores the SQLite state DB.
+    /// Directory where Motyga stores the SQLite state DB.
     pub sqlite_home: PathBuf,
 
-    /// Directory where Codex writes log files (defaults to `$MOTYGA_HOME/log`).
+    /// Directory where Motyga writes log files (defaults to `$MOTYGA_HOME/log`).
     pub log_dir: PathBuf,
 
-    /// Directory where Codex writes effective session config lock files.
+    /// Directory where Motyga writes effective session config lock files.
     pub config_lock_export_dir: Option<AbsolutePathBuf>,
 
-    /// Whether config lock replay ignores Codex version drift between the
+    /// Whether config lock replay ignores Motyga version drift between the
     /// lock metadata and the regenerated lock.
-    pub config_lock_allow_codex_version_mismatch: bool,
+    pub config_lock_allow_motyga_version_mismatch: bool,
 
     /// Whether config lock creation saves values resolved from the model
     /// catalog/session configuration.
@@ -911,19 +911,19 @@ pub struct Config {
     /// output will be hyperlinked using the specified URI scheme.
     pub file_opener: UriBasedFileOpener,
 
-    /// Path to the current Codex executable. This cannot be set in the config
+    /// Path to the current Motyga executable. This cannot be set in the config
     /// file: it must be set in code via [`ConfigOverrides`].
-    pub codex_self_exe: Option<PathBuf>,
+    pub motyga_self_exe: Option<PathBuf>,
 
-    /// Path to the `codex-linux-sandbox` executable. This must be set if
-    /// [`codex_sandboxing::SandboxType::LinuxSeccomp`] is used. Note that this
+    /// Path to the `motyga-linux-sandbox` executable. This must be set if
+    /// [`motyga_sandboxing::SandboxType::LinuxSeccomp`] is used. Note that this
     /// cannot be set in the config file: it must be set in code via
     /// [`ConfigOverrides`].
     ///
-    /// When this program is invoked, arg0 will be set to `codex-linux-sandbox`.
-    pub codex_linux_sandbox_exe: Option<PathBuf>,
+    /// When this program is invoked, arg0 will be set to `motyga-linux-sandbox`.
+    pub motyga_linux_sandbox_exe: Option<PathBuf>,
 
-    /// Path to the `codex-execve-wrapper` executable used for shell
+    /// Path to the `motyga-execve-wrapper` executable used for shell
     /// escalation. This cannot be set in the config file: it must be set in
     /// code via [`ConfigOverrides`].
     pub main_execve_wrapper_exe: Option<PathBuf>,
@@ -959,7 +959,7 @@ pub struct Config {
     /// Base URL for requests to ChatGPT (as opposed to the OpenAI API).
     pub chatgpt_base_url: String,
 
-    /// Whether Codex-owned clients should respect host system proxy settings.
+    /// Whether Motyga-owned clients should respect host system proxy settings.
     pub respect_system_proxy: bool,
 
     /// Optional product SKU forwarded to the host-owned apps MCP server.
@@ -1052,8 +1052,8 @@ pub struct Config {
     /// Collection of various notices we show the user
     pub notices: Notice,
 
-    /// When `true`, checks for Codex updates on startup and surfaces update prompts.
-    /// Set to `false` only if your Codex updates are centrally managed.
+    /// When `true`, checks for Motyga updates on startup and surfaces update prompts.
+    /// Set to `false` only if your Motyga updates are centrally managed.
     /// Defaults to `true`.
     pub check_for_update_on_startup: bool,
 
@@ -1062,11 +1062,11 @@ pub struct Config {
     /// or placeholder replacement will occur for fast keypress bursts.
     pub disable_paste_burst: bool,
 
-    /// When `false`, disables analytics across Codex product surfaces in this machine.
+    /// When `false`, disables analytics across Motyga product surfaces in this machine.
     /// Voluntarily left as Optional because the default value might depend on the client.
     pub analytics_enabled: Option<bool>,
 
-    /// When `false`, disables feedback collection across Codex product surfaces.
+    /// When `false`, disables feedback collection across Motyga product surfaces.
     /// Defaults to `true`.
     pub feedback_enabled: bool,
 
@@ -1074,7 +1074,7 @@ pub struct Config {
     pub tool_suggest: ToolSuggestConfig,
 
     /// OTEL configuration (exporter type, endpoint, headers, etc.).
-    pub otel: codex_config::types::OtelConfig,
+    pub otel: motyga_config::types::OtelConfig,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
@@ -1197,8 +1197,8 @@ pub struct TerminalResizeReflowConfig {
 }
 
 impl AuthManagerConfig for Config {
-    fn codex_home(&self) -> PathBuf {
-        self.codex_home.to_path_buf()
+    fn motyga_home(&self) -> PathBuf {
+        self.motyga_home.to_path_buf()
     }
 
     fn cli_auth_credentials_store_mode(&self) -> AuthCredentialsStoreMode {
@@ -1224,7 +1224,7 @@ impl AuthManagerConfig for Config {
 
 #[derive(Clone, Default)]
 pub struct ConfigBuilder {
-    codex_home: Option<PathBuf>,
+    motyga_home: Option<PathBuf>,
     cli_overrides: Option<Vec<(String, TomlValue)>>,
     harness_overrides: Option<ConfigOverrides>,
     loader_overrides: Option<LoaderOverrides>,
@@ -1235,8 +1235,8 @@ pub struct ConfigBuilder {
 }
 
 impl ConfigBuilder {
-    pub fn codex_home(mut self, codex_home: PathBuf) -> Self {
-        self.codex_home = Some(codex_home);
+    pub fn motyga_home(mut self, motyga_home: PathBuf) -> Self {
+        self.motyga_home = Some(motyga_home);
         self
     }
 
@@ -1285,7 +1285,7 @@ impl ConfigBuilder {
 
     async fn build_inner(self) -> std::io::Result<Config> {
         let Self {
-            codex_home,
+            motyga_home,
             cli_overrides,
             harness_overrides,
             loader_overrides,
@@ -1294,9 +1294,9 @@ impl ConfigBuilder {
             thread_config_loader,
             fallback_cwd,
         } = self;
-        let codex_home = match codex_home {
-            Some(codex_home) => AbsolutePathBuf::from_absolute_path(codex_home)?,
-            None => find_codex_home()?,
+        let motyga_home = match motyga_home {
+            Some(motyga_home) => AbsolutePathBuf::from_absolute_path(motyga_home)?,
+            None => find_motyga_home()?,
         };
         let cli_overrides = cli_overrides.unwrap_or_default();
         let mut harness_overrides = harness_overrides.unwrap_or_default();
@@ -1309,7 +1309,7 @@ impl ConfigBuilder {
         harness_overrides.cwd = Some(cwd.to_path_buf());
         let config_layer_stack = load_config_layers_state(
             LOCAL_FS.as_ref(),
-            &codex_home,
+            &motyga_home,
             Some(cwd),
             &cli_overrides,
             ConfigLoadOptions {
@@ -1319,7 +1319,7 @@ impl ConfigBuilder {
             },
             thread_config_loader
                 .as_deref()
-                .unwrap_or(&codex_config::NoopThreadConfigLoader),
+                .unwrap_or(&motyga_config::NoopThreadConfigLoader),
         )
         .await?;
         let merged_toml = config_layer_stack.effective_config();
@@ -1331,13 +1331,13 @@ impl ConfigBuilder {
         let config_toml: ConfigToml = match merged_toml.try_into() {
             Ok(config_toml) => config_toml,
             Err(err) => {
-                if let Some(config_error) = codex_config::first_layer_config_error::<ConfigToml>(
+                if let Some(config_error) = motyga_config::first_layer_config_error::<ConfigToml>(
                     &config_layer_stack,
-                    codex_config::CONFIG_TOML_FILE,
+                    motyga_config::CONFIG_TOML_FILE,
                 )
                 .await
                 {
-                    return Err(codex_config::io_error_from_config_error(
+                    return Err(motyga_config::io_error_from_config_error(
                         std::io::ErrorKind::InvalidData,
                         config_error,
                         Some(err),
@@ -1353,8 +1353,8 @@ impl ConfigBuilder {
         if let Some(config_lock_load_path) =
             config_lock_settings.and_then(|config_lock| config_lock.load_path.as_ref())
         {
-            let allow_codex_version_mismatch = config_lock_settings
-                .and_then(|config_lock| config_lock.allow_codex_version_mismatch)
+            let allow_motyga_version_mismatch = config_lock_settings
+                .and_then(|config_lock| config_lock.allow_motyga_version_mismatch)
                 .unwrap_or(false);
             let save_fields_resolved_from_model_catalog = config_lock_settings
                 .and_then(|config_lock| config_lock.save_fields_resolved_from_model_catalog)
@@ -1372,12 +1372,12 @@ impl ConfigBuilder {
                 LOCAL_FS.as_ref(),
                 lock_config_toml,
                 harness_overrides,
-                codex_home,
+                motyga_home,
                 lock_config_layer_stack,
             )
             .await?;
             config.config_lock_toml = Some(Arc::new(expected_lock_config));
-            config.config_lock_allow_codex_version_mismatch = allow_codex_version_mismatch;
+            config.config_lock_allow_motyga_version_mismatch = allow_motyga_version_mismatch;
             config.config_lock_save_fields_resolved_from_model_catalog =
                 save_fields_resolved_from_model_catalog;
             return Ok(config);
@@ -1386,7 +1386,7 @@ impl ConfigBuilder {
             LOCAL_FS.as_ref(),
             config_toml,
             harness_overrides,
-            codex_home,
+            motyga_home,
             config_layer_stack,
         )
         .await
@@ -1510,7 +1510,7 @@ impl Config {
 
     pub async fn to_mcp_config(
         &self,
-        plugins_manager: &codex_core_plugins::PluginsManager,
+        plugins_manager: &motyga_core_plugins::PluginsManager,
     ) -> McpConfig {
         self.to_mcp_config_with_plugin_registrations(
             plugins_manager,
@@ -1521,7 +1521,7 @@ impl Config {
 
     pub(crate) async fn to_mcp_config_with_plugin_registrations(
         &self,
-        plugins_manager: &codex_core_plugins::PluginsManager,
+        plugins_manager: &motyga_core_plugins::PluginsManager,
         additional_plugin_registrations: impl IntoIterator<Item = McpServerRegistration>,
     ) -> McpConfig {
         let plugins_input = self.plugins_config_input();
@@ -1561,7 +1561,7 @@ impl Config {
         McpConfig {
             chatgpt_base_url: self.chatgpt_base_url.clone(),
             apps_mcp_product_sku: self.apps_mcp_product_sku.clone(),
-            codex_home: self.codex_home.to_path_buf(),
+            motyga_home: self.motyga_home.to_path_buf(),
             mcp_oauth_credentials_store_mode: self.mcp_oauth_credentials_store_mode,
             auth_keyring_backend_kind: self.auth_keyring_backend_kind(),
             mcp_oauth_callback_port: self.mcp_oauth_callback_port,
@@ -1570,7 +1570,7 @@ impl Config {
                 .features
                 .enabled(Feature::SkillMcpDependencyInstall),
             approval_policy: self.permissions.approval_policy.clone(),
-            codex_linux_sandbox_exe: self.codex_linux_sandbox_exe.clone(),
+            motyga_linux_sandbox_exe: self.motyga_linux_sandbox_exe.clone(),
             use_legacy_landlock: self.features.use_legacy_landlock(),
             apps_enabled: self.features.enabled(Feature::Apps),
             prefix_mcp_tool_names: self.prefix_mcp_tool_names(),
@@ -1586,7 +1586,7 @@ impl Config {
             },
             mcp_server_catalog: catalog.build(),
             connector_snapshot:
-                codex_connectors::ConnectorSnapshot::from_plugin_capability_summaries(
+                motyga_connectors::ConnectorSnapshot::from_plugin_capability_summaries(
                     loaded_plugins.capability_summaries(),
                 ),
         }
@@ -1653,7 +1653,7 @@ impl Config {
                 default_zsh_path,
                 ..Default::default()
             },
-            refreshed_config.codex_home.clone(),
+            refreshed_config.motyga_home.clone(),
             config_layer_stack,
         )
         .await
@@ -1673,18 +1673,18 @@ impl Config {
     pub async fn load_default_with_cli_overrides(
         cli_overrides: Vec<(String, TomlValue)>,
     ) -> std::io::Result<Self> {
-        let codex_home = find_codex_home()?;
-        Self::load_default_with_cli_overrides_for_codex_home(
-            codex_home.to_path_buf(),
+        let motyga_home = find_motyga_home()?;
+        Self::load_default_with_cli_overrides_for_motyga_home(
+            motyga_home.to_path_buf(),
             cli_overrides,
         )
         .await
     }
 
-    /// Load a default configuration for a specific Codex home without reading
+    /// Load a default configuration for a specific Motyga home without reading
     /// user, project, or system config layers.
-    pub async fn load_default_with_cli_overrides_for_codex_home(
-        codex_home: PathBuf,
+    pub async fn load_default_with_cli_overrides_for_motyga_home(
+        motyga_home: PathBuf,
         cli_overrides: Vec<(String, TomlValue)>,
     ) -> std::io::Result<Self> {
         let mut merged = toml::Value::try_from(ConfigToml::default()).map_err(|e| {
@@ -1693,26 +1693,26 @@ impl Config {
                 format!("failed to serialize default config: {e}"),
             )
         })?;
-        let cli_layer = codex_config::build_cli_overrides_layer(&cli_overrides);
-        codex_config::merge_toml_values(&mut merged, &cli_layer);
-        let codex_home = AbsolutePathBuf::from_absolute_path_checked(codex_home)?;
-        let config_toml = deserialize_config_toml_with_base(merged, &codex_home)?;
+        let cli_layer = motyga_config::build_cli_overrides_layer(&cli_overrides);
+        motyga_config::merge_toml_values(&mut merged, &cli_layer);
+        let motyga_home = AbsolutePathBuf::from_absolute_path_checked(motyga_home)?;
+        let config_toml = deserialize_config_toml_with_base(merged, &motyga_home)?;
         Self::load_config_with_layer_stack(
             LOCAL_FS.as_ref(),
             config_toml,
             ConfigOverrides::default(),
-            codex_home,
+            motyga_home,
             ConfigLayerStack::default(),
         )
         .await
     }
     /// This is a secondary way of creating [Config], which is appropriate when
     /// the harness is meant to be used with a specific configuration that
-    /// ignores user settings. For example, the `codex exec` subcommand is
+    /// ignores user settings. For example, the `motyga exec` subcommand is
     /// designed to use [AskForApproval::Never] exclusively.
     ///
     /// Further, [ConfigOverrides] contains some options that are not supported
-    /// in [ConfigToml], such as `cwd`, `codex_self_exe`, `codex_linux_sandbox_exe`, and
+    /// in [ConfigToml], such as `cwd`, `motyga_self_exe`, `motyga_linux_sandbox_exe`, and
     /// `main_execve_wrapper_exe`.
     pub async fn load_with_cli_overrides_and_harness_overrides(
         cli_overrides: Vec<(String, TomlValue)>,
@@ -1727,12 +1727,12 @@ impl Config {
 }
 
 pub fn resolve_profile_v2_config_path(
-    codex_home: &Path,
+    motyga_home: &Path,
     profile_name: &ProfileV2Name,
 ) -> AbsolutePathBuf {
     AbsolutePathBuf::resolve_path_against_base(
         format!("{profile_name}{CONFIG_PROFILE_V2_SUFFIX}"),
-        codex_home,
+        motyga_home,
     )
 }
 
@@ -1740,13 +1740,13 @@ pub fn resolve_profile_v2_config_path(
 /// with [ConfigToml] directly means that [ConfigRequirements] have not been
 /// applied yet, which risks failing to enforce required constraints.
 pub async fn load_config_as_toml_with_cli_overrides(
-    codex_home: &Path,
+    motyga_home: &Path,
     cwd: Option<&AbsolutePathBuf>,
     cli_overrides: Vec<(String, TomlValue)>,
     loader_overrides: LoaderOverrides,
 ) -> std::io::Result<ConfigToml> {
     load_config_as_toml_with_cli_and_loader_overrides(
-        codex_home,
+        motyga_home,
         cwd,
         cli_overrides,
         loader_overrides,
@@ -1759,12 +1759,12 @@ pub async fn load_config_as_toml_with_cli_overrides(
 /// [ConfigRequirements] have not been applied yet, which risks skipping
 /// required constraints.
 pub async fn load_config_as_toml_with_cli_and_loader_overrides(
-    codex_home: &Path,
+    motyga_home: &Path,
     cwd: Option<&AbsolutePathBuf>,
     cli_overrides: Vec<(String, TomlValue)>,
     loader_overrides: LoaderOverrides,
 ) -> std::io::Result<ConfigToml> {
-    load_config_as_toml_with_cli_and_load_options(codex_home, cwd, cli_overrides, loader_overrides)
+    load_config_as_toml_with_cli_and_load_options(motyga_home, cwd, cli_overrides, loader_overrides)
         .await
 }
 
@@ -1773,12 +1773,12 @@ pub async fn load_config_as_toml_with_cli_and_loader_overrides(
 /// [ConfigRequirements] have not been applied yet, which risks skipping
 /// required constraints.
 pub async fn load_config_as_toml_with_cli_and_load_options(
-    codex_home: &Path,
+    motyga_home: &Path,
     cwd: Option<&AbsolutePathBuf>,
     cli_overrides: Vec<(String, TomlValue)>,
     options: impl Into<ConfigLoadOptions>,
 ) -> std::io::Result<ConfigToml> {
-    load_config_toml_with_layer_stack(codex_home, cwd, cli_overrides, options)
+    load_config_toml_with_layer_stack(motyga_home, cwd, cli_overrides, options)
         .await
         .map(|result| result.config_toml)
 }
@@ -1796,23 +1796,23 @@ pub struct ConfigTomlLoadResult {
 /// Loads the partially merged config together with the layer stack used to
 /// derive it, before constructing a full [`Config`].
 pub async fn load_config_toml_with_layer_stack(
-    codex_home: &Path,
+    motyga_home: &Path,
     cwd: Option<&AbsolutePathBuf>,
     cli_overrides: Vec<(String, TomlValue)>,
     options: impl Into<ConfigLoadOptions>,
 ) -> std::io::Result<ConfigTomlLoadResult> {
     let config_layer_stack = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        codex_home,
+        motyga_home,
         cwd.cloned(),
         &cli_overrides,
         options,
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
 
     let merged_toml = config_layer_stack.effective_config();
-    let cfg = deserialize_config_toml_with_base(merged_toml, codex_home).map_err(|e| {
+    let cfg = deserialize_config_toml_with_base(merged_toml, motyga_home).map_err(|e| {
         tracing::error!("Failed to deserialize overridden config: {e}");
         e
     })?;
@@ -1981,7 +1981,7 @@ where
 }
 
 pub async fn load_global_mcp_servers(
-    codex_home: &Path,
+    motyga_home: &Path,
 ) -> std::io::Result<BTreeMap<String, McpServerConfig>> {
     // In general, Config::load_with_cli_overrides() should be used to load the
     // full config with requirements.toml applied, but in this case, we need
@@ -1996,11 +1996,11 @@ pub async fn load_global_mcp_servers(
     let cwd: Option<AbsolutePathBuf> = None;
     let config_layer_stack = load_config_layers_state(
         LOCAL_FS.as_ref(),
-        codex_home,
+        motyga_home,
         cwd,
         &cli_overrides,
         LoaderOverrides::default(),
-        &codex_config::NoopThreadConfigLoader,
+        &motyga_config::NoopThreadConfigLoader,
     )
     .await?;
     let merged_toml = config_layer_stack.effective_config();
@@ -2109,20 +2109,20 @@ pub(crate) fn set_project_trust_level_inner(
 /// Patch `MOTYGA_HOME/config.toml` project state to set trust level.
 /// Use with caution.
 pub fn set_project_trust_level(
-    codex_home: &Path,
+    motyga_home: &Path,
     project_path: &Path,
     trust_level: TrustLevel,
 ) -> anyhow::Result<()> {
     use crate::config::edit::ConfigEditsBuilder;
 
-    ConfigEditsBuilder::new(codex_home)
+    ConfigEditsBuilder::new(motyga_home)
         .set_project_trust_level(project_path, trust_level)
         .apply_blocking()
 }
 
 /// Save the default OSS provider preference to config.toml
-pub fn set_default_oss_provider(codex_home: &Path, provider: &str) -> std::io::Result<()> {
-    codex_config::config_toml::validate_oss_provider(provider)?;
+pub fn set_default_oss_provider(motyga_home: &Path, provider: &str) -> std::io::Result<()> {
+    motyga_config::config_toml::validate_oss_provider(provider)?;
     use toml_edit::value;
 
     let edits = [ConfigEdit::SetPath {
@@ -2130,7 +2130,7 @@ pub fn set_default_oss_provider(codex_home: &Path, provider: &str) -> std::io::R
         value: value(provider),
     }];
 
-    ConfigEditsBuilder::new(codex_home)
+    ConfigEditsBuilder::new(motyga_home)
         .with_edits(edits)
         .apply_blocking()
         .map_err(|err| std::io::Error::other(format!("failed to persist config.toml: {err}")))
@@ -2341,23 +2341,23 @@ fn resolve_permission_config_syntax(
 
 fn apply_managed_filesystem_constraints(
     file_system_sandbox_policy: &mut FileSystemSandboxPolicy,
-    filesystem_constraints: &codex_config::FilesystemConstraints,
+    filesystem_constraints: &motyga_config::FilesystemConstraints,
 ) {
     for deny_read in &filesystem_constraints.deny_read {
         let deny_entry = if deny_read.contains_glob() {
-            codex_protocol::permissions::FileSystemSandboxEntry {
-                path: codex_protocol::permissions::FileSystemPath::GlobPattern {
+            motyga_protocol::permissions::FileSystemSandboxEntry {
+                path: motyga_protocol::permissions::FileSystemPath::GlobPattern {
                     pattern: deny_read.as_str().to_string(),
                 },
-                access: codex_protocol::permissions::FileSystemAccessMode::Deny,
+                access: motyga_protocol::permissions::FileSystemAccessMode::Deny,
             }
         } else {
             let Ok(path) = AbsolutePathBuf::try_from(deny_read.as_str()) else {
                 continue;
             };
-            codex_protocol::permissions::FileSystemSandboxEntry {
-                path: codex_protocol::permissions::FileSystemPath::Path { path },
-                access: codex_protocol::permissions::FileSystemAccessMode::Deny,
+            motyga_protocol::permissions::FileSystemSandboxEntry {
+                path: motyga_protocol::permissions::FileSystemPath::Path { path },
+                access: motyga_protocol::permissions::FileSystemAccessMode::Deny,
             }
         };
         if !file_system_sandbox_policy
@@ -2383,8 +2383,8 @@ pub struct ConfigOverrides {
     pub default_permissions: Option<String>,
     pub model_provider: Option<String>,
     pub service_tier: Option<Option<String>>,
-    pub codex_self_exe: Option<PathBuf>,
-    pub codex_linux_sandbox_exe: Option<PathBuf>,
+    pub motyga_self_exe: Option<PathBuf>,
+    pub motyga_linux_sandbox_exe: Option<PathBuf>,
     pub main_execve_wrapper_exe: Option<PathBuf>,
     pub default_zsh_path: Option<AbsolutePathBuf>,
     pub base_instructions: Option<String>,
@@ -2453,7 +2453,7 @@ fn resolve_experimental_request_user_input_enabled(config_toml: &ConfigToml) -> 
 }
 
 fn resolve_orchestrator_feature_enabled(
-    feature: Option<&codex_config::config_toml::OrchestratorFeatureToml>,
+    feature: Option<&motyga_config::config_toml::OrchestratorFeatureToml>,
 ) -> bool {
     feature.and_then(|feature| feature.enabled).unwrap_or(true)
 }
@@ -2893,7 +2893,7 @@ impl Config {
     async fn load_from_base_config_with_overrides(
         cfg: ConfigToml,
         overrides: ConfigOverrides,
-        codex_home: AbsolutePathBuf,
+        motyga_home: AbsolutePathBuf,
     ) -> std::io::Result<Self> {
         // Note this ignores requirements.toml enforcement for tests.
         let config_layer_stack = ConfigLayerStack::default();
@@ -2901,7 +2901,7 @@ impl Config {
             LOCAL_FS.as_ref(),
             cfg,
             overrides,
-            codex_home,
+            motyga_home,
             config_layer_stack,
         )
         .await
@@ -2911,7 +2911,7 @@ impl Config {
         fs: &dyn ExecutorFileSystem,
         cfg: ConfigToml,
         overrides: ConfigOverrides,
-        codex_home: AbsolutePathBuf,
+        motyga_home: AbsolutePathBuf,
         config_layer_stack: ConfigLayerStack,
     ) -> std::io::Result<Self> {
         // Keep the large config-construction future off small test thread stacks.
@@ -2971,8 +2971,8 @@ impl Config {
             default_permissions: default_permissions_override,
             model_provider,
             service_tier: service_tier_override,
-            codex_self_exe,
-            codex_linux_sandbox_exe,
+            motyga_self_exe,
+            motyga_linux_sandbox_exe,
             main_execve_wrapper_exe,
             default_zsh_path,
             base_instructions,
@@ -3129,7 +3129,7 @@ impl Config {
             None => WindowsSandboxLevel::Disabled,
         };
         let memories_config: MemoriesConfig = cfg.memories.clone().unwrap_or_default().into();
-        let memories_root = memory_root(&codex_home);
+        let memories_root = memory_root(&motyga_home);
 
         let profiles_are_active = effective_permission_selection.profiles_are_active(
             default_permissions_override.as_deref(),
@@ -3534,7 +3534,7 @@ impl Config {
         let forced_chatgpt_workspace_id = cfg
             .forced_chatgpt_workspace_id
             .clone()
-            .map(codex_config::config_toml::ForcedChatgptWorkspaceIds::into_vec)
+            .map(motyga_config::config_toml::ForcedChatgptWorkspaceIds::into_vec)
             .map(|values| {
                 values
                     .into_iter()
@@ -3638,13 +3638,13 @@ impl Config {
             .log_dir
             .as_ref()
             .map(AbsolutePathBuf::to_path_buf)
-            .unwrap_or_else(|| codex_home.join("log").to_path_buf());
+            .unwrap_or_else(|| motyga_home.join("log").to_path_buf());
         let sqlite_home = cfg
             .sqlite_home
             .as_ref()
             .map(AbsolutePathBuf::to_path_buf)
             .or_else(|| resolve_sqlite_home_env(&resolved_cwd))
-            .unwrap_or_else(|| codex_home.to_path_buf());
+            .unwrap_or_else(|| motyga_home.to_path_buf());
         let original_permission_profile = permission_profile.clone();
         apply_requirement_constrained_value(
             "approval_policy",
@@ -3714,8 +3714,8 @@ impl Config {
             network_requirements,
             &network_permission_profile,
         )?;
-        let mut helper_readable_roots = get_readable_roots_required_for_codex_runtime(
-            &codex_home,
+        let mut helper_readable_roots = get_readable_roots_required_for_motyga_runtime(
+            &motyga_home,
             zsh_path.as_ref(),
             main_execve_wrapper_exe.as_ref(),
         );
@@ -3835,7 +3835,7 @@ impl Config {
             memories: memories_config,
             agent_job_max_runtime_seconds,
             agent_interrupt_message_enabled,
-            codex_home,
+            motyga_home,
             sqlite_home,
             log_dir,
             config_lock_export_dir: cfg
@@ -3843,11 +3843,11 @@ impl Config {
                 .as_ref()
                 .and_then(|debug| debug.config_lockfile.as_ref())
                 .and_then(|config_lock| config_lock.export_dir.clone()),
-            config_lock_allow_codex_version_mismatch: cfg
+            config_lock_allow_motyga_version_mismatch: cfg
                 .debug
                 .as_ref()
                 .and_then(|debug| debug.config_lockfile.as_ref())
-                .and_then(|config_lock| config_lock.allow_codex_version_mismatch)
+                .and_then(|config_lock| config_lock.allow_motyga_version_mismatch)
                 .unwrap_or(false),
             config_lock_save_fields_resolved_from_model_catalog: cfg
                 .debug
@@ -3862,8 +3862,8 @@ impl Config {
             extra_config: None,
             bypass_hook_trust,
             file_opener: cfg.file_opener.unwrap_or(UriBasedFileOpener::VsCode),
-            codex_self_exe,
-            codex_linux_sandbox_exe,
+            motyga_self_exe,
+            motyga_linux_sandbox_exe,
             main_execve_wrapper_exe,
             zsh_path,
 
@@ -4310,19 +4310,19 @@ fn normalize_guardian_policy_config(value: Option<&str>) -> Option<String> {
     })
 }
 
-/// Returns the path to the Codex configuration directory, which can be
+/// Returns the path to the Motyga configuration directory, which can be
 /// specified by the `MOTYGA_HOME` environment variable. If not set, defaults to
-/// `~/.codex`.
+/// `~/.motyga`.
 ///
 /// - If `MOTYGA_HOME` is set, the value must exist and be a directory. The
 ///   value will be canonicalized and this function will Err otherwise.
 /// - If `MOTYGA_HOME` is not set, this function does not verify that the
 ///   directory exists.
-pub fn find_codex_home() -> std::io::Result<AbsolutePathBuf> {
-    codex_utils_home_dir::find_codex_home()
+pub fn find_motyga_home() -> std::io::Result<AbsolutePathBuf> {
+    motyga_utils_home_dir::find_motyga_home()
 }
 
-/// Returns the path to the folder where Codex logs are stored. Does not verify
+/// Returns the path to the folder where Motyga logs are stored. Does not verify
 /// that the directory exists.
 pub fn log_dir(cfg: &Config) -> std::io::Result<PathBuf> {
     Ok(cfg.log_dir.clone())

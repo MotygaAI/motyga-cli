@@ -1,6 +1,6 @@
 //! Shared in-process app-server client facade for CLI surfaces.
 //!
-//! This crate wraps [`codex_app_server::in_process`] behind a single async API
+//! This crate wraps [`motyga_app_server::in_process`] behind a single async API
 //! used by surfaces like TUI and exec. It centralizes:
 //!
 //! - Runtime startup and initialize-capabilities handshake.
@@ -11,7 +11,7 @@
 //! - Bounded graceful shutdown with abort fallback.
 //!
 //! The facade interposes a worker task between the caller and the underlying
-//! [`InProcessClientHandle`](codex_app_server::in_process::InProcessClientHandle),
+//! [`InProcessClientHandle`](motyga_app_server::in_process::InProcessClientHandle),
 //! bridging async `mpsc` channels on both sides. Queues are bounded so overload
 //! surfaces as channel-full errors rather than unbounded memory growth.
 
@@ -27,39 +27,39 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
-pub use codex_app_server::app_server_control_socket_path;
-pub use codex_app_server::in_process::DEFAULT_IN_PROCESS_CHANNEL_CAPACITY;
-pub use codex_app_server::in_process::InProcessServerEvent;
-use codex_app_server::in_process::InProcessStartArgs;
-use codex_app_server::in_process::LogDbLayer;
-pub use codex_app_server::in_process::StateDbHandle;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientNotification;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::ConfigWarningNotification;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::Result as JsonRpcResult;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_arg0::Arg0DispatchPaths;
-use codex_config::CloudConfigBundleLoader;
-use codex_config::LoaderOverrides;
-use codex_config::NoopThreadConfigLoader;
-use codex_config::RemoteThreadConfigLoader;
-use codex_config::ThreadConfigLoader;
-use codex_config::config_toml::ConfigToml;
-use codex_core::config::Config;
-pub use codex_core::otel_init::build_provider as build_otel_provider;
-use codex_core::personality_migration::PersonalityMigrationStatus;
-use codex_core::personality_migration::maybe_migrate_personality;
-pub use codex_exec_server::EnvironmentManager;
-pub use codex_exec_server::ExecServerRuntimePaths;
-use codex_feedback::CodexFeedback;
-use codex_protocol::protocol::SessionSource;
-use codex_utils_absolute_path::AbsolutePathBuf;
+pub use motyga_app_server::app_server_control_socket_path;
+pub use motyga_app_server::in_process::DEFAULT_IN_PROCESS_CHANNEL_CAPACITY;
+pub use motyga_app_server::in_process::InProcessServerEvent;
+use motyga_app_server::in_process::InProcessStartArgs;
+use motyga_app_server::in_process::LogDbLayer;
+pub use motyga_app_server::in_process::StateDbHandle;
+use motyga_app_server_protocol::ClientInfo;
+use motyga_app_server_protocol::ClientNotification;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::ConfigWarningNotification;
+use motyga_app_server_protocol::InitializeCapabilities;
+use motyga_app_server_protocol::InitializeParams;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::Result as JsonRpcResult;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ServerRequest;
+use motyga_arg0::Arg0DispatchPaths;
+use motyga_config::CloudConfigBundleLoader;
+use motyga_config::LoaderOverrides;
+use motyga_config::NoopThreadConfigLoader;
+use motyga_config::RemoteThreadConfigLoader;
+use motyga_config::ThreadConfigLoader;
+use motyga_config::config_toml::ConfigToml;
+use motyga_core::config::Config;
+pub use motyga_core::otel_init::build_provider as build_otel_provider;
+use motyga_core::personality_migration::PersonalityMigrationStatus;
+use motyga_core::personality_migration::maybe_migrate_personality;
+pub use motyga_exec_server::EnvironmentManager;
+pub use motyga_exec_server::ExecServerRuntimePaths;
+use motyga_feedback::MotygaFeedback;
+use motyga_protocol::protocol::SessionSource;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use serde::de::DeserializeOwned;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
@@ -75,17 +75,17 @@ pub use crate::remote::RemoteAppServerEndpoint;
 /// Transitional access to core-only embedded app-server types.
 ///
 /// New TUI behavior should prefer the app-server protocol methods. This
-/// module exists so clients can remove a direct `codex-core` dependency
+/// module exists so clients can remove a direct `motyga-core` dependency
 /// while legacy startup/config paths are migrated to RPCs.
 pub mod legacy_core {
-    pub use codex_core::check_execpolicy_for_warnings;
-    pub use codex_core::format_exec_policy_error_with_source;
+    pub use motyga_core::check_execpolicy_for_warnings;
+    pub use motyga_core::format_exec_policy_error_with_source;
 
     pub mod config {
-        pub use codex_core::config::*;
+        pub use motyga_core::config::*;
 
         pub mod edit {
-            pub use codex_core::config::edit::*;
+            pub use motyga_core::config::edit::*;
         }
     }
 }
@@ -96,11 +96,11 @@ const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 ///
 /// Returns `true` when the migration changed config and the caller should reload it.
 pub async fn migrate_personality_if_needed(
-    codex_home: &Path,
+    motyga_home: &Path,
     config_toml: &ConfigToml,
     state_db: Option<StateDbHandle>,
 ) -> IoResult<bool> {
-    let status = maybe_migrate_personality(codex_home, config_toml, state_db).await?;
+    let status = maybe_migrate_personality(motyga_home, config_toml, state_db).await?;
     match status {
         PersonalityMigrationStatus::Applied => Ok(true),
         PersonalityMigrationStatus::SkippedMarker
@@ -331,7 +331,7 @@ pub struct InProcessClientStartArgs {
     /// Preloaded cloud config bundle provider.
     pub cloud_config_bundle: CloudConfigBundleLoader,
     /// Feedback sink used by app-server/core telemetry and logs.
-    pub feedback: CodexFeedback,
+    pub feedback: MotygaFeedback,
     /// SQLite tracing layer used to flush recently emitted logs before feedback upload.
     pub log_db: Option<LogDbLayer>,
     /// Process-wide SQLite state handle shared with the embedded app-server.
@@ -342,8 +342,8 @@ pub struct InProcessClientStartArgs {
     pub config_warnings: Vec<ConfigWarningNotification>,
     /// Session source recorded in app-server thread metadata.
     pub session_source: SessionSource,
-    /// Whether auth loading should honor the `CODEX_API_KEY` environment variable.
-    pub enable_codex_api_key_env: bool,
+    /// Whether auth loading should honor the `MOTYGA_API_KEY` environment variable.
+    pub enable_motyga_api_key_env: bool,
     /// Client name reported during initialize.
     pub client_name: String,
     /// Client version reported during initialize.
@@ -406,7 +406,7 @@ impl InProcessClientStartArgs {
             environment_manager: self.environment_manager,
             config_warnings: self.config_warnings,
             session_source: self.session_source,
-            enable_codex_api_key_env: self.enable_codex_api_key_env,
+            enable_motyga_api_key_env: self.enable_motyga_api_key_env,
             initialize,
             channel_capacity: self.channel_capacity,
         }
@@ -445,7 +445,7 @@ enum ClientCommand {
 ///
 /// This type owns a worker task that bridges between:
 /// - caller-facing async `mpsc` channels used by TUI/exec
-/// - [`codex_app_server::in_process::InProcessClientHandle`], which speaks to
+/// - [`motyga_app_server::in_process::InProcessClientHandle`], which speaks to
 ///   the embedded `MessageProcessor`
 ///
 /// The facade intentionally preserves the server's request/notification/event
@@ -483,7 +483,7 @@ impl InProcessAppServerClient {
     pub async fn start(args: InProcessClientStartArgs) -> IoResult<Self> {
         let channel_capacity = args.channel_capacity.max(1);
         let mut handle =
-            codex_app_server::in_process::start(args.into_runtime_start_args()).await?;
+            motyga_app_server::in_process::start(args.into_runtime_start_args()).await?;
         let request_sender = handle.sender();
         let (command_tx, mut command_rx) = mpsc::channel::<ClientCommand>(channel_capacity);
         let (event_tx, event_rx) = mpsc::channel::<InProcessServerEvent>(channel_capacity);
@@ -851,12 +851,12 @@ impl AppServerRequestHandle {
 }
 
 impl AppServerClient {
-    pub fn codex_home(&self, local_codex_home: &AbsolutePathBuf) -> Option<AppServerPath> {
+    pub fn motyga_home(&self, local_motyga_home: &AbsolutePathBuf) -> Option<AppServerPath> {
         match self {
             Self::InProcess(_) => Some(AppServerPath::from_app_server(
-                local_codex_home.display().to_string(),
+                local_motyga_home.display().to_string(),
             )),
-            Self::Remote(client) => client.codex_home().map(AppServerPath::from_app_server),
+            Self::Remote(client) => client.motyga_home().map(AppServerPath::from_app_server),
         }
     }
 
@@ -945,22 +945,22 @@ pub(crate) fn request_method_name(request: &ClientRequest) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_app_server_protocol::AccountUpdatedNotification;
-    use codex_app_server_protocol::ConfigRequirementsReadResponse;
-    use codex_app_server_protocol::GetAccountResponse;
-    use codex_app_server_protocol::JSONRPCMessage;
-    use codex_app_server_protocol::JSONRPCRequest;
-    use codex_app_server_protocol::JSONRPCResponse;
-    use codex_app_server_protocol::ServerNotification;
-    use codex_app_server_protocol::SessionSource as ApiSessionSource;
-    use codex_app_server_protocol::ThreadStartParams;
-    use codex_app_server_protocol::ThreadStartResponse;
-    use codex_app_server_protocol::ToolRequestUserInputParams;
-    use codex_app_server_protocol::ToolRequestUserInputQuestion;
-    use codex_core::config::ConfigBuilder;
-    use codex_core::init_state_db;
-    use codex_uds::UnixListener;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use motyga_app_server_protocol::AccountUpdatedNotification;
+    use motyga_app_server_protocol::ConfigRequirementsReadResponse;
+    use motyga_app_server_protocol::GetAccountResponse;
+    use motyga_app_server_protocol::JSONRPCMessage;
+    use motyga_app_server_protocol::JSONRPCRequest;
+    use motyga_app_server_protocol::JSONRPCResponse;
+    use motyga_app_server_protocol::ServerNotification;
+    use motyga_app_server_protocol::SessionSource as ApiSessionSource;
+    use motyga_app_server_protocol::ThreadStartParams;
+    use motyga_app_server_protocol::ThreadStartResponse;
+    use motyga_app_server_protocol::ToolRequestUserInputParams;
+    use motyga_app_server_protocol::ToolRequestUserInputQuestion;
+    use motyga_core::config::ConfigBuilder;
+    use motyga_core::init_state_db;
+    use motyga_uds::UnixListener;
+    use motyga_utils_absolute_path::AbsolutePathBuf;
     use futures::SinkExt;
     use futures::StreamExt;
     use pretty_assertions::assert_eq;
@@ -986,15 +986,15 @@ mod tests {
         }
     }
 
-    async fn build_test_config_for_codex_home(codex_home: &Path) -> Config {
+    async fn build_test_config_for_motyga_home(motyga_home: &Path) -> Config {
         match ConfigBuilder::default()
-            .codex_home(codex_home.to_path_buf())
+            .motyga_home(motyga_home.to_path_buf())
             .build()
             .await
         {
             Ok(config) => config,
-            Err(_) => Config::load_default_with_cli_overrides_for_codex_home(
-                codex_home.to_path_buf(),
+            Err(_) => Config::load_default_with_cli_overrides_for_motyga_home(
+                motyga_home.to_path_buf(),
                 Vec::new(),
             )
             .await
@@ -1003,7 +1003,7 @@ mod tests {
     }
 
     struct TestClient {
-        _codex_home: TempDir,
+        _motyga_home: TempDir,
         client: InProcessAppServerClient,
     }
 
@@ -1025,8 +1025,8 @@ mod tests {
         session_source: SessionSource,
         channel_capacity: usize,
     ) -> TestClient {
-        let codex_home = TempDir::new().expect("temp dir");
-        let config = Arc::new(build_test_config_for_codex_home(codex_home.path()).await);
+        let motyga_home = TempDir::new().expect("temp dir");
+        let config = Arc::new(build_test_config_for_motyga_home(motyga_home.path()).await);
         let state_db = init_state_db(config.as_ref())
             .await
             .expect("state db should initialize for in-process test");
@@ -1037,14 +1037,14 @@ mod tests {
             loader_overrides: LoaderOverrides::default(),
             strict_config: false,
             cloud_config_bundle: CloudConfigBundleLoader::default(),
-            feedback: CodexFeedback::new(),
+            feedback: MotygaFeedback::new(),
             log_db: None,
             state_db: Some(state_db),
             environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
             config_warnings: Vec::new(),
             session_source,
-            enable_codex_api_key_env: false,
-            client_name: "codex-app-server-client-test".to_string(),
+            enable_motyga_api_key_env: false,
+            client_name: "motyga-app-server-client-test".to_string(),
             client_version: "0.0.0-test".to_string(),
             experimental_api: true,
             mcp_server_openai_form_elicitation: false,
@@ -1055,7 +1055,7 @@ mod tests {
         .expect("in-process app-server client should start");
 
         TestClient {
-            _codex_home: codex_home,
+            _motyga_home: motyga_home,
             client,
         }
     }
@@ -1126,7 +1126,7 @@ mod tests {
                 id: request.id,
                 result: serde_json::json!({
                     "userAgent": "motyga_cli/9.8.7-test (Test OS; x86_64) rust",
-                    "codexHome": "/server/.motyga",
+                    "motygaHome": "/server/.motyga",
                 }),
             }),
         )
@@ -1182,7 +1182,7 @@ mod tests {
 
     fn command_execution_output_delta_notification(delta: &str) -> ServerNotification {
         ServerNotification::CommandExecutionOutputDelta(
-            codex_app_server_protocol::CommandExecutionOutputDeltaNotification {
+            motyga_app_server_protocol::CommandExecutionOutputDeltaNotification {
                 thread_id: "thread".to_string(),
                 turn_id: "turn".to_string(),
                 item_id: "item".to_string(),
@@ -1193,7 +1193,7 @@ mod tests {
 
     fn agent_message_delta_notification(delta: &str) -> ServerNotification {
         ServerNotification::AgentMessageDelta(
-            codex_app_server_protocol::AgentMessageDeltaNotification {
+            motyga_app_server_protocol::AgentMessageDeltaNotification {
                 thread_id: "thread".to_string(),
                 turn_id: "turn".to_string(),
                 item_id: "item".to_string(),
@@ -1203,11 +1203,11 @@ mod tests {
     }
 
     fn item_completed_notification(text: &str) -> ServerNotification {
-        ServerNotification::ItemCompleted(codex_app_server_protocol::ItemCompletedNotification {
+        ServerNotification::ItemCompleted(motyga_app_server_protocol::ItemCompletedNotification {
             thread_id: "thread".to_string(),
             turn_id: "turn".to_string(),
             completed_at_ms: 0,
-            item: codex_app_server_protocol::ThreadItem::AgentMessage {
+            item: motyga_app_server_protocol::ThreadItem::AgentMessage {
                 id: "item".to_string(),
                 text: text.to_string(),
                 phase: None,
@@ -1217,13 +1217,13 @@ mod tests {
     }
 
     fn turn_completed_notification() -> ServerNotification {
-        ServerNotification::TurnCompleted(codex_app_server_protocol::TurnCompletedNotification {
+        ServerNotification::TurnCompleted(motyga_app_server_protocol::TurnCompletedNotification {
             thread_id: "thread".to_string(),
-            turn: codex_app_server_protocol::Turn {
+            turn: motyga_app_server_protocol::Turn {
                 id: "turn".to_string(),
-                items_view: codex_app_server_protocol::TurnItemsView::Full,
+                items_view: motyga_app_server_protocol::TurnItemsView::Full,
                 items: Vec::new(),
-                status: codex_app_server_protocol::TurnStatus::Completed,
+                status: motyga_app_server_protocol::TurnStatus::Completed,
                 error: None,
                 started_at: None,
                 completed_at: Some(0),
@@ -1238,7 +1238,7 @@ mod tests {
                 websocket_url,
                 auth_token: None,
             },
-            client_name: "codex-app-server-client-test".to_string(),
+            client_name: "motyga-app-server-client-test".to_string(),
             client_version: "0.0.0-test".to_string(),
             experimental_api: true,
             mcp_server_openai_form_elicitation: false,
@@ -1279,7 +1279,7 @@ mod tests {
         let err = client
             .request_typed::<ConfigRequirementsReadResponse>(ClientRequest::ThreadRead {
                 request_id: RequestId::Integer(99),
-                params: codex_app_server_protocol::ThreadReadParams {
+                params: motyga_app_server_protocol::ThreadReadParams {
                     thread_id: "missing-thread".to_string(),
                     include_turns: false,
                 },
@@ -1330,10 +1330,10 @@ mod tests {
             .await
             .expect("thread/start should succeed");
         let read = client
-            .request_typed::<codex_app_server_protocol::ThreadReadResponse>(
+            .request_typed::<motyga_app_server_protocol::ThreadReadResponse>(
                 ClientRequest::ThreadRead {
                     request_id: RequestId::Integer(4),
-                    params: codex_app_server_protocol::ThreadReadParams {
+                    params: motyga_app_server_protocol::ThreadReadParams {
                         thread_id: response.thread.id.clone(),
                         include_turns: false,
                     },
@@ -1437,14 +1437,14 @@ mod tests {
                 notification
             )) if matches!(
                 &notification.item,
-                codex_app_server_protocol::ThreadItem::AgentMessage { text, .. } if text == "hello"
+                motyga_app_server_protocol::ThreadItem::AgentMessage { text, .. } if text == "hello"
             )
         ));
         assert!(matches!(
             &events[4],
             InProcessServerEvent::ServerNotification(ServerNotification::TurnCompleted(
                 notification
-            )) if notification.turn.status == codex_app_server_protocol::TurnStatus::Completed
+            )) if notification.turn.status == motyga_app_server_protocol::TurnStatus::Completed
         ));
     }
 
@@ -1477,11 +1477,11 @@ mod tests {
             .expect("remote client should connect");
 
         assert_eq!(client.server_version(), Some("9.8.7-test"));
-        assert_eq!(client.codex_home(), Some("/server/.motyga"));
+        assert_eq!(client.motyga_home(), Some("/server/.motyga"));
         let response: GetAccountResponse = client
             .request_typed(ClientRequest::GetAccount {
                 request_id: RequestId::Integer(1),
-                params: codex_app_server_protocol::GetAccountParams {
+                params: motyga_app_server_protocol::GetAccountParams {
                     refresh_token: false,
                 },
             })
@@ -1495,7 +1495,7 @@ mod tests {
     #[tokio::test]
     async fn remote_unix_socket_typed_request_roundtrip_works() {
         let socket_dir = TempDir::new().expect("socket dir");
-        let socket_path = AbsolutePathBuf::from_absolute_path(socket_dir.path().join("codex.sock"))
+        let socket_path = AbsolutePathBuf::from_absolute_path(socket_dir.path().join("motyga.sock"))
             .expect("socket path should resolve");
         let mut listener = UnixListener::bind(socket_path.as_path())
             .await
@@ -1527,7 +1527,7 @@ mod tests {
         });
         let client = RemoteAppServerClient::connect(RemoteAppServerConnectArgs {
             endpoint: RemoteAppServerEndpoint::UnixSocket { socket_path },
-            client_name: "codex-app-server-client-test".to_string(),
+            client_name: "motyga-app-server-client-test".to_string(),
             client_version: "0.0.0-test".to_string(),
             experimental_api: true,
             mcp_server_openai_form_elicitation: false,
@@ -1540,7 +1540,7 @@ mod tests {
         let response: GetAccountResponse = client
             .request_typed(ClientRequest::GetAccount {
                 request_id: RequestId::Integer(1),
-                params: codex_app_server_protocol::GetAccountParams {
+                params: motyga_app_server_protocol::GetAccountParams {
                     refresh_token: false,
                 },
             })
@@ -1583,7 +1583,7 @@ mod tests {
         let response: GetAccountResponse = client
             .request_typed(ClientRequest::GetAccount {
                 request_id: RequestId::Integer(1),
-                params: codex_app_server_protocol::GetAccountParams {
+                params: motyga_app_server_protocol::GetAccountParams {
                     refresh_token: false,
                 },
             })
@@ -1616,7 +1616,7 @@ mod tests {
                 websocket_url,
                 auth_token: Some(auth_token),
             },
-            client_name: "codex-app-server-client-test".to_string(),
+            client_name: "motyga-app-server-client-test".to_string(),
             client_version: "0.0.0-test".to_string(),
             experimental_api: true,
             mcp_server_openai_form_elicitation: false,
@@ -1636,7 +1636,7 @@ mod tests {
                 websocket_url: "ws://example.com:4500".to_string(),
                 auth_token: Some("remote-bearer-token".to_string()),
             },
-            client_name: "codex-app-server-client-test".to_string(),
+            client_name: "motyga-app-server-client-test".to_string(),
             client_version: "0.0.0-test".to_string(),
             experimental_api: true,
             mcp_server_openai_form_elicitation: false,
@@ -1715,7 +1715,7 @@ mod tests {
             first_request_handle
                 .request_typed::<GetAccountResponse>(ClientRequest::GetAccount {
                     request_id: RequestId::Integer(1),
-                    params: codex_app_server_protocol::GetAccountParams {
+                    params: motyga_app_server_protocol::GetAccountParams {
                         refresh_token: false,
                     },
                 })
@@ -1730,7 +1730,7 @@ mod tests {
         let second_err = second_request_handle
             .request_typed::<GetAccountResponse>(ClientRequest::GetAccount {
                 request_id: RequestId::Integer(1),
-                params: codex_app_server_protocol::GetAccountParams {
+                params: motyga_app_server_protocol::GetAccountParams {
                     refresh_token: false,
                 },
             })
@@ -1862,7 +1862,7 @@ mod tests {
                     notification,
                 )) if matches!(
                     &notification.item,
-                    codex_app_server_protocol::ThreadItem::AgentMessage { text, .. } if text == "hello"
+                    motyga_app_server_protocol::ThreadItem::AgentMessage { text, .. } if text == "hello"
                 ) =>
                 {
                     transcript_event_names.push("item_completed");
@@ -1870,7 +1870,7 @@ mod tests {
                 AppServerEvent::ServerNotification(ServerNotification::TurnCompleted(
                     notification,
                 )) if notification.turn.status
-                    == codex_app_server_protocol::TurnStatus::Completed =>
+                    == motyga_app_server_protocol::TurnStatus::Completed =>
                 {
                     transcript_event_names.push("turn_completed");
                 }
@@ -2136,14 +2136,14 @@ mod tests {
     fn event_requires_delivery_marks_transcript_and_terminal_events() {
         assert!(event_requires_delivery(
             &InProcessServerEvent::ServerNotification(
-                codex_app_server_protocol::ServerNotification::TurnCompleted(
-                    codex_app_server_protocol::TurnCompletedNotification {
+                motyga_app_server_protocol::ServerNotification::TurnCompleted(
+                    motyga_app_server_protocol::TurnCompletedNotification {
                         thread_id: "thread".to_string(),
-                        turn: codex_app_server_protocol::Turn {
+                        turn: motyga_app_server_protocol::Turn {
                             id: "turn".to_string(),
-                            items_view: codex_app_server_protocol::TurnItemsView::Full,
+                            items_view: motyga_app_server_protocol::TurnItemsView::Full,
                             items: Vec::new(),
-                            status: codex_app_server_protocol::TurnStatus::Completed,
+                            status: motyga_app_server_protocol::TurnStatus::Completed,
                             error: None,
                             started_at: None,
                             completed_at: Some(0),
@@ -2155,8 +2155,8 @@ mod tests {
         ));
         assert!(event_requires_delivery(
             &InProcessServerEvent::ServerNotification(
-                codex_app_server_protocol::ServerNotification::AgentMessageDelta(
-                    codex_app_server_protocol::AgentMessageDeltaNotification {
+                motyga_app_server_protocol::ServerNotification::AgentMessageDelta(
+                    motyga_app_server_protocol::AgentMessageDeltaNotification {
                         thread_id: "thread".to_string(),
                         turn_id: "turn".to_string(),
                         item_id: "item".to_string(),
@@ -2167,12 +2167,12 @@ mod tests {
         ));
         assert!(event_requires_delivery(
             &InProcessServerEvent::ServerNotification(
-                codex_app_server_protocol::ServerNotification::ItemCompleted(
-                    codex_app_server_protocol::ItemCompletedNotification {
+                motyga_app_server_protocol::ServerNotification::ItemCompleted(
+                    motyga_app_server_protocol::ItemCompletedNotification {
                         thread_id: "thread".to_string(),
                         turn_id: "turn".to_string(),
                         completed_at_ms: 0,
-                        item: codex_app_server_protocol::ThreadItem::AgentMessage {
+                        item: motyga_app_server_protocol::ThreadItem::AgentMessage {
                             id: "item".to_string(),
                             text: "hello".to_string(),
                             phase: None,
@@ -2184,8 +2184,8 @@ mod tests {
         ));
         assert!(event_requires_delivery(
             &InProcessServerEvent::ServerNotification(
-                codex_app_server_protocol::ServerNotification::ExternalAgentConfigImportCompleted(
-                    codex_app_server_protocol::ExternalAgentConfigImportCompletedNotification {
+                motyga_app_server_protocol::ServerNotification::ExternalAgentConfigImportCompleted(
+                    motyga_app_server_protocol::ExternalAgentConfigImportCompletedNotification {
                         import_id: "import".to_string(),
                         item_type_results: Vec::new(),
                     },
@@ -2197,8 +2197,8 @@ mod tests {
         }));
         assert!(!event_requires_delivery(
             &InProcessServerEvent::ServerNotification(
-                codex_app_server_protocol::ServerNotification::CommandExecutionOutputDelta(
-                    codex_app_server_protocol::CommandExecutionOutputDeltaNotification {
+                motyga_app_server_protocol::ServerNotification::CommandExecutionOutputDelta(
+                    motyga_app_server_protocol::CommandExecutionOutputDeltaNotification {
                         thread_id: "thread".to_string(),
                         turn_id: "turn".to_string(),
                         item_id: "item".to_string(),
@@ -2218,7 +2218,7 @@ mod tests {
                 Some(
                     ExecServerRuntimePaths::new(
                         std::env::current_exe().expect("current exe"),
-                        /*codex_linux_sandbox_exe*/ None,
+                        /*motyga_linux_sandbox_exe*/ None,
                     )
                     .expect("runtime paths"),
                 ),
@@ -2233,14 +2233,14 @@ mod tests {
             loader_overrides: LoaderOverrides::default(),
             strict_config: false,
             cloud_config_bundle: CloudConfigBundleLoader::default(),
-            feedback: CodexFeedback::new(),
+            feedback: MotygaFeedback::new(),
             log_db: None,
             state_db: None,
             environment_manager: environment_manager.clone(),
             config_warnings: Vec::new(),
             session_source: SessionSource::Exec,
-            enable_codex_api_key_env: false,
-            client_name: "codex-app-server-client-test".to_string(),
+            enable_motyga_api_key_env: false,
+            client_name: "motyga-app-server-client-test".to_string(),
             client_version: "0.0.0-test".to_string(),
             experimental_api: true,
             mcp_server_openai_form_elicitation: true,
@@ -2282,14 +2282,14 @@ mod tests {
             loader_overrides: LoaderOverrides::default(),
             strict_config: false,
             cloud_config_bundle: CloudConfigBundleLoader::default(),
-            feedback: CodexFeedback::new(),
+            feedback: MotygaFeedback::new(),
             log_db: None,
             state_db: None,
             environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
             config_warnings: Vec::new(),
             session_source: SessionSource::Exec,
-            enable_codex_api_key_env: false,
-            client_name: "codex-app-server-client-test".to_string(),
+            enable_motyga_api_key_env: false,
+            client_name: "motyga-app-server-client-test".to_string(),
             client_version: "0.0.0-test".to_string(),
             experimental_api: true,
             mcp_server_openai_form_elicitation: false,
@@ -2305,7 +2305,7 @@ mod tests {
             .expect_err("configured remote loader should try to connect");
         assert_eq!(
             err.code(),
-            codex_config::ThreadConfigLoadErrorCode::RequestFailed
+            motyga_config::ThreadConfigLoadErrorCode::RequestFailed
         );
     }
 

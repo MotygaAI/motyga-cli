@@ -1,8 +1,8 @@
-//! Rollout persistence and discovery for Codex session files.
+//! Rollout persistence and discovery for Motyga session files.
 
 use std::sync::LazyLock;
 
-use codex_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::SessionSource;
 
 pub(crate) mod compression;
 pub(crate) mod config;
@@ -16,7 +16,7 @@ pub(crate) mod session_index;
 mod sqlite_metrics;
 pub mod state_db;
 
-pub(crate) use codex_protocol::protocol;
+pub(crate) use motyga_protocol::protocol;
 
 pub const SESSIONS_SUBDIR: &str = "sessions";
 pub const ARCHIVED_SESSIONS_SUBDIR: &str = "archived_sessions";
@@ -29,7 +29,7 @@ pub static INTERACTIVE_SESSION_SOURCES: LazyLock<Vec<SessionSource>> = LazyLock:
     ]
 });
 
-pub use codex_protocol::protocol::SessionMeta;
+pub use motyga_protocol::protocol::SessionMeta;
 pub use compression::RolloutLineReader;
 pub use compression::existing_rollout_path;
 pub use compression::open_rollout_line_reader;

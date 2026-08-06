@@ -1,28 +1,28 @@
 use std::sync::Arc;
 use std::sync::Weak;
 
-use codex_analytics::AnalyticsEventsClient;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ThreadGoal;
-use codex_app_server_protocol::ThreadGoalUpdatedNotification;
-use codex_core::NewThread;
-use codex_core::StartThreadOptions;
-use codex_core::ThreadManager;
-use codex_core::config::Config;
-use codex_exec_server::EnvironmentManager;
-use codex_extension_api::AgentSpawnFuture;
-use codex_extension_api::AgentSpawner;
-use codex_extension_api::ExtensionEventSink;
-use codex_extension_api::ExtensionRegistry;
-use codex_extension_api::ExtensionRegistryBuilder;
-use codex_goal_extension::GoalService;
-use codex_login::AuthManager;
-use codex_protocol::ThreadId;
-use codex_protocol::error::CodexErr;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_rollout::state_db::StateDbHandle;
-use codex_thread_store::ThreadStore;
+use motyga_analytics::AnalyticsEventsClient;
+use motyga_app_server_protocol::ServerNotification;
+use motyga_app_server_protocol::ThreadGoal;
+use motyga_app_server_protocol::ThreadGoalUpdatedNotification;
+use motyga_core::NewThread;
+use motyga_core::StartThreadOptions;
+use motyga_core::ThreadManager;
+use motyga_core::config::Config;
+use motyga_exec_server::EnvironmentManager;
+use motyga_extension_api::AgentSpawnFuture;
+use motyga_extension_api::AgentSpawner;
+use motyga_extension_api::ExtensionEventSink;
+use motyga_extension_api::ExtensionRegistry;
+use motyga_extension_api::ExtensionRegistryBuilder;
+use motyga_goal_extension::GoalService;
+use motyga_login::AuthManager;
+use motyga_protocol::ThreadId;
+use motyga_protocol::error::MotygaErr;
+use motyga_protocol::protocol::Event;
+use motyga_protocol::protocol::EventMsg;
+use motyga_rollout::state_db::StateDbHandle;
+use motyga_thread_store::ThreadStore;
 
 use crate::outgoing_message::OutgoingMessageSender;
 use crate::thread_state::ThreadListenerCommand;
@@ -36,7 +36,7 @@ pub(crate) struct ThreadExtensionDependencies {
     pub(crate) thread_manager: Weak<ThreadManager>,
     pub(crate) goal_service: Arc<GoalService>,
     pub(crate) environment_manager: Arc<EnvironmentManager>,
-    pub(crate) executor_skill_provider: Arc<dyn codex_skills_extension::SkillProvider>,
+    pub(crate) executor_skill_provider: Arc<dyn motyga_skills_extension::SkillProvider>,
     /// Process-scoped persistence backend for extensions that need stored thread history.
     pub(crate) thread_store: Arc<dyn ThreadStore>,
 }
@@ -46,7 +46,7 @@ pub(crate) fn thread_extensions<S>(
     dependencies: ThreadExtensionDependencies,
 ) -> Arc<ExtensionRegistry<Config>>
 where
-    S: AgentSpawner<StartThreadOptions, Spawned = NewThread, Error = CodexErr> + 'static,
+    S: AgentSpawner<StartThreadOptions, Spawned = NewThread, Error = MotygaErr> + 'static,
 {
     let ThreadExtensionDependencies {
         event_sink,
@@ -61,33 +61,33 @@ where
     } = dependencies;
     let mut builder = ExtensionRegistryBuilder::<Config>::with_event_sink(event_sink);
     if let Some(state_db) = state_db {
-        codex_goal_extension::install_with_backend(
+        motyga_goal_extension::install_with_backend(
             &mut builder,
             state_db,
             analytics_events_client,
-            codex_otel::global(),
+            motyga_otel::global(),
             thread_manager,
             goal_service,
-            |config: &Config| config.features.enabled(codex_features::Feature::Goals),
+            |config: &Config| config.features.enabled(motyga_features::Feature::Goals),
         );
     }
-    codex_guardian::install(&mut builder, guardian_agent_spawner);
-    codex_memories_extension::install(&mut builder, codex_otel::global());
-    codex_mcp_extension::install(&mut builder);
-    codex_mcp_extension::install_executor_plugins(&mut builder, environment_manager);
-    codex_web_search_extension::install(&mut builder, auth_manager.clone());
-    codex_image_generation_extension::install(&mut builder, auth_manager, |config: &Config| {
-        Some(config.codex_home.clone())
+    motyga_guardian::install(&mut builder, guardian_agent_spawner);
+    motyga_memories_extension::install(&mut builder, motyga_otel::global());
+    motyga_mcp_extension::install(&mut builder);
+    motyga_mcp_extension::install_executor_plugins(&mut builder, environment_manager);
+    motyga_web_search_extension::install(&mut builder, auth_manager.clone());
+    motyga_image_generation_extension::install(&mut builder, auth_manager, |config: &Config| {
+        Some(config.motyga_home.clone())
     });
-    let skill_providers = codex_skills_extension::SkillProviders::new()
+    let skill_providers = motyga_skills_extension::SkillProviders::new()
         .with_executor_provider(executor_skill_provider)
         .with_orchestrator_provider(Arc::new(
-            codex_skills_extension::OrchestratorSkillProvider::new(),
+            motyga_skills_extension::OrchestratorSkillProvider::new(),
         ));
-    codex_skills_extension::install_with_providers(
+    motyga_skills_extension::install_with_providers(
         &mut builder,
         skill_providers,
-        |config: &Config| codex_skills_extension::SkillsExtensionConfig {
+        |config: &Config| motyga_skills_extension::SkillsExtensionConfig {
             include_instructions: config.include_skill_instructions,
             bundled_skills_enabled: config.bundled_skills_enabled(),
             orchestrator_skills_enabled: config.orchestrator_skills_enabled,
@@ -155,14 +155,14 @@ impl ExtensionEventSink for AppServerExtensionEventSink {
 
 pub(crate) fn guardian_agent_spawner(
     thread_manager: Weak<ThreadManager>,
-) -> impl AgentSpawner<StartThreadOptions, Spawned = NewThread, Error = CodexErr> {
+) -> impl AgentSpawner<StartThreadOptions, Spawned = NewThread, Error = MotygaErr> {
     move |forked_from_thread_id: ThreadId,
           options: StartThreadOptions|
-          -> AgentSpawnFuture<'static, NewThread, CodexErr> {
+          -> AgentSpawnFuture<'static, NewThread, MotygaErr> {
         let thread_manager = thread_manager.clone();
         Box::pin(async move {
             let thread_manager = thread_manager.upgrade().ok_or_else(|| {
-                CodexErr::UnsupportedOperation("thread manager dropped".to_string())
+                MotygaErr::UnsupportedOperation("thread manager dropped".to_string())
             })?;
             thread_manager
                 .spawn_subagent(forked_from_thread_id, options)
@@ -175,9 +175,9 @@ pub(crate) fn guardian_agent_spawner(
 mod tests {
     use std::time::Duration;
 
-    use codex_protocol::protocol::ThreadGoal as CoreThreadGoal;
-    use codex_protocol::protocol::ThreadGoalStatus;
-    use codex_protocol::protocol::ThreadGoalUpdatedEvent;
+    use motyga_protocol::protocol::ThreadGoal as CoreThreadGoal;
+    use motyga_protocol::protocol::ThreadGoalStatus;
+    use motyga_protocol::protocol::ThreadGoalUpdatedEvent;
     use pretty_assertions::assert_eq;
     use tokio::sync::mpsc;
     use tokio::time::timeout;

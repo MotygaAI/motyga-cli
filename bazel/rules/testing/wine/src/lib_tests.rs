@@ -10,8 +10,8 @@ use std::time::Duration;
 use anyhow::Context;
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_utils_pty::SpawnedProcess;
-use codex_utils_pty::TerminalSize;
+use motyga_utils_pty::SpawnedProcess;
+use motyga_utils_pty::TerminalSize;
 use futures::FutureExt;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
@@ -26,7 +26,7 @@ use super::WineRuntimePaths;
 use super::install_powershell_runtime;
 
 async fn waiting_smoke_process() -> Result<WineTestProcess> {
-    let executable = codex_utils_cargo_bin::cargo_bin("wine-smoke")?;
+    let executable = motyga_utils_cargo_bin::cargo_bin("wine-smoke")?;
     let mut process = WineTestCommand::new(executable).arg("--wait").spawn()?;
     let mut lines = BufReader::new(process.take_stdout()).lines();
     let ready_line = lines
@@ -179,7 +179,7 @@ async fn scope_panic_preserves_panic_and_tears_down() -> Result<()> {
 
 #[tokio::test]
 async fn shutdown_reports_nonzero_process_exit() -> Result<()> {
-    let executable = codex_utils_cargo_bin::cargo_bin("wine-smoke")?;
+    let executable = motyga_utils_cargo_bin::cargo_bin("wine-smoke")?;
     let mut process = WineTestCommand::new(executable).arg("--fail").spawn()?;
     let prefix = prefix_path(&process);
     let status = process
@@ -357,7 +357,7 @@ async fn pinned_powershell_runs_under_wine_with_a_pty() -> Result<()> {
         mut stdout_rx,
         mut stderr_rx,
         exit_rx,
-    } = codex_utils_pty::spawn_pty_process(
+    } = motyga_utils_pty::spawn_pty_process(
         &wine,
         &args,
         prefix.path(),

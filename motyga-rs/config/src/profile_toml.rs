@@ -1,4 +1,4 @@
-use codex_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -9,13 +9,13 @@ use crate::types::ApprovalsReviewer;
 use crate::types::Personality;
 use crate::types::SessionPickerViewMode;
 use crate::types::WindowsToml;
-use codex_features::FeaturesToml;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::AskForApproval;
+use motyga_features::FeaturesToml;
+use motyga_protocol::config_types::ReasoningSummary;
+use motyga_protocol::config_types::SandboxMode;
+use motyga_protocol::config_types::Verbosity;
+use motyga_protocol::config_types::WebSearchMode;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::AskForApproval;
 
 /// Collection of common configuration options that a user can define as a unit
 /// in `config.toml`.

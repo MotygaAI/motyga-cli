@@ -1,13 +1,13 @@
 use anyhow::Result;
 use chrono::DateTime;
 use chrono::Utc;
-use codex_protocol::ThreadId;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::ThreadHistoryMode;
-use codex_protocol::protocol::ThreadSource;
+use motyga_protocol::ThreadId;
+use motyga_protocol::openai_models::ReasoningEffort;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::SandboxPolicy;
+use motyga_protocol::protocol::SessionSource;
+use motyga_protocol::protocol::ThreadHistoryMode;
+use motyga_protocol::protocol::ThreadSource;
 use sqlx::Row;
 use sqlx::sqlite::SqliteRow;
 use std::collections::HashMap;
@@ -558,9 +558,9 @@ mod tests {
     use super::ThreadRow;
     use chrono::DateTime;
     use chrono::Utc;
-    use codex_protocol::ThreadId;
-    use codex_protocol::openai_models::ReasoningEffort;
-    use codex_protocol::protocol::ThreadHistoryMode;
+    use motyga_protocol::ThreadId;
+    use motyga_protocol::openai_models::ReasoningEffort;
+    use motyga_protocol::protocol::ThreadHistoryMode;
     use pretty_assertions::assert_eq;
     use std::path::PathBuf;
 

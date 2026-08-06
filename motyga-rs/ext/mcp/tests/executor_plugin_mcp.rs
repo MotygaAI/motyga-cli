@@ -1,16 +1,16 @@
-use codex_config::test_support::CloudConfigBundleFixture;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_exec_server::EnvironmentManager;
-use codex_exec_server::LOCAL_ENVIRONMENT_ID;
-use codex_extension_api::ExtensionData;
-use codex_extension_api::ExtensionDataInit;
-use codex_extension_api::ExtensionRegistryBuilder;
-use codex_extension_api::McpServerContribution;
-use codex_extension_api::McpServerContributionContext;
-use codex_protocol::capabilities::CapabilityRootLocation;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
-use codex_utils_path_uri::PathUri;
+use motyga_config::test_support::CloudConfigBundleFixture;
+use motyga_core::config::Config;
+use motyga_core::config::ConfigBuilder;
+use motyga_exec_server::EnvironmentManager;
+use motyga_exec_server::LOCAL_ENVIRONMENT_ID;
+use motyga_extension_api::ExtensionData;
+use motyga_extension_api::ExtensionDataInit;
+use motyga_extension_api::ExtensionRegistryBuilder;
+use motyga_extension_api::McpServerContribution;
+use motyga_extension_api::McpServerContributionContext;
+use motyga_protocol::capabilities::CapabilityRootLocation;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_utils_path_uri::PathUri;
 use pretty_assertions::assert_eq;
 use std::sync::Arc;
 
@@ -27,7 +27,7 @@ struct ContributionSummary {
 
 #[tokio::test]
 async fn selected_plugin_servers_use_managed_requirements_for_the_selected_root_id() -> TestResult {
-    let codex_home = tempfile::tempdir()?;
+    let motyga_home = tempfile::tempdir()?;
     let plugin_root = tempfile::tempdir()?;
     std::fs::create_dir_all(plugin_root.path().join(".codex-plugin"))?;
     std::fs::write(
@@ -45,8 +45,8 @@ async fn selected_plugin_servers_use_managed_requirements_for_the_selected_root_
 }"#,
     )?;
     let config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
-        .fallback_cwd(Some(codex_home.path().to_path_buf()))
+        .motyga_home(motyga_home.path().to_path_buf())
+        .fallback_cwd(Some(motyga_home.path().to_path_buf()))
         .cloud_config_bundle(
             CloudConfigBundleFixture::loader_with_enterprise_requirement(
                 r#"
@@ -97,7 +97,7 @@ async fn selected_plugin_contributions(
     plugin_root: &std::path::Path,
 ) -> Result<Vec<ContributionSummary>, Box<dyn std::error::Error>> {
     let mut builder = ExtensionRegistryBuilder::new();
-    codex_mcp_extension::install_executor_plugins(
+    motyga_mcp_extension::install_executor_plugins(
         &mut builder,
         Arc::new(EnvironmentManager::default_for_tests()),
     );

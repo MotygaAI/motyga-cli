@@ -1,22 +1,22 @@
 #![cfg(not(target_os = "windows"))]
 
-use codex_features::Feature;
-use codex_login::CodexAuth;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use motyga_features::Feature;
+use motyga_login::MotygaAuth;
+use motyga_protocol::protocol::EventMsg;
+use motyga_protocol::protocol::Op;
+use motyga_protocol::user_input::UserInput;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_motyga::test_motyga;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn request_body_is_zstd_compressed_for_codex_backend_when_enabled() -> anyhow::Result<()> {
+async fn request_body_is_zstd_compressed_for_motyga_backend_when_enabled() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
@@ -27,8 +27,8 @@ async fn request_body_is_zstd_compressed_for_codex_backend_when_enabled() -> any
     .await;
 
     let base_url = format!("{}/backend-api/codex/v1", server.uri());
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_motyga()
+        .with_auth(MotygaAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config
                 .features
@@ -36,9 +36,9 @@ async fn request_body_is_zstd_compressed_for_codex_backend_when_enabled() -> any
                 .expect("test config should allow feature update");
             config.model_provider.base_url = Some(base_url);
         });
-    let codex = builder.build(&server).await?.codex;
+    let motyga = builder.build(&server).await?.motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "compress me".into(),
@@ -52,7 +52,7 @@ async fn request_body_is_zstd_compressed_for_codex_backend_when_enabled() -> any
         .await?;
 
     // Wait until the task completes so the request definitely hit the server.
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = request_log.single_request();
     assert_eq!(request.header("content-encoding").as_deref(), Some("zstd"));
@@ -79,16 +79,16 @@ async fn request_body_is_not_compressed_for_api_key_auth_even_when_enabled() -> 
     .await;
 
     let base_url = format!("{}/backend-api/codex/v1", server.uri());
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_motyga().with_config(move |config| {
         config
             .features
             .enable(Feature::EnableRequestCompression)
             .expect("test config should allow feature update");
         config.model_provider.base_url = Some(base_url);
     });
-    let codex = builder.build(&server).await?.codex;
+    let motyga = builder.build(&server).await?.motyga;
 
-    codex
+    motyga
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "do not compress".into(),
@@ -101,7 +101,7 @@ async fn request_body_is_not_compressed_for_api_key_auth_even_when_enabled() -> 
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&motyga, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = request_log.single_request();
     assert!(

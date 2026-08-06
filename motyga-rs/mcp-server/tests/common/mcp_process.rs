@@ -10,8 +10,8 @@ use tokio::process::ChildStdin;
 use tokio::process::ChildStdout;
 
 use anyhow::Context;
-use codex_mcp_server::CodexToolCallParam;
-use codex_terminal_detection::user_agent;
+use motyga_mcp_server::MotygaToolCallParam;
+use motyga_terminal_detection::user_agent;
 
 use pretty_assertions::assert_eq;
 use rmcp::model::CallToolRequestParams;
@@ -44,8 +44,8 @@ pub struct McpProcess {
 }
 
 impl McpProcess {
-    pub async fn new(codex_home: &Path) -> anyhow::Result<Self> {
-        Self::new_with_env(codex_home, &[]).await
+    pub async fn new(motyga_home: &Path) -> anyhow::Result<Self> {
+        Self::new_with_env(motyga_home, &[]).await
     }
 
     /// Creates a new MCP process, allowing tests to override or remove
@@ -54,17 +54,17 @@ impl McpProcess {
     /// Pass a tuple of (key, Some(value)) to set/override, or (key, None) to
     /// remove a variable from the child's environment.
     pub async fn new_with_env(
-        codex_home: &Path,
+        motyga_home: &Path,
         env_overrides: &[(&str, Option<&str>)],
     ) -> anyhow::Result<Self> {
-        let program = codex_utils_cargo_bin::cargo_bin("codex-mcp-server")
-            .context("should find binary for codex-mcp-server")?;
+        let program = motyga_utils_cargo_bin::cargo_bin("motyga-mcp-server")
+            .context("should find binary for motyga-mcp-server")?;
         let mut cmd = Command::new(program);
 
         cmd.stdin(Stdio::piped());
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
-        cmd.env("MOTYGA_HOME", codex_home);
+        cmd.env("MOTYGA_HOME", motyga_home);
         cmd.env("RUST_LOG", "debug");
 
         for (k, v) in env_overrides {
@@ -81,7 +81,7 @@ impl McpProcess {
         let mut process = cmd
             .kill_on_drop(true)
             .spawn()
-            .context("codex-mcp-server proc should start")?;
+            .context("motyga-mcp-server proc should start")?;
         let stdin = process
             .stdin
             .take()
@@ -138,7 +138,7 @@ impl McpProcess {
         let initialized = self.read_jsonrpc_message().await?;
         let os_info = os_info::get();
         let build_version = env!("CARGO_PKG_VERSION");
-        let originator = codex_login::default_client::originator().value;
+        let originator = motyga_login::default_client::originator().value;
         let user_agent = format!(
             "{originator}/{build_version} ({} {}; {}) {} (elicitation test; 0.0.0)",
             os_info.os_type(),
@@ -165,8 +165,8 @@ impl McpProcess {
                     },
                 },
                 "serverInfo": {
-                    "name": "codex-mcp-server",
-                    "title": "Codex",
+                    "name": "motyga-mcp-server",
+                    "title": "Motyga",
                     "version": "0.0.0",
                     "user_agent": user_agent
                 },
@@ -186,11 +186,11 @@ impl McpProcess {
 
     /// Returns the id used to make the request so it can be used when
     /// correlating notifications.
-    pub async fn send_codex_tool_call(
+    pub async fn send_motyga_tool_call(
         &mut self,
-        params: CodexToolCallParam,
+        params: MotygaToolCallParam,
     ) -> anyhow::Result<i64> {
-        let codex_tool_call_params = CallToolRequestParams::new("codex").with_arguments(
+        let motyga_tool_call_params = CallToolRequestParams::new("motyga").with_arguments(
             match serde_json::to_value(params)? {
                 serde_json::Value::Object(map) => map,
                 _ => unreachable!("params serialize to object"),
@@ -198,7 +198,7 @@ impl McpProcess {
         );
         self.send_request(
             "tools/call",
-            Some(serde_json::to_value(codex_tool_call_params)?),
+            Some(serde_json::to_value(motyga_tool_call_params)?),
         )
         .await
     }
@@ -309,7 +309,7 @@ impl McpProcess {
     }
 
     /// Reads notifications until a legacy TurnComplete event is observed:
-    /// Method "codex/event" with params.msg.type == "task_complete".
+    /// Method "motyga/event" with params.msg.type == "task_complete".
     pub async fn read_stream_until_legacy_task_complete_notification(
         &mut self,
     ) -> anyhow::Result<JsonRpcNotification<CustomNotification>> {
@@ -319,7 +319,7 @@ impl McpProcess {
             let message = self.read_jsonrpc_message().await?;
             match message {
                 JsonRpcMessage::Notification(notification) => {
-                    let is_match = if notification.notification.method == "codex/event" {
+                    let is_match = if notification.notification.method == "motyga/event" {
                         if let Some(params) = &notification.notification.params {
                             params
                                 .get("msg")
@@ -355,7 +355,7 @@ impl McpProcess {
 
 impl Drop for McpProcess {
     fn drop(&mut self) {
-        // These tests spawn a `codex-mcp-server` child process.
+        // These tests spawn a `motyga-mcp-server` child process.
         //
         // We keep that child alive for the test and rely on Tokio's `kill_on_drop(true)` when this
         // helper is dropped. Tokio documents kill-on-drop as best-effort: dropping requests

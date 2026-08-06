@@ -3,13 +3,13 @@ use std::path::Path;
 use futures::StreamExt;
 use futures::stream::FuturesUnordered;
 
-use codex_protocol::protocol::HookCompletedEvent;
-use codex_protocol::protocol::HookEventName;
-use codex_protocol::protocol::HookExecutionMode;
-use codex_protocol::protocol::HookHandlerType;
-use codex_protocol::protocol::HookRunStatus;
-use codex_protocol::protocol::HookRunSummary;
-use codex_protocol::protocol::HookScope;
+use motyga_protocol::protocol::HookCompletedEvent;
+use motyga_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::HookExecutionMode;
+use motyga_protocol::protocol::HookHandlerType;
+use motyga_protocol::protocol::HookRunStatus;
+use motyga_protocol::protocol::HookRunSummary;
+use motyga_protocol::protocol::HookScope;
 
 use super::CommandShell;
 use super::ConfiguredHandler;
@@ -119,7 +119,7 @@ pub(crate) fn completed_summary(
     handler: &ConfiguredHandler,
     run_result: &CommandRunResult,
     status: HookRunStatus,
-    entries: Vec<codex_protocol::protocol::HookOutputEntry>,
+    entries: Vec<motyga_protocol::protocol::HookOutputEntry>,
 ) -> HookRunSummary {
     HookRunSummary {
         id: handler.run_id(),
@@ -155,10 +155,10 @@ fn scope_for_event(event_name: HookEventName) -> HookScope {
 
 #[cfg(test)]
 mod tests {
-    use codex_protocol::protocol::HookEventName;
-    use codex_protocol::protocol::HookSource;
-    use codex_utils_absolute_path::test_support::PathBufExt;
-    use codex_utils_absolute_path::test_support::test_path_buf;
+    use motyga_protocol::protocol::HookEventName;
+    use motyga_protocol::protocol::HookSource;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
+    use motyga_utils_absolute_path::test_support::test_path_buf;
 
     use super::ConfiguredHandler;
     use super::select_handlers;

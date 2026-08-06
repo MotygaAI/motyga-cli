@@ -7,10 +7,10 @@ use crate::tools::context::boxed_tool_output;
 use crate::tools::handlers::mcp_resource_spec::create_list_mcp_resource_templates_tool;
 use crate::tools::registry::CoreToolRuntime;
 use crate::tools::registry::ToolExecutor;
-use codex_protocol::models::function_call_output_content_items_to_text;
-use codex_protocol::protocol::McpInvocation;
-use codex_tools::ToolName;
-use codex_tools::ToolSpec;
+use motyga_protocol::models::function_call_output_content_items_to_text;
+use motyga_protocol::protocol::McpInvocation;
+use motyga_tools::ToolName;
+use motyga_tools::ToolSpec;
 
 use rmcp::model::PaginatedRequestParams;
 
@@ -41,7 +41,7 @@ impl ToolExecutor<ToolInvocation> for ListMcpResourceTemplatesHandler {
         true
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(invocation))
     }
 }
@@ -77,7 +77,7 @@ impl ListMcpResourceTemplatesHandler {
         let cursor = normalize_optional_string(cursor);
 
         let invocation = McpInvocation {
-            server: server.clone().unwrap_or_else(|| "codex".to_string()),
+            server: server.clone().unwrap_or_else(|| "motyga".to_string()),
             tool: "list_mcp_resource_templates".to_string(),
             arguments: arguments.clone(),
         };

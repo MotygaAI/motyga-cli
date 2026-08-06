@@ -1,5 +1,5 @@
-use codex_protocol::request_permissions::RequestPermissionsArgs;
-use codex_sandboxing::policy_transforms::normalize_additional_permissions;
+use motyga_protocol::request_permissions::RequestPermissionsArgs;
+use motyga_sandboxing::policy_transforms::normalize_additional_permissions;
 
 use crate::function_tool::FunctionCallError;
 use crate::tools::context::FunctionToolOutput;
@@ -13,8 +13,8 @@ use crate::tools::handlers::shell_spec::create_request_permissions_tool;
 use crate::tools::handlers::shell_spec::request_permissions_tool_description;
 use crate::tools::registry::CoreToolRuntime;
 use crate::tools::registry::ToolExecutor;
-use codex_tools::ToolName;
-use codex_tools::ToolSpec;
+use motyga_tools::ToolName;
+use motyga_tools::ToolSpec;
 use serde::Deserialize;
 
 pub struct RequestPermissionsHandler;
@@ -34,7 +34,7 @@ impl ToolExecutor<ToolInvocation> for RequestPermissionsHandler {
         create_request_permissions_tool(request_permissions_tool_description())
     }
 
-    fn handle(&self, invocation: ToolInvocation) -> codex_tools::ToolExecutorFuture<'_> {
+    fn handle(&self, invocation: ToolInvocation) -> motyga_tools::ToolExecutorFuture<'_> {
         Box::pin(self.handle_call(invocation))
     }
 }
@@ -84,7 +84,7 @@ impl RequestPermissionsHandler {
         let mut args: RequestPermissionsArgs =
             parse_arguments_with_base_path(&arguments, &native_cwd)?;
         args.permissions = normalize_additional_permissions(args.permissions.into())
-            .map(codex_protocol::request_permissions::RequestPermissionProfile::from)
+            .map(motyga_protocol::request_permissions::RequestPermissionProfile::from)
             .map_err(FunctionCallError::RespondToModel)?;
         if args.permissions.is_empty() {
             return Err(FunctionCallError::RespondToModel(

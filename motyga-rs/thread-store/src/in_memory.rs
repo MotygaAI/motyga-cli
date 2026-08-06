@@ -7,16 +7,16 @@ use std::sync::MutexGuard;
 use std::sync::OnceLock;
 
 use chrono::Utc;
-use codex_protocol::ThreadId;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionContextWindow;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::ThreadHistoryMode;
-use codex_protocol::protocol::ThreadMemoryMode;
-use codex_rollout::persisted_rollout_items;
+use motyga_protocol::ThreadId;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::protocol::AskForApproval;
+use motyga_protocol::protocol::RolloutItem;
+use motyga_protocol::protocol::SessionContextWindow;
+use motyga_protocol::protocol::SessionMeta;
+use motyga_protocol::protocol::SessionMetaLine;
+use motyga_protocol::protocol::ThreadHistoryMode;
+use motyga_protocol::protocol::ThreadMemoryMode;
+use motyga_rollout::persisted_rollout_items;
 
 use crate::AppendThreadItemsParams;
 use crate::ArchiveThreadParams;
@@ -56,8 +56,8 @@ mod tests {
     use crate::StoredTurnItemsView;
     use crate::ThreadPersistenceMetadata;
     use crate::ThreadSortKey;
-    use codex_protocol::models::BaseInstructions;
-    use codex_protocol::protocol::SessionSource;
+    use motyga_protocol::models::BaseInstructions;
+    use motyga_protocol::protocol::SessionSource;
 
     #[tokio::test]
     async fn default_turn_pagination_methods_return_unsupported() {
@@ -820,7 +820,7 @@ fn history_mode_from_state(
         .unwrap_or_default()
 }
 
-fn git_info_from_patch(patch: &ThreadMetadataPatch) -> Option<codex_protocol::protocol::GitInfo> {
+fn git_info_from_patch(patch: &ThreadMetadataPatch) -> Option<motyga_protocol::protocol::GitInfo> {
     let git_info = patch.git_info.as_ref()?;
     let sha = git_info.sha.clone().flatten();
     let branch = git_info.branch.clone().flatten();
@@ -828,8 +828,8 @@ fn git_info_from_patch(patch: &ThreadMetadataPatch) -> Option<codex_protocol::pr
     if sha.is_none() && branch.is_none() && origin_url.is_none() {
         return None;
     }
-    Some(codex_protocol::protocol::GitInfo {
-        commit_hash: sha.as_deref().map(codex_git_utils::GitSha::new),
+    Some(motyga_protocol::protocol::GitInfo {
+        commit_hash: sha.as_deref().map(motyga_git_utils::GitSha::new),
         branch,
         repository_url: origin_url,
     })

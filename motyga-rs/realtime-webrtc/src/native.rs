@@ -58,7 +58,7 @@ pub(crate) fn start() -> Result<StartedSession> {
     let (offer_tx, offer_rx) = mpsc::channel();
 
     thread::Builder::new()
-        .name("codex-realtime-webrtc".to_string())
+        .name("motyga-realtime-webrtc".to_string())
         .spawn(move || worker_main(command_rx, events_tx, offer_tx))
         .map_err(|err| {
             RealtimeWebrtcError::Message(format!("failed to spawn realtime WebRTC worker: {err}"))
@@ -82,7 +82,7 @@ fn worker_main(
 ) {
     let runtime = match tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .thread_name("codex-realtime-webrtc-tokio")
+        .thread_name("motyga-realtime-webrtc-tokio")
         .build()
     {
         Ok(runtime) => runtime,

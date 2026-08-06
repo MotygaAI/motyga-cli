@@ -25,32 +25,32 @@ use crate::test_support::write_curated_plugin_sha_with as write_curated_plugin_s
 use crate::test_support::write_file;
 use crate::test_support::write_openai_api_curated_marketplace;
 use crate::test_support::write_openai_curated_marketplace;
-use codex_config::AppToolApproval;
-use codex_config::CONFIG_TOML_FILE;
-use codex_config::ConfigLayerEntry;
-use codex_config::ConfigLayerSource;
-use codex_config::ConfigLayerStack;
-use codex_config::ConfigRequirements;
-use codex_config::ConfigRequirementsToml;
-use codex_config::McpServerConfig;
-use codex_config::McpServerOAuthConfig;
-use codex_config::McpServerToolConfig;
-use codex_config::RequirementSource;
-use codex_config::RequirementsLayerEntry;
-use codex_config::compose_requirements;
-use codex_config::types::McpServerTransportConfig;
-use codex_core_skills::PluginSkillSnapshots;
-use codex_core_skills::SkillsLoadInput;
-use codex_core_skills::SkillsService;
-use codex_core_skills::config_rules::SkillConfigRules;
-use codex_login::CodexAuth;
-use codex_plugin::AppDeclaration;
-use codex_plugin::PluginId;
-use codex_protocol::auth::AuthMode;
-use codex_protocol::protocol::HookEventName;
-use codex_protocol::protocol::Product;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_absolute_path::test_support::PathBufExt;
+use motyga_config::AppToolApproval;
+use motyga_config::CONFIG_TOML_FILE;
+use motyga_config::ConfigLayerEntry;
+use motyga_config::ConfigLayerSource;
+use motyga_config::ConfigLayerStack;
+use motyga_config::ConfigRequirements;
+use motyga_config::ConfigRequirementsToml;
+use motyga_config::McpServerConfig;
+use motyga_config::McpServerOAuthConfig;
+use motyga_config::McpServerToolConfig;
+use motyga_config::RequirementSource;
+use motyga_config::RequirementsLayerEntry;
+use motyga_config::compose_requirements;
+use motyga_config::types::McpServerTransportConfig;
+use motyga_core_skills::PluginSkillSnapshots;
+use motyga_core_skills::SkillsLoadInput;
+use motyga_core_skills::SkillsService;
+use motyga_core_skills::config_rules::SkillConfigRules;
+use motyga_login::MotygaAuth;
+use motyga_plugin::AppDeclaration;
+use motyga_plugin::PluginId;
+use motyga_protocol::auth::AuthMode;
+use motyga_protocol::protocol::HookEventName;
+use motyga_protocol::protocol::Product;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_absolute_path::test_support::PathBufExt;
 use pretty_assertions::assert_eq;
 use std::fs;
 use std::path::Path;
@@ -72,7 +72,7 @@ fn unrestricted_config_layer_stack() -> ConfigLayerStack {
 }
 
 fn config_layer_stack_with_requirements(
-    codex_home: &Path,
+    motyga_home: &Path,
     user_config: &str,
     requirements: &str,
 ) -> ConfigLayerStack {
@@ -85,7 +85,7 @@ fn config_layer_stack_with_requirements(
     let requirements_toml = with_sources.clone().into_toml();
     let requirements = ConfigRequirements::try_from(with_sources).expect("normalize requirements");
     let config_file =
-        AbsolutePathBuf::try_from(codex_home.join(CONFIG_TOML_FILE)).expect("absolute config path");
+        AbsolutePathBuf::try_from(motyga_home.join(CONFIG_TOML_FILE)).expect("absolute config path");
     ConfigLayerStack::new(
         vec![ConfigLayerEntry::new(
             ConfigLayerSource::User {
@@ -101,12 +101,12 @@ fn config_layer_stack_with_requirements(
 }
 
 fn plugins_config_input_with_requirements(
-    codex_home: &Path,
+    motyga_home: &Path,
     user_config: &str,
     requirements: &str,
 ) -> PluginsConfigInput {
     PluginsConfigInput::new(
-        config_layer_stack_with_requirements(codex_home, user_config, requirements),
+        config_layer_stack_with_requirements(motyga_home, user_config, requirements),
         /*plugins_enabled*/ true,
         /*remote_plugin_enabled*/ false,
         String::new(),
@@ -129,7 +129,7 @@ fn plugins_manager_tracks_auth_mode() {
 
     let manager_with_auth = PluginsManager::new_with_options(
         tmp.path().join("auth"),
-        Some(Product::Codex),
+        Some(Product::Motyga),
         Some(AuthMode::Chatgpt),
     );
     assert_eq!(manager_with_auth.auth_mode(), Some(AuthMode::Chatgpt));
@@ -137,9 +137,9 @@ fn plugins_manager_tracks_auth_mode() {
 
 #[tokio::test]
 async fn marketplace_policy_projection_disables_installed_plugin_and_invalidates_cache() {
-    let codex_home = TempDir::new().expect("create Motyga home");
+    let motyga_home = TempDir::new().expect("create Motyga home");
     write_plugin(
-        &codex_home.path().join("plugins/cache/company"),
+        &motyga_home.path().join("plugins/cache/company"),
         "sample/local",
         "sample",
     );
@@ -152,7 +152,7 @@ source = "https://github.com/example/company.git"
 enabled = true
 "#;
     let allowed = plugins_config_input_with_requirements(
-        codex_home.path(),
+        motyga_home.path(),
         user_config,
         r#"
 [marketplaces]
@@ -164,7 +164,7 @@ url = "https://github.com/example/company.git"
 "#,
     );
     let blocked = plugins_config_input_with_requirements(
-        codex_home.path(),
+        motyga_home.path(),
         user_config,
         r#"
 [marketplaces]
@@ -175,7 +175,7 @@ source = "git"
 url = "https://github.com/example/other.git"
 "#,
     );
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
 
     let allowed_outcome = manager.plugins_for_config(&allowed).await;
     assert_eq!(allowed_outcome.plugins().len(), 1);
@@ -187,8 +187,8 @@ url = "https://github.com/example/other.git"
 
 #[tokio::test]
 async fn plugin_read_rejects_marketplace_blocked_by_requirements() {
-    let codex_home = TempDir::new().expect("create Motyga home");
-    let marketplace_root = codex_home.path().join("marketplace");
+    let motyga_home = TempDir::new().expect("create Motyga home");
+    let marketplace_root = motyga_home.path().join("marketplace");
     write_plugin(&marketplace_root, "sample", "sample");
     write_file(
         &marketplace_root.join(".agents/plugins/marketplace.json"),
@@ -203,7 +203,7 @@ async fn plugin_read_rejects_marketplace_blocked_by_requirements() {
 }"#,
     );
     let config = plugins_config_input_with_requirements(
-        codex_home.path(),
+        motyga_home.path(),
         "",
         r#"
 [marketplaces]
@@ -214,7 +214,7 @@ restrict_to_allowed_sources = true
         AbsolutePathBuf::try_from(marketplace_root.join(".agents/plugins/marketplace.json"))
             .expect("absolute marketplace path");
 
-    let err = PluginsManager::new(codex_home.path().to_path_buf())
+    let err = PluginsManager::new(motyga_home.path().to_path_buf())
         .read_plugin_for_config(
             &config,
             &PluginReadRequest {
@@ -232,8 +232,8 @@ restrict_to_allowed_sources = true
 
 #[test]
 fn marketplace_policy_filters_discovered_marketplaces_by_configured_name() {
-    let codex_home = TempDir::new().expect("create Motyga home");
-    let repo_root = codex_home.path().join("repo");
+    let motyga_home = TempDir::new().expect("create Motyga home");
+    let repo_root = motyga_home.path().join("repo");
     let subdirectory = repo_root.join("worktree/subdirectory");
     fs::create_dir_all(&subdirectory).expect("create input subdirectory");
     write_plugin(&repo_root, "sample", "sample");
@@ -253,7 +253,7 @@ fn marketplace_policy_filters_discovered_marketplaces_by_configured_name() {
     let repo_root = AbsolutePathBuf::try_from(repo_root).expect("absolute repository root");
     let subdirectory =
         AbsolutePathBuf::try_from(subdirectory).expect("absolute input subdirectory");
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let user_config = format!(
         r#"
 [marketplaces.company]
@@ -263,7 +263,7 @@ source = {:?}
         repo_root.as_path()
     );
     let allowed = plugins_config_input_with_requirements(
-        codex_home.path(),
+        motyga_home.path(),
         &user_config,
         &format!(
             r#"
@@ -278,7 +278,7 @@ path = {:?}
         ),
     );
     let blocked = plugins_config_input_with_requirements(
-        codex_home.path(),
+        motyga_home.path(),
         &user_config,
         &format!(
             r#"
@@ -313,8 +313,8 @@ path = {:?}
     assert_eq!(blocked_outcome.marketplaces, Vec::new());
 }
 
-fn write_auth_projection_plugin(codex_home: &Path, name: &str, include_app: bool) {
-    let plugin_root = codex_home
+fn write_auth_projection_plugin(motyga_home: &Path, name: &str, include_app: bool) {
+    let plugin_root = motyga_home
         .join("plugins/cache")
         .join("test")
         .join(name)
@@ -337,12 +337,12 @@ fn write_auth_projection_plugin(codex_home: &Path, name: &str, include_app: bool
         ),
     );
     if include_app {
-        write_auth_projection_app(codex_home, name, name);
+        write_auth_projection_app(motyga_home, name, name);
     }
 }
 
-fn write_auth_projection_app(codex_home: &Path, plugin_name: &str, app_name: &str) {
-    let plugin_root = codex_home
+fn write_auth_projection_app(motyga_home: &Path, plugin_name: &str, app_name: &str) {
+    let plugin_root = motyga_home
         .join("plugins/cache")
         .join("test")
         .join(plugin_name)
@@ -361,7 +361,7 @@ fn app_declaration(name: &str, connector_id: &str) -> AppDeclaration {
     }
 }
 
-async fn auth_projection_config(codex_home: &Path) -> PluginsConfigInput {
+async fn auth_projection_config(motyga_home: &Path) -> PluginsConfigInput {
     let config_toml = r#"[features]
 plugins = true
 
@@ -372,8 +372,8 @@ enabled = true
 enabled = true
 "#
     .to_string();
-    write_file(&codex_home.join(CONFIG_TOML_FILE), &config_toml);
-    load_config(codex_home, codex_home).await
+    write_file(&motyga_home.join(CONFIG_TOML_FILE), &config_toml);
+    load_config(motyga_home, motyga_home).await
 }
 
 fn sorted_effective_mcp_server_names(outcome: &PluginLoadOutcome) -> Vec<String> {
@@ -388,13 +388,13 @@ fn sorted_effective_mcp_server_names(outcome: &PluginLoadOutcome) -> Vec<String>
 
 #[tokio::test]
 async fn plugin_auth_projection_hides_apps_without_chatgpt_auth() {
-    let codex_home = TempDir::new().unwrap();
-    write_auth_projection_plugin(codex_home.path(), "sample", /*include_app*/ true);
-    write_auth_projection_plugin(codex_home.path(), "docs", /*include_app*/ false);
-    let config = auth_projection_config(codex_home.path()).await;
+    let motyga_home = TempDir::new().unwrap();
+    write_auth_projection_plugin(motyga_home.path(), "sample", /*include_app*/ true);
+    write_auth_projection_plugin(motyga_home.path(), "docs", /*include_app*/ false);
+    let config = auth_projection_config(motyga_home.path()).await;
     let manager = PluginsManager::new_with_options(
-        codex_home.path().to_path_buf(),
-        Some(Product::Codex),
+        motyga_home.path().to_path_buf(),
+        Some(Product::Motyga),
         Some(AuthMode::ApiKey),
     );
 
@@ -416,13 +416,13 @@ async fn plugin_auth_projection_hides_apps_without_chatgpt_auth() {
 
 #[tokio::test]
 async fn plugin_auth_projection_hides_matching_mcp_with_chatgpt_apps_route() {
-    let codex_home = TempDir::new().unwrap();
-    write_auth_projection_plugin(codex_home.path(), "sample", /*include_app*/ true);
-    write_auth_projection_plugin(codex_home.path(), "docs", /*include_app*/ false);
-    let config = auth_projection_config(codex_home.path()).await;
+    let motyga_home = TempDir::new().unwrap();
+    write_auth_projection_plugin(motyga_home.path(), "sample", /*include_app*/ true);
+    write_auth_projection_plugin(motyga_home.path(), "docs", /*include_app*/ false);
+    let config = auth_projection_config(motyga_home.path()).await;
     let manager = PluginsManager::new_with_options(
-        codex_home.path().to_path_buf(),
-        Some(Product::Codex),
+        motyga_home.path().to_path_buf(),
+        Some(Product::Motyga),
         Some(AuthMode::Chatgpt),
     );
 
@@ -457,13 +457,13 @@ async fn plugin_auth_projection_hides_matching_mcp_with_chatgpt_apps_route() {
 
 #[tokio::test]
 async fn plugin_auth_projection_hides_dual_surface_mcp_with_agent_identity_apps_route() {
-    let codex_home = TempDir::new().unwrap();
-    write_auth_projection_plugin(codex_home.path(), "sample", /*include_app*/ true);
-    write_auth_projection_plugin(codex_home.path(), "docs", /*include_app*/ false);
-    let config = auth_projection_config(codex_home.path()).await;
+    let motyga_home = TempDir::new().unwrap();
+    write_auth_projection_plugin(motyga_home.path(), "sample", /*include_app*/ true);
+    write_auth_projection_plugin(motyga_home.path(), "docs", /*include_app*/ false);
+    let config = auth_projection_config(motyga_home.path()).await;
     let manager = PluginsManager::new_with_options(
-        codex_home.path().to_path_buf(),
-        Some(Product::Codex),
+        motyga_home.path().to_path_buf(),
+        Some(Product::Motyga),
         Some(AuthMode::AgentIdentity),
     );
 
@@ -481,14 +481,14 @@ async fn plugin_auth_projection_hides_dual_surface_mcp_with_agent_identity_apps_
 
 #[tokio::test]
 async fn plugin_auth_projection_keeps_non_conflicting_mcp_with_chatgpt_apps_route() {
-    let codex_home = TempDir::new().unwrap();
-    write_auth_projection_plugin(codex_home.path(), "sample", /*include_app*/ false);
-    write_auth_projection_app(codex_home.path(), "sample", "sample_app");
-    write_auth_projection_plugin(codex_home.path(), "docs", /*include_app*/ false);
-    let config = auth_projection_config(codex_home.path()).await;
+    let motyga_home = TempDir::new().unwrap();
+    write_auth_projection_plugin(motyga_home.path(), "sample", /*include_app*/ false);
+    write_auth_projection_app(motyga_home.path(), "sample", "sample_app");
+    write_auth_projection_plugin(motyga_home.path(), "docs", /*include_app*/ false);
+    let config = auth_projection_config(motyga_home.path()).await;
     let manager = PluginsManager::new_with_options(
-        codex_home.path().to_path_buf(),
-        Some(Product::Codex),
+        motyga_home.path().to_path_buf(),
+        Some(Product::Motyga),
         Some(AuthMode::Chatgpt),
     );
 
@@ -516,8 +516,8 @@ async fn plugin_auth_projection_keeps_non_conflicting_mcp_with_chatgpt_apps_rout
 
 #[tokio::test]
 async fn plugin_auth_projection_preserves_duplicate_connector_declaration_names() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test")
@@ -560,7 +560,7 @@ async fn plugin_auth_projection_preserves_duplicate_connector_declaration_names(
 }"#,
     );
     write_file(
-        &codex_home.path().join(CONFIG_TOML_FILE),
+        &motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features]
 plugins = true
 
@@ -568,10 +568,10 @@ plugins = true
 enabled = true
 "#,
     );
-    let config = load_config(codex_home.path(), codex_home.path()).await;
+    let config = load_config(motyga_home.path(), motyga_home.path()).await;
     let manager = PluginsManager::new_with_options(
-        codex_home.path().to_path_buf(),
-        Some(Product::Codex),
+        motyga_home.path().to_path_buf(),
+        Some(Product::Motyga),
         Some(AuthMode::Chatgpt),
     );
 
@@ -599,13 +599,13 @@ enabled = true
 
 #[tokio::test]
 async fn plugin_auth_projection_reprojects_cached_plugins_when_auth_changes() {
-    let codex_home = TempDir::new().unwrap();
-    write_auth_projection_plugin(codex_home.path(), "sample", /*include_app*/ true);
-    write_auth_projection_plugin(codex_home.path(), "docs", /*include_app*/ false);
-    let config = auth_projection_config(codex_home.path()).await;
+    let motyga_home = TempDir::new().unwrap();
+    write_auth_projection_plugin(motyga_home.path(), "sample", /*include_app*/ true);
+    write_auth_projection_plugin(motyga_home.path(), "docs", /*include_app*/ false);
+    let config = auth_projection_config(motyga_home.path()).await;
     let manager = PluginsManager::new_with_options(
-        codex_home.path().to_path_buf(),
-        Some(Product::Codex),
+        motyga_home.path().to_path_buf(),
+        Some(Product::Motyga),
         Some(AuthMode::Chatgpt),
     );
 
@@ -703,7 +703,7 @@ fn write_plugin(root: &Path, dir_name: &str, manifest_name: &str) {
 
 fn init_git_repo(repo: &Path) {
     run_git(repo, &["init"]);
-    run_git(repo, &["config", "user.email", "codex-test@example.com"]);
+    run_git(repo, &["config", "user.email", "motyga-test@example.com"]);
     run_git(repo, &["config", "user.name", "Motyga Test"]);
     run_git(repo, &["add", "."]);
     run_git(repo, &["commit", "-m", "initial"]);
@@ -748,18 +748,18 @@ fn plugin_config_toml(enabled: bool, plugins_feature_enabled: bool) -> String {
 
 async fn load_plugins_from_config(
     config_toml: &str,
-    codex_home: &Path,
+    motyga_home: &Path,
     auth_mode: Option<AuthMode>,
 ) -> PluginLoadOutcome {
-    write_file(&codex_home.join(CONFIG_TOML_FILE), config_toml);
-    let config = load_config(codex_home, codex_home).await;
-    PluginsManager::new_with_options(codex_home.to_path_buf(), Some(Product::Codex), auth_mode)
+    write_file(&motyga_home.join(CONFIG_TOML_FILE), config_toml);
+    let config = load_config(motyga_home, motyga_home).await;
+    PluginsManager::new_with_options(motyga_home.to_path_buf(), Some(Product::Motyga), auth_mode)
         .plugins_for_config(&config)
         .await
 }
 
-async fn load_config(codex_home: &Path, cwd: &Path) -> PluginsConfigInput {
-    load_plugins_config_input(codex_home, cwd).await
+async fn load_config(motyga_home: &Path, cwd: &Path) -> PluginsConfigInput {
+    load_plugins_config_input(motyga_home, cwd).await
 }
 
 fn remote_installed_linear_plugin() -> RemoteInstalledPlugin {
@@ -779,17 +779,17 @@ fn remote_installed_plugin_in_marketplace(
         id: format!("plugins~Plugin_{name}"),
         name: name.to_string(),
         enabled: true,
-        install_policy: codex_app_server_protocol::PluginInstallPolicy::Available,
-        auth_policy: codex_app_server_protocol::PluginAuthPolicy::OnUse,
-        availability: codex_app_server_protocol::PluginAvailability::Available,
+        install_policy: motyga_app_server_protocol::PluginInstallPolicy::Available,
+        auth_policy: motyga_app_server_protocol::PluginAuthPolicy::OnUse,
+        availability: motyga_app_server_protocol::PluginAvailability::Available,
         interface: None,
         keywords: Vec::new(),
     }
 }
 
-fn write_cached_plugin(codex_home: &Path, marketplace_name: &str, plugin_name: &str) {
+fn write_cached_plugin(motyga_home: &Path, marketplace_name: &str, plugin_name: &str) {
     write_plugin_with_version(
-        &codex_home
+        &motyga_home
             .join("plugins/cache")
             .join(marketplace_name)
             .join(plugin_name),
@@ -801,8 +801,8 @@ fn write_cached_plugin(codex_home: &Path, marketplace_name: &str, plugin_name: &
 
 #[tokio::test]
 async fn load_plugins_loads_default_skills_and_mcp_servers() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -846,7 +846,7 @@ async fn load_plugins_loads_default_skills_and_mcp_servers() {
 
     let outcome = load_plugins_from_config(
         &plugin_config_toml(/*enabled*/ true, /*plugins_feature_enabled*/ true),
-        codex_home.path(),
+        motyga_home.path(),
         Some(AuthMode::Chatgpt),
     )
     .await;
@@ -923,8 +923,8 @@ async fn load_plugins_loads_default_skills_and_mcp_servers() {
 
 #[tokio::test]
 async fn load_plugins_loads_manifest_mcp_server_objects() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/counter-sample/local");
@@ -952,7 +952,7 @@ plugins = true
 enabled = true
 "#;
     let outcome =
-        load_plugins_from_config(config_toml, codex_home.path(), /*auth_mode*/ None).await;
+        load_plugins_from_config(config_toml, motyga_home.path(), /*auth_mode*/ None).await;
 
     assert_eq!(outcome.plugins()[0].error, None);
     assert_eq!(
@@ -988,8 +988,8 @@ enabled = true
 
 #[tokio::test]
 async fn load_plugins_applies_plugin_mcp_server_policy() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -1034,7 +1034,7 @@ approval_mode = "approve"
 "#;
 
     let outcome =
-        load_plugins_from_config(config_toml, codex_home.path(), /*auth_mode*/ None).await;
+        load_plugins_from_config(config_toml, motyga_home.path(), /*auth_mode*/ None).await;
     let server = outcome.plugins()[0]
         .mcp_servers
         .get("sample")
@@ -1057,16 +1057,16 @@ approval_mode = "approve"
 
 #[tokio::test]
 async fn remote_installed_cache_ignores_plugins_missing_local_cache() {
-    let codex_home = TempDir::new().unwrap();
+    let motyga_home = TempDir::new().unwrap();
     write_file(
-        &codex_home.path().join(CONFIG_TOML_FILE),
+        &motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features]
 plugins = true
 "#,
     );
 
-    let config = load_config(codex_home.path(), codex_home.path()).await;
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let config = load_config(motyga_home.path(), motyga_home.path()).await;
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     manager.write_remote_installed_plugins_cache(vec![remote_installed_linear_plugin()]);
 
     let outcome = manager.plugins_for_config(&config).await;
@@ -1075,9 +1075,9 @@ plugins = true
 
 #[tokio::test]
 async fn installed_plugin_telemetry_metadata_collects_capabilities() {
-    let codex_home = TempDir::new().unwrap();
-    write_cached_plugin(codex_home.path(), "test", "sample");
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let motyga_home = TempDir::new().unwrap();
+    write_cached_plugin(motyga_home.path(), "test", "sample");
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let plugin_id = PluginId::parse("sample@test").expect("plugin id should parse");
 
     let metadata = manager
@@ -1103,14 +1103,14 @@ async fn installed_plugin_telemetry_metadata_collects_capabilities() {
 
 #[tokio::test]
 async fn installed_plugin_telemetry_metadata_resolves_persisted_remote_identity() {
-    let codex_home = TempDir::new().unwrap();
-    write_cached_plugin(codex_home.path(), "openai-curated-remote", "linear");
+    let motyga_home = TempDir::new().unwrap();
+    write_cached_plugin(motyga_home.path(), "openai-curated-remote", "linear");
     let plugin_id =
         PluginId::parse("linear@openai-curated-remote").expect("plugin id should parse");
-    PluginStore::new(codex_home.path().to_path_buf())
+    PluginStore::new(motyga_home.path().to_path_buf())
         .write_remote_plugin_id(&plugin_id, "plugins~Plugin_linear")
         .expect("persist remote plugin id");
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
 
     let metadata = manager
         .telemetry_metadata_for_installed_plugin(&plugin_id)
@@ -1135,14 +1135,14 @@ async fn installed_plugin_telemetry_metadata_resolves_persisted_remote_identity(
 
 #[tokio::test]
 async fn installed_plugin_telemetry_metadata_prefers_remote_snapshot_identity() {
-    let codex_home = TempDir::new().unwrap();
-    write_cached_plugin(codex_home.path(), "openai-curated-remote", "linear");
+    let motyga_home = TempDir::new().unwrap();
+    write_cached_plugin(motyga_home.path(), "openai-curated-remote", "linear");
     let plugin_id =
         PluginId::parse("linear@openai-curated-remote").expect("plugin id should parse");
-    PluginStore::new(codex_home.path().to_path_buf())
+    PluginStore::new(motyga_home.path().to_path_buf())
         .write_remote_plugin_id(&plugin_id, "plugins~Plugin_stale")
         .expect("persist remote plugin id");
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     manager.write_remote_installed_plugins_cache(vec![remote_installed_linear_plugin()]);
 
     let metadata = manager
@@ -1168,8 +1168,8 @@ async fn installed_plugin_telemetry_metadata_prefers_remote_snapshot_identity() 
 
 #[tokio::test]
 async fn installed_plugin_telemetry_metadata_accepts_authoritative_remote_identity() {
-    let codex_home = TempDir::new().unwrap();
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let motyga_home = TempDir::new().unwrap();
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let plugin_id =
         PluginId::parse("linear@openai-curated-remote").expect("plugin id should parse");
 
@@ -1189,8 +1189,8 @@ async fn installed_plugin_telemetry_metadata_accepts_authoritative_remote_identi
 
 #[test]
 fn capability_summary_telemetry_metadata_uses_local_identity() {
-    let codex_home = TempDir::new().unwrap();
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let motyga_home = TempDir::new().unwrap();
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let summary = PluginCapabilitySummary {
         config_name: "linear@openai-curated-remote".to_string(),
         display_name: "Linear".to_string(),
@@ -1216,14 +1216,14 @@ fn capability_summary_telemetry_metadata_uses_local_identity() {
 
 #[test]
 fn capability_summary_telemetry_metadata_resolves_persisted_remote_identity() {
-    let codex_home = TempDir::new().unwrap();
-    write_cached_plugin(codex_home.path(), "openai-curated-remote", "linear");
+    let motyga_home = TempDir::new().unwrap();
+    write_cached_plugin(motyga_home.path(), "openai-curated-remote", "linear");
     let plugin_id =
         PluginId::parse("linear@openai-curated-remote").expect("plugin id should parse");
-    PluginStore::new(codex_home.path().to_path_buf())
+    PluginStore::new(motyga_home.path().to_path_buf())
         .write_remote_plugin_id(&plugin_id, "plugins~Plugin_linear")
         .expect("persist remote plugin id");
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let summary = PluginCapabilitySummary {
         config_name: "linear@openai-curated-remote".to_string(),
         display_name: "Linear".to_string(),
@@ -1247,9 +1247,9 @@ fn capability_summary_telemetry_metadata_resolves_persisted_remote_identity() {
 
 #[tokio::test]
 async fn remote_installed_cache_prefers_local_curated_conflicts_when_remote_plugin_disabled() {
-    let codex_home = TempDir::new().unwrap();
+    let motyga_home = TempDir::new().unwrap();
     write_file(
-        &codex_home.path().join(CONFIG_TOML_FILE),
+        &motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features]
 plugins = true
 remote_plugin = false
@@ -1261,13 +1261,13 @@ enabled = true
 enabled = true
 "#,
     );
-    write_cached_plugin(codex_home.path(), "openai-curated", "linear");
-    write_cached_plugin(codex_home.path(), "openai-curated", "calendar");
-    write_cached_plugin(codex_home.path(), "openai-curated-remote", "linear");
-    write_cached_plugin(codex_home.path(), "openai-curated-remote", "remote-only");
+    write_cached_plugin(motyga_home.path(), "openai-curated", "linear");
+    write_cached_plugin(motyga_home.path(), "openai-curated", "calendar");
+    write_cached_plugin(motyga_home.path(), "openai-curated-remote", "linear");
+    write_cached_plugin(motyga_home.path(), "openai-curated-remote", "remote-only");
 
-    let config = load_config(codex_home.path(), codex_home.path()).await;
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let config = load_config(motyga_home.path(), motyga_home.path()).await;
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     manager.write_remote_installed_plugins_cache(vec![
         remote_installed_plugin("linear"),
         remote_installed_plugin("remote-only"),
@@ -1290,9 +1290,9 @@ enabled = true
 
 #[tokio::test]
 async fn remote_global_catalog_ignores_local_curated_plugins() {
-    let codex_home = TempDir::new().unwrap();
+    let motyga_home = TempDir::new().unwrap();
     write_file(
-        &codex_home.path().join(CONFIG_TOML_FILE),
+        &motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features]
 plugins = true
 
@@ -1306,16 +1306,16 @@ enabled = true
 enabled = true
 "#,
     );
-    write_cached_plugin(codex_home.path(), "openai-curated", "linear");
-    write_cached_plugin(codex_home.path(), "openai-api-curated", "linear");
-    write_cached_plugin(codex_home.path(), "openai-curated", "calendar");
-    write_cached_plugin(codex_home.path(), "openai-curated-remote", "linear");
-    write_cached_plugin(codex_home.path(), "openai-curated-remote", "remote-only");
+    write_cached_plugin(motyga_home.path(), "openai-curated", "linear");
+    write_cached_plugin(motyga_home.path(), "openai-api-curated", "linear");
+    write_cached_plugin(motyga_home.path(), "openai-curated", "calendar");
+    write_cached_plugin(motyga_home.path(), "openai-curated-remote", "linear");
+    write_cached_plugin(motyga_home.path(), "openai-curated-remote", "remote-only");
 
-    let config = load_config(codex_home.path(), codex_home.path()).await;
+    let config = load_config(motyga_home.path(), motyga_home.path()).await;
     let manager = PluginsManager::new_with_options(
-        codex_home.path().to_path_buf(),
-        Some(Product::Codex),
+        motyga_home.path().to_path_buf(),
+        Some(Product::Motyga),
         Some(AuthMode::Chatgpt),
     );
     manager.write_remote_installed_plugins_cache(vec![
@@ -1339,10 +1339,10 @@ enabled = true
 }
 
 #[tokio::test]
-async fn remote_plugin_feature_keeps_local_curated_without_codex_backend() {
-    let codex_home = TempDir::new().unwrap();
+async fn remote_plugin_feature_keeps_local_curated_without_motyga_backend() {
+    let motyga_home = TempDir::new().unwrap();
     write_file(
-        &codex_home.path().join(CONFIG_TOML_FILE),
+        &motyga_home.path().join(CONFIG_TOML_FILE),
         r#"[features]
 plugins = true
 
@@ -1353,13 +1353,13 @@ enabled = true
 enabled = true
 "#,
     );
-    write_cached_plugin(codex_home.path(), "openai-curated", "linear");
-    write_cached_plugin(codex_home.path(), "openai-api-curated", "linear");
+    write_cached_plugin(motyga_home.path(), "openai-curated", "linear");
+    write_cached_plugin(motyga_home.path(), "openai-api-curated", "linear");
 
-    let config = load_config(codex_home.path(), codex_home.path()).await;
+    let config = load_config(motyga_home.path(), motyga_home.path()).await;
     let manager = PluginsManager::new_with_options(
-        codex_home.path().to_path_buf(),
-        Some(Product::Codex),
+        motyga_home.path().to_path_buf(),
+        Some(Product::Motyga),
         Some(AuthMode::ApiKey),
     );
 
@@ -1380,12 +1380,12 @@ enabled = true
 
 #[tokio::test]
 async fn build_remote_installed_plugin_marketplaces_from_cache_uses_remote_metadata() {
-    let codex_home = TempDir::new().unwrap();
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let motyga_home = TempDir::new().unwrap();
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let mut plugin = remote_installed_linear_plugin();
-    plugin.install_policy = codex_app_server_protocol::PluginInstallPolicy::InstalledByDefault;
-    plugin.auth_policy = codex_app_server_protocol::PluginAuthPolicy::OnInstall;
-    plugin.interface = Some(codex_app_server_protocol::PluginInterface {
+    plugin.install_policy = motyga_app_server_protocol::PluginInstallPolicy::InstalledByDefault;
+    plugin.auth_policy = motyga_app_server_protocol::PluginAuthPolicy::OnInstall;
+    plugin.interface = Some(motyga_app_server_protocol::PluginInterface {
         display_name: Some("Linear".to_string()),
         short_description: Some("Track remote work".to_string()),
         long_description: None,
@@ -1424,11 +1424,11 @@ async fn build_remote_installed_plugin_marketplaces_from_cache_uses_remote_metad
     assert_eq!(plugin.enabled, true);
     assert_eq!(
         plugin.install_policy,
-        codex_app_server_protocol::PluginInstallPolicy::InstalledByDefault
+        motyga_app_server_protocol::PluginInstallPolicy::InstalledByDefault
     );
     assert_eq!(
         plugin.auth_policy,
-        codex_app_server_protocol::PluginAuthPolicy::OnInstall
+        motyga_app_server_protocol::PluginAuthPolicy::OnInstall
     );
     assert_eq!(plugin.keywords, vec!["issues".to_string()]);
     assert_eq!(
@@ -1457,8 +1457,8 @@ async fn build_remote_installed_plugin_marketplaces_from_cache_uses_remote_metad
 
 #[tokio::test]
 async fn build_remote_installed_plugin_marketplaces_from_cache_filters_by_marketplace_name() {
-    let codex_home = TempDir::new().unwrap();
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let motyga_home = TempDir::new().unwrap();
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     manager.write_remote_installed_plugins_cache(vec![
         remote_installed_plugin_in_marketplace(
             "workspace-linear",
@@ -1488,8 +1488,8 @@ async fn build_remote_installed_plugin_marketplaces_from_cache_filters_by_market
 
 #[tokio::test]
 async fn load_plugins_resolves_disabled_skill_names_against_loaded_plugin_skills() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -1515,7 +1515,7 @@ enabled = false
 enabled = true
 "#;
     let outcome =
-        load_plugins_from_config(config_toml, codex_home.path(), /*auth_mode*/ None).await;
+        load_plugins_from_config(config_toml, motyga_home.path(), /*auth_mode*/ None).await;
     let skill_path = std::fs::canonicalize(skill_path)
         .expect("skill path should canonicalize")
         .abs();
@@ -1530,8 +1530,8 @@ enabled = true
 
 #[tokio::test]
 async fn load_plugins_ignores_unknown_disabled_skill_names() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -1556,7 +1556,7 @@ enabled = false
 enabled = true
 "#;
     let outcome =
-        load_plugins_from_config(config_toml, codex_home.path(), /*auth_mode*/ None).await;
+        load_plugins_from_config(config_toml, motyga_home.path(), /*auth_mode*/ None).await;
 
     assert!(outcome.plugins()[0].disabled_skill_paths.is_empty());
     assert!(outcome.plugins()[0].has_enabled_skills);
@@ -1575,8 +1575,8 @@ enabled = true
 
 #[tokio::test]
 async fn plugin_telemetry_metadata_uses_default_mcp_config_path() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -1620,8 +1620,8 @@ async fn plugin_telemetry_metadata_uses_default_mcp_config_path() {
 
 #[tokio::test]
 async fn plugin_capability_summary_uses_manifest_mcp_server_objects() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/counter-sample/local");
@@ -1661,8 +1661,8 @@ async fn plugin_capability_summary_uses_manifest_mcp_server_objects() {
 
 #[tokio::test]
 async fn capability_summary_sanitizes_plugin_descriptions_to_one_line() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -1681,7 +1681,7 @@ async fn capability_summary_sanitizes_plugin_descriptions_to_one_line() {
 
     let outcome = load_plugins_from_config(
         &plugin_config_toml(/*enabled*/ true, /*plugins_feature_enabled*/ true),
-        codex_home.path(),
+        motyga_home.path(),
         /*auth_mode*/ None,
     )
     .await;
@@ -1698,8 +1698,8 @@ async fn capability_summary_sanitizes_plugin_descriptions_to_one_line() {
 
 #[tokio::test]
 async fn capability_summary_truncates_overlong_plugin_descriptions() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -1721,7 +1721,7 @@ async fn capability_summary_truncates_overlong_plugin_descriptions() {
 
     let outcome = load_plugins_from_config(
         &plugin_config_toml(/*enabled*/ true, /*plugins_feature_enabled*/ true),
-        codex_home.path(),
+        motyga_home.path(),
         /*auth_mode*/ None,
     )
     .await;
@@ -1754,8 +1754,8 @@ async fn load_plugins_uses_manifest_configured_component_paths() {
             &["skills/abc", "skills/edk"][..],
         ),
     ] {
-        let codex_home = TempDir::new().unwrap();
-        let plugin_root = codex_home
+        let motyga_home = TempDir::new().unwrap();
+        let plugin_root = motyga_home
             .path()
             .join("plugins/cache")
             .join("test/sample/local");
@@ -1835,7 +1835,7 @@ async fn load_plugins_uses_manifest_configured_component_paths() {
         );
         let outcome = load_plugins_from_config(
             &plugin_config_toml(/*enabled*/ true, /*plugins_feature_enabled*/ true),
-            codex_home.path(),
+            motyga_home.path(),
             Some(AuthMode::Chatgpt),
         )
         .await;
@@ -1885,8 +1885,8 @@ async fn load_plugins_uses_manifest_configured_component_paths() {
 
 #[tokio::test]
 async fn load_plugin_skills_dedupes_overlapping_manifest_roots() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local")
@@ -1951,8 +1951,8 @@ async fn load_plugin_skills_dedupes_overlapping_manifest_roots() {
 
 #[tokio::test]
 async fn load_plugins_ignores_manifest_component_paths_without_dot_slash() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -2019,7 +2019,7 @@ async fn load_plugins_ignores_manifest_component_paths_without_dot_slash() {
 
     let outcome = load_plugins_from_config(
         &plugin_config_toml(/*enabled*/ true, /*plugins_feature_enabled*/ true),
-        codex_home.path(),
+        motyga_home.path(),
         Some(AuthMode::Chatgpt),
     )
     .await;
@@ -2065,8 +2065,8 @@ async fn load_plugins_ignores_manifest_component_paths_without_dot_slash() {
 
 #[tokio::test]
 async fn load_plugins_ignores_invalid_manifest_skills_shape() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -2089,7 +2089,7 @@ async fn load_plugins_ignores_invalid_manifest_skills_shape() {
 
     let outcome = load_plugins_from_config(
         &plugin_config_toml(/*enabled*/ true, /*plugins_feature_enabled*/ true),
-        codex_home.path(),
+        motyga_home.path(),
         /*auth_mode*/ None,
     )
     .await;
@@ -2103,8 +2103,8 @@ async fn load_plugins_ignores_invalid_manifest_skills_shape() {
 
 #[tokio::test]
 async fn load_plugins_preserves_disabled_plugins_without_effective_contributions() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -2129,7 +2129,7 @@ async fn load_plugins_preserves_disabled_plugins_without_effective_contributions
         &plugin_config_toml(
             /*enabled*/ false, /*plugins_feature_enabled*/ true,
         ),
-        codex_home.path(),
+        motyga_home.path(),
         /*auth_mode*/ None,
     )
     .await;
@@ -2159,12 +2159,12 @@ async fn load_plugins_preserves_disabled_plugins_without_effective_contributions
 
 #[tokio::test]
 async fn effective_apps_dedupes_connector_ids_across_plugins() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_a_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_a_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/plugin-a/local");
-    let plugin_b_root = codex_home
+    let plugin_b_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/plugin-b/local");
@@ -2222,7 +2222,7 @@ async fn effective_apps_dedupes_connector_ids_across_plugins() {
         toml::to_string(&Value::Table(root)).expect("plugin test config should serialize");
 
     let outcome =
-        load_plugins_from_config(&config_toml, codex_home.path(), Some(AuthMode::Chatgpt)).await;
+        load_plugins_from_config(&config_toml, motyga_home.path(), Some(AuthMode::Chatgpt)).await;
 
     assert_eq!(
         outcome.effective_apps(),
@@ -2235,8 +2235,8 @@ async fn effective_apps_dedupes_connector_ids_across_plugins() {
 
 #[tokio::test]
 async fn effective_apps_preserves_app_config_order() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -2264,7 +2264,7 @@ async fn effective_apps_preserves_app_config_order() {
 
     let outcome = load_plugins_from_config(
         &plugin_config_toml(/*enabled*/ true, /*plugins_feature_enabled*/ true),
-        codex_home.path(),
+        motyga_home.path(),
         Some(AuthMode::Chatgpt),
     )
     .await;
@@ -2280,7 +2280,7 @@ async fn effective_apps_preserves_app_config_order() {
 
 #[test]
 fn capability_index_filters_inactive_and_zero_capability_plugins() {
-    let codex_home = TempDir::new().unwrap();
+    let motyga_home = TempDir::new().unwrap();
     let connector = |id: &str| AppConnectorId(id.to_string());
     let app = |name: &str, connector_id: &str| app_declaration(name, connector_id);
     let http_server = |url: &str| McpServerConfig {
@@ -2316,7 +2316,7 @@ fn capability_index_filters_inactive_and_zero_capability_plugins() {
                 .to_string(),
         ),
         manifest_description: None,
-        root: AbsolutePathBuf::try_from(codex_home.path().join(dir_name)).unwrap(),
+        root: AbsolutePathBuf::try_from(motyga_home.path().join(dir_name)).unwrap(),
         enabled: true,
         skill_roots: Vec::new(),
         disabled_skill_paths: HashSet::new(),
@@ -2335,7 +2335,7 @@ fn capability_index_filters_inactive_and_zero_capability_plugins() {
     };
     let outcome = PluginLoadOutcome::from_plugins(vec![
         LoadedPlugin {
-            skill_roots: vec![codex_home.path().join("skills-plugin/skills").abs()],
+            skill_roots: vec![motyga_home.path().join("skills-plugin/skills").abs()],
             has_enabled_skills: true,
             ..plugin("skills@test", "skills-plugin", "skills-plugin")
         },
@@ -2355,7 +2355,7 @@ fn capability_index_filters_inactive_and_zero_capability_plugins() {
         plugin("empty@test", "empty-plugin", "empty-plugin"),
         LoadedPlugin {
             enabled: false,
-            skill_roots: vec![codex_home.path().join("disabled-plugin/skills").abs()],
+            skill_roots: vec![motyga_home.path().join("disabled-plugin/skills").abs()],
             apps: vec![app("hidden", "connector_hidden")],
             ..plugin("disabled@test", "disabled-plugin", "disabled-plugin")
         },
@@ -2392,8 +2392,8 @@ fn capability_index_filters_inactive_and_zero_capability_plugins() {
 
 #[tokio::test]
 async fn load_plugins_returns_empty_when_feature_disabled() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -2407,14 +2407,14 @@ async fn load_plugins_returns_empty_when_feature_disabled() {
         "---\nname: sample-search\ndescription: search sample data\n---\n",
     );
     write_file(
-        &codex_home.path().join(CONFIG_TOML_FILE),
+        &motyga_home.path().join(CONFIG_TOML_FILE),
         &plugin_config_toml(
             /*enabled*/ true, /*plugins_feature_enabled*/ false,
         ),
     );
 
-    let config = load_config(codex_home.path(), codex_home.path()).await;
-    let outcome = PluginsManager::new(codex_home.path().to_path_buf())
+    let config = load_config(motyga_home.path(), motyga_home.path()).await;
+    let outcome = PluginsManager::new(motyga_home.path().to_path_buf())
         .plugins_for_config(&config)
         .await;
 
@@ -2423,13 +2423,13 @@ async fn load_plugins_returns_empty_when_feature_disabled() {
 
 #[tokio::test]
 async fn plugin_cache_ignores_unrelated_session_overrides() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
     write_plugin(
-        codex_home.path().join("plugins/cache/test").as_path(),
+        motyga_home.path().join("plugins/cache/test").as_path(),
         "sample/local",
         "sample",
     );
@@ -2444,7 +2444,7 @@ async fn plugin_cache_ignores_unrelated_session_overrides() {
 }"#,
     );
 
-    let user_file = codex_home.path().join(CONFIG_TOML_FILE).abs();
+    let user_file = motyga_home.path().join(CONFIG_TOML_FILE).abs();
     let user_config: toml::Value = toml::from_str(&plugin_config_toml(
         /*enabled*/ true, /*plugins_feature_enabled*/ true,
     ))
@@ -2477,7 +2477,7 @@ async fn plugin_cache_ignores_unrelated_session_overrides() {
             "https://api.motyga.com".to_string(),
         )
     };
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
 
     let first = manager
         .plugins_for_config(&config(r#"model = "first""#))
@@ -2493,38 +2493,38 @@ async fn plugin_cache_ignores_unrelated_session_overrides() {
 
 #[tokio::test]
 async fn skills_service_reuses_skills_parsed_during_plugin_load() {
-    let codex_home = TempDir::new().unwrap();
-    let codex_home_abs = codex_home.path().to_path_buf().abs();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let motyga_home_abs = motyga_home.path().to_path_buf().abs();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
     write_plugin(
-        codex_home.path().join("plugins/cache/test").as_path(),
+        motyga_home.path().join("plugins/cache/test").as_path(),
         "sample/local",
         "sample",
     );
     let skill_path = plugin_root.join("skills/SKILL.md");
     write_file(&skill_path, "---\nname: search\ndescription: first\n---\n");
     write_file(
-        &codex_home.path().join(CONFIG_TOML_FILE),
+        &motyga_home.path().join(CONFIG_TOML_FILE),
         &plugin_config_toml(/*enabled*/ true, /*plugins_feature_enabled*/ true),
     );
 
-    let config = load_config(codex_home.path(), codex_home.path()).await;
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let config = load_config(motyga_home.path(), motyga_home.path()).await;
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let plugin_outcome = manager.plugins_for_config(&config).await;
     let plugin_skill_snapshots = manager.plugin_skill_snapshots_for_config(&config);
     write_file(&skill_path, "---\nname: search\ndescription: second\n---\n");
 
     let skills_input = SkillsLoadInput::new(
-        codex_home_abs.clone(),
+        motyga_home_abs.clone(),
         plugin_outcome.effective_plugin_skill_roots(),
         config.config_layer_stack.clone(),
         /*bundled_skills_enabled*/ false,
     )
     .with_plugin_skill_snapshots(plugin_skill_snapshots);
-    let skills_service = SkillsService::new(codex_home_abs, /*bundled_skills_enabled*/ false);
+    let skills_service = SkillsService::new(motyga_home_abs, /*bundled_skills_enabled*/ false);
     let cached = skills_service
         .snapshot_for_config(&skills_input, /*fs*/ None)
         .await;
@@ -2542,8 +2542,8 @@ async fn skills_service_reuses_skills_parsed_during_plugin_load() {
 
 #[test]
 fn loaded_plugins_cache_invalidation_rejects_stale_load_completion() {
-    let codex_home = TempDir::new().unwrap();
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let motyga_home = TempDir::new().unwrap();
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
     let cache_key = PluginLoadCacheKey {
         configured_plugins: HashMap::new(),
         skill_config_rules: SkillConfigRules::default(),
@@ -2564,8 +2564,8 @@ fn loaded_plugins_cache_invalidation_rejects_stale_load_completion() {
 
 #[tokio::test]
 async fn load_plugins_rejects_invalid_plugin_keys() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -2589,7 +2589,7 @@ async fn load_plugins_rejects_invalid_plugin_keys() {
 
     let outcome = load_plugins_from_config(
         &toml::to_string(&Value::Table(root)).expect("plugin test config should serialize"),
-        codex_home.path(),
+        motyga_home.path(),
         /*auth_mode*/ None,
     )
     .await;
@@ -2662,8 +2662,8 @@ async fn install_plugin_updates_config_with_relative_path_and_plugin_key() {
 
 #[tokio::test]
 async fn strict_install_requires_allowed_local_marketplace_to_be_added_first() {
-    let codex_home = TempDir::new().expect("create Motyga home");
-    let marketplace_root = codex_home.path().join("company-marketplace");
+    let motyga_home = TempDir::new().expect("create Motyga home");
+    let marketplace_root = motyga_home.path().join("company-marketplace");
     write_plugin(&marketplace_root, "sample", "sample");
     write_file(
         &marketplace_root.join(".agents/plugins/marketplace.json"),
@@ -2690,11 +2690,11 @@ source = "local"
 path = {marketplace_root:?}
 "#
     );
-    let config = config_layer_stack_with_requirements(codex_home.path(), "", &requirements);
+    let config = config_layer_stack_with_requirements(motyga_home.path(), "", &requirements);
     let marketplace_path =
         AbsolutePathBuf::try_from(marketplace_root.join(".agents/plugins/marketplace.json"))
             .expect("absolute marketplace path");
-    let manager = PluginsManager::new(codex_home.path().to_path_buf());
+    let manager = PluginsManager::new(motyga_home.path().to_path_buf());
 
     let err = manager
         .install_plugin(
@@ -2711,7 +2711,7 @@ path = {marketplace_root:?}
         PluginInstallError::Marketplace(MarketplaceError::InvalidMarketplaceFile { .. })
     ));
     assert!(err.to_string().contains("must be added to config"));
-    assert!(!codex_home.path().join(CONFIG_TOML_FILE).exists());
+    assert!(!motyga_home.path().join(CONFIG_TOML_FILE).exists());
 
     let user_config = format!(
         r#"
@@ -2720,9 +2720,9 @@ source_type = "local"
 source = {marketplace_root:?}
 "#
     );
-    write_file(&codex_home.path().join(CONFIG_TOML_FILE), &user_config);
+    write_file(&motyga_home.path().join(CONFIG_TOML_FILE), &user_config);
     let config =
-        config_layer_stack_with_requirements(codex_home.path(), &user_config, &requirements);
+        config_layer_stack_with_requirements(motyga_home.path(), &user_config, &requirements);
     let outcome = manager
         .install_plugin(
             &config,
@@ -3386,7 +3386,7 @@ enabled = true
 }
 
 #[tokio::test]
-async fn read_plugin_for_config_filters_mcp_servers_for_codex_backend_auth() {
+async fn read_plugin_for_config_filters_mcp_servers_for_motyga_backend_auth() {
     let tmp = tempfile::tempdir().unwrap();
     let repo_root = tmp.path().join("repo");
     fs::create_dir_all(repo_root.join(".git")).unwrap();
@@ -3436,7 +3436,7 @@ plugins = true
 
     let chatgpt_outcome = PluginsManager::new_with_options(
         tmp.path().to_path_buf(),
-        Some(Product::Codex),
+        Some(Product::Motyga),
         Some(AuthMode::Chatgpt),
     )
     .read_plugin_for_config(&config, &request)
@@ -3453,7 +3453,7 @@ plugins = true
 
     let api_key_outcome = PluginsManager::new_with_options(
         tmp.path().to_path_buf(),
-        Some(Product::Codex),
+        Some(Product::Motyga),
         Some(AuthMode::ApiKey),
     )
     .read_plugin_for_config(&config, &request)
@@ -4826,7 +4826,7 @@ plugins = true
     let featured_plugin_ids = manager
         .featured_plugin_ids_for_config(
             &config,
-            Some(&CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+            Some(&MotygaAuth::create_dummy_chatgpt_auth_for_testing()),
         )
         .await
         .unwrap();
@@ -4835,7 +4835,7 @@ plugins = true
 }
 
 #[tokio::test]
-async fn featured_plugin_ids_for_config_defaults_query_param_to_codex() {
+async fn featured_plugin_ids_for_config_defaults_query_param_to_motyga() {
     let tmp = tempfile::tempdir().unwrap();
     write_file(
         &tmp.path().join(CONFIG_TOML_FILE),
@@ -4847,8 +4847,8 @@ plugins = true
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/backend-api/plugins/featured"))
-        .and(query_param("platform", "codex"))
-        .respond_with(ResponseTemplate::new(200).set_body_string(r#"["codex-plugin"]"#))
+        .and(query_param("platform", "motyga"))
+        .respond_with(ResponseTemplate::new(200).set_body_string(r#"["motyga-plugin"]"#))
         .mount(&server)
         .await;
 
@@ -4865,7 +4865,7 @@ plugins = true
         .await
         .unwrap();
 
-    assert_eq!(featured_plugin_ids, vec!["codex-plugin".to_string()]);
+    assert_eq!(featured_plugin_ids, vec!["motyga-plugin".to_string()]);
 }
 
 #[tokio::test]
@@ -4893,7 +4893,7 @@ plugins = true
     let mut config = load_config(tmp.path(), tmp.path()).await;
     config.chatgpt_base_url = server.uri();
     let manager = std::sync::Arc::new(PluginsManager::new(tmp.path().to_path_buf()));
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
     let cache_key = recommended_plugins_cache_key(&config);
 
     manager.maybe_start_remote_plugin_caches_refresh(
@@ -4944,7 +4944,7 @@ plugins = true
         .and(query_param("scope", "GLOBAL"))
         .and(header("authorization", "Bearer Access Token"))
         .and(header("chatgpt-account-id", "account_id"))
-        .and(header("OAI-Product-Sku", "codex"))
+        .and(header("OAI-Product-Sku", "motyga"))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_json(serde_json::json!({
@@ -4974,7 +4974,7 @@ plugins = true
     let mut config = load_config(tmp.path(), tmp.path()).await;
     config.chatgpt_base_url = server.uri();
     let manager = PluginsManager::new(tmp.path().to_path_buf());
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
     let expected = RecommendedPluginsMode::Endpoint {
         plugins: vec![
             RecommendedPlugin {
@@ -5047,7 +5047,7 @@ plugins = true
     let mut installed_linear = remote_installed_plugin("linear");
     installed_linear.id = "plugin_linear".to_string();
     manager.write_remote_installed_plugins_cache(vec![installed_linear]);
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
     let disabled_tools = [ToolSuggestDisabledTool::plugin(
         "github@openai-curated-remote",
     )];
@@ -5101,7 +5101,7 @@ plugins = true
     let mut config = load_config(tmp.path(), tmp.path()).await;
     config.chatgpt_base_url = server.uri();
     let manager = PluginsManager::new(tmp.path().to_path_buf());
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
     assert_eq!(
         manager
             .recommended_plugins_mode_for_config(&config, Some(&auth))
@@ -5137,7 +5137,7 @@ plugins = true
     let mut config = load_config(tmp.path(), tmp.path()).await;
     config.chatgpt_base_url = server.uri();
     let manager = PluginsManager::new(tmp.path().to_path_buf());
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = MotygaAuth::create_dummy_chatgpt_auth_for_testing();
     assert_eq!(
         manager
             .recommended_plugins_mode_for_config(&config, Some(&auth))
@@ -5306,7 +5306,7 @@ fn refresh_curated_plugin_cache_removes_cache_for_plugin_removed_from_marketplac
 }
 
 #[test]
-fn curated_plugin_ids_from_config_keys_reads_latest_codex_home_user_config() {
+fn curated_plugin_ids_from_config_keys_reads_latest_motyga_home_user_config() {
     let tmp = tempfile::tempdir().unwrap();
     write_file(
         &tmp.path().join(CONFIG_TOML_FILE),
@@ -5325,7 +5325,7 @@ enabled = true
     );
 
     assert_eq!(
-        configured_curated_plugin_ids_from_codex_home(tmp.path())
+        configured_curated_plugin_ids_from_motyga_home(tmp.path())
             .into_iter()
             .map(|plugin_id| plugin_id.as_key())
             .collect::<Vec<_>>(),
@@ -5343,7 +5343,7 @@ plugins = true
     );
 
     assert_eq!(
-        configured_curated_plugin_ids_from_codex_home(tmp.path()),
+        configured_curated_plugin_ids_from_motyga_home(tmp.path()),
         Vec::<PluginId>::new()
     );
 }
@@ -5782,9 +5782,9 @@ fn refresh_non_curated_plugin_cache_continues_after_plugin_error() {
 
 #[tokio::test]
 async fn load_plugins_ignores_project_config_files() {
-    let codex_home = TempDir::new().unwrap();
-    let project_root = codex_home.path().join("project");
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let project_root = motyga_home.path().join("project");
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
@@ -5801,7 +5801,7 @@ async fn load_plugins_ignores_project_config_files() {
     let stack = ConfigLayerStack::new(
         vec![ConfigLayerEntry::new(
             ConfigLayerSource::Project {
-                dot_codex_folder: AbsolutePathBuf::try_from(project_root.join(".motyga")).unwrap(),
+                dot_motyga_folder: AbsolutePathBuf::try_from(project_root.join(".motyga")).unwrap(),
             },
             toml::from_str(&plugin_config_toml(
                 /*enabled*/ true, /*plugins_feature_enabled*/ true,
@@ -5816,9 +5816,9 @@ async fn load_plugins_ignores_project_config_files() {
     let plugins = load_plugins_from_layer_stack(
         &stack,
         std::collections::HashMap::new(),
-        &PluginStore::new(codex_home.path().to_path_buf()),
+        &PluginStore::new(motyga_home.path().to_path_buf()),
         /*plugin_skill_snapshots*/ None,
-        Some(Product::Codex),
+        Some(Product::Motyga),
         /*remote_global_catalog_active*/ false,
     )
     .await;
@@ -5828,13 +5828,13 @@ async fn load_plugins_ignores_project_config_files() {
 
 #[tokio::test]
 async fn plugin_hooks_for_layer_stack_loads_configured_plugin_hooks() {
-    let codex_home = TempDir::new().unwrap();
-    let plugin_root = codex_home
+    let motyga_home = TempDir::new().unwrap();
+    let plugin_root = motyga_home
         .path()
         .join("plugins/cache")
         .join("test/sample/local");
     write_plugin(
-        codex_home.path().join("plugins/cache/test").as_path(),
+        motyga_home.path().join("plugins/cache/test").as_path(),
         "sample/local",
         "sample",
     );
@@ -5856,12 +5856,12 @@ async fn plugin_hooks_for_layer_stack_loads_configured_plugin_hooks() {
 }"#,
     );
     write_file(
-        &codex_home.path().join(CONFIG_TOML_FILE),
+        &motyga_home.path().join(CONFIG_TOML_FILE),
         &plugin_config_toml(/*enabled*/ true, /*plugins_feature_enabled*/ true),
     );
-    let config = load_config(codex_home.path(), codex_home.path()).await;
+    let config = load_config(motyga_home.path(), motyga_home.path()).await;
 
-    let outcome = PluginsManager::new(codex_home.path().to_path_buf())
+    let outcome = PluginsManager::new(motyga_home.path().to_path_buf())
         .plugin_hooks_for_layer_stack(&config.config_layer_stack, &config)
         .await;
 

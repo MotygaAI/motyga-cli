@@ -14,115 +14,115 @@ use crate::session_state::ThreadSessionState;
 use crate::status::StatusAccountDisplay;
 use crate::status::plan_type_display_name;
 use crate::terminal_visualization_instructions::with_terminal_visualization_instructions;
-use codex_app_server_client::AppServerClient;
-use codex_app_server_client::AppServerEvent;
-use codex_app_server_client::AppServerPath;
-use codex_app_server_client::AppServerRequestHandle;
-use codex_app_server_client::TypedRequestError;
-use codex_app_server_protocol::Account;
-use codex_app_server_protocol::AskForApproval;
-use codex_app_server_protocol::AuthMode;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::ConfigBatchWriteParams;
-use codex_app_server_protocol::ConfigRequirementsReadResponse;
-use codex_app_server_protocol::ConfigWriteResponse;
-use codex_app_server_protocol::ExternalAgentConfigDetectParams;
-use codex_app_server_protocol::ExternalAgentConfigDetectResponse;
-use codex_app_server_protocol::ExternalAgentConfigImportParams;
-use codex_app_server_protocol::ExternalAgentConfigImportResponse;
-use codex_app_server_protocol::ExternalAgentConfigMigrationItem;
-use codex_app_server_protocol::GetAccountParams;
-use codex_app_server_protocol::GetAccountRateLimitsResponse;
-use codex_app_server_protocol::GetAccountResponse;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::LogoutAccountResponse;
-use codex_app_server_protocol::MemoryResetResponse;
-use codex_app_server_protocol::Model as ApiModel;
-use codex_app_server_protocol::ModelListParams;
-use codex_app_server_protocol::ModelListResponse;
-use codex_app_server_protocol::NewThreadModelDefaults;
-use codex_app_server_protocol::RateLimitSnapshot;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ReviewDelivery;
-use codex_app_server_protocol::ReviewStartParams;
-use codex_app_server_protocol::ReviewStartResponse;
-use codex_app_server_protocol::ReviewTarget;
-use codex_app_server_protocol::SkillsListParams;
-use codex_app_server_protocol::SkillsListResponse;
-use codex_app_server_protocol::Thread;
-use codex_app_server_protocol::ThreadApproveGuardianDeniedActionParams;
-use codex_app_server_protocol::ThreadApproveGuardianDeniedActionResponse;
-use codex_app_server_protocol::ThreadArchiveParams;
-use codex_app_server_protocol::ThreadArchiveResponse;
-use codex_app_server_protocol::ThreadBackgroundTerminalsCleanParams;
-use codex_app_server_protocol::ThreadBackgroundTerminalsCleanResponse;
-use codex_app_server_protocol::ThreadCompactStartParams;
-use codex_app_server_protocol::ThreadCompactStartResponse;
-use codex_app_server_protocol::ThreadDeleteParams;
-use codex_app_server_protocol::ThreadDeleteResponse;
-use codex_app_server_protocol::ThreadForkParams;
-use codex_app_server_protocol::ThreadForkResponse;
-use codex_app_server_protocol::ThreadGoalClearParams;
-use codex_app_server_protocol::ThreadGoalClearResponse;
-use codex_app_server_protocol::ThreadGoalGetParams;
-use codex_app_server_protocol::ThreadGoalGetResponse;
-use codex_app_server_protocol::ThreadGoalSetParams;
-use codex_app_server_protocol::ThreadGoalSetResponse;
-use codex_app_server_protocol::ThreadGoalStatus;
-use codex_app_server_protocol::ThreadInjectItemsParams;
-use codex_app_server_protocol::ThreadInjectItemsResponse;
-use codex_app_server_protocol::ThreadListParams;
-use codex_app_server_protocol::ThreadListResponse;
-use codex_app_server_protocol::ThreadLoadedListParams;
-use codex_app_server_protocol::ThreadLoadedListResponse;
-use codex_app_server_protocol::ThreadMemoryMode;
-use codex_app_server_protocol::ThreadMemoryModeSetParams;
-use codex_app_server_protocol::ThreadMemoryModeSetResponse;
-use codex_app_server_protocol::ThreadMetadataGitInfoUpdateParams;
-use codex_app_server_protocol::ThreadMetadataUpdateParams;
-use codex_app_server_protocol::ThreadMetadataUpdateResponse;
-use codex_app_server_protocol::ThreadReadParams;
-use codex_app_server_protocol::ThreadReadResponse;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadResumeResponse;
-use codex_app_server_protocol::ThreadRollbackParams;
-use codex_app_server_protocol::ThreadRollbackResponse;
-use codex_app_server_protocol::ThreadSetNameParams;
-use codex_app_server_protocol::ThreadSetNameResponse;
-use codex_app_server_protocol::ThreadSettingsUpdateParams;
-use codex_app_server_protocol::ThreadSettingsUpdateResponse;
-use codex_app_server_protocol::ThreadShellCommandParams;
-use codex_app_server_protocol::ThreadShellCommandResponse;
-use codex_app_server_protocol::ThreadSource;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::ThreadStartSource;
-use codex_app_server_protocol::ThreadUnarchiveParams;
-use codex_app_server_protocol::ThreadUnarchiveResponse;
-use codex_app_server_protocol::ThreadUnsubscribeParams;
-use codex_app_server_protocol::ThreadUnsubscribeResponse;
-use codex_app_server_protocol::Turn;
-use codex_app_server_protocol::TurnInterruptParams;
-use codex_app_server_protocol::TurnInterruptResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::TurnSteerParams;
-use codex_app_server_protocol::TurnSteerResponse;
-use codex_app_server_protocol::UserInput;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::ThreadId;
-use codex_protocol::approvals::GuardianAssessmentEvent;
-use codex_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
-use codex_protocol::models::ActivePermissionProfile;
-use codex_protocol::models::PermissionProfile;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ModelAvailabilityNux;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ModelServiceTier;
-use codex_protocol::openai_models::ModelUpgrade;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_app_server_client::AppServerClient;
+use motyga_app_server_client::AppServerEvent;
+use motyga_app_server_client::AppServerPath;
+use motyga_app_server_client::AppServerRequestHandle;
+use motyga_app_server_client::TypedRequestError;
+use motyga_app_server_protocol::Account;
+use motyga_app_server_protocol::AskForApproval;
+use motyga_app_server_protocol::AuthMode;
+use motyga_app_server_protocol::ClientRequest;
+use motyga_app_server_protocol::ConfigBatchWriteParams;
+use motyga_app_server_protocol::ConfigRequirementsReadResponse;
+use motyga_app_server_protocol::ConfigWriteResponse;
+use motyga_app_server_protocol::ExternalAgentConfigDetectParams;
+use motyga_app_server_protocol::ExternalAgentConfigDetectResponse;
+use motyga_app_server_protocol::ExternalAgentConfigImportParams;
+use motyga_app_server_protocol::ExternalAgentConfigImportResponse;
+use motyga_app_server_protocol::ExternalAgentConfigMigrationItem;
+use motyga_app_server_protocol::GetAccountParams;
+use motyga_app_server_protocol::GetAccountRateLimitsResponse;
+use motyga_app_server_protocol::GetAccountResponse;
+use motyga_app_server_protocol::JSONRPCErrorError;
+use motyga_app_server_protocol::LogoutAccountResponse;
+use motyga_app_server_protocol::MemoryResetResponse;
+use motyga_app_server_protocol::Model as ApiModel;
+use motyga_app_server_protocol::ModelListParams;
+use motyga_app_server_protocol::ModelListResponse;
+use motyga_app_server_protocol::NewThreadModelDefaults;
+use motyga_app_server_protocol::RateLimitSnapshot;
+use motyga_app_server_protocol::RequestId;
+use motyga_app_server_protocol::ReviewDelivery;
+use motyga_app_server_protocol::ReviewStartParams;
+use motyga_app_server_protocol::ReviewStartResponse;
+use motyga_app_server_protocol::ReviewTarget;
+use motyga_app_server_protocol::SkillsListParams;
+use motyga_app_server_protocol::SkillsListResponse;
+use motyga_app_server_protocol::Thread;
+use motyga_app_server_protocol::ThreadApproveGuardianDeniedActionParams;
+use motyga_app_server_protocol::ThreadApproveGuardianDeniedActionResponse;
+use motyga_app_server_protocol::ThreadArchiveParams;
+use motyga_app_server_protocol::ThreadArchiveResponse;
+use motyga_app_server_protocol::ThreadBackgroundTerminalsCleanParams;
+use motyga_app_server_protocol::ThreadBackgroundTerminalsCleanResponse;
+use motyga_app_server_protocol::ThreadCompactStartParams;
+use motyga_app_server_protocol::ThreadCompactStartResponse;
+use motyga_app_server_protocol::ThreadDeleteParams;
+use motyga_app_server_protocol::ThreadDeleteResponse;
+use motyga_app_server_protocol::ThreadForkParams;
+use motyga_app_server_protocol::ThreadForkResponse;
+use motyga_app_server_protocol::ThreadGoalClearParams;
+use motyga_app_server_protocol::ThreadGoalClearResponse;
+use motyga_app_server_protocol::ThreadGoalGetParams;
+use motyga_app_server_protocol::ThreadGoalGetResponse;
+use motyga_app_server_protocol::ThreadGoalSetParams;
+use motyga_app_server_protocol::ThreadGoalSetResponse;
+use motyga_app_server_protocol::ThreadGoalStatus;
+use motyga_app_server_protocol::ThreadInjectItemsParams;
+use motyga_app_server_protocol::ThreadInjectItemsResponse;
+use motyga_app_server_protocol::ThreadListParams;
+use motyga_app_server_protocol::ThreadListResponse;
+use motyga_app_server_protocol::ThreadLoadedListParams;
+use motyga_app_server_protocol::ThreadLoadedListResponse;
+use motyga_app_server_protocol::ThreadMemoryMode;
+use motyga_app_server_protocol::ThreadMemoryModeSetParams;
+use motyga_app_server_protocol::ThreadMemoryModeSetResponse;
+use motyga_app_server_protocol::ThreadMetadataGitInfoUpdateParams;
+use motyga_app_server_protocol::ThreadMetadataUpdateParams;
+use motyga_app_server_protocol::ThreadMetadataUpdateResponse;
+use motyga_app_server_protocol::ThreadReadParams;
+use motyga_app_server_protocol::ThreadReadResponse;
+use motyga_app_server_protocol::ThreadResumeParams;
+use motyga_app_server_protocol::ThreadResumeResponse;
+use motyga_app_server_protocol::ThreadRollbackParams;
+use motyga_app_server_protocol::ThreadRollbackResponse;
+use motyga_app_server_protocol::ThreadSetNameParams;
+use motyga_app_server_protocol::ThreadSetNameResponse;
+use motyga_app_server_protocol::ThreadSettingsUpdateParams;
+use motyga_app_server_protocol::ThreadSettingsUpdateResponse;
+use motyga_app_server_protocol::ThreadShellCommandParams;
+use motyga_app_server_protocol::ThreadShellCommandResponse;
+use motyga_app_server_protocol::ThreadSource;
+use motyga_app_server_protocol::ThreadStartParams;
+use motyga_app_server_protocol::ThreadStartResponse;
+use motyga_app_server_protocol::ThreadStartSource;
+use motyga_app_server_protocol::ThreadUnarchiveParams;
+use motyga_app_server_protocol::ThreadUnarchiveResponse;
+use motyga_app_server_protocol::ThreadUnsubscribeParams;
+use motyga_app_server_protocol::ThreadUnsubscribeResponse;
+use motyga_app_server_protocol::Turn;
+use motyga_app_server_protocol::TurnInterruptParams;
+use motyga_app_server_protocol::TurnInterruptResponse;
+use motyga_app_server_protocol::TurnStartParams;
+use motyga_app_server_protocol::TurnStartResponse;
+use motyga_app_server_protocol::TurnSteerParams;
+use motyga_app_server_protocol::TurnSteerResponse;
+use motyga_app_server_protocol::UserInput;
+use motyga_otel::TelemetryAuthMode;
+use motyga_protocol::ThreadId;
+use motyga_protocol::approvals::GuardianAssessmentEvent;
+use motyga_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
+use motyga_protocol::models::ActivePermissionProfile;
+use motyga_protocol::models::PermissionProfile;
+use motyga_protocol::models::ResponseItem;
+use motyga_protocol::openai_models::ModelAvailabilityNux;
+use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::openai_models::ModelServiceTier;
+use motyga_protocol::openai_models::ModelUpgrade;
+use motyga_protocol::openai_models::ReasoningEffortPreset;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use color_eyre::eyre::ContextCompat;
 use color_eyre::eyre::Result;
 use color_eyre::eyre::WrapErr;
@@ -161,7 +161,7 @@ pub(crate) struct AppServerBootstrap {
     pub(crate) account_email: Option<String>,
     pub(crate) auth_mode: Option<TelemetryAuthMode>,
     pub(crate) status_account_display: Option<StatusAccountDisplay>,
-    pub(crate) plan_type: Option<codex_protocol::account::PlanType>,
+    pub(crate) plan_type: Option<motyga_protocol::account::PlanType>,
     /// Whether the configured model provider needs OpenAI-style auth. Combined
     /// with `has_chatgpt_account` to decide if a startup rate-limit prefetch
     /// should be fired.
@@ -247,11 +247,11 @@ impl AppServerSession {
         matches!(&self.client, AppServerClient::InProcess(_))
     }
 
-    pub(crate) fn codex_home_path(
+    pub(crate) fn motyga_home_path(
         &self,
-        local_codex_home: &AbsolutePathBuf,
+        local_motyga_home: &AbsolutePathBuf,
     ) -> Option<AppServerPath> {
-        self.client.codex_home(local_codex_home)
+        self.client.motyga_home(local_motyga_home)
     }
 
     pub(crate) fn server_version(&self) -> Option<&str> {
@@ -775,15 +775,15 @@ impl AppServerSession {
         items: Vec<UserInput>,
         cwd: PathBuf,
         approval_policy: AskForApproval,
-        approvals_reviewer: codex_protocol::config_types::ApprovalsReviewer,
+        approvals_reviewer: motyga_protocol::config_types::ApprovalsReviewer,
         permissions_override: TurnPermissionsOverride,
         workspace_roots: &[AbsolutePathBuf],
         model: String,
-        effort: Option<codex_protocol::openai_models::ReasoningEffort>,
-        summary: Option<codex_protocol::config_types::ReasoningSummary>,
+        effort: Option<motyga_protocol::openai_models::ReasoningEffort>,
+        summary: Option<motyga_protocol::config_types::ReasoningSummary>,
         service_tier: Option<Option<String>>,
-        collaboration_mode: Option<codex_protocol::config_types::CollaborationMode>,
-        personality: Option<codex_protocol::config_types::Personality>,
+        collaboration_mode: Option<motyga_protocol::config_types::CollaborationMode>,
+        personality: Option<motyga_protocol::config_types::Personality>,
         output_schema: Option<serde_json::Value>,
     ) -> Result<TurnStartResponse> {
         let request_id = self.next_request_id();
@@ -1196,7 +1196,7 @@ pub(crate) async fn start_thread_with_request_handle(
 
 pub(crate) fn status_account_display_from_auth_mode(
     auth_mode: Option<AuthMode>,
-    plan_type: Option<codex_protocol::account::PlanType>,
+    plan_type: Option<motyga_protocol::account::PlanType>,
 ) -> Option<StatusAccountDisplay> {
     match auth_mode {
         Some(AuthMode::ApiKey) => Some(StatusAccountDisplay::ApiKey),
@@ -1268,7 +1268,7 @@ fn model_preset_from_api_model(model: ApiModel) -> ModelPreset {
 
 fn approvals_reviewer_override_from_config(
     config: &Config,
-) -> Option<codex_app_server_protocol::ApprovalsReviewer> {
+) -> Option<motyga_app_server_protocol::ApprovalsReviewer> {
     Some(config.approvals_reviewer.into())
 }
 
@@ -1326,10 +1326,10 @@ fn service_tier_override_from_config(config: &Config) -> Option<Option<String>> 
 fn sandbox_mode_from_permission_profile(
     permission_profile: &PermissionProfile,
     cwd: &std::path::Path,
-) -> Option<codex_app_server_protocol::SandboxMode> {
+) -> Option<motyga_app_server_protocol::SandboxMode> {
     match permission_profile {
         PermissionProfile::Disabled => {
-            Some(codex_app_server_protocol::SandboxMode::DangerFullAccess)
+            Some(motyga_app_server_protocol::SandboxMode::DangerFullAccess)
         }
         PermissionProfile::External { .. } => None,
         PermissionProfile::Managed { .. } => {
@@ -1338,11 +1338,11 @@ fn sandbox_mode_from_permission_profile(
                 permission_profile
                     .network_sandbox_policy()
                     .is_enabled()
-                    .then_some(codex_app_server_protocol::SandboxMode::DangerFullAccess)
+                    .then_some(motyga_app_server_protocol::SandboxMode::DangerFullAccess)
             } else if file_system_policy.can_write_path_with_cwd(cwd, cwd) {
-                Some(codex_app_server_protocol::SandboxMode::WorkspaceWrite)
+                Some(motyga_app_server_protocol::SandboxMode::WorkspaceWrite)
             } else {
-                Some(codex_app_server_protocol::SandboxMode::ReadOnly)
+                Some(motyga_app_server_protocol::SandboxMode::ReadOnly)
             }
         }
     }
@@ -1356,7 +1356,7 @@ fn turn_permissions_overrides(
     permissions_override: TurnPermissionsOverride,
     cwd: &std::path::Path,
 ) -> (
-    Option<codex_app_server_protocol::SandboxPolicy>,
+    Option<motyga_app_server_protocol::SandboxPolicy>,
     Option<String>,
 ) {
     match permissions_override {
@@ -1670,7 +1670,7 @@ async fn thread_session_state_from_thread_fork_response(
 }
 
 fn display_permission_profile_from_thread_response(
-    sandbox: &codex_app_server_protocol::SandboxPolicy,
+    sandbox: &motyga_app_server_protocol::SandboxPolicy,
     cwd: &std::path::Path,
     config: &Config,
     thread_params_mode: ThreadParamsMode,
@@ -1696,13 +1696,13 @@ async fn thread_session_state_from_thread_response(
     model_provider_id: String,
     service_tier: Option<String>,
     approval_policy: AskForApproval,
-    approvals_reviewer: codex_protocol::config_types::ApprovalsReviewer,
+    approvals_reviewer: motyga_protocol::config_types::ApprovalsReviewer,
     permission_profile: PermissionProfile,
     active_permission_profile: Option<ActivePermissionProfile>,
     cwd: AbsolutePathBuf,
     runtime_workspace_roots: Vec<AbsolutePathBuf>,
     instruction_source_paths: Vec<PathUri>,
-    reasoning_effort: Option<codex_protocol::openai_models::ReasoningEffort>,
+    reasoning_effort: Option<motyga_protocol::openai_models::ReasoningEffort>,
     config: &Config,
 ) -> Result<ThreadSessionState, String> {
     let thread_id = ThreadId::from_string(thread_id)
@@ -1713,8 +1713,8 @@ async fn thread_session_state_from_thread_response(
         .transpose()
         .map_err(|err| format!("forked_from_id is invalid: {err}"))?;
     let history_config =
-        codex_message_history::HistoryConfig::new(config.codex_home.clone(), &config.history);
-    let (log_id, entry_count) = codex_message_history::history_metadata(&history_config).await;
+        motyga_message_history::HistoryConfig::new(config.motyga_home.clone(), &config.history);
+    let (log_id, entry_count) = motyga_message_history::history_metadata(&history_config).await;
     Ok(ThreadSessionState {
         thread_id,
         forked_from_id,
@@ -1767,33 +1767,33 @@ mod tests {
     use super::*;
     use crate::legacy_core::config::ConfigBuilder;
     use crate::legacy_core::config::ConfigOverrides;
-    use codex_app_server_protocol::ThreadStatus;
-    use codex_app_server_protocol::Turn;
-    use codex_app_server_protocol::TurnStatus;
-    use codex_features::Feature;
-    use codex_protocol::config_types::Personality;
-    use codex_protocol::config_types::ReasoningSummary;
-    use codex_protocol::config_types::ServiceTier;
-    use codex_protocol::config_types::Verbosity;
-    use codex_protocol::config_types::WebSearchMode;
-    use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
-    use codex_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
-    use codex_protocol::models::ManagedFileSystemPermissions;
-    use codex_protocol::openai_models::ReasoningEffort;
-    use codex_protocol::permissions::FileSystemAccessMode;
-    use codex_protocol::permissions::FileSystemPath;
-    use codex_protocol::permissions::FileSystemSandboxEntry;
-    use codex_protocol::permissions::FileSystemSpecialPath;
-    use codex_protocol::permissions::NetworkSandboxPolicy;
-    use codex_utils_absolute_path::test_support::PathBufExt;
-    use codex_utils_absolute_path::test_support::test_path_buf;
-    use codex_utils_path_uri::LegacyAppPathString;
+    use motyga_app_server_protocol::ThreadStatus;
+    use motyga_app_server_protocol::Turn;
+    use motyga_app_server_protocol::TurnStatus;
+    use motyga_features::Feature;
+    use motyga_protocol::config_types::Personality;
+    use motyga_protocol::config_types::ReasoningSummary;
+    use motyga_protocol::config_types::ServiceTier;
+    use motyga_protocol::config_types::Verbosity;
+    use motyga_protocol::config_types::WebSearchMode;
+    use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_READ_ONLY;
+    use motyga_protocol::models::BUILT_IN_PERMISSION_PROFILE_WORKSPACE;
+    use motyga_protocol::models::ManagedFileSystemPermissions;
+    use motyga_protocol::openai_models::ReasoningEffort;
+    use motyga_protocol::permissions::FileSystemAccessMode;
+    use motyga_protocol::permissions::FileSystemPath;
+    use motyga_protocol::permissions::FileSystemSandboxEntry;
+    use motyga_protocol::permissions::FileSystemSpecialPath;
+    use motyga_protocol::permissions::NetworkSandboxPolicy;
+    use motyga_utils_absolute_path::test_support::PathBufExt;
+    use motyga_utils_absolute_path::test_support::test_path_buf;
+    use motyga_utils_path_uri::LegacyAppPathString;
     use pretty_assertions::assert_eq;
     use tempfile::TempDir;
 
     async fn build_config(temp_dir: &TempDir) -> Config {
         ConfigBuilder::default()
-            .codex_home(temp_dir.path().to_path_buf())
+            .motyga_home(temp_dir.path().to_path_buf())
             .build()
             .await
             .expect("config should build")
@@ -1803,7 +1803,7 @@ mod tests {
         RateLimitSnapshot {
             limit_id: Some(limit_id.to_string()),
             limit_name: None,
-            primary: Some(codex_app_server_protocol::RateLimitWindow {
+            primary: Some(motyga_app_server_protocol::RateLimitWindow {
                 used_percent: 0,
                 window_duration_mins: Some(10_080),
                 resets_at: None,
@@ -1819,9 +1819,9 @@ mod tests {
     #[test]
     fn app_server_rate_limit_snapshots_deduplicates_top_level_limit_from_map() {
         let response = GetAccountRateLimitsResponse {
-            rate_limits: rate_limit_snapshot("codex"),
+            rate_limits: rate_limit_snapshot("motyga"),
             rate_limits_by_limit_id: Some(HashMap::from([
-                ("codex".to_string(), rate_limit_snapshot("codex")),
+                ("motyga".to_string(), rate_limit_snapshot("motyga")),
                 ("other".to_string(), rate_limit_snapshot("other")),
             ])),
             rate_limit_reset_credits: None,
@@ -1834,7 +1834,7 @@ mod tests {
                 .iter()
                 .map(|snapshot| snapshot.limit_id.as_deref())
                 .collect::<Vec<_>>(),
-            vec![Some("codex"), Some("other")]
+            vec![Some("motyga"), Some("other")]
         );
     }
 
@@ -1873,7 +1873,7 @@ mod tests {
     async fn thread_start_params_include_cwd_for_embedded_sessions() {
         let temp_dir = tempfile::tempdir().expect("tempdir");
         let config = ConfigBuilder::default()
-            .codex_home(temp_dir.path().to_path_buf())
+            .motyga_home(temp_dir.path().to_path_buf())
             .harness_overrides(ConfigOverrides {
                 default_permissions: Some(BUILT_IN_PERMISSION_PROFILE_WORKSPACE.to_string()),
                 ..ConfigOverrides::default()
@@ -1978,7 +1978,7 @@ mod tests {
 
         assert_eq!(
             sandbox_policy,
-            Some(codex_app_server_protocol::SandboxPolicy::ReadOnly {
+            Some(motyga_app_server_protocol::SandboxPolicy::ReadOnly {
                 network_access: false
             })
         );
@@ -2084,7 +2084,7 @@ mod tests {
 
         assert_eq!(
             sandbox_mode_from_permission_profile(&permission_profile, cwd.as_path()),
-            Some(codex_app_server_protocol::SandboxMode::ReadOnly)
+            Some(motyga_app_server_protocol::SandboxMode::ReadOnly)
         );
     }
 
@@ -2114,7 +2114,7 @@ mod tests {
 
         assert_eq!(
             sandbox_mode_from_permission_profile(&permission_profile, cwd.as_path()),
-            Some(codex_app_server_protocol::SandboxMode::WorkspaceWrite)
+            Some(motyga_app_server_protocol::SandboxMode::WorkspaceWrite)
         );
     }
 
@@ -2341,7 +2341,7 @@ mod tests {
         let forked_from_id = ThreadId::new();
         let read_only_profile = PermissionProfile::read_only();
         let response = ThreadResumeResponse {
-            thread: codex_app_server_protocol::Thread {
+            thread: motyga_app_server_protocol::Thread {
                 id: thread_id.to_string(),
                 extra: None,
                 session_id: ThreadId::new().to_string(),
@@ -2358,7 +2358,7 @@ mod tests {
                 path: None,
                 cwd: test_path_buf("/tmp/project").abs(),
                 cli_version: "0.0.0".to_string(),
-                source: codex_app_server_protocol::SessionSource::Cli,
+                source: motyga_app_server_protocol::SessionSource::Cli,
                 thread_source: None,
                 agent_nickname: None,
                 agent_role: None,
@@ -2366,17 +2366,17 @@ mod tests {
                 name: None,
                 turns: vec![Turn {
                     id: "turn-1".to_string(),
-                    items_view: codex_app_server_protocol::TurnItemsView::Full,
+                    items_view: motyga_app_server_protocol::TurnItemsView::Full,
                     items: vec![
-                        codex_app_server_protocol::ThreadItem::UserMessage {
+                        motyga_app_server_protocol::ThreadItem::UserMessage {
                             id: "user-1".to_string(),
                             client_id: None,
-                            content: vec![codex_app_server_protocol::UserInput::Text {
+                            content: vec![motyga_app_server_protocol::UserInput::Text {
                                 text: "hello from history".to_string(),
                                 text_elements: Vec::new(),
                             }],
                         },
-                        codex_app_server_protocol::ThreadItem::AgentMessage {
+                        motyga_app_server_protocol::ThreadItem::AgentMessage {
                             id: "assistant-1".to_string(),
                             text: "assistant reply".to_string(),
                             phase: None,
@@ -2401,8 +2401,8 @@ mod tests {
             instruction_sources: vec![LegacyAppPathString::from_abs_path(
                 &test_path_buf("/tmp/project/AGENTS.md").abs(),
             )],
-            approval_policy: codex_app_server_protocol::AskForApproval::Never,
-            approvals_reviewer: codex_app_server_protocol::ApprovalsReviewer::User,
+            approval_policy: motyga_app_server_protocol::AskForApproval::Never,
+            approvals_reviewer: motyga_app_server_protocol::ApprovalsReviewer::User,
             sandbox: read_only_profile
                 .to_legacy_sandbox_policy(test_path_buf("/tmp/project").as_path())
                 .expect("read-only profile must be legacy-compatible")
@@ -2434,7 +2434,7 @@ mod tests {
         assert_eq!(started.turns[0], response.thread.turns[0]);
 
         let embedded_config = ConfigBuilder::default()
-            .codex_home(temp_dir.path().join("embedded-codex-home"))
+            .motyga_home(temp_dir.path().join("embedded-motyga-home"))
             .harness_overrides(ConfigOverrides {
                 default_permissions: Some(BUILT_IN_PERMISSION_PROFILE_WORKSPACE.to_string()),
                 ..ConfigOverrides::default()
@@ -2488,7 +2488,7 @@ mod tests {
     async fn embedded_thread_response_uses_local_config_profile() {
         let temp_dir = tempfile::tempdir().expect("tempdir");
         let config = ConfigBuilder::default()
-            .codex_home(temp_dir.path().to_path_buf())
+            .motyga_home(temp_dir.path().to_path_buf())
             .harness_overrides(ConfigOverrides {
                 default_permissions: Some(BUILT_IN_PERMISSION_PROFILE_READ_ONLY.to_string()),
                 ..ConfigOverrides::default()
@@ -2500,7 +2500,7 @@ mod tests {
 
         assert_eq!(
             display_permission_profile_from_thread_response(
-                &codex_app_server_protocol::SandboxPolicy::DangerFullAccess,
+                &motyga_app_server_protocol::SandboxPolicy::DangerFullAccess,
                 cwd.as_path(),
                 &config,
                 ThreadParamsMode::Embedded,
@@ -2516,12 +2516,12 @@ mod tests {
         let thread_id = ThreadId::new();
 
         let history_config =
-            codex_message_history::HistoryConfig::new(config.codex_home.clone(), &config.history);
+            motyga_message_history::HistoryConfig::new(config.motyga_home.clone(), &config.history);
 
-        codex_message_history::append_entry("older", &thread_id, &history_config)
+        motyga_message_history::append_entry("older", &thread_id, &history_config)
             .await
             .expect("history append should succeed");
-        codex_message_history::append_entry("newer", &thread_id, &history_config)
+        motyga_message_history::append_entry("newer", &thread_id, &history_config)
             .await
             .expect("history append should succeed");
 
@@ -2534,7 +2534,7 @@ mod tests {
             "openai".to_string(),
             /*service_tier*/ None,
             AskForApproval::Never,
-            codex_protocol::config_types::ApprovalsReviewer::User,
+            motyga_protocol::config_types::ApprovalsReviewer::User,
             PermissionProfile::read_only(),
             /*active_permission_profile*/ None,
             test_path_buf("/tmp/project").abs(),
@@ -2569,7 +2569,7 @@ mod tests {
             "openai".to_string(),
             /*service_tier*/ None,
             AskForApproval::Never,
-            codex_protocol::config_types::ApprovalsReviewer::User,
+            motyga_protocol::config_types::ApprovalsReviewer::User,
             PermissionProfile::read_only(),
             /*active_permission_profile*/ None,
             test_path_buf("/tmp/project").abs(),
@@ -2588,7 +2588,7 @@ mod tests {
     fn status_account_display_from_auth_mode_uses_remapped_plan_labels() {
         let business = status_account_display_from_auth_mode(
             Some(AuthMode::Chatgpt),
-            Some(codex_protocol::account::PlanType::EnterpriseCbpUsageBased),
+            Some(motyga_protocol::account::PlanType::EnterpriseCbpUsageBased),
         );
         assert!(matches!(
             business,
@@ -2600,7 +2600,7 @@ mod tests {
 
         let team = status_account_display_from_auth_mode(
             Some(AuthMode::Chatgpt),
-            Some(codex_protocol::account::PlanType::SelfServeBusinessUsageBased),
+            Some(motyga_protocol::account::PlanType::SelfServeBusinessUsageBased),
         );
         assert!(matches!(
             team,

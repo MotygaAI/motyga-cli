@@ -10,10 +10,10 @@ use std::time::Instant;
 
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_api::SharedAuthProvider;
-use codex_config::types::AuthKeyringBackendKind;
-use codex_config::types::McpServerEnvVar;
-use codex_exec_server::HttpClient;
+use motyga_api::SharedAuthProvider;
+use motyga_config::types::AuthKeyringBackendKind;
+use motyga_config::types::McpServerEnvVar;
+use motyga_exec_server::HttpClient;
 use futures::FutureExt;
 use futures::future::BoxFuture;
 use oauth2::TokenResponse;
@@ -73,7 +73,7 @@ use crate::stdio_server_launcher::StdioServerLauncher;
 use crate::stdio_server_launcher::StdioServerProcessHandle;
 use crate::stdio_server_launcher::StdioServerTransport;
 use crate::utils::build_default_headers;
-use codex_config::types::OAuthCredentialsStoreMode;
+use motyga_config::types::OAuthCredentialsStoreMode;
 
 #[path = "streamable_http_retry.rs"]
 mod streamable_http_retry;

@@ -7,18 +7,18 @@ use crate::environment_selection::TurnEnvironmentSnapshot;
 use crate::shell_snapshot::ShellSnapshot;
 use crate::skills::SkillError;
 use crate::state::ActiveTurn;
-use codex_extension_api::ExtensionDataInit;
-use codex_login::auth::AgentIdentityAuthPolicy;
-use codex_protocol::SessionId;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
-use codex_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
-use codex_protocol::config_types::ServiceTier;
-use codex_protocol::permissions::FileSystemPath;
-use codex_protocol::permissions::FileSystemSpecialPath;
-use codex_protocol::protocol::MultiAgentVersion;
-use codex_protocol::protocol::ThreadHistoryMode;
-use codex_protocol::protocol::ThreadSource;
-use codex_protocol::protocol::TurnEnvironmentSelections;
+use motyga_extension_api::ExtensionDataInit;
+use motyga_login::auth::AgentIdentityAuthPolicy;
+use motyga_protocol::SessionId;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
+use motyga_protocol::config_types::ServiceTier;
+use motyga_protocol::permissions::FileSystemPath;
+use motyga_protocol::permissions::FileSystemSpecialPath;
+use motyga_protocol::protocol::MultiAgentVersion;
+use motyga_protocol::protocol::ThreadHistoryMode;
+use motyga_protocol::protocol::ThreadSource;
+use motyga_protocol::protocol::TurnEnvironmentSelections;
 use std::sync::OnceLock;
 use tokio::sync::Semaphore;
 
@@ -84,8 +84,8 @@ pub(crate) struct SessionConfiguration {
     /// Thread-scoped runtime workspace roots for materializing symbolic
     /// workspace permissions at session runtime.
     pub(super) workspace_roots: Vec<AbsolutePathBuf>,
-    /// Directory containing all Codex state for this session.
-    pub(super) codex_home: AbsolutePathBuf,
+    /// Directory containing all Motyga state for this session.
+    pub(super) motyga_home: AbsolutePathBuf,
     /// Optional user-facing name for the thread, updated during the session.
     pub(super) thread_name: Option<String>,
 
@@ -120,8 +120,8 @@ impl SessionConfiguration {
         &self.environments.environments
     }
 
-    pub(crate) fn codex_home(&self) -> &AbsolutePathBuf {
-        &self.codex_home
+    pub(crate) fn motyga_home(&self) -> &AbsolutePathBuf {
+        &self.motyga_home
     }
 
     pub(super) fn permission_profile_state(&self) -> &PermissionProfileState {
@@ -161,7 +161,7 @@ impl SessionConfiguration {
 
     pub(super) fn sandbox_policy(&self) -> SandboxPolicy {
         let permission_profile = self.permission_profile();
-        codex_sandboxing::compatibility_sandbox_policy_for_permission_profile(
+        motyga_sandboxing::compatibility_sandbox_policy_for_permission_profile(
             &permission_profile,
             self.cwd(),
         )
@@ -316,7 +316,7 @@ impl SessionConfiguration {
                         allowed: format!(
                             "configured permission profile with valid network policy ({err})"
                         ),
-                        requirement_source: codex_config::RequirementSource::Unknown,
+                        requirement_source: motyga_config::RequirementSource::Unknown,
                     })?;
                 config
                     .permissions
@@ -481,7 +481,7 @@ impl Session {
     pub(crate) async fn new(
         mut session_configuration: SessionConfiguration,
         config: Arc<Config>,
-        user_instructions: Option<codex_extension_api::UserInstructions>,
+        user_instructions: Option<motyga_extension_api::UserInstructions>,
         installation_id: String,
         auth_manager: Arc<AuthManager>,
         models_manager: SharedModelsManager,
@@ -493,8 +493,8 @@ impl Session {
         skills_service: Arc<SkillsService>,
         plugins_manager: Arc<PluginsManager>,
         mcp_manager: Arc<McpManager>,
-        code_mode_session_provider: Arc<dyn codex_code_mode::CodeModeSessionProvider>,
-        extensions: Arc<codex_extension_api::ExtensionRegistry<crate::config::Config>>,
+        code_mode_session_provider: Arc<dyn motyga_code_mode::CodeModeSessionProvider>,
+        extensions: Arc<motyga_extension_api::ExtensionRegistry<crate::config::Config>>,
         mut thread_extension_init: ExtensionDataInit,
         supports_openai_form_elicitation: bool,
         agent_control: AgentControl,
@@ -573,7 +573,7 @@ impl Session {
                 }
             };
         let mcp_thread_init = thread_extension_init.clone();
-        let thread_extension_data = codex_extension_api::ExtensionData::new_with_init(
+        let thread_extension_data = motyga_extension_api::ExtensionData::new_with_init(
             thread_id.to_string(),
             thread_extension_init,
         );
@@ -687,8 +687,8 @@ impl Session {
                     /*available_environment_ids*/ &[],
                 )
                 .await;
-            let mcp_servers = codex_mcp::effective_mcp_servers(&mcp_config, auth.as_ref());
-            let tool_plugin_provenance = codex_mcp::tool_plugin_provenance(&mcp_config);
+            let mcp_servers = motyga_mcp::effective_mcp_servers(&mcp_config, auth.as_ref());
+            let tool_plugin_provenance = motyga_mcp::tool_plugin_provenance(&mcp_config);
             let auth_statuses = compute_auth_statuses(
                 mcp_servers.iter(),
                 config_for_mcp.mcp_oauth_credentials_store_mode,
@@ -731,7 +731,7 @@ impl Session {
             let trace_agent_path = session_configuration
                 .session_source
                 .get_agent_path()
-                .unwrap_or_else(codex_protocol::AgentPath::root);
+                .unwrap_or_else(motyga_protocol::AgentPath::root);
             let trace_task_name =
                 (!trace_agent_path.is_root()).then(|| trace_agent_path.name().to_string());
             let trace_metadata = ThreadStartedTraceMetadata {
@@ -779,7 +779,7 @@ impl Session {
                     }),
                 });
             }
-            let config_path = config.codex_home.join(CONFIG_TOML_FILE);
+            let config_path = config.motyga_home.join(CONFIG_TOML_FILE);
             if let Some(event) = unstable_features_warning_event(
                 config
                     .config_layer_stack
@@ -793,15 +793,15 @@ impl Session {
                 post_session_configured_events.push(event);
             }
             let auth = auth.as_ref();
-            let auth_mode = auth.map(CodexAuth::auth_mode).map(TelemetryAuthMode::from);
-            let account_id = auth.and_then(CodexAuth::get_account_id);
-            let account_email = auth.and_then(CodexAuth::get_account_email);
+            let auth_mode = auth.map(MotygaAuth::auth_mode).map(TelemetryAuthMode::from);
+            let account_id = auth.and_then(MotygaAuth::get_account_id);
+            let account_email = auth.and_then(MotygaAuth::get_account_email);
             let originator = session_configuration.originator.clone();
             let terminal_type = user_agent();
             let session_model = session_configuration.collaboration_mode.model().to_string();
             let auth_env_telemetry = collect_auth_env_telemetry(
                 &session_configuration.provider,
-                auth_manager.codex_api_key_env_enabled(),
+                auth_manager.motyga_api_key_env_enabled(),
             );
             let mut session_telemetry = SessionTelemetry::new(
                 thread_id,
@@ -882,7 +882,7 @@ impl Session {
             };
             let shell_snapshot = if config.features.enabled(Feature::ShellSnapshot) {
                 ShellSnapshot::new(
-                    config.codex_home.clone(),
+                    config.motyga_home.clone(),
                     thread_id,
                     session_telemetry.clone(),
                     state_db_ctx.clone(),
@@ -1026,12 +1026,12 @@ impl Session {
                 ),
             ));
             let session_extension_data =
-                codex_extension_api::ExtensionData::new(session_id.to_string());
+                motyga_extension_api::ExtensionData::new(session_id.to_string());
             session_extension_data.insert(McpResourceClient::new(Arc::clone(
                 &mcp_connection_manager,
             )));
             for contributor in extensions.thread_lifecycle_contributors() {
-                contributor.on_thread_start(codex_extension_api::ThreadStartInput {
+                contributor.on_thread_start(motyga_extension_api::ThreadStartInput {
                     config: config.as_ref(),
                     session_source: &session_configuration.session_source,
                     persistent_thread_state_available: state_db_ctx.is_some(),
@@ -1204,9 +1204,9 @@ impl Session {
                 mcp_startup_cancellation_token,
                 session_configuration.permission_profile(),
                 mcp_runtime_context.clone(),
-                config.codex_home.to_path_buf(),
-                sess.services.mcp_manager.codex_apps_tools_cache(),
-                codex_apps_tools_cache_key(auth),
+                config.motyga_home.to_path_buf(),
+                sess.services.mcp_manager.motyga_apps_tools_cache(),
+                motyga_apps_tools_cache_key(auth),
                 config.prefix_mcp_tool_names(),
                 mcp_config.client_elicitation_capability.clone(),
                 sess.services
@@ -1215,7 +1215,7 @@ impl Session {
                 tool_plugin_provenance,
                 auth,
                 Some(sess.mcp_elicitation_reviewer()),
-                codex_mcp::ElicitationRequestRouter::default(),
+                motyga_mcp::ElicitationRequestRouter::default(),
             )
             .instrument(info_span!(
                 "session_init.mcp_manager_init",
@@ -1233,11 +1233,11 @@ impl Session {
             sess.schedule_startup_prewarm(session_configuration.base_instructions.clone())
                 .await;
             let session_start_source = match &initial_history {
-                InitialHistory::Resumed(_) => codex_hooks::SessionStartSource::Resume,
+                InitialHistory::Resumed(_) => motyga_hooks::SessionStartSource::Resume,
                 InitialHistory::New | InitialHistory::Forked(_) => {
-                    codex_hooks::SessionStartSource::Startup
+                    motyga_hooks::SessionStartSource::Startup
                 }
-                InitialHistory::Cleared => codex_hooks::SessionStartSource::Clear,
+                InitialHistory::Cleared => motyga_hooks::SessionStartSource::Clear,
             };
 
             // record_initial_history can emit events. We record only after the SessionConfiguredEvent is emitted.

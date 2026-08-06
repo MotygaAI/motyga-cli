@@ -1,22 +1,22 @@
-# codex-exec-server
+# motyga-exec-server
 
-`codex-exec-server` is the library backing `codex exec-server`, a small
+`motyga-exec-server` is the library backing `motyga exec-server`, a small
 JSON-RPC server for spawning and controlling subprocesses through
-`codex-utils-pty`.
+`motyga-utils-pty`.
 
 It provides:
 
-- a CLI entrypoint: `codex exec-server`
+- a CLI entrypoint: `motyga exec-server`
 - a Rust client: `ExecServerClient`
 - a small protocol module with shared request/response types
 
 This crate owns the transport, protocol, and filesystem/process handlers. The
-top-level `codex` binary owns hidden helper dispatch for sandboxed
-filesystem operations and `codex-linux-sandbox`.
+top-level `motyga` binary owns hidden helper dispatch for sandboxed
+filesystem operations and `motyga-linux-sandbox`.
 
 ## Transport
 
-The server speaks the exec-specific `codex-exec-server-protocol` message
+The server speaks the exec-specific `motyga-exec-server-protocol` message
 envelope on the wire.
 
 The CLI entrypoint supports:
@@ -28,18 +28,18 @@ Remote mode registers the local exec-server with the environment registry,
 then reconnects to the service-provided rendezvous websocket as the environment.
 Remote communication uses the Noise relay contract; the registry and harness
 must support it.
-It uses the standard Codex ChatGPT sign-in state; run `codex login` first when
+It uses the standard Motyga ChatGPT sign-in state; run `motyga login` first when
 remote registration needs authentication. Containerized callers that receive an
-Agent Identity JWT in `CODEX_ACCESS_TOKEN` can opt into that auth path with
-`--use-agent-identity-auth`; Codex then registers an Agent task and sends the
+Agent Identity JWT in `MOTYGA_ACCESS_TOKEN` can opt into that auth path with
+`--use-agent-identity-auth`; Motyga then registers an Agent task and sends the
 derived AgentAssertion headers on the registry request.
 
-Alternatively, API users can instead use `CODEX_API_KEY`;
-Codex sends it as a bearer token on the registration request. For example:
+Alternatively, API users can instead use `MOTYGA_API_KEY`;
+Motyga sends it as a bearer token on the registration request. For example:
 
 ```sh
-CODEX_API_KEY="$OPENAI_API_KEY" \
-codex exec-server \
+MOTYGA_API_KEY="$OPENAI_API_KEY" \
+motyga exec-server \
   --remote ... \
   --environment-id "$ENVIRONMENT_ID"
 ```
@@ -52,8 +52,8 @@ Wire framing:
 ## Remote Relay Message Format
 
 In remote mode, the harness and environment communicate through rendezvous using
-`codex.exec_server.relay.v1.RelayMessageFrame`; the checked-in schema is in
-`src/proto/codex.exec_server.relay.v1.proto`. The relay frame carries stream
+`motyga.exec_server.relay.v1.RelayMessageFrame`; the checked-in schema is in
+`src/proto/motyga.exec_server.relay.v1.proto`. The relay frame carries stream
 identity plus endpoint-owned reliability metadata:
 
 ```text
@@ -177,7 +177,7 @@ Field definitions:
 - `env`: environment variables passed to the child process.
 - `tty`: when `true`, spawn a PTY-backed interactive process.
 - `pipeStdin`: when `true`, keep non-PTY stdin writable via `process/write`.
-- `arg0`: optional argv0 override forwarded to `codex-utils-pty`.
+- `arg0`: optional argv0 override forwarded to `motyga-utils-pty`.
 
 Response:
 
@@ -363,7 +363,7 @@ callers must convert them to `file:` URIs before sending requests:
 
 Each filesystem request accepts an optional `sandbox` object. When `sandbox`
 contains a `ReadOnly` or `WorkspaceWrite` policy, the operation runs in a
-hidden helper process launched from the top-level `codex` executable and
+hidden helper process launched from the top-level `motyga` executable and
 prepared through the shared sandbox transform path. Helper requests and
 responses are passed over stdin/stdout.
 
@@ -401,9 +401,9 @@ The crate exports:
   registration mode
 
 Callers must pass `ExecServerRuntimePaths` to `run_main()`. The top-level
-`codex exec-server` command builds these paths from the `codex` arg0 dispatch
+`motyga exec-server` command builds these paths from the `motyga` arg0 dispatch
 state. `RemoteEnvironmentConfig::new(...)` also takes the auth provider that
-remote registration should use; the CLI builds that provider from Codex auth
+remote registration should use; the CLI builds that provider from Motyga auth
 state before starting remote mode.
 
 ## Example session

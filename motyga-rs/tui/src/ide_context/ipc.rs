@@ -20,7 +20,7 @@ const IDE_CONTEXT_REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 #[cfg(any(unix, windows))]
 const MAX_IPC_FRAME_BYTES: usize = 256 * 1024 * 1024;
 #[cfg(any(unix, windows))]
-const TUI_SOURCE_CLIENT_ID: &str = "codex-tui";
+const TUI_SOURCE_CLIENT_ID: &str = "motyga-tui";
 #[cfg(any(unix, windows))]
 const OPEN_IDE_HINT: &str =
     "Open this project in VS Code or Cursor with the Motyga extension active.";
@@ -156,13 +156,13 @@ pub(crate) fn fetch_ide_context(_workspace_root: &Path) -> Result<IdeContext, Id
 fn default_ipc_socket_path() -> PathBuf {
     let uid = unsafe { libc::getuid() };
     std::env::temp_dir()
-        .join("codex-ipc")
+        .join("motyga-ipc")
         .join(format!("ipc-{uid}.sock"))
 }
 
 #[cfg(windows)]
 fn default_ipc_socket_path() -> PathBuf {
-    PathBuf::from(r"\\.\pipe\codex-ipc")
+    PathBuf::from(r"\\.\pipe\motyga-ipc")
 }
 
 #[cfg(not(any(unix, windows)))]
@@ -888,7 +888,7 @@ mod tests {
         let tempdir = tempfile::tempdir().expect("tempdir");
         std::fs::set_permissions(tempdir.path(), std::fs::Permissions::from_mode(0o777))
             .expect("set unsafe permissions");
-        let socket_path = tempdir.path().join("codex-ipc.sock");
+        let socket_path = tempdir.path().join("motyga-ipc.sock");
         let _listener = UnixListener::bind(&socket_path).expect("bind socket");
 
         let err = validate_unix_socket_path(&socket_path)
@@ -904,7 +904,7 @@ mod tests {
         use std::thread;
 
         let tempdir = tempfile::tempdir().expect("tempdir");
-        let socket_path = tempdir.path().join("codex-ipc.sock");
+        let socket_path = tempdir.path().join("motyga-ipc.sock");
         let listener = UnixListener::bind(&socket_path).expect("bind socket");
 
         let server = thread::spawn(move || {

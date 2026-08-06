@@ -1,10 +1,10 @@
-pub use codex_api::ResponseEvent;
-use codex_protocol::error::Result;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::FunctionCallOutputContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_tools::ToolSpec;
+pub use motyga_api::ResponseEvent;
+use motyga_protocol::error::Result;
+use motyga_protocol::models::BaseInstructions;
+use motyga_protocol::models::ContentItem;
+use motyga_protocol::models::FunctionCallOutputContentItem;
+use motyga_protocol::models::ResponseItem;
+use motyga_tools::ToolSpec;
 use futures::Stream;
 use serde_json::Value;
 use std::pin::Pin;

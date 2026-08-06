@@ -1,8 +1,8 @@
 use anyhow::Result;
-use codex_features::Feature;
-use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
-use codex_protocol::protocol::McpServerRefreshConfig;
-use codex_protocol::protocol::Op;
+use motyga_features::Feature;
+use motyga_mcp::MOTYGA_APPS_MCP_SERVER_NAME;
+use motyga_protocol::protocol::McpServerRefreshConfig;
+use motyga_protocol::protocol::Op;
 use core_test_support::apps_test_server::AppsTestServer;
 use core_test_support::apps_test_server::SEARCH_CALENDAR_CREATE_TOOL;
 use core_test_support::apps_test_server::SEARCH_CALENDAR_NAMESPACE;
@@ -78,7 +78,7 @@ async fn code_mode_only_exposes_direct_model_only_mcp_namespaces() -> Result<()>
     });
     assert!(
         exec_description.is_some_and(|description| {
-            !description.contains("mcp__codex_apps__calendar_create_event(args:")
+            !description.contains("mcp__motyga_apps__calendar_create_event(args:")
         }),
         "direct-model-only MCP namespace should not be available through exec: {body}"
     );
@@ -126,7 +126,7 @@ async fn later_follow_up_uses_background_recovered_apps_after_mid_thread_startup
                 vec![SEARCH_CALENDAR_NAMESPACE.to_string()];
         });
     let test = builder.build(&server).await?;
-    wait_for_mcp_server(&test.codex, CODEX_APPS_MCP_SERVER_NAME).await?;
+    wait_for_mcp_server(&test.motyga, MOTYGA_APPS_MCP_SERVER_NAME).await?;
     test.submit_turn("use Calendar before refreshing MCP")
         .await?;
 
@@ -141,11 +141,11 @@ async fn later_follow_up_uses_background_recovered_apps_after_mid_thread_startup
         "Calendar should be available before the MCP refresh: {initial_request}"
     );
 
-    tokio::fs::remove_dir_all(test.codex_home_path().join("cache/codex_apps_tools")).await?;
+    tokio::fs::remove_dir_all(test.motyga_home_path().join("cache/motyga_apps_tools")).await?;
     startup_control.fail_next_initialize_attempts(/*attempts*/ 1);
-    let runtime_mcp_config = test.codex.runtime_mcp_config(&test.config).await;
+    let runtime_mcp_config = test.motyga.runtime_mcp_config(&test.config).await;
     let refresh_config = McpServerRefreshConfig {
-        mcp_servers: serde_json::to_value(codex_mcp::configured_mcp_servers(&runtime_mcp_config))?,
+        mcp_servers: serde_json::to_value(motyga_mcp::configured_mcp_servers(&runtime_mcp_config))?,
         mcp_oauth_credentials_store_mode: serde_json::to_value(
             runtime_mcp_config.mcp_oauth_credentials_store_mode,
         )?,
@@ -153,7 +153,7 @@ async fn later_follow_up_uses_background_recovered_apps_after_mid_thread_startup
             runtime_mcp_config.auth_keyring_backend_kind,
         )?,
     };
-    test.codex
+    test.motyga
         .submit(Op::RefreshMcpServers {
             config: refresh_config,
         })

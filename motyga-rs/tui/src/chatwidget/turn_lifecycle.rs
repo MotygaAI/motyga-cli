@@ -3,12 +3,12 @@
 use std::collections::HashSet;
 use std::time::Instant;
 
-use codex_utils_sleep_inhibitor::SleepInhibitor;
+use motyga_utils_sleep_inhibitor::SleepInhibitor;
 
 #[derive(Debug)]
 pub(super) struct TurnLifecycleState {
     pub(super) sleep_inhibitor: SleepInhibitor,
-    /// Tracks whether codex-core currently considers an agent turn to be in progress.
+    /// Tracks whether motyga-core currently considers an agent turn to be in progress.
     pub(super) agent_turn_running: bool,
     pub(super) last_turn_id: Option<String>,
     pub(super) budget_limited_turn_ids: HashSet<String>,

@@ -121,7 +121,7 @@ run_selected_libtest() {
     exit 0
   fi
 
-  local skip_filters="${CODEX_BAZEL_TEST_SKIP_FILTERS:-}"
+  local skip_filters="${MOTYGA_BAZEL_TEST_SKIP_FILTERS:-}"
 
   local shard_tests=()
   local test_name
@@ -158,7 +158,7 @@ __WORKSPACE_ROOT_SETUP__
 
 TOTAL_SHARDS="${RULES_RUST_TEST_TOTAL_SHARDS:-${TEST_TOTAL_SHARDS:-}}"
 SHARD_INDEX="${RULES_RUST_TEST_SHARD_INDEX:-${TEST_SHARD_INDEX:-}}"
-if [[ -n "${CODEX_BAZEL_TEST_SKIP_FILTERS:-}" || ( -n "${TOTAL_SHARDS}" && "${TOTAL_SHARDS}" != "0" ) ]]; then
+if [[ -n "${MOTYGA_BAZEL_TEST_SKIP_FILTERS:-}" || ( -n "${TOTAL_SHARDS}" && "${TOTAL_SHARDS}" != "0" ) ]]; then
   run_selected_libtest
 fi
 

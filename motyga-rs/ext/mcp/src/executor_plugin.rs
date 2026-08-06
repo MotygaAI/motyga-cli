@@ -1,13 +1,13 @@
-use codex_connectors_extension::ExecutorPluginConnectorProvider;
-use codex_core::config::Config;
-use codex_core_plugins::ExecutorPluginProvider;
-use codex_exec_server::EnvironmentManager;
-use codex_extension_api::ExtensionFuture;
-use codex_extension_api::McpServerContribution;
-use codex_extension_api::McpServerContributionContext;
-use codex_extension_api::McpServerContributor;
-use codex_protocol::capabilities::CapabilityRootLocation;
-use codex_protocol::capabilities::SelectedCapabilityRoot;
+use motyga_connectors_extension::ExecutorPluginConnectorProvider;
+use motyga_core::config::Config;
+use motyga_core_plugins::ExecutorPluginProvider;
+use motyga_exec_server::EnvironmentManager;
+use motyga_extension_api::ExtensionFuture;
+use motyga_extension_api::McpServerContribution;
+use motyga_extension_api::McpServerContributionContext;
+use motyga_extension_api::McpServerContributor;
+use motyga_protocol::capabilities::CapabilityRootLocation;
+use motyga_protocol::capabilities::SelectedCapabilityRoot;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -24,7 +24,7 @@ mod provider;
 struct SelectedPluginMetadata {
     plugin_id: String,
     plugin_display_name: String,
-    servers: Vec<(String, codex_config::McpServerConfig)>,
+    servers: Vec<(String, motyga_config::McpServerConfig)>,
     connector_ids: Vec<String>,
 }
 

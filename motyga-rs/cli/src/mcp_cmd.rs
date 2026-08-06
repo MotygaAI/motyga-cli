@@ -6,33 +6,33 @@ use anyhow::Result;
 use anyhow::anyhow;
 use anyhow::bail;
 use clap::ArgGroup;
-use codex_config::types::AppToolApproval;
-use codex_config::types::McpServerConfig;
-use codex_config::types::McpServerOAuthConfig;
-use codex_config::types::McpServerTransportConfig;
-use codex_core::McpManager;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core::config::LoaderOverrides;
-use codex_core::config::edit::ConfigEditsBuilder;
-use codex_core::config::find_codex_home;
-use codex_core::config::load_global_mcp_servers;
-use codex_core_plugins::PluginsManager;
-use codex_exec_server::EnvironmentManager;
-use codex_login::AuthManager;
-use codex_mcp::McpOAuthLoginSupport;
-use codex_mcp::McpRuntimeContext;
-use codex_mcp::ResolvedMcpOAuthScopes;
-use codex_mcp::compute_auth_statuses;
-use codex_mcp::discover_supported_scopes;
-use codex_mcp::oauth_login_support;
-use codex_mcp::resolve_oauth_scopes;
-use codex_mcp::should_retry_without_scopes;
-use codex_protocol::protocol::McpAuthStatus;
-use codex_rmcp_client::delete_oauth_tokens;
-use codex_rmcp_client::perform_oauth_login;
-use codex_utils_cli::CliConfigOverrides;
-use codex_utils_cli::format_env_display;
+use motyga_config::types::AppToolApproval;
+use motyga_config::types::McpServerConfig;
+use motyga_config::types::McpServerOAuthConfig;
+use motyga_config::types::McpServerTransportConfig;
+use motyga_core::McpManager;
+use motyga_core::config::Config;
+use motyga_core::config::ConfigBuilder;
+use motyga_core::config::LoaderOverrides;
+use motyga_core::config::edit::ConfigEditsBuilder;
+use motyga_core::config::find_motyga_home;
+use motyga_core::config::load_global_mcp_servers;
+use motyga_core_plugins::PluginsManager;
+use motyga_exec_server::EnvironmentManager;
+use motyga_login::AuthManager;
+use motyga_mcp::McpOAuthLoginSupport;
+use motyga_mcp::McpRuntimeContext;
+use motyga_mcp::ResolvedMcpOAuthScopes;
+use motyga_mcp::compute_auth_statuses;
+use motyga_mcp::discover_supported_scopes;
+use motyga_mcp::oauth_login_support;
+use motyga_mcp::resolve_oauth_scopes;
+use motyga_mcp::should_retry_without_scopes;
+use motyga_protocol::protocol::McpAuthStatus;
+use motyga_rmcp_client::delete_oauth_tokens;
+use motyga_rmcp_client::perform_oauth_login;
+use motyga_utils_cli::CliConfigOverrides;
+use motyga_utils_cli::format_env_display;
 
 /// Subcommands:
 /// - `list`   — list configured servers (with `--json`)
@@ -213,8 +213,8 @@ impl McpCli {
 async fn perform_oauth_login_retry_without_scopes(
     name: &str,
     url: &str,
-    store_mode: codex_config::types::OAuthCredentialsStoreMode,
-    keyring_backend_kind: codex_config::types::AuthKeyringBackendKind,
+    store_mode: motyga_config::types::OAuthCredentialsStoreMode,
+    keyring_backend_kind: motyga_config::types::AuthKeyringBackendKind,
     http_headers: Option<HashMap<String, String>>,
     env_http_headers: Option<HashMap<String, String>>,
     resolved_scopes: &ResolvedMcpOAuthScopes,
@@ -292,10 +292,10 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
 
     validate_server_name(&name)?;
 
-    let codex_home = find_codex_home().context("failed to resolve MOTYGA_HOME")?;
-    let mut servers = load_global_mcp_servers(&codex_home)
+    let motyga_home = find_motyga_home().context("failed to resolve MOTYGA_HOME")?;
+    let mut servers = load_global_mcp_servers(&motyga_home)
         .await
-        .with_context(|| format!("failed to load MCP servers from {}", codex_home.display()))?;
+        .with_context(|| format!("failed to load MCP servers from {}", motyga_home.display()))?;
 
     let (transport, oauth_client_id, oauth_resource) = match transport_args {
         AddMcpTransportArgs {
@@ -349,7 +349,7 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
     let new_entry = McpServerConfig {
         auth: Default::default(),
         transport: transport.clone(),
-        environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+        environment_id: motyga_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
         enabled: true,
         required: false,
         supports_parallel_tool_calls: false,
@@ -371,11 +371,11 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
 
     servers.insert(name.clone(), new_entry);
 
-    ConfigEditsBuilder::new(&codex_home)
+    ConfigEditsBuilder::new(&motyga_home)
         .replace_mcp_servers(&servers)
         .apply()
         .await
-        .with_context(|| format!("failed to write MCP servers to {}", codex_home.display()))?;
+        .with_context(|| format!("failed to write MCP servers to {}", motyga_home.display()))?;
 
     println!("Added global MCP server '{name}'.");
 
@@ -421,19 +421,19 @@ async fn run_remove(config_overrides: &CliConfigOverrides, remove_args: RemoveAr
 
     validate_server_name(&name)?;
 
-    let codex_home = find_codex_home().context("failed to resolve MOTYGA_HOME")?;
-    let mut servers = load_global_mcp_servers(&codex_home)
+    let motyga_home = find_motyga_home().context("failed to resolve MOTYGA_HOME")?;
+    let mut servers = load_global_mcp_servers(&motyga_home)
         .await
-        .with_context(|| format!("failed to load MCP servers from {}", codex_home.display()))?;
+        .with_context(|| format!("failed to load MCP servers from {}", motyga_home.display()))?;
 
     let removed = servers.remove(&name).is_some();
 
     if removed {
-        ConfigEditsBuilder::new(&codex_home)
+        ConfigEditsBuilder::new(&motyga_home)
             .replace_mcp_servers(&servers)
             .apply()
             .await
-            .with_context(|| format!("failed to write MCP servers to {}", codex_home.display()))?;
+            .with_context(|| format!("failed to write MCP servers to {}", motyga_home.display()))?;
     }
 
     if removed {
@@ -453,7 +453,7 @@ async fn run_login(config_overrides: &CliConfigOverrides, login_args: LoginArgs)
         .await
         .context("failed to load configuration")?;
     let mcp_manager = McpManager::new(Arc::new(PluginsManager::new(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
     )));
     let mcp_servers = mcp_manager.configured_servers(&config).await;
 
@@ -508,7 +508,7 @@ async fn run_logout(config_overrides: &CliConfigOverrides, logout_args: LogoutAr
         .await
         .context("failed to load configuration")?;
     let mcp_manager = McpManager::new(Arc::new(PluginsManager::new(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
     )));
     let mcp_servers = mcp_manager.configured_servers(&config).await;
 
@@ -545,10 +545,10 @@ async fn run_list(config_overrides: &CliConfigOverrides, list_args: ListArgs) ->
         .await
         .context("failed to load configuration")?;
     let mcp_manager = McpManager::new(Arc::new(PluginsManager::new(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
     )));
     let auth_manager =
-        AuthManager::shared_from_config(&config, /*enable_codex_api_key_env*/ true).await;
+        AuthManager::shared_from_config(&config, /*enable_motyga_api_key_env*/ true).await;
     let auth = auth_manager.auth().await;
     let mcp_servers = mcp_manager.configured_servers(&config).await;
     let effective_mcp_servers = mcp_manager.effective_servers(&config, auth.as_ref()).await;
@@ -809,7 +809,7 @@ async fn run_get(config_overrides: &CliConfigOverrides, get_args: GetArgs) -> Re
         .await
         .context("failed to load configuration")?;
     let mcp_manager = McpManager::new(Arc::new(PluginsManager::new(
-        config.codex_home.to_path_buf(),
+        config.motyga_home.to_path_buf(),
     )));
     let mcp_servers = mcp_manager.configured_servers(&config).await;
 

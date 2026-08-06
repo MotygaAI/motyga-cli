@@ -4,28 +4,28 @@ Module: runtimes
 Concrete ToolRuntime implementations for specific tools. Each runtime stays
 small and focused and reuses the orchestrator for approvals + sandbox + retry.
 */
-use crate::exec_env::CODEX_PERMISSION_PROFILE_ENV_VAR;
-use crate::exec_env::CODEX_THREAD_ID_ENV_VAR;
+use crate::exec_env::MOTYGA_PERMISSION_PROFILE_ENV_VAR;
+use crate::exec_env::MOTYGA_THREAD_ID_ENV_VAR;
 use crate::sandboxing::SandboxPermissions;
 use crate::shell::Shell;
 use crate::shell::ShellType;
 use crate::tools::sandboxing::ToolError;
 #[cfg(unix)]
-use codex_install_context::InstallContext;
+use motyga_install_context::InstallContext;
 #[cfg(target_os = "macos")]
-use codex_network_proxy::CODEX_PROXY_GIT_SSH_COMMAND_MARKER;
-use codex_network_proxy::CUSTOM_CA_ENV_KEYS;
-use codex_network_proxy::PROXY_ACTIVE_ENV_KEY;
-use codex_network_proxy::PROXY_ENV_KEYS;
+use motyga_network_proxy::MOTYGA_PROXY_GIT_SSH_COMMAND_MARKER;
+use motyga_network_proxy::CUSTOM_CA_ENV_KEYS;
+use motyga_network_proxy::PROXY_ACTIVE_ENV_KEY;
+use motyga_network_proxy::PROXY_ENV_KEYS;
 #[cfg(target_os = "macos")]
-use codex_network_proxy::PROXY_GIT_SSH_COMMAND_ENV_KEY;
-use codex_network_proxy::is_managed_mitm_ca_trust_bundle_path;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::AdditionalPermissionProfile;
-use codex_sandboxing::SandboxCommand;
-use codex_sandboxing::SandboxType;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_network_proxy::PROXY_GIT_SSH_COMMAND_ENV_KEY;
+use motyga_network_proxy::is_managed_mitm_ca_trust_bundle_path;
+use motyga_protocol::config_types::WindowsSandboxLevel;
+use motyga_protocol::models::AdditionalPermissionProfile;
+use motyga_sandboxing::SandboxCommand;
+use motyga_sandboxing::SandboxType;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 use std::collections::HashMap;
 #[cfg(unix)]
 use std::path::Path;
@@ -79,7 +79,7 @@ pub(crate) fn is_managed_proxy_env_var(key: &str, value: &str) -> bool {
     #[cfg(target_os = "macos")]
     {
         key == PROXY_GIT_SSH_COMMAND_ENV_KEY
-            && value.starts_with(CODEX_PROXY_GIT_SSH_COMMAND_MARKER)
+            && value.starts_with(MOTYGA_PROXY_GIT_SSH_COMMAND_MARKER)
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -117,7 +117,7 @@ fn prepend_path_entry(env: &mut HashMap<String, String>, path_entry: &str) -> Op
     }
 }
 
-/// PATH entries owned by Codex runtime setup.
+/// PATH entries owned by Motyga runtime setup.
 ///
 /// These are applied to the live exec environment immediately and replayed after
 /// restoring a shell snapshot, unless the user explicitly overrides `PATH`.
@@ -243,10 +243,10 @@ pub(crate) fn disable_powershell_profile_for_elevated_windows_sandbox(
 /// `explicit_env_overrides` contains policy-driven shell env overrides that
 /// should win after the snapshot is sourced, while `env` is the full live exec
 /// environment. We need access to both so snapshot restore logic can preserve
-/// runtime-only vars like `CODEX_THREAD_ID` without pretending they came from
+/// runtime-only vars like `MOTYGA_THREAD_ID` without pretending they came from
 /// the explicit override policy.
 ///
-/// `runtime_path_prepends` contains Codex-owned PATH entries already applied to
+/// `runtime_path_prepends` contains Motyga-owned PATH entries already applied to
 /// the live `env`; snapshot wrapping replays them after restoring the snapshot
 /// PATH unless the user explicitly overrides `PATH`.
 pub(crate) fn maybe_wrap_shell_lc_with_snapshot(
@@ -288,14 +288,14 @@ pub(crate) fn maybe_wrap_shell_lc_with_snapshot(
         .map(|arg| format!(" '{}'", shell_single_quote(arg)))
         .collect::<String>();
     let mut override_env = explicit_env_overrides.clone();
-    for key in [CODEX_THREAD_ID_ENV_VAR, CODEX_PERMISSION_PROFILE_ENV_VAR] {
+    for key in [MOTYGA_THREAD_ID_ENV_VAR, MOTYGA_PERMISSION_PROFILE_ENV_VAR] {
         if let Some(value) = env.get(key) {
             override_env.insert(key.to_string(), value.clone());
         }
     }
     // Do not let a snapshot resurrect a stale profile when no named profile is active.
     let (override_captures, override_exports) =
-        build_override_exports(&override_env, &[CODEX_PERMISSION_PROFILE_ENV_VAR]);
+        build_override_exports(&override_env, &[MOTYGA_PERMISSION_PROFILE_ENV_VAR]);
     let (proxy_captures, proxy_exports) = build_proxy_env_exports();
     let runtime_path_prepend_exports =
         runtime_path_prepends.shell_exports_after_snapshot(explicit_env_overrides);
@@ -331,7 +331,7 @@ fn build_override_exports(
     keys.sort_unstable();
     keys.dedup();
 
-    build_override_exports_for_keys("__CODEX_SNAPSHOT_OVERRIDE", &keys)
+    build_override_exports_for_keys("__MOTYGA_SNAPSHOT_OVERRIDE", &keys)
 }
 
 fn build_proxy_env_exports() -> (String, String) {
@@ -345,15 +345,15 @@ fn build_proxy_env_exports() -> (String, String) {
     keys.dedup();
 
     let (captures, restores) =
-        build_override_exports_for_keys("__CODEX_SNAPSHOT_PROXY_OVERRIDE", &keys);
+        build_override_exports_for_keys("__MOTYGA_SNAPSHOT_PROXY_OVERRIDE", &keys);
     let key = PROXY_ACTIVE_ENV_KEY;
     let proxy_blocks = (
-        format!("{captures}\n__CODEX_SNAPSHOT_PROXY_ENV_SET=\"${{{key}+x}}\""),
+        format!("{captures}\n__MOTYGA_SNAPSHOT_PROXY_ENV_SET=\"${{{key}+x}}\""),
         format!(
-            "if [ -n \"$__CODEX_SNAPSHOT_PROXY_ENV_SET\" ] || [ -n \"${{{key}+x}}\" ]; then\n{restores}\nfi"
+            "if [ -n \"$__MOTYGA_SNAPSHOT_PROXY_ENV_SET\" ] || [ -n \"${{{key}+x}}\" ]; then\n{restores}\nfi"
         ),
     );
-    let git_blocks = build_codex_proxy_git_ssh_command_exports();
+    let git_blocks = build_motyga_proxy_git_ssh_command_exports();
     (
         join_shell_blocks([proxy_blocks.0, git_blocks.0]),
         join_shell_blocks([proxy_blocks.1, git_blocks.1]),
@@ -361,21 +361,21 @@ fn build_proxy_env_exports() -> (String, String) {
 }
 
 #[cfg(target_os = "macos")]
-fn build_codex_proxy_git_ssh_command_exports() -> (String, String) {
+fn build_motyga_proxy_git_ssh_command_exports() -> (String, String) {
     let key = PROXY_GIT_SSH_COMMAND_ENV_KEY;
-    let marker_pattern = format!("{}\\ *", CODEX_PROXY_GIT_SSH_COMMAND_MARKER.trim_end());
+    let marker_pattern = format!("{}\\ *", MOTYGA_PROXY_GIT_SSH_COMMAND_MARKER.trim_end());
     (
         format!(
-            "__CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND_SET=\"${{{key}+x}}\"\n__CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND=\"${{{key}-}}\"\ncase \"$__CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND\" in\n  {marker_pattern}) __CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND_LIVE_MARKED=1 ;;\n  *) __CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND_LIVE_MARKED= ;;\nesac"
+            "__MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND_SET=\"${{{key}+x}}\"\n__MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND=\"${{{key}-}}\"\ncase \"$__MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND\" in\n  {marker_pattern}) __MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND_LIVE_MARKED=1 ;;\n  *) __MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND_LIVE_MARKED= ;;\nesac"
         ),
         format!(
-            "case \"${{{key}-}}\" in\n  {marker_pattern}) __CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND_AFTER_MARKED=1 ;;\n  *) __CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND_AFTER_MARKED= ;;\nesac\nif [ -n \"$__CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND_LIVE_MARKED\" ]; then\n  if [ -z \"${{{key}+x}}\" ] || [ -n \"$__CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND_AFTER_MARKED\" ]; then\n    export {key}=\"$__CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND\"\n  fi\nelif [ -n \"$__CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND_AFTER_MARKED\" ]; then\n  if [ -n \"$__CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND_SET\" ]; then\n    export {key}=\"$__CODEX_SNAPSHOT_PROXY_GIT_SSH_COMMAND\"\n  else\n    unset {key}\n  fi\nfi"
+            "case \"${{{key}-}}\" in\n  {marker_pattern}) __MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND_AFTER_MARKED=1 ;;\n  *) __MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND_AFTER_MARKED= ;;\nesac\nif [ -n \"$__MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND_LIVE_MARKED\" ]; then\n  if [ -z \"${{{key}+x}}\" ] || [ -n \"$__MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND_AFTER_MARKED\" ]; then\n    export {key}=\"$__MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND\"\n  fi\nelif [ -n \"$__MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND_AFTER_MARKED\" ]; then\n  if [ -n \"$__MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND_SET\" ]; then\n    export {key}=\"$__MOTYGA_SNAPSHOT_PROXY_GIT_SSH_COMMAND\"\n  else\n    unset {key}\n  fi\nfi"
         ),
     )
 }
 
 #[cfg(not(target_os = "macos"))]
-fn build_codex_proxy_git_ssh_command_exports() -> (String, String) {
+fn build_motyga_proxy_git_ssh_command_exports() -> (String, String) {
     (String::new(), String::new())
 }
 

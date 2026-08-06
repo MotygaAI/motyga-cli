@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 
-use codex_exec_server_protocol::JSONRPCErrorError;
-use codex_network_proxy::CUSTOM_CA_ENV_KEYS;
-use codex_network_proxy::is_managed_mitm_ca_trust_bundle_path;
-use codex_protocol::models::PermissionProfile;
-use codex_sandboxing::SandboxCommand;
-use codex_sandboxing::SandboxDirectSpawnTransformRequest;
-use codex_sandboxing::SandboxManager;
-use codex_sandboxing::SandboxTransformRequest;
-use codex_sandboxing::SandboxType;
-use codex_sandboxing::SandboxablePreference;
-use codex_sandboxing::with_managed_mitm_ca_readable_root;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_path_uri::PathUri;
+use motyga_exec_server_protocol::JSONRPCErrorError;
+use motyga_network_proxy::CUSTOM_CA_ENV_KEYS;
+use motyga_network_proxy::is_managed_mitm_ca_trust_bundle_path;
+use motyga_protocol::models::PermissionProfile;
+use motyga_sandboxing::SandboxCommand;
+use motyga_sandboxing::SandboxDirectSpawnTransformRequest;
+use motyga_sandboxing::SandboxManager;
+use motyga_sandboxing::SandboxTransformRequest;
+use motyga_sandboxing::SandboxType;
+use motyga_sandboxing::SandboxablePreference;
+use motyga_sandboxing::with_managed_mitm_ca_readable_root;
+use motyga_utils_absolute_path::AbsolutePathBuf;
+use motyga_utils_path_uri::PathUri;
 
 use crate::ExecServerRuntimePaths;
 use crate::protocol::ExecParams;
@@ -108,7 +108,7 @@ pub(crate) fn prepare_exec_request(
         .transform_for_direct_spawn(SandboxDirectSpawnTransformRequest {
             workspace_roots,
             windows_sandbox_proxy_settings_mode:
-                codex_sandboxing::WindowsSandboxProxySettingsMode::Reconcile,
+                motyga_sandboxing::WindowsSandboxProxySettingsMode::Reconcile,
             transform: SandboxTransformRequest {
                 // TODO(jif): Preserve params.arg0 for the inner command across the sandbox
                 // wrapper, or reject sandboxed requests with a custom arg0.
@@ -126,7 +126,7 @@ pub(crate) fn prepare_exec_request(
                 environment_id: None,
                 network: None,
                 sandbox_policy_cwd,
-                codex_linux_sandbox_exe: runtime_paths.codex_linux_sandbox_exe.as_deref(),
+                motyga_linux_sandbox_exe: runtime_paths.motyga_linux_sandbox_exe.as_deref(),
                 use_legacy_landlock: sandbox_context.use_legacy_landlock,
                 windows_sandbox_level: sandbox_context.windows_sandbox_level,
                 windows_sandbox_private_desktop: sandbox_context.windows_sandbox_private_desktop,

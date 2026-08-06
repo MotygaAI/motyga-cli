@@ -5,7 +5,7 @@ import type { ChatgptAuthTokensRefreshReason } from "./ChatgptAuthTokensRefreshR
 
 export type ChatgptAuthTokensRefreshParams = { reason: ChatgptAuthTokensRefreshReason,
 /**
- * Workspace/account identifier that Codex was previously using.
+ * Workspace/account identifier that Motyga was previously using.
  *
  * Clients that manage multiple accounts/workspaces can use this as a hint
  * to refresh the token for the correct workspace.

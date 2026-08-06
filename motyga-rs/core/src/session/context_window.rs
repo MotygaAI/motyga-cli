@@ -1,6 +1,6 @@
 use super::session::Session;
 use super::turn_context::TurnContext;
-use codex_protocol::config_types::AutoCompactTokenLimitScope;
+use motyga_protocol::config_types::AutoCompactTokenLimitScope;
 
 #[derive(Debug)]
 pub(crate) struct ContextWindowTokenStatus {
