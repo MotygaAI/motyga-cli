@@ -9,7 +9,7 @@ expression: rendered
   Your existing Claude Code setup will not be changed.
   Home
   › [x] Settings (settings.json -> config.toml)
-        Import /Users/alex/.claude/settings.json into /Users/alex/.motyga/conf…
+        Import /Users/alex/.claude/settings.json into /Users/alex/.motyga/con…
     [x] Recent chat sessions
         Import recent Claude Code sessions
         1 chat session: Investigate migration UX

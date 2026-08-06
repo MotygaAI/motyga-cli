@@ -6,7 +6,7 @@ expression: rendered
 │ >_ Motyga (v0.0.0)                  │
 │                                     │
 │ model:     gpt-5   /model to change │
-│ directory: C:\tmp\project           │
+│ directory: /tmp/project             │
 ╰─────────────────────────────────────╯
 
   Tip: Model just became available

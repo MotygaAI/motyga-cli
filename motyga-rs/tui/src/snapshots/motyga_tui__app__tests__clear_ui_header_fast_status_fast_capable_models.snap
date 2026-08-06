@@ -6,5 +6,5 @@ expression: rendered
 │ >_ Motyga (v<VERSION>)                             │
 │                                                    │
 │ model:     gpt-5.4 xhigh   fast   /model to change │
-│ directory: C:\tmp\project                          │
+│ directory: /tmp/project                            │
 ╰────────────────────────────────────────────────────╯

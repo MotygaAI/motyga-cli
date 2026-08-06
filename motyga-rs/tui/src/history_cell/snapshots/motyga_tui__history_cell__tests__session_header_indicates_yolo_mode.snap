@@ -6,6 +6,6 @@ expression: rendered
 │ >_ Motyga (vtest)                     │
 │                                       │
 │ model:       gpt-5   /model to change │
-│ directory:   C:\tmp\project           │
+│ directory:   /tmp/project             │
 │ permissions: YOLO mode                │
 ╰───────────────────────────────────────╯

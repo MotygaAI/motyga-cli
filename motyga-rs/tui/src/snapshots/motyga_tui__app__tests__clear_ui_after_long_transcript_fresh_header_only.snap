@@ -6,5 +6,5 @@ expression: rendered
 │ >_ Motyga (v<VERSION>)                      │
 │                                             │
 │ model:     gpt-test high   /model to change │
-│ directory: C:\tmp\project                   │
+│ directory: /tmp/project                     │
 ╰─────────────────────────────────────────────╯
