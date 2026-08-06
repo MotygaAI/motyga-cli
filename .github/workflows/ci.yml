@@ -66,7 +66,7 @@ jobs:
           key: ci-check-${{ hashFiles('motyga-rs/Cargo.lock') }}
           restore-keys: ci-check-
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -110,7 +110,7 @@ jobs:
           key: ci-test-${{ hashFiles('motyga-rs/Cargo.lock') }}
           restore-keys: ci-test-
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -164,7 +164,7 @@ jobs:
           key: ci-test-${{ hashFiles('motyga-rs/Cargo.lock') }}
           restore-keys: ci-test-
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -216,7 +216,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: unittest
