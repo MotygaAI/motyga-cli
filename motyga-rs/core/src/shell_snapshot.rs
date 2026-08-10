@@ -134,9 +134,12 @@ impl ShellSnapshot {
         let path = motyga_home
             .join(SNAPSHOT_DIR)
             .join(format!("{session_id}.{nonce}.{extension}"));
+        // The staging file keeps the final extension: validation dot-sources this path, and
+        // PowerShell silently declines to run a file that is not named `.ps1`, which would let a
+        // malformed snapshot pass validation untested.
         let temp_path = motyga_home
             .join(SNAPSHOT_DIR)
-            .join(format!("{session_id}.tmp-{nonce}"));
+            .join(format!("{session_id}.tmp-{nonce}.{extension}"));
 
         // Clean the (unlikely) leaked snapshot files.
         let motyga_home = motyga_home.clone();
@@ -200,7 +203,7 @@ async fn write_shell_snapshot(
     output_path: &AbsolutePathBuf,
     cwd: &AbsolutePathBuf,
 ) -> Result<()> {
-    if shell_type == ShellType::PowerShell || shell_type == ShellType::Cmd {
+    if shell_type == ShellType::Cmd {
         bail!("Shell snapshot not supported yet for {shell_type:?}");
     }
     let shell = get_shell(shell_type, /*path*/ None)
@@ -230,7 +233,18 @@ async fn capture_snapshot(shell: &Shell, cwd: &AbsolutePathBuf) -> Result<String
         ShellType::Zsh => run_shell_script(shell, &zsh_snapshot_script(), cwd).await,
         ShellType::Bash => run_shell_script(shell, &bash_snapshot_script(), cwd).await,
         ShellType::Sh => run_shell_script(shell, &sh_snapshot_script(), cwd).await,
-        ShellType::PowerShell => run_shell_script(shell, powershell_snapshot_script(), cwd).await,
+        // The PowerShell script loads the user's profiles itself so it can diff them against a
+        // pristine baseline, so it must start from a shell that has not already loaded them.
+        ShellType::PowerShell => {
+            run_script_with_timeout(
+                shell,
+                &powershell_snapshot_script(),
+                SNAPSHOT_TIMEOUT,
+                /*use_login_shell*/ false,
+                cwd,
+            )
+            .await
+        }
         ShellType::Cmd => bail!("Shell snapshotting is not yet supported for {shell_type:?}"),
     }
 }
@@ -250,7 +264,13 @@ async fn validate_snapshot(
     cwd: &AbsolutePathBuf,
 ) -> Result<()> {
     let snapshot_path_display = snapshot_path.display();
-    let script = format!("set -e; . \"{snapshot_path_display}\"");
+    let script = match shell.shell_type {
+        ShellType::PowerShell => {
+            let quoted = powershell_single_quote(&snapshot_path_display.to_string());
+            format!("$ErrorActionPreference = 'Stop'; . '{quoted}'")
+        }
+        _ => format!("set -e; . \"{snapshot_path_display}\""),
+    };
     run_script_with_timeout(
         shell,
         &script,
@@ -469,29 +489,106 @@ fi
     script.replace("EXCLUDED_EXPORTS", &excluded)
 }
 
-fn powershell_snapshot_script() -> &'static str {
+/// Escapes a value for a PowerShell single-quoted literal, where `'` is the only special
+/// character and is escaped by doubling it.
+pub(crate) fn powershell_single_quote(input: &str) -> String {
+    input.replace('\'', "''")
+}
+
+fn powershell_snapshot_script() -> String {
+    // Unlike the POSIX scripts, this one runs in a shell started without profiles: it records a
+    // pristine baseline of functions and aliases, loads the user's profiles itself, and emits only
+    // what they added. Replaying the built-ins instead would mean re-declaring several hundred
+    // engine-owned names on every command, and re-declaring some of them fails outright.
+    //
+    // Anything the profiles print lands ahead of the `# Snapshot file` marker and is stripped by
+    // the caller, so profile chatter cannot corrupt the snapshot.
+    //
+    // Environment names are emitted in `${env:NAME}` form. Windows ships variables that are not
+    // valid bare identifiers -- `ProgramFiles(x86)` is on every machine -- and the unbraced
+    // `$env:NAME` form is a parse error for those.
     r##"$ErrorActionPreference = 'Stop'
+$baselineFunctions = @{}
+foreach ($item in Get-ChildItem Function:) { $baselineFunctions[$item.Name] = $true }
+$baselineAliases = @{}
+foreach ($item in Get-Alias) { $baselineAliases[$item.Name] = $true }
+$baselineModules = @{}
+foreach ($item in Get-Module) { $baselineModules[$item.Name] = $true }
+
+$profilePaths = @(
+    $PROFILE.AllUsersAllHosts,
+    $PROFILE.AllUsersCurrentHost,
+    $PROFILE.CurrentUserAllHosts,
+    $PROFILE.CurrentUserCurrentHost
+)
+foreach ($profilePath in $profilePaths) {
+    if ($profilePath -and (Test-Path -LiteralPath $profilePath)) {
+        try { . $profilePath } catch { }
+    }
+}
+
+$excludedExports = @(EXCLUDED_EXPORTS)
+
+# Modules the profiles imported are replayed as imports rather than as their contents: an alias a
+# module exports would otherwise be restored pointing at a function that was never defined.
+$modules = @(Get-Module | Where-Object { -not $baselineModules.ContainsKey($_.Name) })
+$importedNames = @{}
+foreach ($item in $modules) {
+    foreach ($name in $item.ExportedFunctions.Keys) { $importedNames[$name] = $true }
+    foreach ($name in $item.ExportedAliases.Keys) { $importedNames[$name] = $true }
+}
+
+# `Module` is empty only for a function declared directly by a profile; the engine autoloads some of
+# its own on first use, and those would otherwise show up as profile additions.
+#
+# A function name only round-trips through a `function <name> { }` declaration when it needs no
+# quoting, and a profile that defines an exotic name is far rarer than one that would be broken by
+# guessing at the escaping, so skip those instead.
+$functions = @(Get-ChildItem Function: |
+    Where-Object { -not $baselineFunctions.ContainsKey($_.Name) } |
+    Where-Object { -not $_.Module } |
+    Where-Object { -not $importedNames.ContainsKey($_.Name) } |
+    Where-Object { $_.Name -match '^[A-Za-z_][A-Za-z0-9_.\-]*$' })
+$aliases = @(Get-Alias |
+    Where-Object { -not $baselineAliases.ContainsKey($_.Name) } |
+    Where-Object { -not $importedNames.ContainsKey($_.Name) })
+$envVars = @(Get-ChildItem Env: | Where-Object { $excludedExports -notcontains $_.Name })
+
 Write-Output '# Snapshot file'
-Write-Output '# Unset all aliases to avoid conflicts with functions'
-Write-Output 'Remove-Item Alias:* -ErrorAction SilentlyContinue'
-Write-Output '# Functions'
-Get-ChildItem Function: | ForEach-Object {
-    "function {0} {{`n{1}`n}}" -f $_.Name, $_.Definition
+Write-Output ('# modules ' + $modules.Count)
+foreach ($item in $modules) {
+    $target = if ($item.Path) { $item.Path } else { $item.Name }
+    $escaped = $target -replace "'", "''"
+    "Import-Module -Name '{0}' -Global -ErrorAction SilentlyContinue" -f $escaped
 }
 Write-Output ''
-$aliases = Get-Alias
-Write-Output ("# aliases " + $aliases.Count)
-$aliases | ForEach-Object {
-    "Set-Alias -Name {0} -Value {1}" -f $_.Name, $_.Definition
+Write-Output ('# functions ' + $functions.Count)
+foreach ($item in $functions) {
+    "function {0} {{`n{1}`n}}" -f $item.Name, $item.Definition
 }
 Write-Output ''
-$envVars = Get-ChildItem Env:
-Write-Output ("# exports " + $envVars.Count)
-$envVars | ForEach-Object {
-    $escaped = $_.Value -replace "'", "''"
-    "`$env:{0}='{1}'" -f $_.Name, $escaped
+Write-Output ('# aliases ' + $aliases.Count)
+foreach ($item in $aliases) {
+    $name = $item.Name -replace "'", "''"
+    $value = $item.Definition -replace "'", "''"
+    "Set-Alias -Name '{0}' -Value '{1}' -Scope Global -Force -ErrorAction SilentlyContinue" -f $name, $value
+}
+Write-Output ''
+Write-Output ('# exports ' + $envVars.Count)
+foreach ($item in $envVars) {
+    $name = $item.Name -replace '`', '``' -replace '\{', '`{' -replace '\}', '`}'
+    $escaped = $item.Value -replace "'", "''"
+    '${{env:{0}}}=''{1}''' -f $name, $escaped
 }
 "##
+    .replace(
+        "EXCLUDED_EXPORTS",
+        &EXCLUDED_EXPORT_VARS
+            .iter()
+            .map(|name| format!("'{name}'"))
+            .collect::<Vec<_>>()
+            .join(", "),
+    )
 }
 
 /// Removes shell snapshots that either lack a matching session rollout file or

@@ -82,7 +82,11 @@ fn assert_posix_snapshot_sections(snapshot: &str) {
 
 async fn get_snapshot(shell_type: ShellType) -> Result<String> {
     let dir = tempdir()?;
-    let path = dir.path().join("snapshot.sh");
+    let extension = match shell_type {
+        ShellType::PowerShell => "ps1",
+        _ => "sh",
+    };
+    let path = dir.path().join(format!("snapshot.{extension}"));
     write_shell_snapshot(shell_type, &path.abs(), &dir.path().abs()).await?;
     let content = fs::read_to_string(&path).await?;
     Ok(content)
@@ -393,13 +397,48 @@ async fn linux_sh_snapshot_includes_sections() -> Result<()> {
 }
 
 #[cfg(target_os = "windows")]
-#[ignore]
 #[tokio::test]
 async fn windows_powershell_snapshot_includes_sections() -> Result<()> {
     let snapshot = get_snapshot(ShellType::PowerShell).await?;
     assert!(snapshot.contains("# Snapshot file"));
-    assert!(snapshot.contains("aliases "));
-    assert!(snapshot.contains("exports "));
+    assert!(snapshot.contains("# modules "));
+    assert!(snapshot.contains("# functions "));
+    assert!(snapshot.contains("# aliases "));
+    assert!(snapshot.contains("# exports "));
+    Ok(())
+}
+
+/// Windows ships environment variables that are not valid bare identifiers, so the snapshot has to
+/// brace them; the unbraced form is a parse error and would fail validation on every machine.
+#[cfg(target_os = "windows")]
+#[tokio::test]
+async fn windows_powershell_snapshot_braces_environment_names() -> Result<()> {
+    let snapshot = get_snapshot(ShellType::PowerShell).await?;
+    let exports = snapshot
+        .lines()
+        .filter(|line| line.contains("env:"))
+        .collect::<Vec<_>>();
+    assert!(!exports.is_empty(), "snapshot should capture exports");
+    for line in exports {
+        assert!(
+            line.starts_with("${env:"),
+            "export line must brace the variable name: {line}"
+        );
+    }
+    Ok(())
+}
+
+/// A snapshot is only worth keeping if PowerShell can actually run it back.
+#[cfg(target_os = "windows")]
+#[tokio::test]
+async fn windows_powershell_snapshot_replays_cleanly() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("snapshot.ps1");
+    write_shell_snapshot(ShellType::PowerShell, &path.abs(), &dir.path().abs()).await?;
+
+    let shell = get_shell(ShellType::PowerShell, /*path*/ None)
+        .context("PowerShell should be available on Windows")?;
+    validate_snapshot(&shell, &path.abs(), &dir.path().abs()).await?;
     Ok(())
 }
 

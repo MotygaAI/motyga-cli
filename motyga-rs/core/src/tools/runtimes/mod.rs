@@ -9,6 +9,7 @@ use crate::exec_env::MOTYGA_THREAD_ID_ENV_VAR;
 use crate::sandboxing::SandboxPermissions;
 use crate::shell::Shell;
 use crate::shell::ShellType;
+use crate::shell_snapshot::powershell_single_quote;
 use crate::tools::sandboxing::ToolError;
 #[cfg(unix)]
 use motyga_install_context::InstallContext;
@@ -257,10 +258,6 @@ pub(crate) fn maybe_wrap_shell_lc_with_snapshot(
     env: &HashMap<String, String>,
     runtime_path_prepends: &RuntimePathPrepends,
 ) -> Vec<String> {
-    if cfg!(windows) {
-        return command.to_vec();
-    }
-
     let Some(snapshot) = shell_snapshot else {
         return command.to_vec();
     };
@@ -270,6 +267,21 @@ pub(crate) fn maybe_wrap_shell_lc_with_snapshot(
     }
 
     if command.len() < 3 {
+        return command.to_vec();
+    }
+
+    if session_shell.shell_type == ShellType::PowerShell {
+        return wrap_powershell_command_with_snapshot(
+            command,
+            snapshot,
+            explicit_env_overrides,
+            env,
+        );
+    }
+
+    // Every other shell keeps the POSIX wrapper, which has no Windows equivalent: a Bash running
+    // there is a Git Bash whose snapshot semantics have never been exercised.
+    if cfg!(windows) {
         return command.to_vec();
     }
 
@@ -316,6 +328,135 @@ pub(crate) fn maybe_wrap_shell_lc_with_snapshot(
     };
 
     vec![shell_path.to_string(), "-c".to_string(), rewritten_script]
+}
+
+/// PowerShell counterpart of the POSIX wrapper above.
+///
+/// `powershell -Command "<script>"`
+///   => `powershell -NoProfile -Command "<capture>; . SNAPSHOT (best effort); <restore>; <script>"`
+///
+/// The snapshot already carries what the profile would have set, so the wrapped command drops the
+/// profile the way the POSIX path drops `-l`. Restoring the snapshot is best effort: a profile that
+/// fails to replay must not take the user's command down with it.
+fn wrap_powershell_command_with_snapshot(
+    command: &[String],
+    snapshot: &AbsolutePathBuf,
+    explicit_env_overrides: &HashMap<String, String>,
+    env: &HashMap<String, String>,
+) -> Vec<String> {
+    // Only the login form is rewritten. Anything else already opted out of profile loading, and a
+    // command carrying extra arguments has no single script to prefix.
+    if command.len() != 3 || !command[1].eq_ignore_ascii_case("-Command") {
+        return command.to_vec();
+    }
+
+    let snapshot_path = powershell_single_quote(snapshot.to_string_lossy().as_ref());
+    let original_script = &command[2];
+
+    let mut override_env = explicit_env_overrides.clone();
+    for key in [MOTYGA_THREAD_ID_ENV_VAR, MOTYGA_PERMISSION_PROFILE_ENV_VAR] {
+        if let Some(value) = env.get(key) {
+            override_env.insert(key.to_string(), value.clone());
+        }
+    }
+    // Do not let a snapshot resurrect a stale profile when no named profile is active.
+    let (override_captures, override_restores) =
+        build_powershell_override_exports(&override_env, &[MOTYGA_PERMISSION_PROFILE_ENV_VAR]);
+    let (proxy_captures, proxy_restores) = build_powershell_proxy_env_exports();
+    let captures = join_shell_blocks([override_captures, proxy_captures]);
+    let restores = join_shell_blocks([override_restores, proxy_restores]);
+
+    let restore_snapshot = format!("try {{ . '{snapshot_path}' *> $null }} catch {{ }}");
+    let script = join_shell_blocks([
+        captures,
+        restore_snapshot,
+        restores,
+        original_script.to_string(),
+    ]);
+
+    vec![
+        command[0].clone(),
+        "-NoProfile".to_string(),
+        "-Command".to_string(),
+        script,
+    ]
+}
+
+fn build_powershell_override_exports(
+    explicit_env_overrides: &HashMap<String, String>,
+    restore_even_when_absent: &[&str],
+) -> (String, String) {
+    let mut keys = explicit_env_overrides
+        .keys()
+        .map(String::as_str)
+        .chain(restore_even_when_absent.iter().copied())
+        .filter(|key| is_valid_shell_variable_name(key))
+        .collect::<Vec<_>>();
+    keys.sort_unstable();
+    keys.dedup();
+
+    build_powershell_override_exports_for_keys("__MotygaSnapshotOverride", &keys)
+}
+
+fn build_powershell_proxy_env_exports() -> (String, String) {
+    let mut keys = PROXY_ENV_KEYS
+        .iter()
+        .copied()
+        .chain(CUSTOM_CA_ENV_KEYS)
+        .filter(|key| is_valid_shell_variable_name(key))
+        .collect::<Vec<_>>();
+    keys.sort_unstable();
+    keys.dedup();
+
+    let (captures, restores) =
+        build_powershell_override_exports_for_keys("__MotygaSnapshotProxyOverride", &keys);
+    if captures.is_empty() {
+        return (String::new(), String::new());
+    }
+
+    let key = PROXY_ACTIVE_ENV_KEY;
+    // Proxy variables are only forced back when Motyga's proxy is the one in play; otherwise a
+    // profile is free to set its own.
+    (
+        format!("{captures}\n$__MotygaSnapshotProxyEnvSet = Test-Path -LiteralPath 'Env:{key}'"),
+        format!(
+            "if ($__MotygaSnapshotProxyEnvSet -or (Test-Path -LiteralPath 'Env:{key}')) {{\n{restores}\n}}"
+        ),
+    )
+}
+
+fn build_powershell_override_exports_for_keys(
+    variable_prefix: &str,
+    keys: &[&str],
+) -> (String, String) {
+    if keys.is_empty() {
+        return (String::new(), String::new());
+    }
+
+    let captures = keys
+        .iter()
+        .enumerate()
+        .map(|(idx, key)| {
+            let set_var = format!("${variable_prefix}Set{idx}");
+            let value_var = format!("${variable_prefix}{idx}");
+            format!("{set_var} = Test-Path -LiteralPath 'Env:{key}'\n{value_var} = ${{env:{key}}}")
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let restores = keys
+        .iter()
+        .enumerate()
+        .map(|(idx, key)| {
+            let set_var = format!("${variable_prefix}Set{idx}");
+            let value_var = format!("${variable_prefix}{idx}");
+            format!(
+                "if ({set_var}) {{ ${{env:{key}}} = {value_var} }} else {{ Remove-Item -LiteralPath 'Env:{key}' -ErrorAction SilentlyContinue }}"
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    (captures, restores)
 }
 
 fn build_override_exports(
@@ -431,6 +572,118 @@ fn is_valid_shell_variable_name(name: &str) -> bool {
 
 fn shell_single_quote(input: &str) -> String {
     input.replace('\'', r#"'"'"'"#)
+}
+
+/// These cover argv rewriting only, so they run everywhere -- unlike the POSIX wrapper tests, which
+/// are Unix-gated as a whole.
+#[cfg(test)]
+mod powershell_snapshot_wrapper_tests {
+    use super::*;
+    use core_test_support::PathBufExt;
+    use pretty_assertions::assert_eq;
+    use std::path::PathBuf;
+    use tempfile::tempdir;
+
+    fn powershell_shell() -> Shell {
+        Shell {
+            shell_type: ShellType::PowerShell,
+            shell_path: PathBuf::from("powershell.exe"),
+        }
+    }
+
+    #[test]
+    fn wraps_powershell_command() {
+        let dir = tempdir().expect("create temp dir");
+        let snapshot_path = dir.path().join("snapshot.ps1");
+        std::fs::write(&snapshot_path, "# Snapshot file\n").expect("write snapshot");
+        let snapshot = snapshot_path.abs();
+        let command = vec![
+            "powershell.exe".to_string(),
+            "-Command".to_string(),
+            "Write-Output hello".to_string(),
+        ];
+
+        let rewritten = maybe_wrap_shell_lc_with_snapshot(
+            &command,
+            &powershell_shell(),
+            Some(&snapshot),
+            &HashMap::new(),
+            &HashMap::new(),
+            &RuntimePathPrepends::default(),
+        );
+
+        assert_eq!(rewritten[0], "powershell.exe");
+        assert_eq!(rewritten[1], "-NoProfile");
+        assert_eq!(rewritten[2], "-Command");
+        assert!(rewritten[3].contains("try { . '"));
+        assert!(rewritten[3].contains("*> $null } catch { }"));
+        assert!(rewritten[3].ends_with("Write-Output hello"));
+    }
+
+    #[test]
+    fn restores_overrides_after_the_snapshot() {
+        let dir = tempdir().expect("create temp dir");
+        let snapshot_path = dir.path().join("snapshot.ps1");
+        std::fs::write(&snapshot_path, "# Snapshot file\n").expect("write snapshot");
+        let snapshot = snapshot_path.abs();
+        let command = vec![
+            "powershell.exe".to_string(),
+            "-Command".to_string(),
+            "Write-Output hello".to_string(),
+        ];
+        let overrides = HashMap::from([("MY_OVERRIDE".to_string(), "kept".to_string())]);
+
+        let rewritten = maybe_wrap_shell_lc_with_snapshot(
+            &command,
+            &powershell_shell(),
+            Some(&snapshot),
+            &overrides,
+            &HashMap::new(),
+            &RuntimePathPrepends::default(),
+        );
+
+        let script = &rewritten[3];
+        let capture = script
+            .find("Test-Path -LiteralPath 'Env:MY_OVERRIDE'")
+            .expect("override should be captured");
+        let snapshot_restore = script
+            .find("try { . '")
+            .expect("snapshot should be restored");
+        let restore = script
+            .find("${env:MY_OVERRIDE} =")
+            .expect("override should be restored");
+        assert!(
+            capture < snapshot_restore && snapshot_restore < restore,
+            "override must be captured before the snapshot and reapplied after it"
+        );
+    }
+
+    /// A command that already opted out of the profile, or that carries extra arguments, has no
+    /// single script to prefix and must be handed through untouched.
+    #[test]
+    fn skips_commands_that_are_not_the_login_form() {
+        let dir = tempdir().expect("create temp dir");
+        let snapshot_path = dir.path().join("snapshot.ps1");
+        std::fs::write(&snapshot_path, "# Snapshot file\n").expect("write snapshot");
+        let snapshot = snapshot_path.abs();
+        let command = vec![
+            "powershell.exe".to_string(),
+            "-NoProfile".to_string(),
+            "-Command".to_string(),
+            "Write-Output hello".to_string(),
+        ];
+
+        let rewritten = maybe_wrap_shell_lc_with_snapshot(
+            &command,
+            &powershell_shell(),
+            Some(&snapshot),
+            &HashMap::new(),
+            &HashMap::new(),
+            &RuntimePathPrepends::default(),
+        );
+
+        assert_eq!(rewritten, command);
+    }
 }
 
 #[cfg(test)]
