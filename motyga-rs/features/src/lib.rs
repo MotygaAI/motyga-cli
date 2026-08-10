@@ -168,6 +168,11 @@ pub enum Feature {
     ToolSuggest,
     /// Enable plugins.
     Plugins,
+    /// Sync the curated plugin catalog from its upstream sources on startup.
+    ///
+    /// Off until a curated catalog is actually published: with no source to read, every startup
+    /// only spends timeouts on requests that cannot succeed.
+    PluginsCuratedSync,
     /// Removed compatibility flag for plugin-bundled lifecycle hooks.
     PluginHooks,
     /// Allow the in-app browser pane in desktop apps.
@@ -1105,6 +1110,12 @@ pub const FEATURES: &[FeatureSpec] = &[
         key: "plugins",
         stage: Stage::Stable,
         default_enabled: true,
+    },
+    FeatureSpec {
+        id: Feature::PluginsCuratedSync,
+        key: "plugins_curated_sync",
+        stage: Stage::UnderDevelopment,
+        default_enabled: false,
     },
     FeatureSpec {
         id: Feature::PluginHooks,

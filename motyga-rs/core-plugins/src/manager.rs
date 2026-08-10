@@ -107,6 +107,7 @@ const FEATURED_PLUGIN_IDS_CACHE_TTL: std::time::Duration =
 pub struct PluginsConfigInput {
     pub config_layer_stack: ConfigLayerStack,
     pub plugins_enabled: bool,
+    pub curated_sync_enabled: bool,
     pub remote_plugin_enabled: bool,
     pub chatgpt_base_url: String,
 }
@@ -115,12 +116,14 @@ impl PluginsConfigInput {
     pub fn new(
         config_layer_stack: ConfigLayerStack,
         plugins_enabled: bool,
+        curated_sync_enabled: bool,
         remote_plugin_enabled: bool,
         chatgpt_base_url: String,
     ) -> Self {
         Self {
             config_layer_stack,
             plugins_enabled,
+            curated_sync_enabled,
             remote_plugin_enabled,
             chatgpt_base_url,
         }
@@ -1926,7 +1929,7 @@ impl PluginsManager {
         if config.plugins_enabled {
             let use_remote_global_catalog =
                 config.remote_plugin_enabled && auth_manager.current_auth_uses_motyga_backend();
-            if !use_remote_global_catalog {
+            if !use_remote_global_catalog && config.curated_sync_enabled {
                 self.start_curated_repo_sync();
             }
             let should_spawn_marketplace_auto_upgrade = {

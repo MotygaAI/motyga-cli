@@ -148,6 +148,11 @@ pub(crate) async fn load_plugins_config(motyga_home: &Path, cwd: &Path) -> Plugi
         feature_enabled(&effective_config, "plugins", /*default_enabled*/ true),
         feature_enabled(
             &effective_config,
+            "plugins_curated_sync",
+            /*default_enabled*/ false,
+        ),
+        feature_enabled(
+            &effective_config,
             "remote_plugin",
             /*default_enabled*/ true,
         ),

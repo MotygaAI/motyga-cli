@@ -108,6 +108,7 @@ fn plugins_config_input_with_requirements(
     PluginsConfigInput::new(
         config_layer_stack_with_requirements(motyga_home, user_config, requirements),
         /*plugins_enabled*/ true,
+        /*curated_sync_enabled*/ false,
         /*remote_plugin_enabled*/ false,
         String::new(),
     )
@@ -2473,6 +2474,7 @@ async fn plugin_cache_ignores_unrelated_session_overrides() {
         PluginsConfigInput::new(
             stack(session_config),
             /*plugins_enabled*/ true,
+            /*curated_sync_enabled*/ false,
             /*remote_plugin_enabled*/ false,
             "https://api.motyga.com".to_string(),
         )

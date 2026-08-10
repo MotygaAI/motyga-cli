@@ -454,12 +454,6 @@
             "code_mode_only": {
               "type": "boolean"
             },
-            "motyga_git_commit": {
-              "type": "boolean"
-            },
-            "motyga_hooks": {
-              "type": "boolean"
-            },
             "collab": {
               "type": "boolean"
             },
@@ -553,6 +547,12 @@
             "mentions_v2": {
               "type": "boolean"
             },
+            "motyga_git_commit": {
+              "type": "boolean"
+            },
+            "motyga_hooks": {
+              "type": "boolean"
+            },
             "multi_agent": {
               "type": "boolean"
             },
@@ -578,6 +578,9 @@
               "type": "boolean"
             },
             "plugins": {
+              "type": "boolean"
+            },
+            "plugins_curated_sync": {
               "type": "boolean"
             },
             "prevent_idle_sleep": {
@@ -4646,7 +4649,7 @@
       "description": "Settings for app-specific controls."
     },
     "apps_mcp_product_sku": {
-      "description": "Optional product SKU forwarded on host-owned Motyga Apps MCP requests.",
+      "description": "Optional product SKU forwarded on host-owned Motyga apps MCP requests.",
       "type": "string"
     },
     "audio": {
@@ -4820,12 +4823,6 @@
         "code_mode_only": {
           "type": "boolean"
         },
-        "motyga_git_commit": {
-          "type": "boolean"
-        },
-        "motyga_hooks": {
-          "type": "boolean"
-        },
         "collab": {
           "type": "boolean"
         },
@@ -4919,6 +4916,12 @@
         "mentions_v2": {
           "type": "boolean"
         },
+        "motyga_git_commit": {
+          "type": "boolean"
+        },
+        "motyga_hooks": {
+          "type": "boolean"
+        },
         "multi_agent": {
           "type": "boolean"
         },
@@ -4944,6 +4947,9 @@
           "type": "boolean"
         },
         "plugins": {
+          "type": "boolean"
+        },
+        "plugins_curated_sync": {
           "type": "boolean"
         },
         "prevent_idle_sleep": {
