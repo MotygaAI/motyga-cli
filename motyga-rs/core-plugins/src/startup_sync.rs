@@ -184,7 +184,10 @@ fn lock_curated_plugins_startup_sync(motyga_home: &Path) -> Result<File, String>
     Ok(lock_file)
 }
 
-fn sync_openai_plugins_repo_via_git(motyga_home: &Path, git_binary: &str) -> Result<String, String> {
+fn sync_openai_plugins_repo_via_git(
+    motyga_home: &Path,
+    git_binary: &str,
+) -> Result<String, String> {
     let repo_path = curated_plugins_repo_path(motyga_home);
     let sha_path = motyga_home.join(CURATED_PLUGINS_SHA_FILE);
     let remote_sha = git_ls_remote_head_sha(git_binary)?;
@@ -651,7 +654,20 @@ fn git_head_sha(repo_path: &Path, git_binary: &str) -> Result<String, String> {
 
 fn git_command(git_binary: &str) -> Command {
     let mut command = Command::new(git_binary);
-    command.env("GIT_OPTIONAL_LOCKS", "0");
+    command
+        .env("GIT_OPTIONAL_LOCKS", "0")
+        // This sync is a best-effort background fetch of a public URL, so it must never ask the
+        // user for anything. An unauthenticated GitHub endpoint answers 401 for a repository it
+        // will not serve, and on that answer Git escalates to a credential helper: a graphical
+        // helper such as Git Credential Manager then opens a sign-in window on top of whatever the
+        // user is doing. Clearing the helper list and both prompt paths turns that 401 into an
+        // immediate, silent failure instead. An empty `credential.helper` resets the list rather
+        // than appending to it, so this also overrides host-scoped helpers from the user's config.
+        // `stdin(Stdio::null())` alone is not enough: Git opens the terminal directly, and a
+        // graphical helper needs no stdin at all.
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_ASKPASS", "")
+        .args(["-c", "credential.helper=", "-c", "core.askPass="]);
     for name in REPOSITORY_LOCAL_GIT_ENVIRONMENT_VARIABLES {
         command.env_remove(name);
     }

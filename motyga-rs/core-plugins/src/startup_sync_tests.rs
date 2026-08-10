@@ -33,6 +33,40 @@ fn git_command_sanitizes_ambient_repository_environment() {
     }
 }
 
+#[test]
+fn git_command_never_escalates_to_a_credential_helper() {
+    let command = git_command("git");
+
+    let args: Vec<&OsStr> = command.get_args().collect();
+    assert_eq!(
+        args,
+        vec![
+            OsStr::new("-c"),
+            OsStr::new("credential.helper="),
+            OsStr::new("-c"),
+            OsStr::new("core.askPass="),
+        ],
+        "credential configuration must be cleared, and before the subcommand is appended"
+    );
+    assert_eq!(
+        command_env(&command, "GIT_TERMINAL_PROMPT"),
+        Some(Some(OsStr::new("0"))),
+        "startup sync Git commands must not fall back to a terminal prompt"
+    );
+    assert_eq!(
+        command_env(&command, "GIT_ASKPASS"),
+        Some(Some(OsStr::new(""))),
+        "startup sync Git commands must not run an inherited askpass program"
+    );
+}
+
+fn command_env<'a>(command: &'a Command, name: &str) -> Option<Option<&'a OsStr>> {
+    command
+        .get_envs()
+        .find(|(key, _)| *key == OsStr::new(name))
+        .map(|(_, value)| value)
+}
+
 fn write_file(path: &Path, contents: &str) {
     std::fs::create_dir_all(path.parent().expect("file should have a parent")).unwrap();
     std::fs::write(path, contents).unwrap();
@@ -132,12 +166,16 @@ fn run_git(repo: &Path, args: &[&str]) -> std::process::Output {
 
 async fn mount_github_repo_and_ref(server: &MockServer, sha: &str) {
     Mock::given(method("GET"))
-        .and(path("/repos/openai/plugins"))
+        .and(path(format!(
+            "/repos/{MOTYGA_PLUGINS_OWNER}/{MOTYGA_PLUGINS_REPO}"
+        )))
         .respond_with(ResponseTemplate::new(200).set_body_string(r#"{"default_branch":"main"}"#))
         .mount(server)
         .await;
     Mock::given(method("GET"))
-        .and(path("/repos/openai/plugins/git/ref/heads/main"))
+        .and(path(format!(
+            "/repos/{MOTYGA_PLUGINS_OWNER}/{MOTYGA_PLUGINS_REPO}/git/ref/heads/main"
+        )))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_string(format!(r#"{{"object":{{"sha":"{sha}"}}}}"#)),
@@ -148,7 +186,9 @@ async fn mount_github_repo_and_ref(server: &MockServer, sha: &str) {
 
 async fn mount_github_zipball(server: &MockServer, sha: &str, bytes: Vec<u8>) {
     Mock::given(method("GET"))
-        .and(path(format!("/repos/openai/plugins/zipball/{sha}")))
+        .and(path(format!(
+            "/repos/{MOTYGA_PLUGINS_OWNER}/{MOTYGA_PLUGINS_REPO}/zipball/{sha}"
+        )))
         .respond_with(
             ResponseTemplate::new(200)
                 .insert_header("content-type", "application/zip")
@@ -302,6 +342,7 @@ fn concurrent_syncs_serialize_fetches_without_skipping_remote_checks() {
         &git_path,
         &format!(
             r#"#!/bin/sh
+while [ "$1" = "-c" ]; do shift 2; done
 printf '%s\n' "$*" >> '{}'
 if [ "$1" = "ls-remote" ]; then
   sleep 1
@@ -457,7 +498,14 @@ fn sync_openai_plugins_repo_via_git_succeeds_with_local_rewritten_remote() {
     write_executable_script(
         &git_wrapper,
         &format!(
-            "#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{}'\nGIT_CONFIG_GLOBAL='{}' exec git \"$@\"\n",
+            r#"#!/bin/sh
+log_invocation() {{
+  while [ "$1" = "-c" ]; do shift 2; done
+  printf '%s\n' "$*" >> '{}'
+}}
+log_invocation "$@"
+GIT_CONFIG_GLOBAL='{}' exec git "$@"
+"#,
             invocation_log.display(),
             git_config_path.display()
         ),
@@ -672,6 +720,7 @@ fn sync_openai_plugins_repo_via_git_cleans_up_staged_dir_on_fetch_failure() {
         &git_path,
         &format!(
             r#"#!/bin/sh
+while [ "$1" = "-c" ]; do shift 2; done
 if [ "$1" = "ls-remote" ]; then
   printf '%s\tHEAD\n' "{sha}"
   exit 0
@@ -717,6 +766,7 @@ fn sync_openai_plugins_repo_via_git_preserves_existing_snapshot_on_validation_fa
         &git_path,
         &format!(
             r#"#!/bin/sh
+while [ "$1" = "-c" ]; do shift 2; done
 if [ "$1" = "ls-remote" ]; then
   printf '%s\tHEAD\n' "{remote_sha}"
   exit 0
@@ -822,7 +872,9 @@ async fn sync_openai_plugins_repo_falls_back_to_export_archive_when_no_snapshot_
     let export_sha = "1111111111111111111111111111111111111111";
 
     Mock::given(method("GET"))
-        .and(path("/repos/openai/plugins"))
+        .and(path(format!(
+            "/repos/{MOTYGA_PLUGINS_OWNER}/{MOTYGA_PLUGINS_REPO}"
+        )))
         .respond_with(ResponseTemplate::new(500).set_body_string("github repo lookup failed"))
         .mount(&server)
         .await;
@@ -861,7 +913,9 @@ async fn sync_openai_plugins_repo_skips_export_archive_when_snapshot_exists() {
     let server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/repos/openai/plugins"))
+        .and(path(format!(
+            "/repos/{MOTYGA_PLUGINS_OWNER}/{MOTYGA_PLUGINS_REPO}"
+        )))
         .respond_with(ResponseTemplate::new(500).set_body_string("github repo lookup failed"))
         .mount(&server)
         .await;
