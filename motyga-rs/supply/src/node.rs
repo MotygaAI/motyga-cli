@@ -39,6 +39,12 @@ pub struct NodeRuntime {
     cfg: SupplyConfig,
     token: String,
     http: reqwest::Client,
+    /// One permit per concurrent job the supplier allows on a lane. Held for the length of the vendor call,
+    /// so the limit is a real ceiling rather than a number in a config file.
+    slots: std::sync::Mutex<HashMap<String, std::sync::Arc<tokio::sync::Semaphore>>>,
+    /// Last window utilisation each vendor reported, which is how this machine knows when the slice it
+    /// agreed to give is gone. Reported by the vendor on its own responses — nothing we compute.
+    window: std::sync::Mutex<HashMap<String, u8>>,
 }
 
 impl NodeRuntime {
@@ -47,7 +53,37 @@ impl NodeRuntime {
             .timeout(Duration::from_secs(600))
             .build()
             .unwrap_or_default();
-        Self { cfg, token, http }
+        Self { cfg, token, http, slots: Default::default(), window: Default::default() }
+    }
+
+    /// The permit pool for one lane, created on first use at the supplier's configured concurrency.
+    fn slot(&self, vendor: &str, model: &str, max: u8) -> std::sync::Arc<tokio::sync::Semaphore> {
+        let key = format!("{vendor}/{model}");
+        // A poisoned lock means some other task panicked while holding it. The map behind it is a plain
+        // counter table, not an invariant that a panic could have half-updated, so recovering the guard is
+        // strictly better than bringing a working node down over it.
+        let mut slots = self.slots.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        std::sync::Arc::clone(
+            slots
+                .entry(key)
+                .or_insert_with(|| std::sync::Arc::new(tokio::sync::Semaphore::new(max.max(1) as usize))),
+        )
+    }
+
+    /// Has this vendor's window passed the share the supplier offered? Unknown reads as NOT spent: a vendor
+    /// that never reports utilisation must not silently take the machine offline.
+    fn window_spent(&self, vendor: &str, share_pct: u8) -> bool {
+        self.window
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(vendor)
+            .is_some_and(|used| *used >= share_pct)
+    }
+
+    fn note_window(&self, vendor: &str, used: Option<u8>) {
+        if let Some(pct) = used {
+            self.window.lock().unwrap_or_else(std::sync::PoisonError::into_inner).insert(vendor.to_string(), pct);
+        }
     }
 
     /// Connect, serve, and reconnect forever. Returns only on an unrecoverable configuration problem —
@@ -59,6 +95,14 @@ impl NodeRuntime {
                 Ok(()) => {
                     tracing::info!("supply: link closed by the server, reconnecting");
                     backoff = RECONNECT_MIN;
+                }
+                Err(err) if is_auth_failure(&err) => {
+                    // A revoked, expired or simply wrong node token is not a network hiccup, and retrying
+                    // it forever leaves the supplier watching a silent backoff loop while nothing works.
+                    // This is exactly the "unrecoverable configuration problem" this function documents.
+                    return Err(anyhow!(
+                        "this machine is no longer authorised ({err:#}).\n\
+                         Run `motyga supply login` to connect it again."));
                 }
                 Err(err) => {
                     tracing::warn!("supply: link error: {err:#}");
@@ -137,7 +181,24 @@ impl NodeRuntime {
                             // Detached for real this time. A completion can run for minutes; awaiting it in
                             // this arm would starve the heartbeat and look to the server exactly like a
                             // machine that went to sleep — which is what an earlier version of this loop did.
+                            // A job is addressed by its id, so an unusable one has to be refused rather than
+                            // normalised. An empty id (the old `unwrap_or("")`) made every such job share a
+                            // single map slot; a REPEATED id overwrote the previous JoinHandle without
+                            // aborting it, so two vendor calls ran on under one id, their chunks interleaved
+                            // on the wire, and a later `cancel` reached only the newer one.
                             let job_id = frame.get("job_id").and_then(Value::as_str).unwrap_or("").to_string();
+                            if job_id.is_empty() || job_id.len() > 64 {
+                                tracing::warn!("supply: dropping a job with an unusable id");
+                                continue;
+                            }
+                            if running.contains_key(&job_id) {
+                                tracing::warn!("supply: dropping a duplicate job id {job_id}");
+                                let _ = out_tx.send(json!({
+                                    "type": "fail", "job_id": job_id,
+                                    "code": "duplicate_job_id", "retryable": false,
+                                }));
+                                continue;
+                            }
                             let me = std::sync::Arc::clone(self);
                             let sender = out_tx.clone();
                             let lanes = effective.clone();
@@ -186,13 +247,19 @@ impl NodeRuntime {
             })
         };
 
+        let vendor = frame.get("vendor").and_then(Value::as_str).unwrap_or("").to_string();
         let result = self.run_job(&frame, &effective, &DeltaSink::new(delta_tx)).await;
         // Drain the pump BEFORE the terminal frame: the server treats `done` as the end of the answer, so a
         // chunk arriving after it would be dropped and the buyer would silently lose the tail.
         let _ = pump.await;
 
         let _ = out.send(match result {
-            Ok(outcome) => done_frame(&job_id, outcome),
+            Ok(outcome) => {
+                // The vendor just told us how much of its window is gone. That reading is what closes the
+                // lane once the supplier's share is spent, so it is recorded before the frame goes out.
+                self.note_window(&vendor, outcome.window_used_pct);
+                done_frame(&job_id, outcome)
+            }
             Err(err) => fail_frame(&job_id, &err),
         });
     }
@@ -232,16 +299,31 @@ impl NodeRuntime {
             .and_then(Value::as_str)
             .ok_or_else(|| anyhow!("job without a model"))?
             .to_string();
+        let lane_model = frame.get("lane_model").and_then(Value::as_str);
         let payload = frame.get("payload").cloned().unwrap_or(Value::Null);
 
         // Refuse a vendor this machine did not offer. The server already filters, but a node should not
         // rely on the other end for what it is willing to spend its own subscription on.
-        if !effective
+        let Some(lane) = effective
             .iter()
-            .any(|l| l.enabled && l.vendor == vendor && l.model_matches(&model))
-        {
+            .find(|l| l.enabled && l.vendor == vendor && l.authorises(&model, lane_model))
+        else {
             return Err(anyhow!("this node does not offer {vendor}/{model}"));
+        };
+
+        // The two limits this CLI promises in its own `--help`, enforced HERE rather than trusted to the
+        // other end. The server does apply both, and that is not the point: they are promises made to the
+        // person whose subscription and whose machine this is, so the machine has to keep them itself. A
+        // backend bug, a stale registry or a replayed frame must not be able to spend past what they agreed
+        // to give.
+        if self.window_spent(&vendor, lane.share_pct) {
+            return Err(anyhow!(
+                "the {}% of the {vendor} window this machine offers is already spent", lane.share_pct));
         }
+        let _slot = self
+            .slot(&vendor, &lane.model, lane.max_concurrency)
+            .try_acquire_owned()
+            .map_err(|_| anyhow!("this node is already serving {} {vendor} job(s)", lane.max_concurrency))?;
 
         let job = Job { vendor: vendor.clone(), model, payload };
         match vendor.as_str() {
@@ -253,12 +335,29 @@ impl NodeRuntime {
 }
 
 impl crate::config::Lane {
-    /// The server sends the VENDOR's model id, which may differ from ours. Accept an exact match or a
-    /// shared prefix so a dated snapshot id still resolves to the lane the supplier configured.
-    fn model_matches(&self, vendor_model: &str) -> bool {
-        self.model == vendor_model
-            || vendor_model.starts_with(&self.model)
-            || self.model.starts_with(vendor_model)
+    /// Does this lane authorise the incoming job?
+    ///
+    /// `lane_model` is Motyga's own id for the model and is what this machine's config is written in, so
+    /// when the server sends it the comparison is EXACT. That is the whole point of the field: the vendor's
+    /// id often differs from ours (our `claude-opus-4` is the vendor's `claude-opus-4-8`), and with only the
+    /// vendor id to go on this had to fall back to a shared PREFIX — under which a lane for
+    /// `claude-opus-4` silently accepted a `claude-opus-4-5` job and spent the supplier's quota on a model
+    /// they never enabled.
+    ///
+    /// The prefix path survives ONLY for a server too old to send `lane_model`, and is deliberately
+    /// asymmetric now: the incoming id may be a longer, dated snapshot of what we enabled
+    /// (`claude-opus-4` -> `claude-opus-4-8`), never the other way round. `gpt-5` must not match a lane
+    /// for `gpt-50`, so the boundary after the prefix has to be a separator rather than any character.
+    fn authorises(&self, vendor_model: &str, lane_model: Option<&str>) -> bool {
+        if let Some(canonical) = lane_model {
+            return self.model == canonical;
+        }
+        if self.model == vendor_model {
+            return true;
+        }
+        vendor_model
+            .strip_prefix(&self.model)
+            .is_some_and(|rest| rest.starts_with('-') || rest.starts_with('.'))
     }
 }
 
@@ -331,10 +430,13 @@ fn apply_server_config(effective: &mut Vec<Lane>, local: &SupplyConfig, pushed: 
         ) else {
             continue;
         };
+        // EXACT, unlike a job frame. A pushed config names models in MOTYGA's ids — the same ones this
+        // machine's own config is written in — so there is nothing to translate here, and matching by
+        // prefix would let a push for one model quietly re-configure a neighbouring lane.
         let Some(base) = local
             .enabled_lanes()
             .into_iter()
-            .find(|l| l.vendor == vendor && l.model_matches(model))
+            .find(|l| l.vendor == vendor && l.model == model)
         else {
             continue; // not offered locally -> the server cannot conjure it
         };
@@ -385,6 +487,21 @@ fn done_frame(job_id: &str, outcome: VendorOutcome) -> Value {
     })
 }
 
+/// Did the handshake fail because this token is not accepted, as opposed to the link being down?
+///
+/// tungstenite reports a rejected upgrade as an Http response rather than a typed error, so the status is
+/// read off that. Anything it cannot classify counts as transient — treating an unknown failure as fatal
+/// would take a working node offline for a reason nobody could see.
+fn is_auth_failure(err: &anyhow::Error) -> bool {
+    use tokio_tungstenite::tungstenite::Error as WsError;
+    for cause in err.chain() {
+        if let Some(WsError::Http(resp)) = cause.downcast_ref::<WsError>() {
+            return matches!(resp.status().as_u16(), 401 | 403);
+        }
+    }
+    false
+}
+
 fn fail_frame(job_id: &str, err: &anyhow::Error) -> Value {
     json!({
         "type": "fail",
@@ -398,7 +515,7 @@ fn report_hello_ok(frame: &Value) {
     let accepted = frame
         .get("lanes")
         .and_then(Value::as_array)
-        .map(|l| l.len())
+        .map(Vec::len)
         .unwrap_or(0);
     let rejected: Vec<&str> = frame
         .get("rejected")
@@ -433,9 +550,32 @@ mod tests {
             max_concurrency: 1,
             enabled: true,
         };
-        assert!(lane.model_matches("claude-opus-4-7"));
-        assert!(lane.model_matches("claude-opus-4-7-20260115"));
-        assert!(!lane.model_matches("claude-sonnet-4-5"));
+        // Old server: no canonical id, so a dated snapshot of the SAME model still resolves.
+        assert!(lane.authorises("claude-opus-4-7", None));
+        assert!(lane.authorises("claude-opus-4-7-20260115", None));
+        assert!(!lane.authorises("claude-sonnet-4-5", None));
+    }
+
+    #[test]
+    fn a_lane_never_authorises_a_neighbouring_model() {
+        // The footgun the canonical id exists to close: `claude-opus-4` used to accept `claude-opus-4-5`
+        // through a shared prefix, spending the supplier's quota on a model they never enabled.
+        let opus4 = lane("claude", "claude-opus-4", 100, 1);
+        assert!(!opus4.authorises("claude-opus-4-5", Some("claude-opus-4-5")));
+        assert!(opus4.authorises("claude-opus-4-8", Some("claude-opus-4")), "our id, vendor's snapshot");
+        // ...and even without a canonical id, the prefix must end on a separator rather than mid-token.
+        let five = lane("codex", "gpt-5", 100, 1);
+        assert!(!five.authorises("gpt-50", None));
+        assert!(five.authorises("gpt-5.6-sol", None));
+    }
+
+    #[test]
+    fn the_canonical_id_is_authoritative_when_present() {
+        // A server that sends lane_model has already resolved the mapping; the vendor id is then just what
+        // we forward upstream, and must not widen what this machine agreed to serve.
+        let lane = lane("claude", "claude-opus-4-7", 100, 1);
+        assert!(lane.authorises("anything-at-all", Some("claude-opus-4-7")));
+        assert!(!lane.authorises("claude-opus-4-7", Some("claude-haiku-4-5")));
     }
 
     fn lane(vendor: &str, model: &str, share: u8, conc: u8) -> Lane {

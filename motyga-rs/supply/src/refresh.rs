@@ -121,20 +121,33 @@ impl Vendor {
             .stderr(Stdio::null())
             // A supplier may well launch `motyga supply run` from a terminal inside Claude Code, and the
             // CLI refuses to start nested. Clearing the marker is what keeps the refresh working there.
-            .env_remove("CLAUDECODE");
+            .env_remove("CLAUDECODE")
+            // The "hard timeout" below only stops US waiting: dropping the wait future does not stop the
+            // process, so a hung vendor CLI used to survive on the supplier's machine indefinitely and a
+            // fresh one was launched every cooldown. This is what makes the timeout actually terminal.
+            .kill_on_drop(true);
         #[cfg(windows)]
         {
             // npm installs these as .cmd shims, which CreateProcess will not resolve on its own.
             cmd = rebuild_via_cmd_shell(&argv);
+            cmd.kill_on_drop(true);
         }
 
-        let child = cmd.spawn().with_context(|| {
+        let mut child = cmd.spawn().with_context(|| {
             format!("cannot start `{}` — is that vendor's CLI installed and on PATH?", self.as_str())
         })?;
-        let status = tokio::time::timeout(REFRESH_TIMEOUT, child.wait_with_output())
-            .await
-            .map_err(|_| anyhow!("`{}` did not finish within {:?}", self.as_str(), REFRESH_TIMEOUT))?
-            .with_context(|| format!("running `{}`", self.as_str()))?;
+        let status = match tokio::time::timeout(REFRESH_TIMEOUT, child.wait()).await {
+            Ok(res) => {
+                let code = res.with_context(|| format!("running `{}`", self.as_str()))?;
+                std::process::Output { status: code, stdout: Vec::new(), stderr: Vec::new() }
+            }
+            Err(_) => {
+                // Kill and REAP, so the child does not linger as a zombie holding its pipes open.
+                let _ = child.kill().await;
+                return Err(anyhow!(
+                    "`{}` did not finish within {:?}", self.as_str(), REFRESH_TIMEOUT));
+            }
+        };
         if !status.status.success() {
             return Err(anyhow!("`{}` exited with {}", self.as_str(), status.status));
         }
