@@ -207,7 +207,8 @@ enum Subcommand {
     /// Inspect feature flags.
     Features(FeaturesCli),
 
-    /// Sell part of your own Motyga/Claude subscription through Motyga.
+    /// Serve your own Motyga/Claude subscription through Motyga: to your own machines, to your
+    /// team, or for sale.
     Supply(motyga_supply::SupplyCli),
 }
 
