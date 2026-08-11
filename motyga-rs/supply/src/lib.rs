@@ -1,8 +1,16 @@
-//! `motyga supply` — sell part of your own Codex / Claude subscription through Motyga.
+//! `motyga supply` — run your own Codex / Claude subscription through Motyga.
 //!
 //! What this is: a small daemon that holds one outbound WebSocket to Motyga, receives model calls, runs
 //! them against the subscription YOU are already signed into on this machine, and sends the answer back.
-//! You are paid a share of what the request sold for.
+//!
+//! WHO RECEIVES THOSE CALLS IS DECIDED ON THE WEBSITE, PER MODEL, AND DEFAULTS TO NOBODY BUT YOU:
+//!   * only me    — your own other devices reach this subscription through Motyga. Open to everyone.
+//!   * my team    — plus the active members of ONE organization you belong to.
+//!   * for sale   — the marketplace, by invitation only. Only here are you paid a share of the sale.
+//!
+//! That setting deliberately does NOT live in this file or in `~/.motyga/supply.json`. It is a statement
+//! about other PEOPLE, not about this machine, so the server owns it — which is also what lets you change
+//! your mind from a phone without restarting anything.
 //!
 //! What this is NOT, and cannot be made into without changing the frame vocabulary in `node.rs`: a remote
 //! shell. There is no frame that runs a command, reads a file or opens a port. A supply node executes model
@@ -12,8 +20,10 @@
 //! with the token their own CLI stored — Motyga only ever sees the prompt it sent you and the answer you
 //! returned.
 //!
-//! ⚠️ Reselling subscription access very likely breaches your vendor's terms of service. You accept that
-//! risk explicitly in the browser before a node token is ever issued.
+//! ⚠️ Your vendor's terms generally licence a subscription to ONE person. Reaching your own subscription
+//! from your own other devices is the mild reading of that; letting colleagues use it, and selling access
+//! to strangers, are not. You accept the risk that applies to you explicitly in the browser, before a node
+//! token is ever issued.
 
 pub mod config;
 pub mod enroll;
@@ -42,7 +52,7 @@ pub enum SupplyCommand {
     Login(LoginArgs),
     /// Show what this machine offers and whether it is connected.
     Status,
-    /// List the models you can sell, and what each one pays you.
+    /// List the models this machine can serve (and, if you sell, what each one pays).
     Models,
     /// Offer a model from one of your subscriptions.
     Enable(EnableArgs),
@@ -72,7 +82,7 @@ pub struct EnableArgs {
     /// Model id — run `motyga supply models` to see what is being bought.
     #[arg(long)]
     pub model: String,
-    /// Percentage of that subscription's WEEKLY window you are willing to sell (1-100). The node stops
+    /// Percentage of that subscription's WEEKLY window this machine may spend (1-100). The node stops
     /// offering the model once the vendor reports this much of the window is gone, so the rest stays yours.
     #[arg(long, default_value_t = 100, value_parser = clap::value_parser!(u8).range(1..=100))]
     pub share: u8,
@@ -111,11 +121,16 @@ async fn cmd_login(args: LoginArgs) -> Result<()> {
     cfg.node_token = Some(token);
     config::save(&cfg)?;
     println!("This machine is connected.");
-    println!("Next: motyga supply models        # see what is being bought and at what rate");
+    println!("Next: motyga supply models        # which models this machine can serve");
     // No model id here on purpose: this text ships inside the npm binary, so a retired model would keep
     // being suggested until every supplier upgrades.
     println!("      motyga supply enable claude --model <id from the list above> --share 50");
     println!("Then: motyga supply run");
+    // Said at the moment the machine becomes reachable, because "who can reach it" is the one thing this
+    // command does NOT decide — and the answer it starts with is "nobody but you".
+    println!();
+    println!("By default only YOU reach this subscription, from your own other devices.");
+    println!("Sharing it with your team, or selling it, is chosen per model on the website.");
     Ok(())
 }
 
@@ -129,7 +144,9 @@ async fn cmd_status() -> Result<()> {
     if cfg.lanes.is_empty() {
         println!("Offering:  nothing yet — see `motyga supply enable --help`");
     } else {
-        println!("Offering:");
+        // Deliberately NOT claiming who reaches each lane: that lives on the server and this file would be
+        // guessing. Saying nothing is better than printing a stale "for sale" next to a private model.
+        println!("Offering (who may reach each — see the website):");
         for lane in &cfg.lanes {
             println!(
                 "  {:<8} {:<24} share {:>3}%  concurrency {}  {}",
@@ -179,6 +196,14 @@ async fn cmd_models() -> Result<()> {
     #[derive(serde::Deserialize)]
     struct Resp {
         models: Vec<Row>,
+        /// Is this account actually in the SALE programme? The rates below are what a seller is paid, and
+        /// printing them to someone who is only relaying their own subscription tells them something false
+        /// about their own account. There is no browser session in a terminal, so the answer travels with
+        /// the catalog. Defaults to false — the honest reading of an older backend that does not send it.
+        #[serde(default)]
+        may_sell: bool,
+        #[serde(default)]
+        relay_fee_microusd: i64,
     }
 
     let cfg = config::load()?;
@@ -204,21 +229,46 @@ async fn cmd_models() -> Result<()> {
         .context("unexpected response from the catalog")?;
 
     if body.models.is_empty() {
-        println!("Nothing is being bought right now.");
+        println!("No models are available right now.");
         return Ok(());
     }
-    println!("{:<8} {:<20} {:<22} {:>14} {:>14}", "VENDOR", "MODEL", "NAME", "YOU EARN", "BUYER PAYS");
-    println!("{:<8} {:<20} {:<22} {:>14} {:>14}", "", "", "", "$ / 1M out", "$ / 1M out");
-    for m in &body.models {
-        println!(
-            "{:<8} {:<20} {:<22} {:>14.2} {:>14.2}",
-            m.vendor, m.model, m.label, m.pay_usd_per_1m_output, m.buyer_usd_per_1m_output
-        );
+    if body.may_sell {
+        println!("{:<8} {:<20} {:<22} {:>14} {:>14}", "VENDOR", "MODEL", "NAME", "YOU EARN", "BUYER PAYS");
+        println!("{:<8} {:<20} {:<22} {:>14} {:>14}", "", "", "", "$ / 1M out", "$ / 1M out");
+        for m in &body.models {
+            println!(
+                "{:<8} {:<20} {:<22} {:>14.2} {:>14.2}",
+                m.vendor, m.model, m.label, m.pay_usd_per_1m_output, m.buyer_usd_per_1m_output
+            );
+        }
+    } else {
+        // No earnings column: this account is not in the sale programme, so those numbers describe money
+        // that will never arrive. What it CAN do is reach its own subscription — so price that instead.
+        println!("{:<8} {:<20} {:<22}", "VENDOR", "MODEL", "NAME");
+        for m in &body.models {
+            println!("{:<8} {:<20} {:<22}", m.vendor, m.model, m.label);
+        }
+        if body.relay_fee_microusd > 0 {
+            println!();
+            println!(
+                "Reaching your own subscription through Motyga costs ${} per request — any model, any length.",
+                trim_zeros(body.relay_fee_microusd as f64 / 1_000_000.0)
+            );
+        }
     }
     println!();
     println!("Offer one with:  motyga supply enable <vendor> --model <model> --share <1-100>");
-    println!("--share is the percentage of that subscription's weekly window you are willing to sell.");
+    println!("--share is the percentage of that subscription's weekly window this machine may spend.");
+    println!("Who may reach it — only you, your team, or the marketplace — is chosen per model on the website.");
     Ok(())
+}
+
+/// "$0.001", not "$0.0010000". A fee below a cent needs more places than money usually gets, and the
+/// trailing zeros then read as false precision.
+fn trim_zeros(v: f64) -> String {
+    let s = format!("{v:.6}");
+    let s = s.trim_end_matches('0').trim_end_matches('.');
+    if s.is_empty() { "0".to_string() } else { s.to_string() }
 }
 
 fn cmd_enable(args: EnableArgs) -> Result<()> {
@@ -235,6 +285,7 @@ fn cmd_enable(args: EnableArgs) -> Result<()> {
         "Offering {} {} — up to {}% of the window, {} at a time.",
         args.vendor, args.model, args.share, args.max_concurrency
     );
+    println!("Reachable by you only, until you say otherwise on the website.");
     println!("Restart `motyga supply run` for this to take effect.");
     Ok(())
 }
