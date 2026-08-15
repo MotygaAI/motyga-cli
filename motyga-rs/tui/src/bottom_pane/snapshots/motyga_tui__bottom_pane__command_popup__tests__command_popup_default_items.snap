@@ -2,7 +2,7 @@
 source: tui/src/bottom_pane/command_popup.rs
 expression: commands
 ---
-/model - choose what model and reasoning effort to use
+/model - choose a model and reasoning effort, or /model <model-id> to switch directly
 /ide - include current selection, open files, and other context from your IDE
 /permissions - choose what Motyga is allowed to do
 /keymap - remap TUI shortcuts

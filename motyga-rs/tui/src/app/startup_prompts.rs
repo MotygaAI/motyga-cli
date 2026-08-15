@@ -105,6 +105,55 @@ pub(super) fn emit_project_config_warnings(app_event_tx: &AppEventSender, config
     )));
 }
 
+/// Warning for a model list that is the bundled fallback because the refresh failed.
+///
+/// Without this the failure is invisible: `/model` just comes back with the handful of models this
+/// build ships, which is indistinguishable from a provider that only offers those. A rejected key
+/// is the common cause, and the environment variable that carries it outranks `motyga login`, so
+/// say which one is set rather than leaving the user to guess.
+/// `set_env_key` is the provider's API-key variable when it is actually set in this environment,
+/// which is the case where it, not `motyga login`, is the credential the request used.
+pub(super) fn model_catalog_warning(
+    refresh_error: Option<&str>,
+    model_count: usize,
+    set_env_key: Option<&str>,
+) -> Option<String> {
+    let refresh_error = refresh_error?;
+    let mut message = format!(
+        "Could not refresh the model list: {refresh_error}\n\
+         Showing the {model_count} model(s) bundled with this build, so /model may be missing \
+         models your account can use."
+    );
+
+    let rejected = refresh_error.contains("401") || refresh_error.contains("Unauthorized");
+    if let Some(env_key) = set_env_key
+        && rejected
+    {
+        message.push_str(&format!(
+            "\n{env_key} is set and takes precedence over `motyga login`. Unset it or replace it \
+             with a working key, then restart."
+        ));
+    }
+
+    Some(message)
+}
+
+pub(super) fn emit_model_catalog_warning(
+    app_event_tx: &AppEventSender,
+    refresh_error: Option<&str>,
+    model_count: usize,
+    provider_env_key: Option<&str>,
+) {
+    let set_env_key = provider_env_key
+        .filter(|env_key| std::env::var(env_key).is_ok_and(|value| !value.trim().is_empty()));
+    let Some(message) = model_catalog_warning(refresh_error, model_count, set_env_key) else {
+        return;
+    };
+    app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
+        history_cell::new_warning_event(message),
+    )));
+}
+
 pub(super) fn emit_system_bwrap_warning(app_event_tx: &AppEventSender, config: &Config) {
     let Some(message) =
         motyga_sandboxing::system_bwrap_warning(config.permissions.permission_profile())
@@ -398,6 +447,42 @@ mod tests {
             vec![base_cwd.join("rel").into_path_buf()]
         );
         Ok(())
+    }
+
+    #[test]
+    fn model_catalog_warning_is_silent_when_the_refresh_succeeded() {
+        assert_eq!(
+            model_catalog_warning(/*refresh_error*/ None, /*model_count*/ 130, None),
+            None
+        );
+    }
+
+    #[test]
+    fn model_catalog_warning_names_the_env_key_that_outranks_login() {
+        let warning = model_catalog_warning(
+            Some("unexpected status 401 Unauthorized: Invalid API key"),
+            /*model_count*/ 6,
+            Some("MOTYGA_API_KEY"),
+        )
+        .expect("a failed refresh warns");
+
+        assert!(warning.contains("401"), "{warning}");
+        assert!(warning.contains("6 model(s)"), "{warning}");
+        assert!(warning.contains("MOTYGA_API_KEY is set"), "{warning}");
+    }
+
+    #[test]
+    fn model_catalog_warning_omits_the_key_hint_for_non_auth_failures() {
+        let warning = model_catalog_warning(
+            Some("error sending request: connection reset"),
+            /*model_count*/ 6,
+            Some("MOTYGA_API_KEY"),
+        )
+        .expect("a failed refresh warns");
+
+        // A transport failure says nothing about the credential, so pointing at the key would send
+        // the user to rotate a perfectly good one.
+        assert!(!warning.contains("MOTYGA_API_KEY"), "{warning}");
     }
 
     fn skill_error(path: &str, message: &str) -> SkillErrorInfo {

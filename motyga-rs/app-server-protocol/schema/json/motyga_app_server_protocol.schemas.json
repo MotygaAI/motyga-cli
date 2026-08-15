@@ -7082,144 +7082,6 @@
           }
         ]
       },
-      "MotygaErrorInfo": {
-        "description": "This translation layer make sure that we expose motyga error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `motygaErrorInfo` variant.",
-        "oneOf": [
-          {
-            "enum": [
-              "contextWindowExceeded",
-              "sessionBudgetExceeded",
-              "usageLimitExceeded",
-              "serverOverloaded",
-              "cyberPolicy",
-              "internalServerError",
-              "unauthorized",
-              "badRequest",
-              "threadRollbackFailed",
-              "sandboxError",
-              "other"
-            ],
-            "type": "string"
-          },
-          {
-            "additionalProperties": false,
-            "properties": {
-              "httpConnectionFailed": {
-                "properties": {
-                  "httpStatusCode": {
-                    "format": "uint16",
-                    "minimum": 0.0,
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
-                  }
-                },
-                "type": "object"
-              }
-            },
-            "required": [
-              "httpConnectionFailed"
-            ],
-            "title": "HttpConnectionFailedMotygaErrorInfo",
-            "type": "object"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Failed to connect to the response SSE stream.",
-            "properties": {
-              "responseStreamConnectionFailed": {
-                "properties": {
-                  "httpStatusCode": {
-                    "format": "uint16",
-                    "minimum": 0.0,
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
-                  }
-                },
-                "type": "object"
-              }
-            },
-            "required": [
-              "responseStreamConnectionFailed"
-            ],
-            "title": "ResponseStreamConnectionFailedMotygaErrorInfo",
-            "type": "object"
-          },
-          {
-            "additionalProperties": false,
-            "description": "The response SSE stream disconnected in the middle of a turn before completion.",
-            "properties": {
-              "responseStreamDisconnected": {
-                "properties": {
-                  "httpStatusCode": {
-                    "format": "uint16",
-                    "minimum": 0.0,
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
-                  }
-                },
-                "type": "object"
-              }
-            },
-            "required": [
-              "responseStreamDisconnected"
-            ],
-            "title": "ResponseStreamDisconnectedMotygaErrorInfo",
-            "type": "object"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Reached the retry limit for responses.",
-            "properties": {
-              "responseTooManyFailedAttempts": {
-                "properties": {
-                  "httpStatusCode": {
-                    "format": "uint16",
-                    "minimum": 0.0,
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
-                  }
-                },
-                "type": "object"
-              }
-            },
-            "required": [
-              "responseTooManyFailedAttempts"
-            ],
-            "title": "ResponseTooManyFailedAttemptsMotygaErrorInfo",
-            "type": "object"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Returned when `turn/start` or `turn/steer` is submitted while the current active turn cannot accept same-turn steering, for example `/review` or manual `/compact`.",
-            "properties": {
-              "activeTurnNotSteerable": {
-                "properties": {
-                  "turnKind": {
-                    "$ref": "#/definitions/v2/NonSteerableTurnKind"
-                  }
-                },
-                "required": [
-                  "turnKind"
-                ],
-                "type": "object"
-              }
-            },
-            "required": [
-              "activeTurnNotSteerable"
-            ],
-            "title": "ActiveTurnNotSteerableMotygaErrorInfo",
-            "type": "object"
-          }
-        ]
-      },
       "CollabAgentState": {
         "properties": {
           "message": {
@@ -12640,6 +12502,14 @@
       "ModelListResponse": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "properties": {
+          "catalogRefreshError": {
+            "default": null,
+            "description": "Why the last catalog refresh failed, when `data` is therefore the bundled fallback rather than the provider's catalog. A rejected key or an unreachable gateway used to be invisible here: the list simply came back short, and the client had no way to tell a small catalog from a failed refresh.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "data": {
             "items": {
               "$ref": "#/definitions/v2/Model"
@@ -12858,6 +12728,144 @@
           }
         },
         "type": "object"
+      },
+      "MotygaErrorInfo": {
+        "description": "This translation layer make sure that we expose motyga error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `motygaErrorInfo` variant.",
+        "oneOf": [
+          {
+            "enum": [
+              "contextWindowExceeded",
+              "sessionBudgetExceeded",
+              "usageLimitExceeded",
+              "serverOverloaded",
+              "cyberPolicy",
+              "internalServerError",
+              "unauthorized",
+              "badRequest",
+              "threadRollbackFailed",
+              "sandboxError",
+              "other"
+            ],
+            "type": "string"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "httpConnectionFailed": {
+                "properties": {
+                  "httpStatusCode": {
+                    "format": "uint16",
+                    "minimum": 0.0,
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "httpConnectionFailed"
+            ],
+            "title": "HttpConnectionFailedMotygaErrorInfo",
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Failed to connect to the response SSE stream.",
+            "properties": {
+              "responseStreamConnectionFailed": {
+                "properties": {
+                  "httpStatusCode": {
+                    "format": "uint16",
+                    "minimum": 0.0,
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "responseStreamConnectionFailed"
+            ],
+            "title": "ResponseStreamConnectionFailedMotygaErrorInfo",
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The response SSE stream disconnected in the middle of a turn before completion.",
+            "properties": {
+              "responseStreamDisconnected": {
+                "properties": {
+                  "httpStatusCode": {
+                    "format": "uint16",
+                    "minimum": 0.0,
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "responseStreamDisconnected"
+            ],
+            "title": "ResponseStreamDisconnectedMotygaErrorInfo",
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Reached the retry limit for responses.",
+            "properties": {
+              "responseTooManyFailedAttempts": {
+                "properties": {
+                  "httpStatusCode": {
+                    "format": "uint16",
+                    "minimum": 0.0,
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "responseTooManyFailedAttempts"
+            ],
+            "title": "ResponseTooManyFailedAttemptsMotygaErrorInfo",
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Returned when `turn/start` or `turn/steer` is submitted while the current active turn cannot accept same-turn steering, for example `/review` or manual `/compact`.",
+            "properties": {
+              "activeTurnNotSteerable": {
+                "properties": {
+                  "turnKind": {
+                    "$ref": "#/definitions/v2/NonSteerableTurnKind"
+                  }
+                },
+                "required": [
+                  "turnKind"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "activeTurnNotSteerable"
+            ],
+            "title": "ActiveTurnNotSteerableMotygaErrorInfo",
+            "type": "object"
+          }
+        ]
       },
       "MultiAgentMode": {
         "description": "Controls whether the model receives multi-agent delegation instructions and, when it does, whether it should only spawn sub-agents after an explicit user request or may delegate proactively when doing so would help. `none` leaves the multi-agent tools available without injecting delegation instructions.",
@@ -14505,7 +14513,8 @@
           "workspace_owner_credits_depleted",
           "workspace_member_credits_depleted",
           "workspace_owner_usage_limit_reached",
-          "workspace_member_usage_limit_reached"
+          "workspace_member_usage_limit_reached",
+          "model_warming_up"
         ],
         "type": "string"
       },
@@ -19995,6 +20004,9 @@
               "null"
             ]
           },
+          "message": {
+            "type": "string"
+          },
           "motygaErrorInfo": {
             "anyOf": [
               {
@@ -20004,9 +20016,6 @@
                 "type": "null"
               }
             ]
-          },
-          "message": {
-            "type": "string"
           }
         },
         "required": [

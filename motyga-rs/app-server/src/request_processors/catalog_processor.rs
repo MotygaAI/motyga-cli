@@ -254,13 +254,16 @@ impl CatalogRequestProcessor {
             cursor,
             include_hidden,
         } = params;
-        let models = supported_models(thread_manager, include_hidden.unwrap_or(false)).await;
+        let models = supported_models(thread_manager.clone(), include_hidden.unwrap_or(false)).await;
+        // Read after listing: `supported_models` is what performs the refresh that may have failed.
+        let catalog_refresh_error = thread_manager.catalog_refresh_error().await;
         let total = models.len();
 
         if total == 0 {
             return Ok(ModelListResponse {
                 data: Vec::new(),
                 next_cursor: None,
+                catalog_refresh_error,
             });
         }
 
@@ -289,6 +292,7 @@ impl CatalogRequestProcessor {
         Ok(ModelListResponse {
             data: items,
             next_cursor,
+            catalog_refresh_error,
         })
     }
 

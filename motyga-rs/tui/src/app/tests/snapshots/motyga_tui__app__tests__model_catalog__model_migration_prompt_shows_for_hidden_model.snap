@@ -2,10 +2,10 @@
 source: tui/src/app/tests/model_catalog.rs
 expression: model_migration_copy_to_plain_text(&copy)
 ---
-Introducing GPT-5.4
+Switch to gpt-5.4
 
-Motyga just got an upgrade with GPT-5.4, our most capable model for professional work. It outperforms prior models while being more token efficient, with notable improvements on long-running tasks, tool calling, computer use, and frontend development.
+gpt-5.4 is a newer OpenAI model available in Motyga. It is more token efficient than gpt-5.3-codex, with notable improvements on long-running tasks, tool calling, computer use, and frontend development.
 
-Learn more: https://motyga.com/models
+Browse the full catalog: https://motyga.com/models
 
-You can always keep using GPT-5.3-Codex if you prefer.
+You can keep using gpt-5.3-codex if you prefer.

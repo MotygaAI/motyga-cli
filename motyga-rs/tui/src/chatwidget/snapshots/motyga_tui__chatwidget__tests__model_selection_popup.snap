@@ -3,7 +3,7 @@ source: tui/src/chatwidget/tests/popups_and_settings.rs
 expression: popup
 ---
   Select Model and Effort
-  Access legacy models by running motyga -m <model_name> or in your config.tom
+  Not listed? Run /model <model-id> to switch to any model the server serves.
 
   1. gpt-5.5 (default)  Frontier model for complex coding, research, and real-
                         world work.

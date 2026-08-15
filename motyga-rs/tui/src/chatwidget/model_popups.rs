@@ -4,6 +4,7 @@
 //! into another, especially while Plan mode is active.
 
 use super::*;
+use motyga_utils_fuzzy_match::fuzzy_match;
 
 impl ChatWidget {
     /// Open a popup to choose a quick auto model. Selecting "All models"
@@ -34,13 +35,22 @@ impl ChatWidget {
     ///
     /// The argument used to be dropped on the floor: the picker opened, the name was discarded,
     /// and the session kept running the previous model with no indication anything was ignored.
-    /// An unmatched name is now an error rather than a silent no-op.
+    /// A name the catalog does not list switches the session anyway, the same way `-m` does.
     pub(crate) fn apply_model_slash_arg(&mut self, requested: &str) {
         if !self.is_session_configured() {
             self.add_info_message(
                 "Model selection is disabled until startup completes.".to_string(),
                 /*hint*/ None,
             );
+            return;
+        }
+
+        // A model id is a single token. Anything with whitespace in it is a sentence, not a name,
+        // and switching the session to it would be a silent way to break every following turn.
+        if requested.split_whitespace().count() > 1 {
+            self.add_error_message(format!(
+                "'{requested}' is not a model id. Usage: /model <model-id>, for example /model gpt-5.5. Run /model with no argument to browse the catalog."
+            ));
             return;
         }
 
@@ -57,14 +67,8 @@ impl ChatWidget {
 
         // Match the catalog id the user typed. Deliberately not filtered by `show_in_picker`:
         // naming a model outright is a more explicit act than browsing for one.
-        let Some(preset) = presets
-            .iter()
-            .find(|preset| preset.model.eq_ignore_ascii_case(requested))
-            .cloned()
-        else {
-            self.add_error_message(format!(
-                "Unknown model '{requested}'. Run /model with no argument to pick from the catalog."
-            ));
+        let Some(preset) = match_model_arg(&presets, requested) else {
+            self.switch_to_uncatalogued_model(requested, &presets);
             return;
         };
 
@@ -72,8 +76,47 @@ impl ChatWidget {
         let should_prompt_plan_mode_scope =
             self.should_prompt_plan_mode_reasoning_scope(preset.model.as_str(), effort.clone());
         for action in
-            Self::model_selection_actions(preset.model.clone(), effort, should_prompt_plan_mode_scope)
+            Self::model_selection_actions(preset.model, effort, should_prompt_plan_mode_scope)
         {
+            action(&self.app_event_tx);
+        }
+    }
+
+    /// Switch to a model id the local catalog does not list.
+    ///
+    /// The catalog only holds what the last `/models` refresh returned, and that call falls back to
+    /// the small bundled list whenever the gateway is unreachable or the key is rejected — so an id
+    /// we cannot resolve locally is not an id the backend cannot run. `motyga -m <id>` has always
+    /// accepted an unlisted id and let the server decide; typing it into `/model` now does the same
+    /// instead of refusing and sending the user back to the command line.
+    ///
+    /// Reasoning effort carries over unchanged: an unlisted model brings no default to apply, and
+    /// passing `None` would clear `model_reasoning_effort` from config.toml as a side effect.
+    fn switch_to_uncatalogued_model(&mut self, requested: &str, presets: &[ModelPreset]) {
+        let suggestions = suggest_model_ids(presets, requested);
+        let hint = if suggestions.is_empty() {
+            "Run /model with no argument to browse the models this session knows about.".to_string()
+        } else {
+            format!(
+                "Close catalog ids: {}. Run /model with no argument to browse them.",
+                suggestions.join(", ")
+            )
+        };
+        self.add_info_message(
+            format!(
+                "'{requested}' is not in this session's model catalog — switching anyway, the server decides whether it can serve it."
+            ),
+            Some(hint),
+        );
+
+        let effort = self.config.model_reasoning_effort.clone();
+        let should_prompt_plan_mode_scope =
+            self.should_prompt_plan_mode_reasoning_scope(requested, effort.clone());
+        for action in Self::model_selection_actions(
+            requested.to_string(),
+            effort,
+            should_prompt_plan_mode_scope,
+        ) {
             action(&self.app_event_tx);
         }
     }
@@ -251,7 +294,7 @@ impl ChatWidget {
 
         let header = self.model_menu_header(
             "Select Model and Effort",
-            "Access legacy models by running motyga -m <model_name> or in your config.toml",
+            "Not listed? Run /model <model-id> to switch to any model the server serves.",
         );
         self.bottom_pane.show_selection_view(SelectionViewParams {
             footer_hint: Some(self.bottom_pane.standard_popup_hint_line()),
@@ -580,5 +623,160 @@ impl ChatWidget {
         self.apply_model_and_effort_without_persist(model.clone(), effort.clone());
         self.app_event_tx
             .send(AppEvent::PersistModelSelection { model, effort });
+    }
+}
+
+/// Collapse an id to just its alphanumerics, so ids that differ only in separators or case compare
+/// equal. The catalog spells versions both ways depending on the vendor (`claude-opus-4-5` vs the
+/// label's "Claude Opus 4.5"), and a user typing the version they SEE should not be a dead end.
+fn normalized_model_id(id: &str) -> String {
+    id.chars()
+        .filter(char::is_ascii_alphanumeric)
+        .map(|c| c.to_ascii_lowercase())
+        .collect()
+}
+
+/// Resolve `/model <name>` against the catalog: exact id first, then an id that is identical once
+/// separators and case are stripped — but only when exactly one model matches, so an ambiguous
+/// shorthand still errors instead of silently picking one.
+fn match_model_arg(presets: &[ModelPreset], requested: &str) -> Option<ModelPreset> {
+    if let Some(exact) = presets
+        .iter()
+        .find(|preset| preset.model.eq_ignore_ascii_case(requested))
+    {
+        return Some(exact.clone());
+    }
+    let wanted = normalized_model_id(requested);
+    if wanted.is_empty() {
+        return None;
+    }
+    let mut normalized = presets
+        .iter()
+        .filter(|preset| normalized_model_id(&preset.model) == wanted);
+    let only = normalized.next()?;
+    normalized.next().is_none().then(|| only.clone())
+}
+
+/// Catalog ids an unmatched `/model` argument most plausibly meant, best first (at most three).
+///
+/// Ranked with the same subsequence matcher the pickers use, run in BOTH directions: the catalog id
+/// inside what was typed catches a name carrying extra words the id never had (`chatgpt-5.6-sol`
+/// finds `gpt-5.6-sol`), and what was typed inside the catalog id catches truncation and typos.
+fn suggest_model_ids(presets: &[ModelPreset], requested: &str) -> Vec<String> {
+    if requested.is_empty() {
+        return Vec::new();
+    }
+    let mut scored: Vec<(i32, &str)> = presets
+        .iter()
+        .filter_map(|preset| {
+            let id = preset.model.as_str();
+            let inside_request = fuzzy_match(requested, id).map(|(_, score)| score);
+            let inside_id = fuzzy_match(id, requested).map(|(_, score)| score);
+            let best = match (inside_request, inside_id) {
+                (Some(a), Some(b)) => Some(a.min(b)),
+                (found, None) | (None, found) => found,
+            }?;
+            Some((best, id))
+        })
+        .collect();
+    // Stable by score, then by id, so the same typo always produces the same advice.
+    scored.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(b.1)));
+    scored.dedup_by(|a, b| a.1 == b.1);
+    scored
+        .into_iter()
+        .take(3)
+        .map(|(_, id)| format!("'{id}'"))
+        .collect()
+}
+
+#[cfg(test)]
+mod model_arg_tests {
+    use super::*;
+    use motyga_protocol::openai_models::default_input_modalities;
+
+    fn preset(slug: &str) -> ModelPreset {
+        ModelPreset {
+            id: slug.to_string(),
+            model: slug.to_string(),
+            display_name: slug.to_string(),
+            description: String::new(),
+            default_reasoning_effort: ReasoningEffortConfig::Medium,
+            supported_reasoning_efforts: Vec::new(),
+            supports_personality: false,
+            additional_speed_tiers: Vec::new(),
+            service_tiers: Vec::new(),
+            default_service_tier: None,
+            is_default: false,
+            upgrade: None,
+            show_in_picker: true,
+            availability_nux: None,
+            supported_in_api: true,
+            input_modalities: default_input_modalities(),
+        }
+    }
+
+    fn catalog() -> Vec<ModelPreset> {
+        [
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+            "gpt-5.6-luna",
+            "gpt-5.5",
+            "claude-opus-4-5",
+        ]
+        .into_iter()
+        .map(preset)
+        .collect()
+    }
+
+    #[test]
+    fn exact_and_case_insensitive_ids_still_match() {
+        let presets = catalog();
+        assert_eq!(
+            match_model_arg(&presets, "gpt-5.6-terra").map(|p| p.model),
+            Some("gpt-5.6-terra".to_string())
+        );
+        assert_eq!(
+            match_model_arg(&presets, "GPT-5.6-SOL").map(|p| p.model),
+            Some("gpt-5.6-sol".to_string())
+        );
+    }
+
+    #[test]
+    fn separator_only_differences_resolve() {
+        // The catalog LABEL reads "Claude Opus 4.5", so that is the version people type.
+        let presets = catalog();
+        assert_eq!(
+            match_model_arg(&presets, "claude-opus-4.5").map(|p| p.model),
+            Some("claude-opus-4-5".to_string())
+        );
+    }
+
+    #[test]
+    fn unknown_id_does_not_silently_resolve() {
+        assert!(match_model_arg(&catalog(), "definitely-not-a-model").is_none());
+    }
+
+    #[test]
+    fn brand_prefixed_name_points_at_the_real_id() {
+        // OpenAI serves no `chatgpt-*` chat id, so this can never be a catalog entry or an alias — but it
+        // is what someone reaching for the ChatGPT flagship types, and it has to lead somewhere.
+        let presets = catalog();
+        assert!(match_model_arg(&presets, "chatgpt-5.6-sol").is_none());
+        assert_eq!(
+            suggest_model_ids(&presets, "chatgpt-5.6-sol")
+                .first()
+                .map(String::as_str),
+            Some("'gpt-5.6-sol'")
+        );
+        // The retired bare `gpt-5.6` is an equally good prefix of all three codenames, so the suggester
+        // cannot rank Sol first and must not pretend to — only the server's alias table knows which one
+        // it meant. Offering the family is the honest answer; the switch itself still resolves server-side.
+        let family = suggest_model_ids(&presets, "gpt-5.6");
+        assert!(family.contains(&"'gpt-5.6-sol'".to_string()), "{family:?}");
+    }
+
+    #[test]
+    fn nothing_close_suggests_nothing() {
+        assert!(suggest_model_ids(&catalog(), "zzzzzzzz").is_empty());
     }
 }

@@ -834,6 +834,12 @@ impl App {
             model = updated_model;
         }
         let model_catalog = Arc::new(ModelCatalog::new(available_models.clone()));
+        emit_model_catalog_warning(
+            &app_event_tx,
+            bootstrap.catalog_refresh_error.as_deref(),
+            available_models.len(),
+            config.model_provider.env_key.as_deref(),
+        );
         let feedback_audience = bootstrap.feedback_audience;
         let auth_mode = bootstrap.auth_mode;
         let has_chatgpt_account = bootstrap.has_chatgpt_account;

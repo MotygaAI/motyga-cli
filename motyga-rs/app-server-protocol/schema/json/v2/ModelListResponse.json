@@ -206,6 +206,14 @@
     }
   },
   "properties": {
+    "catalogRefreshError": {
+      "default": null,
+      "description": "Why the last catalog refresh failed, when `data` is therefore the bundled fallback rather than the provider's catalog. A rejected key or an unreachable gateway used to be invisible here: the list simply came back short, and the client had no way to tell a small catalog from a failed refresh.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "data": {
       "items": {
         "$ref": "#/definitions/Model"

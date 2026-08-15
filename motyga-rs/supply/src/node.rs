@@ -614,7 +614,7 @@ mod tests {
     fn server_cannot_invent_a_lane_the_machine_never_offered() {
         let local = SupplyConfig { lanes: vec![lane("claude", "claude-opus-4-7", 50, 1)], ..Default::default() };
         let mut effective = local.enabled_lanes().into_iter().cloned().collect::<Vec<_>>();
-        let pushed = serde_json::json!([{"vendor": "codex", "model": "gpt-5.6", "share_pct": 100}]);
+        let pushed = serde_json::json!([{"vendor": "codex", "model": "gpt-5.6-sol", "share_pct": 100}]);
         apply_server_config(&mut effective, &local, Some(&pushed));
         assert!(effective.is_empty());
     }

@@ -170,6 +170,8 @@ pub(crate) struct AppServerBootstrap {
     pub(crate) feedback_audience: FeedbackAudience,
     pub(crate) has_chatgpt_account: bool,
     pub(crate) available_models: Vec<ModelPreset>,
+    /// Set when `available_models` is the bundled fallback because the catalog refresh failed.
+    pub(crate) catalog_refresh_error: Option<String>,
 }
 
 pub(crate) struct AppServerSession {
@@ -294,6 +296,7 @@ impl AppServerSession {
             .map_err(|err| {
                 bootstrap_request_error("model/list failed during TUI bootstrap", err)
             })?;
+        let catalog_refresh_error = models.catalog_refresh_error;
         let available_models = models
             .data
             .into_iter()
@@ -366,6 +369,7 @@ impl AppServerSession {
             feedback_audience,
             has_chatgpt_account,
             available_models,
+            catalog_refresh_error,
         })
     }
 

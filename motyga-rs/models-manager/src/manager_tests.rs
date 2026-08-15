@@ -114,6 +114,43 @@ impl TestModelsEndpoint {
     }
 }
 
+/// Endpoint that plays back a scripted sequence of refresh outcomes, failures included.
+#[derive(Debug)]
+struct ScriptedModelsEndpoint {
+    outcomes: Mutex<VecDeque<CoreResult<Vec<ModelInfo>>>>,
+}
+
+impl ScriptedModelsEndpoint {
+    fn new(outcomes: Vec<CoreResult<Vec<ModelInfo>>>) -> Arc<Self> {
+        Arc::new(Self {
+            outcomes: Mutex::new(outcomes.into()),
+        })
+    }
+}
+
+impl ModelsEndpointClient for ScriptedModelsEndpoint {
+    fn has_command_auth(&self) -> bool {
+        false
+    }
+
+    fn uses_motyga_backend(&self) -> ModelsEndpointFuture<'_, bool> {
+        Box::pin(async { true })
+    }
+
+    fn list_models<'a>(
+        &'a self,
+        _client_version: &'a str,
+    ) -> ModelsEndpointFuture<'a, CoreResult<(Vec<ModelInfo>, Option<String>)>> {
+        let outcome = self
+            .outcomes
+            .lock()
+            .expect("outcomes lock should not be poisoned")
+            .pop_front()
+            .unwrap_or_else(|| Ok(Vec::new()));
+        Box::pin(async move { outcome.map(|models| (models, None)) })
+    }
+}
+
 #[derive(Debug)]
 struct TestExternalApiKeyAuth;
 
@@ -1052,4 +1089,34 @@ fn bundled_models_json_roundtrips() {
         !response.models.is_empty(),
         "bundled models.json should contain at least one model"
     );
+}
+
+#[tokio::test]
+async fn catalog_refresh_error_is_recorded_then_cleared() {
+    let motyga_home = tempdir().expect("temp motyga home");
+    let endpoint = ScriptedModelsEndpoint::new(vec![
+        Err(motyga_protocol::error::MotygaErr::RequestTimeout),
+        Ok(vec![remote_model("api-model", "API Model", 1)]),
+    ]);
+    let manager = openai_manager_for_tests(motyga_home.path().to_path_buf(), endpoint);
+
+    // A failed refresh still serves a catalog — the bundled one — so the failure is only
+    // distinguishable through the recorded error.
+    let fallback = manager.raw_model_catalog(RefreshStrategy::Online).await;
+    assert!(!fallback.models.is_empty());
+    assert_eq!(
+        manager.catalog_refresh_error().await.as_deref(),
+        Some("request timed out")
+    );
+
+    let refreshed = manager.raw_model_catalog(RefreshStrategy::Online).await;
+    assert_eq!(
+        refreshed
+            .models
+            .iter()
+            .map(|model| model.slug.as_str())
+            .collect::<Vec<_>>(),
+        vec!["api-model"]
+    );
+    assert_eq!(manager.catalog_refresh_error().await, None);
 }

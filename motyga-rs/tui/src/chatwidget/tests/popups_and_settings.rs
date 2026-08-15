@@ -3149,6 +3149,93 @@ async fn model_picker_hides_show_in_picker_false_models_from_cache() {
 }
 
 #[tokio::test]
+async fn model_slash_arg_switches_to_model_outside_catalog() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.2")).await;
+    chat.thread_id = Some(ThreadId::new());
+    chat.config.model_reasoning_effort = Some(ReasoningEffortConfig::XHigh);
+    while rx.try_recv().is_ok() {}
+
+    chat.apply_model_slash_arg("claude-opus-5");
+
+    let mut history = Vec::new();
+    let mut updated_model = None;
+    let mut persisted = None;
+    while let Ok(event) = rx.try_recv() {
+        match event {
+            AppEvent::InsertHistoryCell(cell) => {
+                history.push(lines_to_single_string(&cell.display_lines(/*width*/ 120)));
+            }
+            AppEvent::UpdateModel(model) => updated_model = Some(model),
+            AppEvent::PersistModelSelection { model, effort } => persisted = Some((model, effort)),
+            _ => {}
+        }
+    }
+
+    assert_eq!(updated_model.as_deref(), Some("claude-opus-5"));
+    // The effort stored in config carries over; passing None here would clear it from config.toml.
+    assert_eq!(
+        persisted,
+        Some((
+            "claude-opus-5".to_string(),
+            Some(ReasoningEffortConfig::XHigh)
+        ))
+    );
+    assert!(
+        history
+            .iter()
+            .any(|text| text.contains("claude-opus-5") && text.contains("not in this session")),
+        "expected a notice that the model is unlisted:\n{history:?}"
+    );
+}
+
+#[tokio::test]
+async fn model_slash_arg_rejects_multi_word_argument() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.2")).await;
+    chat.thread_id = Some(ThreadId::new());
+    while rx.try_recv().is_ok() {}
+
+    chat.apply_model_slash_arg("tell me about the weather");
+
+    let mut history = Vec::new();
+    while let Ok(event) = rx.try_recv() {
+        match event {
+            AppEvent::InsertHistoryCell(cell) => {
+                history.push(lines_to_single_string(&cell.display_lines(/*width*/ 120)));
+            }
+            AppEvent::UpdateModel(model) => {
+                panic!("a multi-word argument must not switch the model, got {model}")
+            }
+            _ => {}
+        }
+    }
+
+    assert!(
+        history
+            .iter()
+            .any(|text| text.contains("is not a model id")),
+        "expected a usage error:\n{history:?}"
+    );
+}
+
+#[tokio::test]
+async fn model_slash_arg_switches_to_catalog_model_with_its_default_effort() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.2")).await;
+    chat.thread_id = Some(ThreadId::new());
+    while rx.try_recv().is_ok() {}
+
+    chat.apply_model_slash_arg("gpt-5.4");
+
+    let mut updated_model = None;
+    while let Ok(event) = rx.try_recv() {
+        if let AppEvent::UpdateModel(model) = event {
+            updated_model = Some(model);
+        }
+    }
+
+    assert_eq!(updated_model.as_deref(), Some("gpt-5.4"));
+}
+
+#[tokio::test]
 async fn server_overloaded_error_does_not_switch_models() {
     let (mut chat, mut rx, mut op_rx) = make_chatwidget_manual(Some("gpt-5.3-codex")).await;
     chat.set_model("gpt-5.3-codex");

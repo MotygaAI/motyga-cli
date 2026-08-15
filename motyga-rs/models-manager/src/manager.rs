@@ -109,6 +109,16 @@ pub trait ModelsManager: fmt::Debug + Send + Sync {
         refresh_strategy: RefreshStrategy,
     ) -> ModelsManagerFuture<'_, ModelsResponse>;
 
+    /// Why the most recent refresh failed, when the catalog on hand is the bundled fallback rather
+    /// than the provider's own.
+    ///
+    /// The refresh error is otherwise swallowed into a log line nobody reads, and a rejected key
+    /// looks exactly like a provider that only ships a handful of models. Managers with no remote
+    /// to refresh from have nothing to report.
+    fn catalog_refresh_error(&self) -> ModelsManagerFuture<'_, Option<String>> {
+        Box::pin(async { None })
+    }
+
     /// Return the current in-memory remote model catalog without refreshing or loading cache state.
     fn get_remote_models(&self) -> ModelsManagerFuture<'_, Vec<ModelInfo>>;
 
@@ -208,6 +218,7 @@ pub type SharedModelsManager = Arc<dyn ModelsManager>;
 pub struct OpenAiModelsManager {
     remote_models: RwLock<Vec<ModelInfo>>,
     etag: RwLock<Option<String>>,
+    refresh_error: RwLock<Option<String>>,
     cache_manager: ModelsCacheManager,
     endpoint_client: SharedModelsEndpointClient,
     auth_manager: Option<Arc<AuthManager>>,
@@ -233,6 +244,7 @@ impl OpenAiModelsManager {
         Self {
             remote_models: RwLock::new(remote_models),
             etag: RwLock::new(None),
+            refresh_error: RwLock::new(None),
             cache_manager,
             endpoint_client,
             auth_manager,
@@ -261,6 +273,10 @@ impl ModelsManager for OpenAiModelsManager {
         ))
     }
 
+    fn catalog_refresh_error(&self) -> ModelsManagerFuture<'_, Option<String>> {
+        Box::pin(async move { self.refresh_error.read().await.clone() })
+    }
+
     fn get_remote_models(&self) -> ModelsManagerFuture<'_, Vec<ModelInfo>> {
         Box::pin(async move { self.remote_models.read().await.clone() })
     }
@@ -284,8 +300,14 @@ impl ModelsManager for OpenAiModelsManager {
 
 impl OpenAiModelsManager {
     async fn raw_model_catalog(&self, refresh_strategy: RefreshStrategy) -> ModelsResponse {
-        if let Err(err) = self.refresh_available_models(refresh_strategy).await {
-            error!("failed to refresh available models: {err}");
+        match self.refresh_available_models(refresh_strategy).await {
+            Ok(()) => *self.refresh_error.write().await = None,
+            Err(err) => {
+                error!("failed to refresh available models: {err}");
+                // Kept so callers can tell "the provider only has these models" from "we never
+                // got the provider's list"; the log line alone never reaches the user.
+                *self.refresh_error.write().await = Some(err.to_string());
+            }
         }
         ModelsResponse {
             models: self.get_remote_models().await,

@@ -155,6 +155,9 @@
             "null"
           ]
         },
+        "message": {
+          "type": "string"
+        },
         "motygaErrorInfo": {
           "anyOf": [
             {
@@ -164,9 +167,6 @@
               "type": "null"
             }
           ]
-        },
-        "message": {
-          "type": "string"
         }
       },
       "required": [

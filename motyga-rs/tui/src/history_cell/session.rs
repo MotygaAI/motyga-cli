@@ -185,7 +185,8 @@ pub(crate) fn new_session_info(
             Line::from(vec![
                 "  ".into(),
                 "/model".into(),
-                " - choose what model and reasoning effort to use".dim(),
+                " - choose a model and reasoning effort, or /model <model-id> to switch directly"
+                    .dim(),
             ]),
             Line::from(vec![
                 "  ".into(),

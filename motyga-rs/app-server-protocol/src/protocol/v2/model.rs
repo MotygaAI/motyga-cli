@@ -132,6 +132,12 @@ pub struct ModelListResponse {
     /// Opaque cursor to pass to the next call to continue after the last item.
     /// If None, there are no more items to return.
     pub next_cursor: Option<String>,
+    /// Why the last catalog refresh failed, when `data` is therefore the bundled fallback rather
+    /// than the provider's catalog. A rejected key or an unreachable gateway used to be invisible
+    /// here: the list simply came back short, and the client had no way to tell a small catalog
+    /// from a failed refresh.
+    #[serde(default)]
+    pub catalog_refresh_error: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]

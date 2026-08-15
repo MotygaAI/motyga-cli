@@ -539,6 +539,11 @@ impl ThreadManager {
             .await
     }
 
+    /// Why the last model catalog refresh failed, if the catalog on hand is a stale fallback.
+    pub async fn catalog_refresh_error(&self) -> Option<String> {
+        self.state.models_manager.catalog_refresh_error().await
+    }
+
     pub fn list_collaboration_modes(&self) -> Vec<CollaborationModeMask> {
         self.state.models_manager.list_collaboration_modes()
     }

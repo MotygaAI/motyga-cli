@@ -117,6 +117,7 @@ async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
     let ModelListResponse {
         data: items,
         next_cursor,
+        catalog_refresh_error: _,
     } = to_response::<ModelListResponse>(response)?;
 
     let expected_models = expected_visible_models();
@@ -151,6 +152,7 @@ async fn list_models_includes_hidden_models() -> Result<()> {
     let ModelListResponse {
         data: items,
         next_cursor,
+        catalog_refresh_error: _,
     } = to_response::<ModelListResponse>(response)?;
 
     assert!(items.iter().any(|item| item.hidden));
@@ -237,6 +239,7 @@ openai_base_url = "{server_uri}/v1"
     let ModelListResponse {
         data: items,
         next_cursor,
+        catalog_refresh_error: _,
     } = to_response::<ModelListResponse>(response)?;
     let mut expected_presets: Vec<ModelPreset> = vec![remote_model.into()];
     ModelPreset::mark_default_by_picker_visibility(&mut expected_presets);
@@ -299,6 +302,7 @@ async fn list_models_pagination_works() -> Result<()> {
         let ModelListResponse {
             data: page_items,
             next_cursor,
+            catalog_refresh_error: _,
         } = to_response::<ModelListResponse>(response)?;
 
         assert_eq!(page_items.len(), 1);
