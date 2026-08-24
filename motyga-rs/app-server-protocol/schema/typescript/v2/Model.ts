@@ -4,6 +4,7 @@
 import type { InputModality } from "../InputModality";
 import type { ReasoningEffort } from "../ReasoningEffort";
 import type { ModelAvailabilityNux } from "./ModelAvailabilityNux";
+import type { ModelProvider } from "./ModelProvider";
 import type { ModelServiceTier } from "./ModelServiceTier";
 import type { ModelUpgradeInfo } from "./ModelUpgradeInfo";
 import type { ReasoningEffortOption } from "./ReasoningEffortOption";
@@ -16,4 +17,9 @@ additionalSpeedTiers: Array<string>, serviceTiers: Array<ModelServiceTier>,
 /**
  * Catalog default service tier id for this model, when one is configured.
  */
-defaultServiceTier: string | null, isDefault: boolean, };
+defaultServiceTier: string | null, isDefault: boolean,
+/**
+ * Distributors that can serve this model. Two or more mean the caller has a choice to offer;
+ * an empty list means the catalog does not publish one and the server picks.
+ */
+providers: Array<ModelProvider>, };

@@ -104,6 +104,20 @@ pub struct Model {
     pub default_service_tier: Option<String>,
     // Only one model should be marked as default.
     pub is_default: bool,
+    /// Distributors that can serve this model. Two or more mean the caller has a choice to offer;
+    /// an empty list means the catalog does not publish one and the server picks.
+    #[serde(default)]
+    pub providers: Vec<ModelProvider>,
+}
+
+/// One distributor that can serve a model: an opaque routing token plus the name to show for it.
+/// Address it by sending `<model>@<id>`; `label` is display-only.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct ModelProvider {
+    pub id: String,
+    pub label: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]

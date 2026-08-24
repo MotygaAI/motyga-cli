@@ -1019,6 +1019,9 @@ impl App {
             AppEvent::OpenReasoningPopup { model } => {
                 self.chat_widget.open_reasoning_popup(model);
             }
+            AppEvent::OpenProviderPopup { model } => {
+                self.chat_widget.open_provider_popup(model);
+            }
             AppEvent::OpenPlanReasoningScopePrompt { model, effort } => {
                 self.chat_widget
                     .open_plan_reasoning_scope_prompt(model, effort);

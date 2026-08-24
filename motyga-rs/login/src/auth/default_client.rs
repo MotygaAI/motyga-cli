@@ -211,7 +211,65 @@ pub fn create_client() -> MotygaHttpClient {
 /// This supported default path preserves reqwest's existing proxy behavior and does not opt into
 /// Motyga's route-aware system/PAC resolution. Auth callers with route settings must use
 /// `build_default_auth_reqwest_client` or `create_default_auth_client`.
+/// Everything about the process environment that changes what `build_reqwest_client` would produce.
+///
+/// A `reqwest::Client` owns its connection pool, so handing out a fresh one throws the pool away and
+/// the next request pays a full TCP + TLS handshake. That is not free on a distant host: ~470 ms
+/// measured against the busiest upstream. The client is therefore cached — but NOT in a bare
+/// `OnceLock`, which would freeze the first call's configuration for the life of the process.
+/// Residency in particular is settable at runtime (`set_default_client_residency_requirement`), and a
+/// client built before it was set would keep omitting the residency header forever. Caching against
+/// this fingerprint keeps the pool while still rebuilding the moment any input actually changes.
+#[derive(PartialEq)]
+struct ClientFingerprint {
+    /// Covers originator, User-Agent (including `USER_AGENT_SUFFIX`) and the residency header.
+    headers: HeaderMap,
+    sandboxed: bool,
+    ca_certificate: Option<String>,
+    ssl_cert_file: Option<String>,
+}
+
+fn client_fingerprint() -> ClientFingerprint {
+    ClientFingerprint {
+        headers: default_headers(),
+        sandboxed: is_sandboxed(),
+        ca_certificate: std::env::var("MOTYGA_CA_CERTIFICATE").ok(),
+        ssl_cert_file: std::env::var("SSL_CERT_FILE").ok(),
+    }
+}
+
+#[allow(clippy::type_complexity)]
+static CACHED_CLIENT: LazyLock<Mutex<Option<(ClientFingerprint, reqwest::Client)>>> =
+    LazyLock::new(|| Mutex::new(None));
+
 pub fn build_reqwest_client() -> reqwest::Client {
+    let fingerprint = client_fingerprint();
+    // A poisoned lock is not a reason to fail a request: fall through and build an uncached client.
+    if let Ok(guard) = CACHED_CLIENT.lock()
+        && let Some((cached, client)) = guard.as_ref()
+        && *cached == fingerprint
+    {
+        return client.clone();
+    }
+    let client = build_uncached_reqwest_client();
+    if let Ok(mut guard) = CACHED_CLIENT.lock() {
+        *guard = Some((fingerprint, client.clone()));
+    }
+    client
+}
+
+/// Drop the cached client, so the next `build_reqwest_client` rebuilds from scratch.
+///
+/// The fingerprint covers the process state this module can cheaply observe; it deliberately does not
+/// re-read the CONTENTS of the custom CA bundle on every call. A caller that rotates that file in
+/// place, rather than pointing the env var somewhere new, should call this.
+pub fn reset_cached_reqwest_client() {
+    if let Ok(mut guard) = CACHED_CLIENT.lock() {
+        *guard = None;
+    }
+}
+
+fn build_uncached_reqwest_client() -> reqwest::Client {
     try_build_reqwest_client().unwrap_or_else(|error| {
         tracing::warn!(error = %error, "failed to build default reqwest client");
         with_chatgpt_cloudflare_cookie_store(reqwest::Client::builder())

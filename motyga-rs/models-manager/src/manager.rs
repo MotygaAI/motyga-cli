@@ -387,13 +387,16 @@ impl OpenAiModelsManager {
         // A provider that serves an OpenAI-compatible catalog (e.g. Motyga) hands us stub
         // descriptors with no metadata; enrich them from the bundled defaults keyed on the
         // slug so they render in the picker and run with a real system prompt. Preserve the
-        // stub's visibility so catalog entries stay listable.
+        // stub's visibility so catalog entries stay listable, and its distributor list — that
+        // one exists ONLY on the stub (the bundled defaults know nothing about who serves a
+        // model), so dropping it here would silently cost every model its provider choice.
         let models: Vec<ModelInfo> = models
             .into_iter()
             .map(|model| {
                 if model.base_instructions.is_empty() {
                     let mut enriched = model_info::model_info_from_slug(&model.slug);
                     enriched.visibility = model.visibility;
+                    enriched.providers = model.providers;
                     enriched
                 } else {
                     model

@@ -742,6 +742,11 @@ pub(crate) enum AppEvent {
         model: ModelPreset,
     },
 
+    /// Open the distributor selection popup for a model served by more than one of them.
+    OpenProviderPopup {
+        model: ModelPreset,
+    },
+
     /// Open the Plan-mode reasoning scope prompt for the selected model/effort.
     OpenPlanReasoningScopePrompt {
         model: String,

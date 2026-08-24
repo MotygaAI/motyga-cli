@@ -1,5 +1,6 @@
 use super::*;
 use crate::app_event::ConnectorsSnapshot;
+use motyga_protocol::openai_models::ModelProvider;
 use crate::chatwidget::connectors::ConnectorsCacheState;
 use motyga_app_server_protocol::HookErrorInfo;
 use motyga_app_server_protocol::HooksListEntry;
@@ -3130,6 +3131,7 @@ async fn model_picker_hides_show_in_picker_false_models_from_cache() {
         availability_nux: None,
         supported_in_api: true,
         input_modalities: default_input_modalities(),
+        providers: Vec::new(),
     };
 
     chat.open_model_popup_with_presets(vec![
@@ -3185,6 +3187,155 @@ async fn model_slash_arg_switches_to_model_outside_catalog() {
             .iter()
             .any(|text| text.contains("claude-opus-5") && text.contains("not in this session")),
         "expected a notice that the model is unlisted:\n{history:?}"
+    );
+}
+
+#[tokio::test]
+async fn model_slash_arg_pins_a_distributor() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.2")).await;
+    chat.thread_id = Some(ThreadId::new());
+    while rx.try_recv().is_ok() {}
+
+    chat.apply_model_slash_arg("claude-opus-5@d0a4b7a3f9c");
+
+    let mut updated_model = None;
+    while let Ok(event) = rx.try_recv() {
+        if let AppEvent::UpdateModel(model) = event {
+            updated_model = Some(model);
+        }
+    }
+
+    // The suffix is the server's routing syntax and has to survive intact — stripping it here
+    // would silently drop the user back onto the cheapest distributor.
+    assert_eq!(
+        updated_model.as_deref(),
+        Some("claude-opus-5@d0a4b7a3f9c"),
+        "expected the pinned distributor to reach the session"
+    );
+}
+
+#[tokio::test]
+async fn model_slash_arg_rejects_a_distributor_that_does_not_serve_the_model() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.2")).await;
+    chat.thread_id = Some(ThreadId::new());
+    while rx.try_recv().is_ok() {}
+
+    let mut preset = get_available_model(&chat, "gpt-5.2");
+    preset.providers = vec![
+        ModelProvider {
+            id: "d0a4b7a3f9c".to_string(),
+            label: "Leaky Pocket".to_string(),
+        },
+        ModelProvider {
+            id: "d81be2ff107".to_string(),
+            label: "Quiet Harbour".to_string(),
+        },
+    ];
+    chat.model_catalog = Arc::new(ModelCatalog::new(vec![preset]));
+
+    chat.apply_model_slash_arg("gpt-5.2@not-a-distributor");
+
+    let mut history = Vec::new();
+    while let Ok(event) = rx.try_recv() {
+        match event {
+            AppEvent::InsertHistoryCell(cell) => {
+                history.push(lines_to_single_string(&cell.display_lines(/*width*/ 120)));
+            }
+            AppEvent::UpdateModel(model) => {
+                panic!("an unknown distributor must not switch the model, got {model}")
+            }
+            _ => {}
+        }
+    }
+
+    assert!(
+        history.iter().any(|text| text.contains("not-a-distributor")
+            && text.contains("Leaky Pocket")
+            && text.contains("Quiet Harbour")),
+        "expected the rejection to name the distributors that do serve it:\n{history:?}"
+    );
+}
+
+#[tokio::test]
+async fn distributor_popup_lists_automatic_first_then_each_distributor() {
+    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    let mut preset = ModelPreset {
+        id: "qwen3.8-27b".to_string(),
+        model: "qwen3.8-27b".to_string(),
+        display_name: "qwen3.8-27b".to_string(),
+        description: String::new(),
+        default_reasoning_effort: ReasoningEffortConfig::Medium,
+        supported_reasoning_efforts: vec![
+            ReasoningEffortPreset {
+                effort: ReasoningEffortConfig::Medium,
+                description: "medium".to_string(),
+            },
+            ReasoningEffortPreset {
+                effort: ReasoningEffortConfig::High,
+                description: "high".to_string(),
+            },
+        ],
+        supports_personality: false,
+        additional_speed_tiers: Vec::new(),
+        service_tiers: Vec::new(),
+        default_service_tier: None,
+        is_default: false,
+        upgrade: None,
+        show_in_picker: true,
+        availability_nux: None,
+        supported_in_api: true,
+        input_modalities: default_input_modalities(),
+        providers: Vec::new(),
+    };
+    preset.providers = vec![
+        ModelProvider {
+            id: "d0a4b7a3f9c".to_string(),
+            label: "Leaky Pocket".to_string(),
+        },
+        ModelProvider {
+            id: "d81be2ff107".to_string(),
+            label: "Quiet Harbour".to_string(),
+        },
+    ];
+
+    chat.open_provider_popup(preset);
+
+    let popup = render_bottom_popup(&chat, /*width*/ 120);
+    assert!(
+        popup.contains("Select Distributor for qwen3.8-27b"),
+        "expected the distributor popup header; popup: {popup}"
+    );
+    // The rows read as names, not as the opaque tokens they route on.
+    for expected in ["Automatic", "Leaky Pocket", "Quiet Harbour"] {
+        assert!(
+            popup.contains(expected),
+            "expected '{expected}' in the distributor popup; popup: {popup}"
+        );
+    }
+    assert!(
+        !popup.contains("d0a4b7a3f9c"),
+        "the routing token is not something to show a reader; popup: {popup}"
+    );
+}
+
+#[tokio::test]
+async fn a_single_distributor_skips_straight_to_reasoning() {
+    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    let mut preset = get_available_model(&chat, "gpt-5.2");
+    preset.providers = vec![ModelProvider {
+        id: "d0a4b7a3f9c".to_string(),
+        label: "Leaky Pocket".to_string(),
+    }];
+
+    chat.open_provider_popup(preset);
+
+    // One distributor is not a choice; showing a menu of one would be a step that asks nothing.
+    let popup = render_bottom_popup(&chat, /*width*/ 120);
+    assert!(
+        !popup.contains("Select Distributor"),
+        "expected no distributor step for a single distributor; popup: {popup}"
     );
 }
 
@@ -3490,6 +3641,7 @@ async fn single_reasoning_option_skips_selection() {
         availability_nux: None,
         supported_in_api: true,
         input_modalities: default_input_modalities(),
+        providers: Vec::new(),
     };
     chat.open_reasoning_popup(preset);
 

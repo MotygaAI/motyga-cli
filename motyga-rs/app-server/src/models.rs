@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use motyga_app_server_protocol::Model;
+use motyga_app_server_protocol::ModelProvider;
 use motyga_app_server_protocol::ModelServiceTier;
 use motyga_app_server_protocol::ModelUpgradeInfo;
 use motyga_app_server_protocol::ReasoningEffortOption;
@@ -55,6 +56,14 @@ fn model_from_preset(preset: ModelPreset) -> Model {
             .collect(),
         default_service_tier: preset.default_service_tier,
         is_default: preset.is_default,
+        providers: preset
+            .providers
+            .into_iter()
+            .map(|provider| ModelProvider {
+                id: provider.id,
+                label: provider.label,
+            })
+            .collect(),
     }
 }
 

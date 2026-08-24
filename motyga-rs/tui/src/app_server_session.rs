@@ -118,6 +118,7 @@ use motyga_protocol::models::PermissionProfile;
 use motyga_protocol::models::ResponseItem;
 use motyga_protocol::openai_models::ModelAvailabilityNux;
 use motyga_protocol::openai_models::ModelPreset;
+use motyga_protocol::openai_models::ModelProvider;
 use motyga_protocol::openai_models::ModelServiceTier;
 use motyga_protocol::openai_models::ModelUpgrade;
 use motyga_protocol::openai_models::ReasoningEffortPreset;
@@ -1267,6 +1268,14 @@ fn model_preset_from_api_model(model: ApiModel) -> ModelPreset {
         // `model/list` already returns models filtered for the active client/auth context.
         supported_in_api: true,
         input_modalities: model.input_modalities,
+        providers: model
+            .providers
+            .into_iter()
+            .map(|provider| ModelProvider {
+                id: provider.id,
+                label: provider.label,
+            })
+            .collect(),
     }
 }
 

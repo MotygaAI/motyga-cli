@@ -8816,6 +8816,14 @@
         "model": {
           "type": "string"
         },
+        "providers": {
+          "default": [],
+          "description": "Distributors that can serve this model. Two or more mean the caller has a choice to offer; an empty list means the catalog does not publish one and the server picks.",
+          "items": {
+            "$ref": "#/definitions/ModelProvider"
+          },
+          "type": "array"
+        },
         "serviceTiers": {
           "default": [],
           "items": {
@@ -8932,6 +8940,22 @@
         "data"
       ],
       "title": "ModelListResponse",
+      "type": "object"
+    },
+    "ModelProvider": {
+      "description": "One distributor that can serve a model: an opaque routing token plus the name to show for it. Address it by sending `<model>@<id>`; `label` is display-only.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label"
+      ],
       "type": "object"
     },
     "ModelProviderCapabilitiesReadParams": {

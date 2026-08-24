@@ -95,6 +95,17 @@ impl MarkdownStreamCollector {
         Some(out)
     }
 
+    /// Source appended since the last commit — i.e. the partial line still being streamed.
+    ///
+    /// Commits are newline-gated so that markdown blocks are never rendered half-parsed, which also
+    /// means that between two newlines the collector is the ONLY place the newest bytes exist. A
+    /// caller that wants to show the user that text is still arriving reads it here and renders it
+    /// as plain text in an ephemeral region; it must never be fed to the stable markdown renderer,
+    /// because its meaning can still change when the rest of the line arrives.
+    pub fn uncommitted_source(&self) -> &str {
+        &self.buffer[self.committed_source_len..]
+    }
+
     /// Finalize the stream and return any remaining raw source.
     ///
     /// Ensures the returned source chunk is newline-terminated when non-empty so callers can

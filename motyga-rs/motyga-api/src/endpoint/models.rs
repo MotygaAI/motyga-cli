@@ -5,12 +5,14 @@ use crate::provider::Provider;
 use motyga_client::HttpTransport;
 use motyga_client::RequestTelemetry;
 use motyga_protocol::openai_models::ModelInfo;
+use motyga_protocol::openai_models::ModelProvider;
 use motyga_protocol::openai_models::ModelVisibility;
 use motyga_protocol::openai_models::ModelsResponse;
 use http::HeaderMap;
 use serde::Deserialize;
 use http::Method;
 use http::header::ETAG;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 pub struct ModelsClient<T: HttpTransport> {
@@ -80,11 +82,23 @@ impl<T: HttpTransport> ModelsClient<T> {
                 simple
                     .data
                     .into_iter()
-                    .map(|m| ModelInfo {
-                        slug: m.id.clone(),
-                        display_name: m.id,
-                        visibility: ModelVisibility::List,
-                        ..Default::default()
+                    .map(|m| {
+                        let mut labels = m.provider_labels;
+                        let providers = m
+                            .providers
+                            .into_iter()
+                            .map(|id| {
+                                let label = labels.remove(&id).unwrap_or_else(|| id.clone());
+                                ModelProvider { id, label }
+                            })
+                            .collect();
+                        ModelInfo {
+                            slug: m.id.clone(),
+                            display_name: m.id,
+                            visibility: ModelVisibility::List,
+                            providers,
+                            ..Default::default()
+                        }
                     })
                     .collect()
             }
@@ -95,7 +109,7 @@ impl<T: HttpTransport> ModelsClient<T> {
 }
 
 /// Minimal view of an OpenAI-compatible `/models` response (only the fields we
-/// need to build stub descriptors; extra fields such as `providers` are ignored).
+/// need to build stub descriptors).
 #[derive(Deserialize)]
 struct OpenAiSimpleModelsResponse {
     #[serde(default)]
@@ -105,6 +119,15 @@ struct OpenAiSimpleModelsResponse {
 #[derive(Deserialize)]
 struct OpenAiSimpleModel {
     id: String,
+    /// Opaque distributor tokens that can serve this model — the only values that may follow `@`
+    /// on a request. Motyga publishes them; other OpenAI-compatible catalogs do not, and the
+    /// default empty list is what tells the picker there is no distributor choice to offer.
+    #[serde(default)]
+    providers: Vec<String>,
+    /// Public display name per token. Absent for an older backend, in which case the token is
+    /// shown as-is: unreadable, but never wrong.
+    #[serde(default)]
+    provider_labels: HashMap<String, String>,
 }
 
 #[cfg(test)]

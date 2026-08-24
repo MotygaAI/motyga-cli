@@ -237,6 +237,10 @@ pub struct ModelPreset {
     /// Input modalities accepted when composing user turns for this preset.
     #[serde(default = "default_input_modalities")]
     pub input_modalities: Vec<InputModality>,
+    /// Distributors that can serve this model. More than one means the picker offers a choice;
+    /// leaving it to the server picks the cheapest, which is what happens when nothing is chosen.
+    #[serde(default)]
+    pub providers: Vec<ModelProvider>,
 }
 
 /// Visibility of a model in the picker or APIs.
@@ -431,6 +435,21 @@ pub struct ModelInfo {
         deserialize_with = "deserialize_optional_model_selector"
     )]
     pub multi_agent_version: Option<MultiAgentVersion>,
+    /// Distributors that can serve this model. Empty when the backend does not publish them, which
+    /// is every provider except Motyga — the picker then offers no distributor step at all.
+    #[serde(default)]
+    pub providers: Vec<ModelProvider>,
+}
+
+/// One distributor that can serve a model.
+///
+/// The two halves are not interchangeable: `id` is the opaque token the server routes on and the
+/// only thing that may follow `@`, while `label` is the public name to show. The upstream's real
+/// identity is deliberately absent from both.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default, TS, JsonSchema)]
+pub struct ModelProvider {
+    pub id: String,
+    pub label: String,
 }
 
 impl Default for ModelInfo {
@@ -478,6 +497,7 @@ impl Default for ModelInfo {
             auto_review_model_override: None,
             tool_mode: None,
             multi_agent_version: None,
+            providers: Vec::new(),
         }
     }
 }
@@ -637,6 +657,7 @@ impl From<ModelInfo> for ModelPreset {
             availability_nux: info.availability_nux,
             supported_in_api: info.supported_in_api,
             input_modalities: info.input_modalities,
+            providers: info.providers,
         }
     }
 }
@@ -742,6 +763,7 @@ mod tests {
             auto_review_model_override: None,
             tool_mode: None,
             multi_agent_version: None,
+            providers: Vec::new(),
         }
     }
 

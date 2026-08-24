@@ -4,6 +4,7 @@
 //! into another, especially while Plan mode is active.
 
 use super::*;
+use motyga_protocol::openai_models::ModelProvider;
 use motyga_utils_fuzzy_match::fuzzy_match;
 
 impl ChatWidget {
@@ -65,12 +66,52 @@ impl ChatWidget {
             }
         };
 
+        // `<id>@<distributor>` names a model AND who should serve it. Resolve the two halves
+        // separately: the id against the catalog as before, the distributor against that model's
+        // own list, so a wrong distributor is caught here instead of surfacing as a server error
+        // on the next turn.
+        let (requested_id, requested_provider) = split_model_arg(requested);
+
         // Match the catalog id the user typed. Deliberately not filtered by `show_in_picker`:
         // naming a model outright is a more explicit act than browsing for one.
-        let Some(preset) = match_model_arg(&presets, requested) else {
+        let Some(mut preset) = match_model_arg(&presets, requested_id) else {
             self.switch_to_uncatalogued_model(requested, &presets);
             return;
         };
+
+        if let Some(provider) = requested_provider {
+            // Accept either half: the routing token, or the label for someone reading it off the
+            // picker. Only the token may go on the wire, so a label match resolves to its token.
+            let matched = preset
+                .providers
+                .iter()
+                .find(|known| {
+                    known.id.eq_ignore_ascii_case(provider)
+                        || known.label.eq_ignore_ascii_case(provider)
+                })
+                .map(|known| known.id.clone());
+
+            // An empty list means this catalog does not publish distributors at all, so there is
+            // nothing to check against and the server stays the authority — same as an unlisted id.
+            let resolved = match (matched, preset.providers.is_empty()) {
+                (Some(id), _) => id,
+                (None, true) => provider.to_string(),
+                (None, false) => {
+                    let known = preset
+                        .providers
+                        .iter()
+                        .map(|known| format!("{} ({})", known.label, known.id))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    self.add_error_message(format!(
+                        "'{provider}' does not serve {}. Available: {known}.",
+                        preset.model
+                    ));
+                    return;
+                }
+            };
+            preset.model = format!("{}@{resolved}", preset.model);
+        }
 
         let effort = Some(preset.default_reasoning_effort.clone());
         let should_prompt_plan_mode_scope =
@@ -269,16 +310,40 @@ impl ChatWidget {
 
         let mut items: Vec<SelectionItem> = Vec::new();
         for preset in presets.into_iter() {
-            let description =
-                (!preset.description.is_empty()).then_some(preset.description.to_string());
-            let is_current = preset.model.as_str() == self.current_model();
-            let single_supported_effort = preset.supported_reasoning_efforts.len() == 1;
+            // Say that a distributor choice exists on the row itself. A nested popup nobody knows
+            // about is a feature nobody uses, and the count is the only hint the list can carry.
+            let description = match (
+                preset.description.is_empty(),
+                preset.providers.len(),
+            ) {
+                (_, count) if count > 1 => Some(if preset.description.is_empty() {
+                    format!("{count} distributors")
+                } else {
+                    format!("{} · {count} distributors", preset.description)
+                }),
+                (false, _) => Some(preset.description.to_string()),
+                (true, _) => None,
+            };
+            // The row matches the session whether or not a distributor is pinned: `qwen@openrouter`
+            // is still this model, and marking it current is what tells the user where they are.
+            let is_current = preset.model.as_str() == model_base_slug(self.current_model());
+            // A distributor choice is its own step, so a model that has one always opens a child
+            // popup — even when its reasoning level would otherwise apply outright.
+            let offers_provider_choice = preset.providers.len() > 1;
+            let single_supported_effort =
+                preset.supported_reasoning_efforts.len() == 1 && !offers_provider_choice;
             let preset_for_action = preset.clone();
             let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
                 let preset_for_event = preset_for_action.clone();
-                tx.send(AppEvent::OpenReasoningPopup {
-                    model: preset_for_event,
-                });
+                if offers_provider_choice {
+                    tx.send(AppEvent::OpenProviderPopup {
+                        model: preset_for_event,
+                    });
+                } else {
+                    tx.send(AppEvent::OpenReasoningPopup {
+                        model: preset_for_event,
+                    });
+                }
             })];
             items.push(SelectionItem {
                 name: preset.model.clone(),
@@ -439,6 +504,97 @@ impl ChatWidget {
     }
 
     /// Open a popup to choose the reasoning effort (stage 2) for the given model.
+    /// Choose which distributor serves the model just picked.
+    ///
+    /// The same model reaches us through several distributors at different costs, and the server
+    /// routes to the cheapest one unless the request names another. The catalog publishes that list
+    /// per model, so this step appears exactly where the choice exists: a model with one
+    /// distributor — or from a provider that publishes no list at all — goes straight to the
+    /// reasoning level, as it did before.
+    pub(crate) fn open_provider_popup(&mut self, preset: ModelPreset) {
+        let base_model = model_base_slug(&preset.model).to_string();
+        if preset.providers.len() < 2 {
+            // Nothing to choose between. Falling through rather than showing a menu of one keeps a
+            // catalog that changed under us from stranding the user on a pointless popup.
+            self.open_reasoning_popup(preset);
+            return;
+        }
+
+        let current_model = self.current_model().to_string();
+        let on_this_model = model_base_slug(&current_model) == base_model;
+        let current_provider = model_provider(&current_model).map(str::to_string);
+        // Only one level closes the popups outright; otherwise the reasoning popup opens as a child.
+        let single_supported_effort = preset.supported_reasoning_efforts.len() == 1;
+
+        // `None` is the "let the server decide" row and leads the list: it is both the default and
+        // the cheapest, so the menu should not read as if pinning were the normal thing to do.
+        let rows: Vec<Option<ModelProvider>> = std::iter::once(None)
+            .chain(preset.providers.iter().cloned().map(Some))
+            .collect();
+        let initial_selected_idx = on_this_model.then(|| {
+            rows.iter()
+                .position(|row| {
+                    row.as_ref().map(|provider| provider.id.as_str()) == current_provider.as_deref()
+                })
+                .unwrap_or(0)
+        });
+
+        let mut items: Vec<SelectionItem> = Vec::new();
+        for row in rows.iter() {
+            let (name, description, model) = match row {
+                None => (
+                    "Automatic".to_string(),
+                    Some("Route to the cheapest distributor that serves this model.".to_string()),
+                    base_model.clone(),
+                ),
+                // Show the label, route on the id: the id is an opaque token that means nothing to
+                // a reader, and the label is not something the server would accept.
+                Some(provider) => (
+                    provider.label.clone(),
+                    Some(format!("Always serve this model through {}.", provider.label)),
+                    format!("{base_model}@{}", provider.id),
+                ),
+            };
+
+            let mut preset_for_action = preset.clone();
+            preset_for_action.model = model;
+            let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
+                tx.send(AppEvent::OpenReasoningPopup {
+                    model: preset_for_action.clone(),
+                });
+            })];
+
+            items.push(SelectionItem {
+                name,
+                description,
+                is_current: on_this_model
+                    && row.as_ref().map(|provider| provider.id.as_str())
+                        == current_provider.as_deref(),
+                actions,
+                dismiss_on_select: single_supported_effort,
+                dismiss_parent_on_child_accept: !single_supported_effort,
+                ..Default::default()
+            });
+        }
+
+        let mut header = ColumnRenderable::new();
+        header.push(Line::from(
+            format!("Select Distributor for {base_model}").bold(),
+        ));
+        header.push(Line::from(
+            "The same model, sold by different distributors. Cost and speed vary; the model does not."
+                .dim(),
+        ));
+
+        self.bottom_pane.show_selection_view(SelectionViewParams {
+            header: Box::new(header),
+            footer_hint: Some(standard_popup_hint_line()),
+            items,
+            initial_selected_idx,
+            ..Default::default()
+        });
+    }
+
     pub(crate) fn open_reasoning_popup(&mut self, preset: ModelPreset) {
         let default_effort = preset.default_reasoning_effort;
         let supported = preset.supported_reasoning_efforts;
@@ -629,6 +785,27 @@ impl ChatWidget {
 /// Collapse an id to just its alphanumerics, so ids that differ only in separators or case compare
 /// equal. The catalog spells versions both ways depending on the vendor (`claude-opus-4-5` vs the
 /// label's "Claude Opus 4.5"), and a user typing the version they SEE should not be a dead end.
+/// The catalog id inside a possibly distributor-qualified model string: `slug@who` -> `slug`.
+///
+/// The suffix is the server's routing syntax, not part of the name, so everything that reasons
+/// about WHICH model this is — catalog lookup, "is this the current one" — has to look past it.
+pub(crate) fn model_base_slug(model: &str) -> &str {
+    model.split_once('@').map_or(model, |(slug, _)| slug)
+}
+
+/// The distributor pinned in a model string, when one is. An empty suffix is not a distributor.
+pub(crate) fn model_provider(model: &str) -> Option<&str> {
+    model
+        .split_once('@')
+        .map(|(_, provider)| provider)
+        .filter(|provider| !provider.is_empty())
+}
+
+/// Split `<id>[@<distributor>]` as typed into `/model`.
+fn split_model_arg(requested: &str) -> (&str, Option<&str>) {
+    (model_base_slug(requested), model_provider(requested))
+}
+
 fn normalized_model_id(id: &str) -> String {
     id.chars()
         .filter(char::is_ascii_alphanumeric)
@@ -712,6 +889,7 @@ mod model_arg_tests {
             availability_nux: None,
             supported_in_api: true,
             input_modalities: default_input_modalities(),
+            providers: Vec::new(),
         }
     }
 
@@ -754,6 +932,38 @@ mod model_arg_tests {
     #[test]
     fn unknown_id_does_not_silently_resolve() {
         assert!(match_model_arg(&catalog(), "definitely-not-a-model").is_none());
+    }
+
+    #[test]
+    fn distributor_suffix_splits_off_the_id() {
+        assert_eq!(
+            split_model_arg("qwen3.8-27b@openrouter"),
+            ("qwen3.8-27b", Some("openrouter"))
+        );
+        assert_eq!(split_model_arg("qwen3.8-27b"), ("qwen3.8-27b", None));
+        // A bare '@' pins nothing; treating it as a distributor would send an empty one upstream.
+        assert_eq!(split_model_arg("qwen3.8-27b@"), ("qwen3.8-27b", None));
+    }
+
+    #[test]
+    fn a_pinned_distributor_still_resolves_to_its_model() {
+        // The id half is what the catalog knows; the suffix must not turn a known model into an
+        // unknown one and send the user down the uncatalogued path.
+        let presets = catalog();
+        let (id, provider) = split_model_arg("gpt-5.6-sol@openrouter");
+        assert_eq!(
+            match_model_arg(&presets, id).map(|p| p.model),
+            Some("gpt-5.6-sol".to_string())
+        );
+        assert_eq!(provider, Some("openrouter"));
+    }
+
+    #[test]
+    fn base_slug_and_provider_read_both_halves() {
+        assert_eq!(model_base_slug("gpt-5.5@xgapi"), "gpt-5.5");
+        assert_eq!(model_provider("gpt-5.5@xgapi"), Some("xgapi"));
+        assert_eq!(model_base_slug("gpt-5.5"), "gpt-5.5");
+        assert_eq!(model_provider("gpt-5.5"), None);
     }
 
     #[test]

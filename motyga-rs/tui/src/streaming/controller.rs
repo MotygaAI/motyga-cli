@@ -213,7 +213,40 @@ impl StreamCore {
     #[inline]
     fn current_tail_lines(&self) -> Vec<HyperlinkLine> {
         let start = self.enqueued_stable_len.min(self.rendered_lines.len());
-        self.rendered_lines[start..].to_vec()
+        let mut lines = self.rendered_lines[start..].to_vec();
+        lines.extend(self.live_partial_line());
+        lines
+    }
+
+    /// The partial line still being streamed, as plain text, or nothing when showing it would lie.
+    ///
+    /// Commits are newline-gated, so between two newlines NOTHING reached `rendered_lines` and the
+    /// screen simply froze — on ordinary prose that is a visible stall of a second or more while
+    /// bytes are in fact arriving the whole time. This is the missing sub-line feedback.
+    ///
+    /// It is deliberately plain: the text goes into the ephemeral active cell that
+    /// `sync_active_stream_tail` rebuilds on every delta, never into the stable markdown render, so
+    /// there is nothing to un-emit when the line completes and scrollback ordering is untouched.
+    ///
+    /// Two constructs are withheld rather than shown, because for them a half-line does not merely
+    /// look unfinished, it renders as something the completed line will NOT be:
+    ///   * a table row — the holdback machinery exists precisely so a partial row never paints
+    ///     columns that reshape on the next delta, and the scanner only ever sees COMMITTED source,
+    ///     so a table that starts mid-buffer is still invisible to it here;
+    ///   * a fenced code block — the fence line is markup, not content.
+    fn live_partial_line(&self) -> Option<HyperlinkLine> {
+        if !matches!(self.holdback_scanner.state(), TableHoldbackState::None) {
+            return None;
+        }
+        let partial = self.state.collector.uncommitted_source();
+        if partial.is_empty() {
+            return None;
+        }
+        let trimmed = partial.trim_start();
+        if trimmed.starts_with('|') || trimmed.starts_with("```") {
+            return None;
+        }
+        plain_hyperlink_lines(raw_lines_from_source(partial)).pop()
     }
 
     #[inline]
@@ -902,15 +935,51 @@ mod tests {
     }
 
     #[test]
-    fn controller_live_tail_requires_table_holdback_state() {
+    fn controller_live_tail_shows_uncommitted_prose_as_plain_text() {
+        // This used to assert the opposite — that ordinary text without a newline produced nothing —
+        // which is precisely why the screen sat frozen for a second or more on every paragraph while
+        // bytes were arriving the whole time. Prose is safe to show early: unlike a table row, a half
+        // sentence renders as itself.
         let mut ctrl = stream_controller(Some(80));
         ctrl.push("plain text without newline");
 
+        let tail = hyperlink_lines_to_plain_strings(&ctrl.current_tail_lines()).join("\n");
         assert!(
-            ctrl.current_tail_lines().is_empty(),
-            "expected no live tail outside table holdback state",
+            tail.contains("plain text without newline"),
+            "expected the uncommitted line to be visible: {tail:?}",
         );
+        // It is display-only. `has_live_tail` drives scrollback/finalize decisions and must still be
+        // false, or finalize would treat this ephemeral text as already-emitted history.
         assert!(!ctrl.has_live_tail());
+    }
+
+    #[test]
+    fn controller_live_tail_withholds_an_uncommitted_fence_line() {
+        // A fence is markup, not content: showing "```rust" and then replacing it with a code block is
+        // a flicker with nothing gained, so it stays gated like a table row.
+        let mut ctrl = stream_controller(Some(80));
+        ctrl.push("```rust");
+
+        let tail = hyperlink_lines_to_plain_strings(&ctrl.current_tail_lines()).join("\n");
+        assert!(
+            !tail.contains("```"),
+            "expected the fence line to stay gated: {tail:?}"
+        );
+    }
+
+    #[test]
+    fn controller_live_tail_withholds_an_uncommitted_row_before_any_table_is_known() {
+        // The holdback scanner only ever sees COMMITTED source, so at the very first row of a table it
+        // still reports `None` and cannot be the thing that gates this. The shape of the partial line
+        // has to be checked too, or the first row of every table would paint and then be retracted.
+        let mut ctrl = stream_controller(Some(80));
+        ctrl.push("| A | B");
+
+        let tail = hyperlink_lines_to_plain_strings(&ctrl.current_tail_lines()).join("\n");
+        assert!(
+            !tail.contains("A | B"),
+            "expected the first table row to stay gated: {tail:?}"
+        );
     }
 
     #[test]

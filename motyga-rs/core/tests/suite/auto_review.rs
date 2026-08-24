@@ -234,6 +234,7 @@ fn remote_model_with_auto_review_override(slug: &str, review_model: &str) -> Mod
         auto_review_model_override: Some(review_model.to_string()),
         tool_mode: None,
         multi_agent_version: None,
+        providers: Vec::new(),
         priority: 1,
         additional_speed_tiers: Vec::new(),
         service_tiers: Vec::new(),

@@ -441,7 +441,14 @@ impl ChatWidget {
                 return;
             }
 
-            self.bottom_pane.hide_status_indicator();
+            // Hide the status row only once there is RENDERED content — i.e. exactly when this used to
+            // be reached at all. `current_tail_lines` now also carries the uncommitted partial line so
+            // the screen moves between newlines, but a half-written first line is not yet an answer:
+            // retiring the status row on it would drop the only "still working" affordance mid-recovery,
+            // right after a reconnect, before anything readable had landed.
+            if controller.has_live_tail() {
+                self.bottom_pane.hide_status_indicator();
+            }
             self.transcript.active_cell =
                 Some(Box::new(history_cell::StreamingAgentTailCell::new(
                     tail_lines,

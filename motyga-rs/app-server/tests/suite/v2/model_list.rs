@@ -12,6 +12,7 @@ use motyga_app_server_protocol::JSONRPCResponse;
 use motyga_app_server_protocol::Model;
 use motyga_app_server_protocol::ModelListParams;
 use motyga_app_server_protocol::ModelListResponse;
+use motyga_app_server_protocol::ModelProvider;
 use motyga_app_server_protocol::ModelServiceTier;
 use motyga_app_server_protocol::ModelUpgradeInfo;
 use motyga_app_server_protocol::ReasoningEffortOption;
@@ -72,6 +73,14 @@ fn model_from_preset(preset: &ModelPreset) -> Model {
             .collect(),
         default_service_tier: preset.default_service_tier.clone(),
         is_default: preset.is_default,
+        providers: preset
+            .providers
+            .iter()
+            .map(|provider| ModelProvider {
+                id: provider.id.clone(),
+                label: provider.label.clone(),
+            })
+            .collect(),
     }
 }
 
